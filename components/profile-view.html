@@ -141,6 +141,33 @@
         </form>
       </div>
 
+      <!-- SECCIÓN DE CAMBIO DE CONTRASEÑA -->
+      <div class="card" style="margin-top: 20px; border-color: var(--blue-telemetry);">
+          <div class="card-header">
+              <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:1.2rem;">🔐</span>
+                  <h3>Cambiar Contraseña</h3>
+              </div>
+          </div>
+          <div class="card-content">
+              <div class="form-group">
+                  <label for="currentPassword">Contraseña Actual</label>
+                  <input type="password" id="currentPassword" class="form-control" placeholder="Ingresa tu contraseña actual" />
+              </div>
+              <div class="form-group">
+                  <label for="newPassword">Nueva Contraseña</label>
+                  <input type="password" id="newPassword" class="form-control" placeholder="Mínimo 6 caracteres" />
+              </div>
+              <div class="form-group">
+                  <label for="confirmPassword">Confirmar Nueva Contraseña</label>
+                  <input type="password" id="confirmPassword" class="form-control" placeholder="Repite la nueva contraseña" />
+              </div>
+              <button onclick="handleChangePassword()" class="btn-primary" style="width: 100%;">
+                  🔒 Actualizar Contraseña
+              </button>
+          </div>
+      </div>
+
       <!-- Quick Hangar Summary inside Profile -->
       <div class="card" style="margin-top: 1.5rem;">
         <div class="card-header">

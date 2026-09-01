@@ -115,7 +115,19 @@
               <th>Acciones</th>
             </tr>
           </thead>
-          <tbody id="membersTableBody"></tbody>
+          <tbody id="membersTableBody">
+            <!-- 
+              ========================================================================
+              NOTA PARA EL RENDERIZADO DINÁMICO (JavaScript):
+              Al generar las filas (<tr>) de esta tabla, asegúrate de incluir el 
+              siguiente botón en la última celda (<td>) de la columna "Acciones":
+              
+              <button onclick="resetUserPassword('${user.user_id}')" class="btn-warning" style="padding: 4px 12px; font-size: 0.75rem;">
+                  🔄 Reset Pass
+              </button>
+              ========================================================================
+            -->
+          </tbody>
         </table>
         <div id="noResultsMessage" style="display:none;padding:1.5rem;text-align:center;color:#a0aec0;">
           No se encontraron pilotos con los filtros seleccionados
@@ -181,3 +193,28 @@
     </div>
   </div>
 </div>
+
+<!-- TEMPLATE OCULTO: Estructura de fila para la generación dinámica (Referencia) -->
+<template id="memberTableRowTemplate">
+  <tr>
+    <td class="pilot-name-cell">
+      <div class="pilot-info-mini">
+        <span class="pilot-nick">NICKNAME</span>
+        <span class="pilot-email">email@ffaa.py</span>
+      </div>
+    </td>
+    <td><span class="role-badge">ROL</span></td>
+    <td class="last-activity">-</td>
+    <td class="avg-tokens">0</td>
+    <td class="weeks-count">0</td>
+    <td class="trend-indicator">➡️</td>
+    <td><span class="status-badge">ESTADO</span></td>
+    <td><span class="squad-status-badge">ESTADO</span></td>
+    <td>
+      <!-- BOTÓN AGREGADO SEGÚN SOLICITUD -->
+      <button onclick="resetUserPassword('USER_ID_PLACEHOLDER')" class="btn-warning" style="padding: 4px 12px; font-size: 0.75rem;">
+        🔄 Reset Pass
+      </button>
+    </td>
+  </tr>
+</template>
