@@ -155,7 +155,7 @@ function logout() {
   localStorage.removeItem('tempToken');
   currentUser = null;
   
-  if (sessionTimeout) {
+  if (typeof sessionTimeout !== 'undefined' && sessionTimeout) {
     clearTimeout(sessionTimeout);
   }
   
@@ -322,7 +322,9 @@ async function changeTemporaryPassword() {
 
 function showForgotPassword() {
   closeModal('loginModal');
-  showModal('forgotPasswordModal');
+  if (typeof showModal === 'function') {
+    showModal('forgotPasswordModal');
+  }
   
   // Limpiar campos y mensajes
   const resetEmail = document.getElementById('resetEmail');
@@ -477,3 +479,126 @@ function stopOnlineUsersPolling() {
     onlinePollingInterval = null;
   }
 }
+
+// ========================================================================
+// ========== NUEVAS FUNCIONALIDADES AGREGADAS (CAMBIO DESDE PERFIL) ======
+// ========================================================================
+
+// ========== CAMBIO DE CONTRASEÑA DESDE PERFIL ==========
+async function changePasswordFromProfile(currentPassword, newPassword) {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            throw new Error('No hay sesión activa');
+        }
+
+        const response = await fetch(`${API_BASE}/api/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cambiar la contraseña');
+        }
+
+        return data;
+
+    } catch (error) {
+        console.error('❌ Error en changePasswordFromProfile:', error);
+        throw error;
+    }
+}
+
+// ========== MANEJAR CAMBIO DE CONTRASEÑA DESDE PERFIL ==========
+async function handleChangePassword() {
+    try {
+        const current = document.getElementById('currentPassword')?.value;
+        const newPass = document.getElementById('newPassword')?.value;
+        const confirm = document.getElementById('confirmPassword')?.value;
+
+        if (!current || !newPass || !confirm) {
+            showToast('❌ Completa todos los campos', 'error');
+            return;
+        }
+
+        if (newPass !== confirm) {
+            showToast('❌ Las contraseñas no coinciden', 'error');
+            return;
+        }
+
+        if (newPass.length < 6) {
+            showToast('❌ La contraseña debe tener al menos 6 caracteres', 'error');
+            return;
+        }
+
+        const result = await changePasswordFromProfile(current, newPass);
+
+        if (result.success) {
+            showToast('✅ Contraseña actualizada correctamente', 'success');
+            // Limpiar campos
+            const currentPassEl = document.getElementById('currentPassword');
+            const newPassEl = document.getElementById('newPassword');
+            const confirmPassEl = document.getElementById('confirmPassword');
+            
+            if (currentPassEl) currentPassEl.value = '';
+            if (newPassEl) newPassEl.value = '';
+            if (confirmPassEl) confirmPassEl.value = '';
+            
+            // Cerrar modal si existe
+            if (typeof closeModal === 'function') {
+                closeModal('changePasswordModal');
+            }
+        } else {
+            showToast('❌ ' + (result.error || 'Error al cambiar la contraseña'), 'error');
+        }
+
+    } catch (error) {
+        console.error('❌ Error en handleChangePassword:', error);
+        showToast('❌ ' + error.message, 'error');
+    }
+}
+
+// ========== RESETEAR CONTRASEÑA DE USUARIO (ADMIN) ==========
+async function resetUserPassword(userId) {
+    if (!confirm('¿Estás seguro de resetear la contraseña de este usuario a "123456"?')) {
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${API_BASE}/api/admin/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al resetear la contraseña');
+        }
+
+        showToast('✅ ' + data.message, 'success');
+        // Recargar lista de usuarios si existe la función
+        if (typeof loadMembersList === 'function') {
+            loadMembersList();
+        }
+
+    } catch (error) {
+        console.error('❌ Error en resetUserPassword:', error);
+        showToast('❌ ' + error.message, 'error');
+    }
+}
+
+// Exportar funciones para uso global
+window.changePasswordFromProfile = changePasswordFromProfile;
+window.handleChangePassword = handleChangePassword;
+window.resetUserPassword = resetUserPassword;
