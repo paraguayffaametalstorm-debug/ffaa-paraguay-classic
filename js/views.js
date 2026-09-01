@@ -1,8 +1,11 @@
 /**
-* PARAGUAY-FFAA | METALSTORM v2.0 - Gestión de Vistas SPA
-* ✅ SINCRONIZADO CON NUEVA BD
-* ✅ v3.1 — Exportación de reportes PNG via Canvas
-*/
+ * PARAGUAY-FFAA | METALSTORM v2.0 - Gestión de Vistas SPA
+ * ✅ SINCRONIZADO CON NUEVA BD
+ * ✅ v3.1 — Exportación de reportes PNG via Canvas
+ */
+
+// Importar módulo de rendimiento
+import { initPerformanceForm } from './performance.js';
 
 // IDs de vistas principales
 window.escapeHTML = function(str) {
@@ -183,32 +186,55 @@ function loadViewData(viewId) {
     case VIEWS.DASHBOARD:
       loadDashboardData();
       break;
+      
     case VIEWS.PERFORMANCE:
-      loadPerformanceForm();
+    case 'performanceForm': // Cubre tanto la constante como el string explícito
+      if (typeof initPerformanceForm === 'function') {
+        initPerformanceForm();
+      } else {
+        // Fallback seguro por compatibilidad
+        loadPerformanceForm();
+      }
       break;
+      
     case VIEWS.PLANES:
       loadPlanesView();
       break;
+      
     case VIEWS.HISTORIAL:
       loadHistorial();
       break;
+      
     case VIEWS.PROFILE:
       loadPersonalProfile();
       break;
+      
     case VIEWS.NORMATIVAS:
       loadNormativas();
       break;
+      
     case VIEWS.ADMIN:
       loadAdminPanel();
       break;
+      
     case VIEWS.ALL_PERFORMANCES:
       loadAllPerformances();
       break;
+      
     case VIEWS.SETTINGS:
-      loadSettings();
+      if (typeof loadSettings === 'function') loadSettings();
       break;
+      
     case VIEWS.EXPORT:
       loadExportView();
+      break;
+      
+    case 'ownerPanelView':
+      if (typeof loadOwnerPanel === 'function') loadOwnerPanel();
+      break;
+      
+    default:
+      console.warn(`[METALSTORM] Vista no manejada explícitamente: ${viewId}`);
       break;
   }
 }
@@ -1476,10 +1502,33 @@ function loadHistorial() {
   });
 }
 
+// ========== HISTORIAL ==========
+function loadHistorial() {
+  if (!currentUser) return;
+  fetch(`${API_BASE}/api/performances/my-history`, {
+    headers: getAuthHeaders()
+  })
+  .then(res => res.json())
+  .then(data => {
+    // ✅ Extraer el array real de la respuesta del backend.
+    // El controlador siempre responde { history, performances }, nunca un array suelto.
+    const history = Array.isArray(data) ? data : (data.history || data.performances || []);
+    displayHistorial(history);
+  })
+  .catch(err => {
+    console.error('Error cargando historial:', err);
+    showToast('❌ Error al cargar historial', 'error');
+  });
+}
+
 function displayHistorial(history) {
   const container = document.getElementById('historialContent');
   if (!container) return;
-  if (history.length === 0) {
+
+  // ✅ Defensa adicional: nunca asumir que el parámetro es un array.
+  const historyArray = Array.isArray(history) ? history : [];
+
+  if (historyArray.length === 0) {
     container.innerHTML = `
 <div class="no-results">
 <p>📊 Aún no tienes registros de rendimiento</p>
@@ -1488,14 +1537,15 @@ function displayHistorial(history) {
 `;
     return;
   }
-  container.innerHTML = history.map(record => `
+
+  container.innerHTML = historyArray.map(record => `
 <div class="historial-item">
-<h4>${record.event_id}</h4>
-<p><strong>Tokens:</strong> ${record.tokens}</p>
-<p><strong>Días conectado:</strong> ${record.days_connected}</p>
-<p><strong>Estado:</strong> <span class="status-badge status-${record.status.toLowerCase()}">${record.status}</span></p>
-<p><strong>Fecha:</strong> ${new Date(record.created_at).toLocaleDateString()}</p>
-${record.notes ? `<p><strong>Notas:</strong> ${record.notes}</p>` : ''}
+<h4>${escapeHTML(record.event_id || 'Sin evento')}</h4>
+<p><strong>Tokens:</strong> ${record.tokens ?? 0}</p>
+<p><strong>Días conectado:</strong> ${record.days_connected ?? 0}</p>
+<p><strong>Estado:</strong> <span class="status-badge status-${(record.status || 'NEGRO').toLowerCase()}">${record.status || 'NEGRO'}</span></p>
+<p><strong>Fecha:</strong> ${record.created_at ? new Date(record.created_at).toLocaleDateString() : 'N/A'}</p>
+${record.notes ? `<p><strong>Notas:</strong> ${escapeHTML(record.notes)}</p>` : ''}
 </div>
 `).join('');
 }
