@@ -23,10 +23,10 @@ export const getSummary = async (req, res, next) => {
           activeEvent = eventData.find(e => e.is_open || e.status === 'OPEN') || eventData[0];
         }
 
-        // Obtener usuarios activos del escuadrón
+        // Obtener usuarios activos con user_id (integer)
         let { data: users } = await supabase
           .from('users')
-          .select('id, email, nick, role, status')
+          .select('id, user_id, email, nick, role, status')
           .eq('status', 'ACTIVE')
           .like('email', '%@ffaa.py');
 
@@ -34,43 +34,44 @@ export const getSummary = async (req, res, next) => {
         if (!users || users.length === 0) {
           const { data: generalUsers } = await supabase
             .from('users')
-            .select('id, email, nick, role, status')
+            .select('id, user_id, email, nick, role, status')
             .eq('status', 'ACTIVE');
           users = generalUsers || [];
         }
 
         if (users && users.length > 0) {
-          // Obtener emails para filtrar performances
-          const emails = users.map(u => u.email).filter(Boolean);
+          // Obtener user_id (integer) de los usuarios
+          const userIds = users.map(u => u.user_id).filter(id => id !== null && id !== undefined);
 
-          // Obtener performances de estos usuarios
+          // Obtener performances por user_id (integer)
           let performances = [];
-          if (emails.length > 0) {
+          if (userIds.length > 0) {
             const { data: perfData } = await supabase
               .from('performances')
-              .select('user_email, tokens')
-              .in('user_email', emails);
+              .select('user_id, tokens')
+              .in('user_id', userIds);
             if (perfData) {
               performances = perfData;
             }
           }
 
-          // Calcular promedio por usuario
+          // Calcular promedio por user_id
           const avgMap = {};
           (performances || []).forEach(p => {
-            if (p.user_email) {
-              if (!avgMap[p.user_email]) avgMap[p.user_email] = { sum: 0, count: 0 };
-              avgMap[p.user_email].sum += Number(p.tokens) || 0;
-              avgMap[p.user_email].count += 1;
+            if (p.user_id !== null && p.user_id !== undefined) {
+              if (!avgMap[p.user_id]) avgMap[p.user_id] = { sum: 0, count: 0 };
+              avgMap[p.user_id].sum += Number(p.tokens) || 0;
+              avgMap[p.user_id].count += 1;
             }
           });
 
           // Construir lista con avg_tokens calculado
           usersWithAvg = users.map(u => {
-            const stats = avgMap[u.email];
+            const stats = u.user_id ? avgMap[u.user_id] : null;
             const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0;
             return {
               id: u.id,
+              user_id: u.user_id,
               email: u.email,
               nick: u.nick || u.email?.split('@')[0],
               role: (u.role || 'MIEMBRO').toUpperCase(),
@@ -87,7 +88,11 @@ export const getSummary = async (req, res, next) => {
             .slice(0, 5);
 
           // Estadísticas del usuario actual
-          const currentProfile = usersWithAvg.find(u => u.email === user.email || u.id === user.id);
+          const currentProfile = usersWithAvg.find(u => 
+            (user.user_id && u.user_id === user.user_id) || 
+            (user.id && u.id === user.id) || 
+            (user.email && u.email === user.email)
+          );
           if (currentProfile) {
             userTokensAvg = currentProfile.avg_tokens;
             userWeeks = currentProfile.weeks_evaluated;
@@ -141,47 +146,51 @@ export const getActiveMembers = async (req, res, next) => {
     if (supabase) {
       let { data: users } = await supabase
         .from('users')
-        .select('id, email, nick, role, status')
+        .select('id, user_id, email, nick, role, status')
         .eq('status', 'ACTIVE')
         .like('email', '%@ffaa.py');
 
       if (!users || users.length === 0) {
         const { data: generalUsers } = await supabase
           .from('users')
-          .select('id, email, nick, role, status')
+          .select('id, user_id, email, nick, role, status')
           .eq('status', 'ACTIVE');
         users = generalUsers || [];
       }
 
       if (users && users.length > 0) {
-        const emails = users.map(u => u.email).filter(Boolean);
+        const userIds = users.map(u => u.user_id).filter(id => id !== null && id !== undefined);
         let performances = [];
-        if (emails.length > 0) {
+        if (userIds.length > 0) {
           const { data: perfData } = await supabase
             .from('performances')
-            .select('user_email, tokens')
-            .in('user_email', emails);
+            .select('user_id, tokens')
+            .in('user_id', userIds);
           if (perfData) performances = perfData;
         }
 
         const avgMap = {};
         (performances || []).forEach(p => {
-          if (p.user_email) {
-            if (!avgMap[p.user_email]) avgMap[p.user_email] = { sum: 0, count: 0 };
-            avgMap[p.user_email].sum += Number(p.tokens) || 0;
-            avgMap[p.user_email].count += 1;
+          if (p.user_id !== null && p.user_id !== undefined) {
+            if (!avgMap[p.user_id]) avgMap[p.user_id] = { sum: 0, count: 0 };
+            avgMap[p.user_id].sum += Number(p.tokens) || 0;
+            avgMap[p.user_id].count += 1;
           }
         });
 
-        activeMembers = users.map(u => ({
-          id: u.id,
-          email: u.email,
-          nick: u.nick || u.email?.split('@')[0],
-          role: (u.role || 'MIEMBRO').toUpperCase(),
-          perf_status: u.status || 'ACTIVE',
-          status: u.status || 'ACTIVE',
-          avg_tokens: avgMap[u.email] ? Math.round(avgMap[u.email].sum / avgMap[u.email].count) : 0
-        })).sort((a, b) => b.avg_tokens - a.avg_tokens);
+        activeMembers = users.map(u => {
+          const stats = u.user_id ? avgMap[u.user_id] : null;
+          return {
+            id: u.id,
+            user_id: u.user_id,
+            email: u.email,
+            nick: u.nick || u.email?.split('@')[0],
+            role: (u.role || 'MIEMBRO').toUpperCase(),
+            perf_status: u.status || 'ACTIVE',
+            status: u.status || 'ACTIVE',
+            avg_tokens: stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0
+          };
+        }).sort((a, b) => b.avg_tokens - a.avg_tokens);
       }
     }
 
