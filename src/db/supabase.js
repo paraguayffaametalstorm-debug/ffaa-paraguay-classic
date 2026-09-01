@@ -99,11 +99,12 @@ if (supabaseClient) {
 // Initial seed password hash ('123456' hashed with bcrypt)
 const DEFAULT_PASSWORD_HASH = bcrypt.hashSync('123456', 10);
 
-// Default seed records
+// Default seed records (Real squadron leadership only, test pilots removed)
 export const memoryStore = {
   users: [
     {
       user_id: 1,
+      id: 1,
       email: 'admin@ffaa.py',
       password_hash: DEFAULT_PASSWORD_HASH,
       nick: 'PRY_Comandante',
@@ -115,6 +116,7 @@ export const memoryStore = {
       bio: 'Comandante en Jefe del Escuadrón Paraguay FFAA',
       joined_date: '2025-01-01',
       perf_status: 'VERDE',
+      status: 'ACTIVE',
       squad_status: 'ACTIVE',
       avg_tokens: 195,
       weeks_evaluated: 16,
@@ -123,6 +125,7 @@ export const memoryStore = {
     },
     {
       user_id: 2,
+      id: 2,
       email: 'falcon@ffaa.py',
       password_hash: DEFAULT_PASSWORD_HASH,
       nick: 'PRY_Falcon',
@@ -134,72 +137,17 @@ export const memoryStore = {
       bio: 'Oficial Táctico y Administrador de Escuadrón',
       joined_date: '2025-02-10',
       perf_status: 'VERDE',
+      status: 'ACTIVE',
       squad_status: 'ACTIVE',
       avg_tokens: 188,
       weeks_evaluated: 14,
       trend: 'stable',
       last_activity: new Date(Date.now() - 86400000).toISOString()
-    },
-    {
-      user_id: 3,
-      email: 'veterano@ffaa.py',
-      password_hash: DEFAULT_PASSWORD_HASH,
-      nick: 'PRY_Condor',
-      role: 'VETERANO',
-      must_change_password: false,
-      phone: '+595 983 778899',
-      callsign: 'CONDOR-03',
-      discord: 'Condor#9900',
-      bio: 'Piloto veterano de combate aéreo',
-      joined_date: '2025-03-01',
-      perf_status: 'NARANJA',
-      squad_status: 'ACTIVE',
-      avg_tokens: 162,
-      weeks_evaluated: 12,
-      trend: 'up',
-      last_activity: new Date(Date.now() - 172800000).toISOString()
-    },
-    {
-      user_id: 4,
-      email: 'piloto@ffaa.py',
-      password_hash: DEFAULT_PASSWORD_HASH,
-      nick: 'PRY_Jaguar',
-      role: 'MIEMBRO',
-      must_change_password: false,
-      phone: '+595 984 112233',
-      callsign: 'JAGUAR-04',
-      discord: 'Jaguar#3344',
-      bio: 'Piloto activo de escuadrón',
-      joined_date: '2025-05-15',
-      perf_status: 'ROJO',
-      squad_status: 'ACTIVE',
-      avg_tokens: 118,
-      weeks_evaluated: 8,
-      trend: 'down',
-      last_activity: new Date(Date.now() - 259200000).toISOString()
-    },
-    {
-      user_id: 5,
-      email: 'novato@ffaa.py',
-      password_hash: DEFAULT_PASSWORD_HASH,
-      nick: 'PRY_Tornado',
-      role: 'MIEMBRO',
-      must_change_password: false,
-      phone: '+595 985 445566',
-      callsign: 'TORNADO-05',
-      discord: 'Tornado#5566',
-      bio: 'Piloto recién graduado',
-      joined_date: '2025-08-01',
-      perf_status: 'VERDE',
-      squad_status: 'ACTIVE',
-      avg_tokens: 180,
-      weeks_evaluated: 4,
-      trend: 'up',
-      last_activity: new Date().toISOString()
     }
   ],
   userSettings: {
-    1: { theme: 'militar', language: 'es', notif_email: true, notif_whatsapp: false, notif_status: true, notif_reminder: true, notif_announcements: true }
+    1: { theme: 'militar', language: 'es', notif_email: true, notif_whatsapp: false, notif_status: true, notif_reminder: true, notif_announcements: true },
+    2: { theme: 'militar', language: 'es', notif_email: true, notif_whatsapp: false, notif_status: true, notif_reminder: true, notif_announcements: true }
   },
   events: [
     { id: 'SQUADRON-2026-08', type: 'SQUADRON', start_date: '2026-02-23', end_date: '2026-03-01', is_open: true, status: 'OPEN' },
@@ -209,10 +157,7 @@ export const memoryStore = {
   ],
   performances: [
     { id: 1, user_id: 1, nick: 'PRY_Comandante', role: 'OWNER', event_id: 'SQUADRON-2026-08', tokens: 195, days_connected: 4, flew_in_group: true, notes: 'Patrullaje completo', status: 'VERDE', created_at: new Date().toISOString() },
-    { id: 2, user_id: 2, nick: 'PRY_Falcon', role: 'ADMIN', event_id: 'SQUADRON-2026-08', tokens: 190, days_connected: 4, flew_in_group: true, notes: 'Escolta táctica', status: 'VERDE', created_at: new Date().toISOString() },
-    { id: 3, user_id: 3, nick: 'PRY_Condor', role: 'VETERANO', event_id: 'SQUADRON-2026-08', tokens: 165, days_connected: 3, flew_in_group: true, notes: 'Misiones de intercepción', status: 'NARANJA', created_at: new Date().toISOString() },
-    { id: 4, user_id: 4, nick: 'PRY_Jaguar', role: 'MIEMBRO', event_id: 'SQUADRON-2026-08', tokens: 115, days_connected: 2, flew_in_group: true, notes: 'Conexión parcial', status: 'ROJO', created_at: new Date().toISOString() },
-    { id: 5, user_id: 5, nick: 'PRY_Tornado', role: 'MIEMBRO', event_id: 'SQUADRON-2026-08', tokens: 180, days_connected: 4, flew_in_group: true, notes: 'Excelente desempeño novato', status: 'VERDE', created_at: new Date().toISOString() }
+    { id: 2, user_id: 2, nick: 'PRY_Falcon', role: 'ADMIN', event_id: 'SQUADRON-2026-08', tokens: 190, days_connected: 4, flew_in_group: true, notes: 'Escolta táctica', status: 'VERDE', created_at: new Date().toISOString() }
   ],
   planeModels: [
     { id: '101', name: 'F-4 Phantom II', type: 'Caza de Intercepción', tier: 1, special_name: 'Cortina de Fuego', passive_name: 'Empuje Forzado' },
