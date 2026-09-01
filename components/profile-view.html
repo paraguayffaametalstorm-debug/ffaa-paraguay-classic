@@ -1,50 +1,161 @@
 <div id="profileView" class="view" style="display:none;">
-  <div class="view-header" style="margin-bottom:1.5rem;">
-    <h2>👤 Expediente de Piloto & Perfil</h2>
-    <p class="subtitle">Datos de identificación militar y preferencias personales</p>
+  <div class="view-header-tactical">
+    <div class="header-titles">
+      <div class="badge-tag">EXPEDIENTE DE SERVICIO</div>
+      <h2>👤 Perfil del Piloto & Credenciales</h2>
+      <p class="subtitle">Hoja de servicio militar, historial táctico y configuración de contacto en [PRY]</p>
+    </div>
+    <div class="header-actions">
+      <button onclick="loadPersonalProfile()" class="btn-secondary btn-sm">
+        🔄 Actualizar
+      </button>
+      <button onclick="showView('settingsView')" class="btn-secondary btn-sm">
+        ⚙️ Ajustes de Cuenta
+      </button>
+    </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;">
-    <div class="card">
-      <div class="card-header">
-        <h3>🎖️ Credenciales de Escuadrón</h3>
-      </div>
-      <div id="profileContent" style="margin-top:1rem;">
-        <div class="loading-text">Cargando credenciales...</div>
+  <div class="profile-layout-grid">
+    <!-- Left Column: Pilot ID Card & Service Stats -->
+    <div class="profile-card-col">
+      <!-- Tactical Pilot ID Card -->
+      <div class="card pilot-id-badge-card">
+        <div class="pilot-id-header">
+          <div class="pilot-avatar-container">
+            <div class="pilot-avatar-shield" id="profileAvatarShield">
+              <span id="profileInitials" class="avatar-initials">PRY</span>
+            </div>
+            <div class="pilot-rank-insignia" id="profileRankIcon">🎖️</div>
+          </div>
+          <div class="pilot-id-info">
+            <div class="callsign-wrapper">
+              <h3 id="profileNick" class="pilot-callsign">PILOTO</h3>
+              <span class="pilot-squad-tag">[PRY]</span>
+            </div>
+            <div class="pilot-meta-badges">
+              <span id="profileRoleBadge" class="role-badge role-MIEMBRO">MIEMBRO</span>
+              <span id="profileSquadStatusBadge" class="squad-status-badge squad-ACTIVE">ACTIVO</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pilot-stats-row">
+          <div class="p-stat-box">
+            <span class="p-stat-lbl">ESTADO</span>
+            <span id="profileStatusBadge" class="status-badge status-verde" style="font-size:0.8rem;padding:2px 8px;">VERDE</span>
+          </div>
+          <div class="p-stat-box">
+            <span class="p-stat-lbl">PROMEDIO</span>
+            <span id="profileAvgTokens" class="p-stat-val" style="color:var(--pry-gold);">185</span>
+          </div>
+          <div class="p-stat-box">
+            <span class="p-stat-lbl">SEMANAS</span>
+            <span id="profileWeeksEvaluated" class="p-stat-val" style="color:#38BDF8;">12</span>
+          </div>
+          <div class="p-stat-box">
+            <span class="p-stat-lbl">HANGAR</span>
+            <span id="profilePlanesCount" class="p-stat-val" style="color:#FFFFFF;">-</span>
+          </div>
+        </div>
+
+        <div id="profileDetailedCredentials" class="credentials-list">
+          <div class="cred-item">
+            <span class="cred-label">Identificador ID:</span>
+            <span id="profileUserId" class="cred-val font-mono">-</span>
+          </div>
+          <div class="cred-item">
+            <span class="cred-label">Correo Oficial:</span>
+            <span id="profileOfficialEmail" class="cred-val font-mono">-</span>
+          </div>
+          <div class="cred-item">
+            <span class="cred-label">Última Operación:</span>
+            <span id="profileLastEvent" class="cred-val">-</span>
+          </div>
+        </div>
+
+        <div class="pilot-card-actions">
+          <button onclick="showView('performanceForm')" class="btn-primary" style="width:100%;">
+            📝 Registrar Rendimiento
+          </button>
+          <button onclick="showView('planesView')" class="btn-secondary" style="width:100%;">
+            ✈️ Ver Mis Aeronaves en Hangar
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <h3>📝 Información de Contacto</h3>
+    <!-- Right Column: Personal Information & Preferences Form -->
+    <div class="profile-form-col">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.2rem;">📝</span>
+            <h3>Datos Personales y Contacto de Emergencia</h3>
+          </div>
+        </div>
+
+        <form id="personalProfileForm" class="tactical-form">
+          <div class="form-group">
+            <label for="fullName">
+              <span>Nombre y Apellido Real</span>
+              <span class="field-hint">(Opcional para registro de escuadrón)</span>
+            </label>
+            <input type="text" id="fullName" placeholder="Ej: Carlos Benítez" autocomplete="name" />
+          </div>
+
+          <div class="form-group">
+            <label for="personalEmail">
+              <span>Correo Personal / Respaldo</span>
+              <span class="field-hint">(Para avisos y recuperación)</span>
+            </label>
+            <input type="email" id="personalEmail" placeholder="ejemplo@gmail.com" autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">
+              <span>WhatsApp / Contacto Táctico</span>
+              <span class="field-hint">(Para coordinación de escuadrón)</span>
+            </label>
+            <input type="tel" id="phone" placeholder="+595 981 123456" autocomplete="tel" />
+          </div>
+
+          <div class="form-group checkbox-tactical" style="margin-top: 1rem;">
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="notificationsEnabled" />
+              <span class="checkbox-box"></span>
+              <span class="checkbox-text">
+                <strong>Alertas de Ventana Operativa</strong>
+                <span class="checkbox-subtext">Recibir notificaciones cuando se abran eventos semanales y Black Market</span>
+              </span>
+            </label>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="submit" class="btn-gold" style="flex:1; min-width:200px;">
+              💾 Guardar Datos del Perfil
+            </button>
+            <button type="button" onclick="showView('settingsView')" class="btn-secondary">
+              🔒 Seguridad & Clave
+            </button>
+          </div>
+        </form>
       </div>
-      <form id="personalProfileForm" style="margin-top:1rem;">
-        <div class="form-group">
-          <label for="fullName">Nombre Completo</label>
-          <input type="text" id="fullName" placeholder="Nombre y Apellido" />
-        </div>
 
-        <div class="form-group">
-          <label for="personalEmail">Correo Personal / Respaldo</label>
-          <input type="email" id="personalEmail" placeholder="contacto@ejemplo.com" />
+      <!-- Quick Hangar Summary inside Profile -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.2rem;">✈️</span>
+            <h3>Aeronaves en Servicio Activo</h3>
+          </div>
+          <button onclick="showView('planesView')" class="btn-link" style="font-size:0.8rem;color:var(--pry-gold);">
+            Administrar Hangar →
+          </button>
         </div>
-
-        <div class="form-group">
-          <label for="phone">Teléfono / WhatsApp</label>
-          <input type="tel" id="phone" placeholder="+595 9..." />
+        <div id="profilePlanesList" class="profile-planes-mini-grid">
+          <div class="loading-text">Cargando flota de combate...</div>
         </div>
-
-        <div class="form-group" style="margin-top:1rem;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" id="notificationsEnabled" style="width:18px;height:18px;" />
-            <span>Recibir alertas y recordatorios de eventos</span>
-          </label>
-        </div>
-
-        <button type="submit" class="btn-primary" style="margin-top:1rem;width:100%;">
-          💾 Guardar Datos Personales
-        </button>
-      </form>
+      </div>
     </div>
   </div>
 </div>

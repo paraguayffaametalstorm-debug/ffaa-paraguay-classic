@@ -1,52 +1,87 @@
-<header id="header">
+<header id="header" class="tactical-header">
   <div class="header-container">
-    <div class="logo-section">
+    <div class="logo-section" onclick="showView('appView')" style="cursor:pointer;" title="Volver al Cuadro de Mando">
       <img src="/logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" class="logo" />
-      <h1>PARAGUAY-FFAA</h1>
+      <div class="logo-text">
+        <h1 class="escuadron-title">PARAGUAY-FFAA</h1>
+        <span class="escuadron-subtitle">[PRY] · METALSTORM</span>
+      </div>
     </div>
     
     <div class="title-section">
-      <h2>SISTEMA DE GESTIÓN Y RENDIMIENTO</h2>
-      <p>METALSTORM · ESCUADRÓN [PRY]</p>
+      <h2>SISTEMA DE GESTIÓN Y RENDIMIENTO MILITAR</h2>
+      <p>CENTRO DE MANDO TÁCTICO · ESCUADRÓN OFICIAL</p>
     </div>
 
     <div class="nav-section">
-      <div class="online-users" style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,0.3);padding:4px 10px;border-radius:20px;font-size:0.8rem;border:1px solid rgba(255,255,255,0.1);">
-        <span style="display:inline-block;width:8px;height:8px;background:#2ecc71;border-radius:50%;"></span>
-        <span>Pilotos: <strong id="onlineCount" style="color:#d4af37;">1</strong></span>
+      <!-- Live Online Indicator -->
+      <div class="online-indicator-badge" title="Pilotos activos en la plataforma">
+        <span class="online-pulse-dot"></span>
+        <span>Pilotos: <strong id="onlineCount">1</strong></span>
       </div>
 
-      <div id="userHeaderInfo" style="display:flex;align-items:center;gap:8px;margin-left:8px;">
-        <span id="userName" style="font-weight:700;font-size:0.9rem;color:#ffffff;"></span>
-        <span id="userRole"></span>
+      <!-- Quick Sync / Refresh Button -->
+      <button onclick="refreshCurrentView()" class="btn-icon-tactical" title="Sincronizar Datos" aria-label="Actualizar">
+        🔄
+      </button>
+
+      <!-- User Identification Pill -->
+      <div id="userHeaderInfo" class="user-header-pill">
+        <span id="userName" class="user-callsign"></span>
+        <span id="userRole" class="user-role-container"></span>
       </div>
 
-      <button id="loginBtn" onclick="showLoginModal()" class="btn-primary" style="display:none;padding:6px 12px;font-size:0.85rem;">
+      <button id="loginBtn" onclick="showLoginModal()" class="btn-primary btn-sm" style="display:none;">
         🔑 Iniciar Sesión
       </button>
-      <button id="logoutBtn" onclick="logout()" class="btn-danger" style="display:none;padding:6px 12px;font-size:0.85rem;">
+      <button id="logoutBtn" onclick="logout()" class="btn-danger btn-sm" style="display:none;">
         🚪 Salir
       </button>
-      <button id="helpBtn" class="btn-secondary" style="padding:6px 12px;font-size:0.85rem;">
+      <button id="helpBtn" class="btn-secondary btn-sm" title="Ayuda y Soporte">
         ❓ Ayuda
       </button>
     </div>
   </div>
 
-  <nav class="nav-menu" style="display:flex;gap:4px;overflow-x:auto;padding:6px 12px;background:rgba(13,27,42,0.95);border-top:1px solid rgba(212,175,55,0.2);">
-    <button onclick="showView('appView')" class="active">📊 Dashboard</button>
-    <button onclick="showView('performanceForm')">📝 Cargar Rendimiento</button>
-    <button onclick="showView('planesView')">✈️ Hangar Aeronaves</button>
-    <button onclick="showView('historialView')">📜 Mi Historial</button>
-    <button onclick="showView('normativasView')">📚 Normativas</button>
-    <button onclick="showView('profileView')">👤 Mi Perfil</button>
-    <button onclick="showView('settingsView')">⚙️ Configuración</button>
-    <button onclick="showView('helpView')">ℹ️ Guía & FAQ</button>
+  <!-- Desktop Navigation Strip -->
+  <nav class="nav-menu" aria-label="Menú Principal">
+    <button onclick="showView('appView')" class="nav-tab active">
+      <span>📊</span> Dashboard
+    </button>
+    <button onclick="showView('performanceForm')" class="nav-tab">
+      <span>📝</span> Cargar Rendimiento
+    </button>
+    <button onclick="showView('planesView')" class="nav-tab">
+      <span>✈️</span> Hangar Aeronaves
+    </button>
+    <button onclick="showView('historialView')" class="nav-tab">
+      <span>📜</span> Mi Historial
+    </button>
+    <button onclick="showView('normativasView')" class="nav-tab">
+      <span>📚</span> Normativas
+    </button>
+    <button onclick="showView('profileView')" class="nav-tab">
+      <span>👤</span> Mi Perfil
+    </button>
+    <button onclick="showView('settingsView')" class="nav-tab">
+      <span>⚙️</span> Configuración
+    </button>
+    <button onclick="showView('helpView')" class="nav-tab">
+      <span>ℹ️</span> Guía & FAQ
+    </button>
     
-    <!-- Admin & Owner Controls -->
-    <button id="adminBtn" onclick="showView('adminPanel')" style="display:none;border-color:rgba(232,67,147,0.5);">🛡️ Panel Admin</button>
-    <button id="allPerformancesBtn" onclick="showView('allPerformancesView')" style="display:none;">📈 Rendimientos Globales</button>
-    <button id="ownerBtn" onclick="showView('ownerPanelView')" style="display:none;border-color:rgba(212,175,55,0.6);color:#d4af37;">👑 Centro de Control</button>
-    <button id="exportBtn" onclick="showView('exportView')" style="display:none;">🖼️ Reporte PNG</button>
+    <!-- Administrative Tabs -->
+    <button id="adminBtn" onclick="showView('adminPanel')" class="nav-tab nav-tab-admin" style="display:none;">
+      <span>🛡️</span> Panel Admin
+    </button>
+    <button id="allPerformancesBtn" onclick="showView('allPerformancesView')" class="nav-tab nav-tab-admin" style="display:none;">
+      <span>📈</span> Rendimientos Globales
+    </button>
+    <button id="ownerBtn" onclick="showView('ownerPanelView')" class="nav-tab nav-tab-owner" style="display:none;">
+      <span>👑</span> Centro de Control
+    </button>
+    <button id="exportBtn" onclick="showView('exportView')" class="nav-tab" style="display:none;">
+      <span>🖼️</span> Reporte PNG
+    </button>
   </nav>
 </header>

@@ -57,10 +57,13 @@ export const PlaneSchema = z.object({
 
 export const ProfileUpdateSchema = z.object({
   nick: z.string().min(2).max(50).optional(),
+  full_name: z.string().max(100).optional().nullable(),
+  email_personal: z.string().email().optional().nullable().or(z.literal('')),
   phone: z.string().max(30).optional().nullable(),
   callsign: z.string().max(50).optional().nullable(),
   discord: z.string().max(50).optional().nullable(),
-  bio: z.string().max(500).optional().nullable()
+  bio: z.string().max(500).optional().nullable(),
+  notifications_enabled: z.boolean().optional()
 });
 
 export const SettingsUpdateSchema = z.object({
