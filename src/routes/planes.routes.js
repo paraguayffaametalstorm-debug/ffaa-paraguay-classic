@@ -6,7 +6,8 @@ import {
   addPlane,
   updatePlane,
   deletePlane,
-  exportPlanesCSV
+  exportPlanesCSV,
+  getPlaneStats
 } from '../controllers/planes.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -20,6 +21,7 @@ router.get('/catalog/plane-mods', getCatalogMods);
 router.use(requireAuth);
 router.get('/', getMyPlanes);
 router.get('/my-planes', getMyPlanes);
+router.get('/:id/stats', getPlaneStats);
 router.post('/', addPlane);
 router.put('/:id', updatePlane);
 router.delete('/:id', deletePlane);

@@ -828,9 +828,9 @@ function displayPlanes(planes) {
   }
   tbody.innerHTML = planes.map(plane => `
 <tr>
-<td data-label="Aeronave"><strong>${plane.model_name || plane.avion_id || '-'}</strong></td>
+<td data-label="Aeronave"><strong>${plane.model_name || plane.name || plane.avion_id || '-'}</strong></td>
 <td data-label="Tipo">${plane.type || '-'}</td>
-<td data-label="Estado">
+<td data-label="Nivel">
 <span class="status-badge" style="background:rgba(212,175,55,0.2); color:#d4af37; border:1px solid #d4af37;">
 Nv. ${plane.nivel}
 </span>
@@ -849,18 +849,35 @@ Nv. ${plane.nivel}
 }
 
 function updatePlanesStats(planes) {
-  document.getElementById('totalPlanes').textContent = planes.length;
+  const totalEl = document.getElementById('totalPlanes');
+  const avgEl   = document.getElementById('avgPlaneLevel');
+  const maxEl   = document.getElementById('maxPlaneLevel');
+  const specEl  = document.getElementById('planesWithSpecial');
+
+  if (totalEl) totalEl.textContent = planes.length;
   if (planes.length > 0) {
-    const avg = planes.reduce((s, p) => s + p.nivel, 0) / planes.length;
-    document.getElementById('avgPlaneLevel').textContent = avg.toFixed(1);
-    document.getElementById('maxPlaneLevel').textContent = Math.max(...planes.map(p => p.nivel));
-    document.getElementById('planesWithSpecial').textContent = planes.filter(p => p.especial_nombre).length;
+    const sum = planes.reduce((s, p) => s + (parseInt(p.nivel, 10) || 0), 0);
+    const avg = sum / planes.length;
+    const max = Math.max(...planes.map(p => parseInt(p.nivel, 10) || 0));
+    const withSpecial = planes.filter(p => !!p.especial_nombre).length;
+
+    if (avgEl)  avgEl.textContent = avg.toFixed(1);
+    if (maxEl)  maxEl.textContent = max;
+    if (specEl) specEl.textContent = withSpecial;
   } else {
-    ['avgPlaneLevel', 'maxPlaneLevel', 'planesWithSpecial'].forEach(id => {
-      document.getElementById(id).textContent = '0';
-    });
+    if (avgEl)  avgEl.textContent = '0';
+    if (maxEl)  maxEl.textContent = '0';
+    if (specEl) specEl.textContent = '0';
   }
 }
+
+// Global aliases for full cross-module compatibility
+window.loadPlanes = loadUserPlanes;
+window.loadUserPlanes = loadUserPlanes;
+window.renderPlanes = displayPlanes;
+window.displayPlanes = displayPlanes;
+window.updateStats = updatePlanesStats;
+window.updatePlanesStats = updatePlanesStats;
 
 function filterPlanes() {
   const search   = (document.getElementById('planeSearch')?.value || '').toLowerCase();
