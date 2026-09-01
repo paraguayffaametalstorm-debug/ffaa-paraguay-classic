@@ -52,7 +52,21 @@ export const PlaneSchema = z.object({
   mod1_id: z.string().optional().nullable(),
   mod1_lvl: z.number().int().min(1).max(5).optional().nullable(),
   mod2_id: z.string().optional().nullable(),
-  mod2_lvl: z.number().int().min(1).max(5).optional().nullable()
+  mod2_lvl: z.number().int().min(1).max(5).optional().nullable(),
+  // Upgrades 2.0 (Sistemas mejorables niveles 0-8 y recursos)
+  nivel_fuselaje: z.number().int().min(0).max(8).optional().default(0),
+  nivel_motor: z.number().int().min(0).max(8).optional().default(0),
+  nivel_avionica: z.number().int().min(0).max(8).optional().default(0),
+  nivel_armas: z.number().int().min(0).max(8).optional().default(0),
+  recursos_piezas: z.number().int().min(0).optional().default(0),
+  recursos_avanzadas: z.number().int().min(0).optional().default(0)
+});
+
+export const UpdatePlaneSystemSchema = z.object({
+  sistema: z.enum(['fuselaje', 'motor', 'avionica', 'armas']),
+  nivel: z.number().int().min(0).max(8),
+  piezas: z.number().int().min(0).optional().default(0),
+  avanzadas: z.number().int().min(0).optional().default(0)
 });
 
 export const ProfileUpdateSchema = z.object({

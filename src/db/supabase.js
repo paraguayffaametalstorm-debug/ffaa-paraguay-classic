@@ -257,6 +257,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 2,
+      nivel_motor: 3,
+      nivel_avionica: 1,
+      nivel_armas: 2,
+      recursos_piezas: 500,
+      recursos_avanzadas: 25,
       created_at: '2025-01-10T00:00:00Z'
     },
     {
@@ -273,6 +279,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 1,
+      nivel_motor: 1,
+      nivel_avionica: 1,
+      nivel_armas: 1,
+      recursos_piezas: 250,
+      recursos_avanzadas: 0,
       created_at: '2025-01-12T00:00:00Z'
     },
     {
@@ -289,6 +301,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 4,
+      nivel_motor: 4,
+      nivel_avionica: 3,
+      nivel_armas: 5,
+      recursos_piezas: 1200,
+      recursos_avanzadas: 80,
       created_at: '2025-01-15T00:00:00Z'
     },
     {
@@ -305,6 +323,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 3,
+      nivel_motor: 4,
+      nivel_avionica: 4,
+      nivel_armas: 3,
+      recursos_piezas: 800,
+      recursos_avanzadas: 50,
       created_at: '2025-01-18T00:00:00Z'
     },
     {
@@ -321,6 +345,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 0,
+      nivel_motor: 0,
+      nivel_avionica: 0,
+      nivel_armas: 0,
+      recursos_piezas: 0,
+      recursos_avanzadas: 0,
       created_at: '2025-01-20T00:00:00Z'
     },
     {
@@ -337,6 +367,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 0,
+      nivel_motor: 0,
+      nivel_avionica: 0,
+      nivel_armas: 0,
+      recursos_piezas: 0,
+      recursos_avanzadas: 0,
       created_at: '2025-01-22T00:00:00Z'
     },
     {
@@ -353,6 +389,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 0,
+      nivel_motor: 0,
+      nivel_avionica: 0,
+      nivel_armas: 0,
+      recursos_piezas: 0,
+      recursos_avanzadas: 0,
       created_at: '2025-01-25T00:00:00Z'
     },
     {
@@ -369,6 +411,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 0,
+      nivel_motor: 0,
+      nivel_avionica: 0,
+      nivel_armas: 0,
+      recursos_piezas: 0,
+      recursos_avanzadas: 0,
       created_at: '2025-01-28T00:00:00Z'
     },
     {
@@ -385,6 +433,12 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 0,
+      nivel_motor: 0,
+      nivel_avionica: 0,
+      nivel_armas: 0,
+      recursos_piezas: 0,
+      recursos_avanzadas: 0,
       created_at: '2025-01-30T00:00:00Z'
     },
     {
@@ -401,9 +455,16 @@ export const memoryStore = {
       mod1_lvl: null,
       mod2_id: null,
       mod2_lvl: null,
+      nivel_fuselaje: 0,
+      nivel_motor: 0,
+      nivel_avionica: 0,
+      nivel_armas: 0,
+      recursos_piezas: 0,
+      recursos_avanzadas: 0,
       created_at: '2025-02-02T00:00:00Z'
     }
   ],
+  planeUpgrades: [],
   normativas: [
     {
       id: 1,
