@@ -25,11 +25,19 @@
   
   <title>PARAGUAY-FFAA | METALSTORM</title>
   
+  <!-- Fonts: Rajdhani (tactical military), Inter (clean UI), JetBrains Mono (data/code) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
   <!-- ✅ Estilos modulares con cache-busting -->
-  <link rel="stylesheet" href="/css/global.css?v=3.1.0">
-  <link rel="stylesheet" href="/css/components.css?v=3.1.0">
-  <link rel="stylesheet" href="/css/views.css?v=3.1.0">
-  <link rel="stylesheet" href="/css/help.css?v=3.1.0">
+  <link rel="stylesheet" href="/css/global.css?v=3.2.0">
+  <link rel="stylesheet" href="/css/components.css?v=3.2.0">
+  <link rel="stylesheet" href="/css/views.css?v=3.2.0">
+  <link rel="stylesheet" href="/css/help.css?v=3.2.0">
   
   <link rel="icon" href="/logo-escuadron.png">
   <link rel="manifest" href="/manifest.json">
@@ -244,6 +252,34 @@
       });
     }
   </script>
+
+  <!-- ✅ Mobile Bottom Navigation Bar (Visible only on screens < 768px) -->
+  <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navegación Móvil">
+    <button class="mobile-nav-item active" onclick="showView('appView')" data-view="appView" aria-label="Dashboard">
+      <span class="mobile-nav-icon">📊</span>
+      <span class="mobile-nav-label">Mando</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('performanceForm')" data-view="performanceForm" aria-label="Rendimiento">
+      <span class="mobile-nav-icon">📝</span>
+      <span class="mobile-nav-label">Tokens</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('planesView')" data-view="planesView" aria-label="Hangar">
+      <span class="mobile-nav-icon">✈️</span>
+      <span class="mobile-nav-label">Hangar</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('historialView')" data-view="historialView" aria-label="Historial">
+      <span class="mobile-nav-icon">📜</span>
+      <span class="mobile-nav-label">Historial</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('profileView')" data-view="profileView" aria-label="Perfil">
+      <span class="mobile-nav-icon">👤</span>
+      <span class="mobile-nav-label">Perfil</span>
+    </button>
+    <button class="mobile-nav-item mobile-nav-admin-btn" id="mobileAdminNavItem" onclick="showView('adminPanel')" data-view="adminPanel" style="display:none;" aria-label="Admin">
+      <span class="mobile-nav-icon">🛡️</span>
+      <span class="mobile-nav-label">Admin</span>
+    </button>
+  </nav>
 
 </body>
 </html>

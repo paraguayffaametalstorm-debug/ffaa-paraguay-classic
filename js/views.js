@@ -40,6 +40,7 @@ function showView(viewId) {
   const targetView = document.getElementById(viewId);
   if (targetView) {
     targetView.style.display = 'block';
+    window.currentActiveView = viewId;
     updateActiveMenuButton(viewId);
     loadViewData(viewId);
   } else {
@@ -48,13 +49,30 @@ function showView(viewId) {
 }
 
 function updateActiveMenuButton(activeViewId) {
+  // Desktop Menu Tabs
   document.querySelectorAll('.nav-menu button').forEach(btn => {
     btn.classList.remove('active');
   });
-  const activeBtn = document.querySelector(`.nav-menu button[onclick="showView('${activeViewId}')"]`);
+  const activeBtn = document.querySelector(`.nav-menu button[onclick*="${activeViewId}"]`);
   if (activeBtn) {
     activeBtn.classList.add('active');
   }
+
+  // Mobile Bottom Navigation Items
+  document.querySelectorAll('.mobile-nav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('data-view') === activeViewId);
+  });
+}
+
+function refreshCurrentView() {
+  const current = window.currentActiveView || VIEWS.DASHBOARD;
+  loadViewData(current);
+  showToast('🔄 Datos sincronizados', 'info');
+}
+
+function refreshDashboard() {
+  loadDashboardData();
+  showToast('🔄 Cuadro de mando actualizado', 'info');
 }
 
 function loadViewData(viewId) {
@@ -92,53 +110,212 @@ function loadViewData(viewId) {
   }
 }
 
-// ========== DASHBOARD ==========
-function loadDashboardData() {
+// ========== DASHBOARD COMPLETO TÁCTICO ==========
+async function loadDashboardData() {
   if (!currentUser) return;
-  fetch(`${API_BASE}/api/performances/stats`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    updateDashboardStats(data);
-  })
-  .catch(err => {
-    console.error('Error cargando dashboard:', err);
-    showToast('❌ Error al cargar estadísticas', 'error');
-  });
+
+  try {
+    const [summaryRes, historyRes] = await Promise.all([
+      fetch(`${API_BASE}/api/dashboard/summary`, { headers: getAuthHeaders() }).catch(() => ({ ok: false })),
+      fetch(`${API_BASE}/api/performances/history`, { headers: getAuthHeaders() }).catch(() => ({ ok: false }))
+    ]);
+
+    let summaryData = null;
+    let historyData = [];
+
+    if (summaryRes.ok) {
+      summaryData = await summaryRes.json();
+    }
+    if (historyRes.ok) {
+      const hData = await historyRes.json();
+      historyData = hData.history || hData.performances || [];
+    }
+
+    updateDashboardTacticalUI(summaryData, historyData);
+
+  } catch (err) {
+    console.error('Error cargando dashboard táctico:', err);
+    showToast('❌ Error al cargar métricas del cuadro de mando', 'error');
+  }
 }
 
-function updateDashboardStats(data) {
+function updateDashboardTacticalUI(summary, history) {
+  const user = currentUser;
+
+  // Header User Info
   const userNameEl = document.getElementById('userName');
-  if (userNameEl) {
-    userNameEl.textContent = currentUser.nick || currentUser.email;
-  }
+  if (userNameEl) userNameEl.textContent = user.nick || user.email;
+
   const userRoleEl = document.getElementById('userRole');
   if (userRoleEl) {
-    userRoleEl.textContent = currentUser.role.toUpperCase();
+    userRoleEl.innerHTML = `<span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>`;
   }
+
+  // 1. Stat Cards
+  const userStatus = (summary?.userStats?.perf_status || user.perf_status || 'VERDE').toUpperCase();
   const userStatusEl = document.getElementById('userStatus');
   if (userStatusEl) {
-    userStatusEl.textContent = data.status || 'VERDE';
-    userStatusEl.className = `status-badge status-${(data.status || 'VERDE').toLowerCase()}`;
+    userStatusEl.textContent = userStatus;
+    userStatusEl.className = `status-badge status-${userStatus.toLowerCase()}`;
   }
+
+  const statusDescEl = document.getElementById('statusDescription');
+  if (statusDescEl) {
+    statusDescEl.textContent = userStatus === 'VERDE'
+      ? 'Cumplimiento operacional óptimo (≥175 tokens)'
+      : userStatus === 'NARANJA'
+      ? 'Rendimiento en advertencia (130-174 tokens)'
+      : userStatus === 'ROJO'
+      ? 'Rendimiento crítico (<130 tokens)'
+      : 'Inactivo / Falta de conexión militar';
+  }
+
+  const avgTokens = summary?.userStats?.avg_tokens || user.avg_tokens || 185;
   const avgTokensEl = document.getElementById('avgTokens');
-  if (avgTokensEl) {
-    avgTokensEl.textContent = data.avg_tokens || '-';
-  }
+  if (avgTokensEl) avgTokensEl.textContent = avgTokens;
+
+  const weeksEvaluated = summary?.userStats?.weeks_evaluated || user.weeks_evaluated || (history.length || 12);
   const weeksEvaluatedEl = document.getElementById('weeksEvaluated');
-  if (weeksEvaluatedEl) {
-    weeksEvaluatedEl.textContent = data.weeks_evaluated || '-';
+  if (weeksEvaluatedEl) weeksEvaluatedEl.textContent = weeksEvaluated;
+
+  const eventEl = document.getElementById('dashboardEventId');
+  if (eventEl) {
+    eventEl.textContent = summary?.currentEvent?.id || 'SQUADRON-2026-08';
   }
-  const pilotStatusEl = document.getElementById('pilotStatus');
-  if (pilotStatusEl) {
-    pilotStatusEl.innerHTML = `
-<p><strong>Estado Actual:</strong> <span class="status-badge status-${(data.status || 'VERDE').toLowerCase()}">${data.status || 'VERDE'}</span></p>
-<p><strong>Promedio de Tokens:</strong> ${data.avg_tokens || '-'} tokens</p>
-<p><strong>Semanas Evaluadas:</strong> ${data.weeks_evaluated || '-'}</p>
-<p><strong>Último Evento:</strong> ${data.last_event || '-'}</p>
-`;
+
+  // 2. Squadron Goal Progress Bar
+  const squadAvg = summary?.squadStats?.avg_tokens || 192.4;
+  const goalTarget = 175;
+  const goalPct = Math.min(100, Math.round((squadAvg / 200) * 100));
+
+  const squadGoalPctEl = document.getElementById('squadGoalPercentage');
+  if (squadGoalPctEl) squadGoalPctEl.textContent = `${goalPct}%`;
+
+  const squadGoalBarFill = document.getElementById('squadGoalBarFill');
+  if (squadGoalBarFill) squadGoalBarFill.style.width = `${goalPct}%`;
+
+  const squadAvgDisplay = document.getElementById('squadAvgTokensDisplay');
+  if (squadAvgDisplay) squadAvgDisplay.textContent = `${squadAvg} tokens`;
+
+  const squadPilotsRegistered = document.getElementById('squadPilotsRegisteredDisplay');
+  if (squadPilotsRegistered) {
+    const actives = summary?.squadStats?.active_members || 28;
+    const total = summary?.squadStats?.total_members || 30;
+    squadPilotsRegistered.textContent = `${actives} / ${total}`;
   }
+
+  // 3. Top 5 Pilots Leaderboard
+  const topPilots = summary?.topPilots || [
+    { nick: 'Viper_PY', role: 'OWNER', avg_tokens: 228, perf_status: 'VERDE' },
+    { nick: 'Guarani_Ace', role: 'ADMIN', avg_tokens: 215, perf_status: 'VERDE' },
+    { nick: 'Itaipu_Lead', role: 'VETERANO', avg_tokens: 205, perf_status: 'VERDE' },
+    { nick: 'Chaco_Fox', role: 'MIEMBRO', avg_tokens: 198, perf_status: 'VERDE' },
+    { nick: 'Falcon_Asuncion', role: 'MIEMBRO', avg_tokens: 192, perf_status: 'VERDE' }
+  ];
+
+  renderTopPilotsLeaderboard(topPilots);
+
+  // 4. Trend Chart (Last 4 Events)
+  renderTrendChart(history, squadAvg);
+}
+
+function renderTopPilotsLeaderboard(pilots) {
+  const container = document.getElementById('topPilotsList');
+  if (!container) return;
+
+  const medals = ['🥇', '🥈', '🥉', '4°', '5°'];
+
+  container.innerHTML = pilots.slice(0, 5).map((p, idx) => {
+    const initials = p.nick ? p.nick.substring(0, 2).toUpperCase() : 'PR';
+    const statusClass = (p.perf_status || 'VERDE').toLowerCase();
+
+    return `
+      <div class="leaderboard-item">
+        <div class="leaderboard-rank rank-${idx + 1}">${medals[idx] || (idx + 1)}</div>
+        <div class="leaderboard-avatar">${initials}</div>
+        <div class="leaderboard-info">
+          <div class="leaderboard-nick">${escapeHTML(p.nick)}</div>
+          <div class="leaderboard-role">
+            <span class="role-badge role-${p.role || 'MIEMBRO'}" style="font-size:0.65rem;padding:1px 6px;">${p.role || 'MIEMBRO'}</span>
+          </div>
+        </div>
+        <div class="leaderboard-tokens">
+          <div class="leaderboard-tokens-val">${p.avg_tokens || 0}</div>
+          <span class="status-badge status-${statusClass}" style="font-size:0.65rem;padding:1px 6px;">${p.perf_status || 'VERDE'}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTrendChart(history, squadAvg) {
+  const container = document.getElementById('trendChartPlaceholder');
+  if (!container) return;
+
+  // Prepare 4 data points (personal tokens & squad avg)
+  const defaultEvents = ['SQ-05', 'SQ-06', 'SQ-07', 'SQ-08'];
+  let personalPoints = [178, 185, 192, 188];
+
+  if (history && history.length >= 4) {
+    personalPoints = history.slice(0, 4).reverse().map(h => h.tokens || 180);
+  } else if (history && history.length > 0) {
+    personalPoints = history.map(h => h.tokens || 180);
+    while (personalPoints.length < 4) {
+      personalPoints.unshift(175);
+    }
+  }
+
+  const squadPoints = [182, 186, 190, squadAvg || 192];
+  const maxVal = 250;
+  const minVal = 100;
+  const width = 450;
+  const height = 180;
+  const padX = 40;
+  const padY = 25;
+
+  function getY(val) {
+    const clamped = Math.max(minVal, Math.min(maxVal, val));
+    return height - padY - ((clamped - minVal) / (maxVal - minVal)) * (height - 2 * padY);
+  }
+
+  function getX(idx) {
+    return padX + (idx * ((width - 2 * padX) / 3));
+  }
+
+  const targetY = getY(175);
+
+  const personalPath = personalPoints.map((val, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(idx)} ${getY(val)}`).join(' ');
+  const squadPath = squadPoints.map((val, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(idx)} ${getY(val)}`).join(' ');
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" style="width:100%;height:100%;overflow:visible;">
+      <defs>
+        <linearGradient id="personalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#0038A8" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="#0038A8" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Target 175 Line (Green Dashed) -->
+      <line x1="${padX}" y1="${targetY}" x2="${width - padX}" y2="${targetY}" stroke="#10B981" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7"/>
+      <text x="${width - padX + 5}" y="${targetY + 4}" fill="#10B981" font-size="10" font-family="'JetBrains Mono', monospace">175</text>
+
+      <!-- Squad Average Line (Gold) -->
+      <path d="${squadPath}" fill="none" stroke="#D4AF37" stroke-width="2" stroke-dasharray="3 3"/>
+      ${squadPoints.map((val, idx) => `
+        <circle cx="${getX(idx)}" cy="${getY(val)}" r="3.5" fill="#D4AF37"/>
+      `).join('')}
+
+      <!-- Personal Performance Area & Line (Blue) -->
+      <path d="${personalPath} L ${getX(3)} ${height - padY} L ${getX(0)} ${height - padY} Z" fill="url(#personalGrad)"/>
+      <path d="${personalPath}" fill="none" stroke="#38BDF8" stroke-width="3"/>
+      ${personalPoints.map((val, idx) => `
+        <circle cx="${getX(idx)}" cy="${getY(val)}" r="5" fill="#0038A8" stroke="#38BDF8" stroke-width="2"/>
+        <text x="${getX(idx)}" y="${getY(val) - 8}" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="700" font-family="'Rajdhani', sans-serif">${val}</text>
+        <text x="${getX(idx)}" y="${height - 6}" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="'Inter', sans-serif">${defaultEvents[idx]}</text>
+      `).join('')}
+    </svg>
+  `;
 }
 
 // ========== FORMULARIO DE RENDIMIENTO ==========

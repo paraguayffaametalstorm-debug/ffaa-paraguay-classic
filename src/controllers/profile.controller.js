@@ -21,6 +21,9 @@ export async function updateProfile(req, res, next) {
     if (data.discord !== undefined) user.discord = data.discord;
     if (data.bio !== undefined) user.bio = data.bio;
     if (data.nick !== undefined && data.nick.trim()) user.nick = data.nick.trim();
+    if (data.full_name !== undefined) user.full_name = data.full_name;
+    if (data.email_personal !== undefined) user.email_personal = data.email_personal;
+    if (data.notifications_enabled !== undefined) user.notifications_enabled = data.notifications_enabled;
 
     const supabase = getSupabase();
     if (supabase) {
@@ -29,7 +32,10 @@ export async function updateProfile(req, res, next) {
         callsign: user.callsign,
         discord: user.discord,
         bio: user.bio,
-        nick: user.nick
+        nick: user.nick,
+        full_name: user.full_name,
+        email_personal: user.email_personal,
+        notifications_enabled: user.notifications_enabled
       }).eq('user_id', user.user_id);
     }
 

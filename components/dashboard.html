@@ -1,66 +1,206 @@
 <div id="appView" class="view" style="display:block;">
-  <div class="view-header" style="margin-bottom:1.5rem;">
-    <h2>📊 Cuadro de Mando Operacional</h2>
-    <p class="subtitle">Estado táctico y estadísticas de vuelo en MetalStorm</p>
-  </div>
-
-  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem;">
-    <div class="card stat-card" style="border-left:4px solid #2ecc71;">
-      <h4>Estado Operativo</h4>
-      <div style="margin:10px 0;">
-        <span id="userStatus" class="status-badge status-verde" style="font-size:1.1rem;padding:6px 14px;">VERDE</span>
-      </div>
-      <p style="font-size:0.8rem;color:#a0aec0;">Evaluación militar del escuadrón</p>
+  <!-- Dashboard Tactical Header -->
+  <div class="view-header-tactical">
+    <div class="header-titles">
+      <div class="badge-tag">SISTEMA DE CONTROL TÁCTICO</div>
+      <h2>📊 Cuadro de Mando Operacional</h2>
+      <p class="subtitle">Estado militar del escuadrón, métricas de vuelo y clasificación en MetalStorm</p>
     </div>
-
-    <div class="card stat-card" style="border-left:4px solid #d4af37;">
-      <h4>Promedio de Tokens</h4>
-      <div style="margin:10px 0;font-size:1.8rem;font-weight:700;color:#d4af37;" id="avgTokens">185</div>
-      <p style="font-size:0.8rem;color:#a0aec0;">Objetivo mínimo: 175 tokens</p>
-    </div>
-
-    <div class="card stat-card" style="border-left:4px solid #3498db;">
-      <h4>Semanas Evaluadas</h4>
-      <div style="margin:10px 0;font-size:1.8rem;font-weight:700;color:#3498db;" id="weeksEvaluated">12</div>
-      <p style="font-size:0.8rem;color:#a0aec0;">Historial de eventos consecutivos</p>
+    <div class="header-actions">
+      <button onclick="refreshDashboard()" class="btn-secondary btn-sm" title="Actualizar datos">
+        🔄 Sincronizar
+      </button>
+      <button onclick="showView('performanceForm')" class="btn-primary btn-sm">
+        📝 Registrar Tokens
+      </button>
     </div>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;">
-    <div class="card">
-      <div class="card-header">
-        <h3>🎖️ Resumen de Expediente</h3>
+  <!-- Key Stat Cards Grid -->
+  <div class="stats-grid-tactical">
+    <!-- Stat 1: Estado Operativo -->
+    <div class="card stat-card-tactical card-status-indicator" id="statCardStatus">
+      <div class="stat-card-header">
+        <span class="stat-label">ESTADO DE COMBATE</span>
+        <span class="stat-icon">🛡️</span>
       </div>
-      <div id="pilotStatus" style="line-height:2;">
-        <p><strong>Estado Actual:</strong> <span class="status-badge status-verde">VERDE</span></p>
-        <p><strong>Promedio de Tokens:</strong> 185 tokens</p>
-        <p><strong>Semanas Evaluadas:</strong> 12</p>
-        <p><strong>Último Evento:</strong> SQUADRON-2026-06</p>
+      <div class="stat-main">
+        <span id="userStatus" class="status-badge status-verde">VERDE</span>
       </div>
-      <div style="margin-top:1.5rem;display:flex;gap:10px;flex-wrap:wrap;">
-        <button onclick="showView('performanceForm')" class="btn-primary">📝 Registrar Rendimiento</button>
-        <button onclick="showView('planesView')" class="btn-secondary">✈️ Ver Mis Aviones</button>
+      <div class="stat-footer">
+        <span class="stat-footer-text" id="statusDescription">Cumplimiento operacional óptimo</span>
       </div>
     </div>
 
-    <div class="card">
+    <!-- Stat 2: Promedio de Tokens -->
+    <div class="card stat-card-tactical" style="border-left: 4px solid var(--pry-gold);">
+      <div class="stat-card-header">
+        <span class="stat-label">MI PROMEDIO DE TOKENS</span>
+        <span class="stat-icon">🎖️</span>
+      </div>
+      <div class="stat-main">
+        <span id="avgTokens" class="stat-number-gold">185</span>
+        <span class="stat-unit">tokens/ev</span>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-footer-text">Meta Mínima: <strong style="color:var(--pry-gold);">175 tokens</strong></span>
+      </div>
+    </div>
+
+    <!-- Stat 3: Semanas Evaluadas -->
+    <div class="card stat-card-tactical" style="border-left: 4px solid var(--pry-blue);">
+      <div class="stat-card-header">
+        <span class="stat-label">EVENTOS EVALUADOS</span>
+        <span class="stat-icon">📅</span>
+      </div>
+      <div class="stat-main">
+        <span id="weeksEvaluated" class="stat-number-blue">12</span>
+        <span class="stat-unit">semanas</span>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-footer-text">Historial activo consecutivo</span>
+      </div>
+    </div>
+
+    <!-- Stat 4: Escuadrón / Evento Activo -->
+    <div class="card stat-card-tactical" style="border-left: 4px solid var(--color-info);">
+      <div class="stat-card-header">
+        <span class="stat-label">EVENTO ACTUAL</span>
+        <span class="stat-icon">⚡</span>
+      </div>
+      <div class="stat-main">
+        <span id="dashboardEventId" class="stat-event-name">SQUADRON-2026-08</span>
+      </div>
+      <div class="stat-footer">
+        <span id="dashboardEventStatus" class="stat-footer-badge">🟢 Ventana Activa</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Squadron Weekly Goal Progress Bar -->
+  <div class="card squad-goal-card" style="margin-bottom: 1.5rem;">
+    <div class="goal-header">
+      <div class="goal-title-group">
+        <span class="goal-icon">🎯</span>
+        <div>
+          <h3>Objetivo Semanal del Escuadrón [PRY]</h3>
+          <p class="goal-sub">Meta institucional: Promedio mínimo de 175 tokens por piloto activo</p>
+        </div>
+      </div>
+      <div class="goal-metric">
+        <span id="squadGoalPercentage" class="goal-pct-number">96%</span>
+        <span class="goal-pct-label">COMPLETADO</span>
+      </div>
+    </div>
+    
+    <div class="goal-bar-track">
+      <div id="squadGoalBarFill" class="goal-bar-fill" style="width: 96%;">
+        <div class="goal-bar-shine"></div>
+      </div>
+      <div class="goal-milestone-marker" style="left: 87.5%;" title="Meta Base: 175 Tokens">
+        <span class="milestone-label">175 META</span>
+      </div>
+    </div>
+
+    <div class="goal-footer-stats">
+      <span>Tokens Promedio Escuadrón: <strong id="squadAvgTokensDisplay" style="color:var(--pry-gold);">192.4</strong></span>
+      <span>Pilotos Registrados: <strong id="squadPilotsRegisteredDisplay" style="color:#FFFFFF;">28 / 30</strong></span>
+      <span>Estado Escuadrón: <span class="status-badge status-verde" style="font-size:0.75rem;padding:2px 8px;">EN OBJETIVO</span></span>
+    </div>
+  </div>
+
+  <!-- Main Grid: Trend Chart + Top 5 Pilots Leaderboard -->
+  <div class="dashboard-main-grid">
+    <!-- Trend Graph Panel -->
+    <div class="card trend-panel-card">
       <div class="card-header">
-        <h3>⚡ Operaciones Rápidas</h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.2rem;">📈</span>
+          <h3>Tendencia de Rendimiento (Últimos 4 Eventos)</h3>
+        </div>
+        <span class="badge-tag">HISTORIAL TÁCTICO</span>
       </div>
-      <p style="font-size:0.9rem;color:#cbd5e0;margin-bottom:1rem;">
-        Accede directamente a los módulos clave del sistema de escuadrón:
-      </p>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <button onclick="showView('historialView')" class="btn-secondary" style="text-align:left;padding:10px 14px;">
-          📜 <strong>Consultar Historial:</strong> Revisa tus registros y observaciones pasadas
-        </button>
-        <button onclick="showView('normativasView')" class="btn-secondary" style="text-align:left;padding:10px 14px;">
-          📚 <strong>Biblioteca de Normativas:</strong> Consulta reglamentos y directivas
-        </button>
-        <button onclick="if(typeof startTour==='function')startTour();" class="btn-secondary" style="text-align:left;padding:10px 14px;">
-          🚀 <strong>Tour Guiado:</strong> Recorrido por las funciones de la plataforma
+      
+      <div class="trend-chart-container">
+        <div id="trendChartPlaceholder" class="trend-chart-tactical">
+          <!-- Dynamic SVG/Canvas Rendered Chart -->
+        </div>
+      </div>
+
+      <div class="chart-legend-tactical">
+        <div class="legend-item"><span class="legend-dot" style="background:#0038A8;"></span> Rendimiento Personal</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#D4AF37;"></span> Promedio Escuadrón</div>
+        <div class="legend-item"><span class="legend-line" style="border-color:#10B981;"></span> Meta Mínima (175)</div>
+      </div>
+    </div>
+
+    <!-- Top 5 Pilots Leaderboard -->
+    <div class="card leaderboard-panel-card">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.2rem;">🏆</span>
+          <h3>Top 5 Pilotos de Combate</h3>
+        </div>
+        <button onclick="showView('allPerformancesView')" class="btn-link" style="font-size:0.8rem;color:var(--pry-gold);">
+          Ver Todos →
         </button>
       </div>
+
+      <div id="topPilotsList" class="leaderboard-list">
+        <div class="loading-text">Cargando clasificación de pilotos...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Tactical Operations Hub -->
+  <div class="card operations-hub-card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:1.2rem;">⚡</span>
+        <h3>Operaciones Rápidas de Escuadrón</h3>
+      </div>
+    </div>
+
+    <div class="operations-grid">
+      <button onclick="showView('performanceForm')" class="op-button">
+        <div class="op-icon-box" style="background:rgba(0,56,168,0.25);border-color:var(--pry-blue);">
+          📝
+        </div>
+        <div class="op-content">
+          <strong class="op-title">Registrar Tokens</strong>
+          <span class="op-desc">Carga tu puntaje para el evento activo</span>
+        </div>
+      </button>
+
+      <button onclick="showView('planesView')" class="op-button">
+        <div class="op-icon-box" style="background:rgba(212,175,55,0.25);border-color:var(--pry-gold);">
+          ✈️
+        </div>
+        <div class="op-content">
+          <strong class="op-title">Hangar Aeronaves</strong>
+          <span class="op-desc">Gestiona tus cazas, niveles y mejoras</span>
+        </div>
+      </button>
+
+      <button onclick="showView('historialView')" class="op-button">
+        <div class="op-icon-box" style="background:rgba(16,185,129,0.25);border-color:var(--color-success);">
+          📜
+        </div>
+        <div class="op-content">
+          <strong class="op-title">Mi Historial</strong>
+          <span class="op-desc">Consulta tus registros y notas pasadas</span>
+        </div>
+      </button>
+
+      <button onclick="showView('normativasView')" class="op-button">
+        <div class="op-icon-box" style="background:rgba(56,189,248,0.25);border-color:var(--color-info);">
+          📚
+        </div>
+        <div class="op-content">
+          <strong class="op-title">Normativas FFAA</strong>
+          <span class="op-desc">Reglamento y directivas del escuadrón</span>
+        </div>
+      </button>
     </div>
   </div>
 </div>

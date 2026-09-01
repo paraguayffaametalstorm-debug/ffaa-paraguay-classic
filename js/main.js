@@ -115,18 +115,26 @@ function updateUserUI(user) {
     const uploadNormativaBtn = document.getElementById('uploadNormativaBtn');
     const viewAllNormativasBtn = document.getElementById('viewAllNormativasBtn');
     const uploadEventBtn = document.getElementById('uploadEventBtn');
+    const mobileAdminNavItem = document.getElementById('mobileAdminNavItem');
     
     if (user.role === 'OWNER' || user.role === 'ADMIN') {
-        if (adminBtn) adminBtn.style.display = 'block';
-        if (allPerformancesBtn) allPerformancesBtn.style.display = 'block';
+        if (adminBtn) adminBtn.style.display = 'inline-flex';
+        if (allPerformancesBtn) allPerformancesBtn.style.display = 'inline-flex';
         if (uploadNormativaBtn) uploadNormativaBtn.style.display = 'block';
         if (viewAllNormativasBtn) viewAllNormativasBtn.style.display = 'block';
         if (uploadEventBtn) uploadEventBtn.style.display = 'block';
+        if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'flex';
+    } else {
+        if (adminBtn) adminBtn.style.display = 'none';
+        if (allPerformancesBtn) allPerformancesBtn.style.display = 'none';
+        if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'none';
     }
     // Centro de Control exclusivo OWNER
     const ownerBtn = document.getElementById('ownerBtn');
     if (user.role === 'OWNER') {
-        if (ownerBtn) ownerBtn.style.display = 'block';
+        if (ownerBtn) ownerBtn.style.display = 'inline-flex';
+    } else {
+        if (ownerBtn) ownerBtn.style.display = 'none';
     }
 }
 
