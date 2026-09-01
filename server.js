@@ -22,13 +22,41 @@ import eventsRoutes from './src/routes/events.routes.js';
 import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
 
+// Global error handlers to prevent process crash
+process.on('unhandledRejection', (err) => {
+  console.error('⚠️ [Process] Unhandled Rejection:', err);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ [Process] Uncaught Exception:', err);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Trust proxy for reverse proxies (Fly.io, Cloud Run, Nginx) so rate limiter and HTTPS detection work correctly
+// Trust proxy for reverse proxies (Fly.io, Cloud Run, Nginx)
 app.set('trust proxy', 1);
+
+// ============================================================
+// IMMEDIATE FAST HEALTH CHECKS (Before heavy middlewares)
+// ============================================================
+
+// Lightweight plain text probe for Fly.io
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Full API health probe with status, uptime and timestamp
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    system: 'PARAGUAY-FFAA | METALSTORM Tactical Core',
+    uptime: Math.round(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ============================================================
 // SECURITY & PERFORMANCE MIDDLEWARES
@@ -94,16 +122,6 @@ app.use('/api/', apiLimiter);
 // API ROUTES MOUNTING
 // ============================================================
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    system: 'PARAGUAY-FFAA | METALSTORM Tactical Core',
-    version: '3.1.0',
-    timestamp: new Date().toISOString()
-  });
-});
-
 app.use('/api/auth', authRoutes);
 app.use('/api/performances', performancesRoutes);
 app.use('/api/planes', planesRoutes);
@@ -142,7 +160,7 @@ app.get('*all', (req, res) => {
 // Centralized Error Handling Middleware
 app.use(errorHandler);
 
-// Start Server
+// Start Server immediately without blocking
 app.listen(ENV.PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto ${ENV.PORT} (0.0.0.0:${ENV.PORT})`);
 });
