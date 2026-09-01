@@ -32,7 +32,8 @@ export async function requireAuth(req, res, next) {
 
     if (supabase) {
       try {
-        let query = supabase.from('users').select('*');
+        let query = supabase.from('users').select('*'); // Select '*' ya incluye token_version
+        
         if (decoded.email) {
           query = query.eq('email', decoded.email);
         } else if (decoded.user_id && (typeof decoded.user_id === 'number' || /^\d+$/.test(String(decoded.user_id)))) {
@@ -44,6 +45,21 @@ export async function requireAuth(req, res, next) {
         const { data, error } = await query.limit(1);
         if (!error && data && data.length > 0) {
           const u = data[0];
+
+          // ==========================================
+          // VERIFICACIÓN DE TOKEN_VERSION
+          // ==========================================
+          const dbTokenVersion = u.token_version !== undefined ? u.token_version : 0;
+          const decodedTokenVersion = decoded.token_version !== undefined ? decoded.token_version : 0;
+
+          if (decodedTokenVersion !== dbTokenVersion) {
+            return res.status(401).json({ 
+              error: 'Sesión inválida. La contraseña fue cambiada recientemente.',
+              code: 'TOKEN_VERSION_MISMATCH'
+            });
+          }
+          // ==========================================
+
           user = {
             ...u,
             user_id: u.user_id ? Number(u.user_id) : (Number.isInteger(Number(u.id)) ? Number(u.id) : u.id),
@@ -55,11 +71,15 @@ export async function requireAuth(req, res, next) {
       }
     }
 
+    // Fallback a memoryStore (entornos de desarrollo/pruebas)
     if (!user && memoryStore && memoryStore.users) {
       user = memoryStore.users.find(u => 
         (decoded.user_id && (u.user_id === decoded.user_id || u.id === decoded.user_id)) ||
         (decoded.email && u.email?.toLowerCase() === decoded.email?.toLowerCase())
       );
+      
+      // Nota: memoryStore no suele tener control estricto de token_version, 
+      // por lo que se permite el paso si es el único medio disponible.
     }
 
     if (!user) {
@@ -80,6 +100,7 @@ export async function requireAuth(req, res, next) {
     const { password_hash, ...safeUser } = user;
     req.user = safeUser;
     next();
+    
   } catch (err) {
     return res.status(401).json({
       error: 'Token inválido o expirado',

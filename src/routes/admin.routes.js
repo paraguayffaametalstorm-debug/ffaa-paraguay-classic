@@ -41,10 +41,10 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             return res.status(500).json({ error: 'Base de datos no disponible' });
         }
 
-        // Verificar que el usuario existe
+        // Verificar que el usuario existe y obtener su token_version actual
         const { data: user, error: userError } = await supabase
             .from('users')
-            .select('id, nick, email')
+            .select('id, nick, email, token_version')
             .eq('id', userId)
             .single();
 
@@ -56,12 +56,16 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         const tempPassword = '123456';
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
+        // Incrementar token_version para invalidar sesiones anteriores de forma segura
+        const newTokenVersion = (user.token_version || 0) + 1;
+
         const { error: updateError } = await supabase
             .from('users')
             .update({
                 password_hash: hashedPassword,
                 must_change_password: true,
-                updated_at: new Date().toISOString()
+                password_changed_at: new Date().toISOString(),
+                token_version: newTokenVersion
             })
             .eq('id', userId);
 

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
 import { getSupabase, memoryStore } from '../db/supabase.js';
+import { logSecurityEvent } from '../utils/audit.js';
 
 // ========== LOGIN ==========
 export const login = async (req, res) => {
@@ -38,12 +39,32 @@ export const login = async (req, res) => {
         }
 
         if (!user) {
+            // Registrar evento de fallo
+            await logSecurityEvent({
+                supabase,
+                userId: user?.id || null,
+                nick: email || null,
+                event: 'LOGIN_FAILED',
+                ip: req.ip,
+                userAgent: req.headers['user-agent'],
+                metadata: { reason: 'invalid_credentials' }
+            });
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
         // 3. Verificar contraseña
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
+            // Registrar evento de fallo
+            await logSecurityEvent({
+                supabase,
+                userId: user?.id || null,
+                nick: email || null,
+                event: 'LOGIN_FAILED',
+                ip: req.ip,
+                userAgent: req.headers['user-agent'],
+                metadata: { reason: 'invalid_credentials' }
+            });
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
@@ -52,12 +73,26 @@ export const login = async (req, res) => {
             return res.status(403).json({ error: 'Cuenta inactiva. Contacta a un administrador.' });
         }
 
-        // 5. Generar JWT
+        // 5. Generar JWT con token_version
         const token = jwt.sign(
-            { user_id: user.user_id || user.id },
+            { 
+                user_id: user.user_id || user.id,
+                token_version: user.token_version || 0 
+            },
             ENV.JWT_SECRET,
             { expiresIn: ENV.JWT_EXPIRES_IN || '7d' }
         );
+
+        // Registrar evento de éxito
+        await logSecurityEvent({
+            supabase,
+            userId: user.id,
+            nick: user.nick,
+            event: 'LOGIN_SUCCESS',
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            metadata: { role: user.role }
+        });
 
         // 6. Actualizar last_activity
         if (supabase) {
