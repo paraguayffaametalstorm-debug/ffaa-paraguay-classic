@@ -1,10 +1,28 @@
 import { memoryStore, getSupabase } from '../db/supabase.js';
 import { ProfileUpdateSchema } from '../utils/schemas.js';
 
-export function getProfile(req, res) {
-  const user = memoryStore.users.find(u => u.user_id === req.user.user_id) || req.user;
-  const { password_hash, ...safe } = user;
-  res.json({ profile: safe, user: safe });
+export async function getProfile(req, res, next) {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', req.user.user_id)
+        .single();
+
+      if (!error && data) {
+        const { password_hash, password, encrypted_password, ...safe } = data;
+        return res.json({ profile: safe, user: safe });
+      }
+    }
+
+    const user = memoryStore.users.find(u => u.user_id === req.user.user_id) || req.user;
+    const { password_hash, ...safe } = user;
+    res.json({ profile: safe, user: safe });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function updateProfile(req, res, next) {

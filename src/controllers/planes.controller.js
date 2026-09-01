@@ -10,9 +10,26 @@ export function getCatalogMods(req, res) {
   res.json(memoryStore.planeMods);
 }
 
-export function getMyPlanes(req, res) {
-  const planes = memoryStore.userPlanes.filter(p => p.user_id === req.user.user_id);
-  res.json({ planes });
+export async function getMyPlanes(req, res, next) {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('user_planes')
+        .select('*')
+        .eq('user_id', req.user.user_id)
+        .order('id', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return res.json({ planes: data });
+      }
+    }
+
+    const planes = memoryStore.userPlanes.filter(p => p.user_id === req.user.user_id);
+    res.json({ planes });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function addPlane(req, res, next) {
@@ -88,26 +105,48 @@ export async function updatePlane(req, res, next) {
     plane.mod1_nombre = mod1 ? mod1.name : null;
     plane.mod2_nombre = mod2 ? mod2.name : null;
 
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        await supabase.from('user_planes').update(plane).eq('id', id);
+      } catch (dbErr) {
+        console.warn('⚠️ [Planes update] Error en Supabase:', dbErr.message);
+      }
+    }
+
     res.json({ message: 'Aeronave actualizada correctamente', plane });
   } catch (err) {
     next(err);
   }
 }
 
-export function deletePlane(req, res) {
-  const id = parseInt(req.params.id, 10);
-  const plane = memoryStore.userPlanes.find(p => p.id === id);
+export async function deletePlane(req, res, next) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const plane = memoryStore.userPlanes.find(p => p.id === id);
 
-  if (!plane) {
-    return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
+    if (!plane) {
+      return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
+    }
+
+    if (plane.user_id !== req.user.user_id && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Permisos denegados para eliminar esta aeronave', code: 'FORBIDDEN' });
+    }
+
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        await supabase.from('user_planes').delete().eq('id', id);
+      } catch (dbErr) {
+        console.warn('⚠️ [Planes delete] Error en Supabase:', dbErr.message);
+      }
+    }
+
+    memoryStore.userPlanes = memoryStore.userPlanes.filter(p => p.id !== id);
+    res.json({ message: 'Aeronave eliminada del hangar' });
+  } catch (err) {
+    next(err);
   }
-
-  if (plane.user_id !== req.user.user_id && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-    return res.status(403).json({ error: 'Permisos denegados para eliminar esta aeronave', code: 'FORBIDDEN' });
-  }
-
-  memoryStore.userPlanes = memoryStore.userPlanes.filter(p => p.id !== id);
-  res.json({ message: 'Aeronave eliminada del hangar' });
 }
 
 export function exportPlanesCSV(req, res) {

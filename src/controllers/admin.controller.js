@@ -7,17 +7,54 @@ import {
   BulkUploadSchema
 } from '../utils/schemas.js';
 
-export function getMembers(req, res) {
-  const safeMembers = memoryStore.users.map(({ password_hash, ...u }) => u);
-  res.json({ members: safeMembers });
+export async function getMembers(req, res, next) {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('user_id', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        const safe = data.map(({ password_hash, password, encrypted_password, ...u }) => ({
+          ...u,
+          user_id: u.user_id || u.id,
+          squad_status: u.squad_status || u.status || 'ACTIVE'
+        }));
+        return res.json({ members: safe });
+      }
+    }
+
+    const safeMembers = memoryStore.users.map(({ password_hash, ...u }) => u);
+    res.json({ members: safeMembers });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function addMember(req, res, next) {
   try {
     const data = AddMemberSchema.parse(req.body);
-    const existing = memoryStore.users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+    const supabase = getSupabase();
 
-    if (existing) {
+    if (supabase) {
+      const { data: existing } = await supabase
+        .from('users')
+        .select('email')
+        .ilike('email', data.email.toLowerCase())
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        return res.status(409).json({
+          error: 'Ya existe un piloto registrado con ese correo institucional',
+          code: 'USER_ALREADY_EXISTS'
+        });
+      }
+    }
+
+    const existingMem = memoryStore.users.find(u => u.email.toLowerCase() === data.email.toLowerCase());
+    if (existingMem) {
       return res.status(409).json({
         error: 'Ya existe un piloto registrado con ese correo institucional',
         code: 'USER_ALREADY_EXISTS'
@@ -61,9 +98,12 @@ export async function addMember(req, res, next) {
       ip: req.ip || '127.0.0.1'
     });
 
-    const supabase = getSupabase();
     if (supabase) {
-      await supabase.from('users').insert(newMember);
+      try {
+        await supabase.from('users').insert(newMember);
+      } catch (dbErr) {
+        console.warn('⚠️ [Admin addMember] Error insertando en Supabase:', dbErr.message);
+      }
     }
 
     const { password_hash, ...safe } = newMember;
@@ -79,16 +119,22 @@ export async function updateMemberStatus(req, res, next) {
     const { status } = UpdateMemberStatusSchema.parse(req.body);
     const member = memoryStore.users.find(u => u.user_id === id);
 
-    if (!member) {
-      return res.status(404).json({ error: 'Piloto no encontrado', code: 'USER_NOT_FOUND' });
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        await supabase.from('users').update({ squad_status: status }).eq('user_id', id);
+      } catch (dbErr) {
+        console.warn('⚠️ [Admin updateMemberStatus] Error actualizando Supabase:', dbErr.message);
+      }
     }
 
-    // Owner protection
-    if (member.role === 'OWNER' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'No tienes permiso para modificar al Comandante General', code: 'FORBIDDEN' });
+    if (member) {
+      // Owner protection
+      if (member.role === 'OWNER' && req.user.role !== 'OWNER') {
+        return res.status(403).json({ error: 'No tienes permiso para modificar al Comandante General', code: 'FORBIDDEN' });
+      }
+      member.squad_status = status;
     }
-
-    member.squad_status = status;
 
     memoryStore.auditLogs.unshift({
       id: memoryStore.auditLogs.length + 1,
@@ -115,11 +161,18 @@ export async function updateMemberRole(req, res, next) {
     const { role } = UpdateMemberRoleSchema.parse(req.body);
     const member = memoryStore.users.find(u => u.user_id === id);
 
-    if (!member) {
-      return res.status(404).json({ error: 'Piloto no encontrado', code: 'USER_NOT_FOUND' });
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        await supabase.from('users').update({ role }).eq('user_id', id);
+      } catch (dbErr) {
+        console.warn('⚠️ [Admin updateMemberRole] Error actualizando Supabase:', dbErr.message);
+      }
     }
 
-    member.role = role;
+    if (member) {
+      member.role = role;
+    }
 
     memoryStore.auditLogs.unshift({
       id: memoryStore.auditLogs.length + 1,
@@ -203,13 +256,32 @@ export async function bulkUploadEvent(req, res, next) {
       ip: req.ip || '127.0.0.1'
     });
 
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        const perfBatch = bulkList.map(item => ({
+          nick: item.nick,
+          event_id,
+          tokens: item.tokens,
+          days_connected: 4,
+          flew_in_group: true,
+          notes: 'Carga masiva de evento táctico',
+          status: item.tokens < 100 ? 'NEGRO' : item.tokens < 130 ? 'ROJO' : item.tokens < 175 ? 'NARANJA' : 'VERDE',
+          created_at: new Date().toISOString()
+        }));
+        await supabase.from('performances').insert(perfBatch);
+      } catch (dbErr) {
+        console.warn('⚠️ [Admin bulkUploadEvent] Error en Supabase:', dbErr.message);
+      }
+    }
+
     res.json({ message: `Carga masiva completada: ${processed} registros procesados` });
   } catch (err) {
     next(err);
   }
 }
 
-export function activateBlackMarket(req, res) {
+export async function activateBlackMarket(req, res) {
   memoryStore.events.forEach(e => { e.is_open = false; e.status = 'CLOSED'; });
   const bmEvent = {
     id: `BM-2026-${String(memoryStore.events.length + 1).padStart(2, '0')}`,
@@ -220,6 +292,16 @@ export function activateBlackMarket(req, res) {
     status: 'OPEN'
   };
   memoryStore.events.unshift(bmEvent);
+
+  const supabase = getSupabase();
+  if (supabase) {
+    try {
+      await supabase.from('events').update({ is_open: false, status: 'CLOSED' }).neq('id', 'NONE');
+      await supabase.from('events').insert(bmEvent);
+    } catch (dbErr) {
+      console.warn('⚠️ [Admin activateBlackMarket] Error en Supabase:', dbErr.message);
+    }
+  }
 
   memoryStore.auditLogs.unshift({
     id: memoryStore.auditLogs.length + 1,
