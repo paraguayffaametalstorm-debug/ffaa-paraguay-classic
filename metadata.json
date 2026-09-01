@@ -1,0 +1,6 @@
+{
+  "name": "PARAGUAY-FFAA | METALSTORM",
+  "description": "Sistema de Rendimiento y Gestión para el Escuadrón PARAGUAY FFAA [PRY] en MetalStorm",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,45 @@
+<div id="aircraftStatsModal" class="modal">
+  <div class="modal-content" style="max-width:700px;">
+    <div class="modal-header">
+      <h3>✈️ Análisis Balístico & Estadísticas: <span id="statsAircraftName" style="color:var(--color-secondary,#d4af37);"></span></h3>
+      <span class="close-btn" onclick="closeModal('aircraftStatsModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;background:rgba(0,0,0,0.25);padding:12px;border-radius:8px;">
+        <div><strong>Modelo:</strong> <span id="statsModelName">—</span></div>
+        <div><strong>Nivel:</strong> <span id="statsLevel" style="color:#d4af37;">—</span></div>
+        <div><strong>Tipo:</strong> <span id="statsType">—</span></div>
+        <div><strong>Especial:</strong> <span id="statsSpecial">—</span></div>
+        <div><strong>Pasiva:</strong> <span id="statsPassive">—</span></div>
+        <div style="display:none;" id="currentLevel">1</div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <strong style="font-size:0.9rem;color:#cbd5e0;">Modificaciones Activas:</strong>
+        <div id="statsModsGrid" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;"></div>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:center;">
+        <div style="width:280px;height:280px;display:flex;align-items:center;justify-content:center;">
+          <canvas id="aircraftRadarChart" width="280" height="280"></canvas>
+        </div>
+        <div style="flex:1;min-width:260px;overflow-x:auto;">
+          <table class="data-table" style="font-size:0.85rem;width:100%;">
+            <thead>
+              <tr>
+                <th>Atributo</th>
+                <th>Actual</th>
+                <th>Máx (Nv.20)</th>
+                <th>Progreso</th>
+              </tr>
+            </thead>
+            <tbody id="statsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('aircraftStatsModal')" class="btn-secondary">Cerrar</button>
+    </div>
+  </div>
+</div>

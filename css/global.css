@@ -1,10 +1,10 @@
 /* ========================================
    ESTILOS GLOBALES - PARAGUAY-FFAA | METALSTORM
    Mobile-First Architecture v3.0
-   Breakpoints: 360px (base) ¡¤ 768px ¡¤ 1024px
+   Breakpoints: 360px (base) ï¿½ï¿½ 768px ï¿½ï¿½ 1024px
    ======================================== */
 
-/* ©¤©¤ Reset & Box Model ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Reset & Box Model ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 *,
 *::before,
 *::after {
@@ -13,7 +13,7 @@
   box-sizing: border-box;
 }
 
-/* ©¤©¤ Design Tokens ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Design Tokens ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 :root {
   /* Colors */
   --color-primary:   #1a3a6c;
@@ -78,7 +78,7 @@
   --bottom-nav-h: 3.5rem;
 }
 
-/* ©¤©¤ Base HTML & Body ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Base HTML & Body ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 html {
   font-size: 100%; /* 16px */
   -webkit-text-size-adjust: 100%;
@@ -92,13 +92,13 @@ body {
   color: #ffffff;
   line-height: 1.6;
   min-height: 100vh;
-  /* NO padding fijo ¡ª cada componente maneja su propio espacio */
+  /* NO padding fijo ï¿½ï¿½ cada componente maneja su propio espacio */
   padding-top: var(--sat);
   padding-left: var(--sal);
   padding-right: var(--sar);
-  /* Espacio inferior para bottom-nav en m¨®vil */
+  /* Espacio inferior para bottom-nav en mï¿½ï¿½vil */
   padding-bottom: calc(var(--bottom-nav-h) + var(--sab));
-  /* Mejora de rendering en m¨®vil */
+  /* Mejora de rendering en mï¿½ï¿½vil */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -110,7 +110,7 @@ body {
   }
 }
 
-/* ©¤©¤ Container ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Container ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 .container {
   width: 100%;
   margin-inline: auto;
@@ -130,7 +130,7 @@ body {
   }
 }
 
-/* ©¤©¤ Typography ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Typography ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.3;
@@ -176,7 +176,7 @@ p {
   font-size: var(--fs-base);
 }
 
-/* ©¤©¤ Links ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Links ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 a {
   color: var(--color-secondary);
   text-decoration: none;
@@ -188,8 +188,8 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ©¤©¤ Buttons ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
-/* Base button ¡ª mobile-first touch target */
+/* ï¿½ï¿½ï¿½ï¿½ Buttons ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
+/* Base button ï¿½ï¿½ mobile-first touch target */
 button {
   cursor: pointer;
   border: none;
@@ -210,7 +210,7 @@ button {
   text-align: center;
 }
 
-/* Desktop hover effects ¡ª desactivados en touch */
+/* Desktop hover effects ï¿½ï¿½ desactivados en touch */
 @media (hover: hover) and (pointer: fine) {
   button:hover {
     transform: translateY(-2px);
@@ -255,7 +255,7 @@ button {
   animation: pulse-install 2s infinite;
 }
 
-/* Quitar animaci¨®n en m¨®vil/reduced-motion */
+/* Quitar animaciï¿½ï¿½n en mï¿½ï¿½vil/reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .btn-install { animation: none; }
 }
@@ -269,7 +269,7 @@ button {
   50%       { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0);  }
 }
 
-/* ©¤©¤ Inputs / Forms ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Inputs / Forms ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -285,12 +285,12 @@ textarea {
   border-radius: var(--radius);
   background: #2a3b5c;
   color: #ffffff;
-  /* 16px previene zoom autom¨¢tico en iOS */
+  /* 16px previene zoom automï¿½ï¿½tico en iOS */
   font-size: 1rem;
   line-height: 1.5;
   min-height: var(--touch-min);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  /* Mejora usabilidad en m¨®vil */
+  /* Mejora usabilidad en mï¿½ï¿½vil */
   -webkit-appearance: none;
   appearance: none;
 }
@@ -320,7 +320,7 @@ input[type="checkbox"] {
   min-height: auto;
   margin-right: var(--sp-2);
   cursor: pointer;
-  /* Aumentar hit area en m¨®vil */
+  /* Aumentar hit area en mï¿½ï¿½vil */
   width: 1.25rem;
   height: 1.25rem;
   accent-color: var(--color-secondary);
@@ -334,11 +334,11 @@ input[type="checkbox"] {
   display: block;
 }
 
-/* ©¤©¤ Tables ¡ú Cards en m¨®vil ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤
+/* ï¿½ï¿½ï¿½ï¿½ Tables ï¿½ï¿½ Cards en mï¿½ï¿½vil ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
    Para activar el modo card, a?adir clase
    .table-cards al <table> o wrapper.
    Los <td> deben tener data-label="Header"
-   ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+   ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -368,7 +368,7 @@ tr:hover {
   background: rgba(212, 175, 55, 0.08);
 }
 
-/* ©¤©¤ Tabla ¡ú Card (mobile-first) ©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Tabla ï¿½ï¿½ Card (mobile-first) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 @media (max-width: 767px) {
   /* Wrapper responsive */
   .responsive-table {
@@ -384,7 +384,7 @@ tr:hover {
 
   .responsive-table thead,
   table.table-cards thead {
-    /* Ocultar headers ¡ª se replican con data-label */
+    /* Ocultar headers ï¿½ï¿½ se replican con data-label */
     display: none;
   }
 
@@ -456,7 +456,7 @@ tr:hover {
   }
 }
 
-/* ©¤©¤ Lists ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Lists ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 ul, ol {
   margin-left: var(--sp-5);
   margin-bottom: var(--sp-4);
@@ -468,7 +468,7 @@ li {
   font-size: var(--fs-base);
 }
 
-/* ©¤©¤ Code ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Code ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 code {
   background: rgba(0, 0, 0, 0.35);
   padding: 0.1em 0.4em;
@@ -478,7 +478,7 @@ code {
   color: var(--color-secondary);
 }
 
-/* ©¤©¤ Utility classes ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Utility classes ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 .text-center  { text-align: center; }
 .text-right   { text-align: right; }
 .text-left    { text-align: left; }
@@ -513,7 +513,7 @@ code {
 .gap-2 { gap: var(--sp-2); }
 .gap-4 { gap: var(--sp-4); }
 
-/* ©¤©¤ Scrollbar (webkit) ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Scrollbar (webkit) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 ::-webkit-scrollbar {
   width: 0.5rem;
   height: 0.5rem;
@@ -532,7 +532,7 @@ code {
   background: #b89b2a;
 }
 
-/* ©¤©¤ Online users badge ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Online users badge ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 .online-users {
   display: inline-flex;
   align-items: center;
@@ -551,7 +551,7 @@ code {
   color: #ffffff;
 }
 
-/* ©¤©¤ PWA ¡ª Modo offline ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ PWA ï¿½ï¿½ Modo offline ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 .offline::before {
   content: '?? MODO OFFLINE';
   display: block;
@@ -569,7 +569,7 @@ code {
   letter-spacing: 0.1em;
 }
 
-/* ©¤©¤ Update Toast PWA ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Update Toast PWA ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 .update-toast {
   position: fixed;
   bottom: calc(var(--bottom-nav-h) + var(--sp-4) + var(--sab));
@@ -616,14 +616,14 @@ code {
   font-size: var(--fs-sm);
 }
 
-/* ©¤©¤ Modo standalone PWA ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Modo standalone PWA ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 @media (display-mode: standalone) {
   body {
     padding-top: calc(var(--sat) + var(--sp-2));
   }
 }
 
-/* ©¤©¤ Landscape en m¨®vil ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Landscape en mï¿½ï¿½vil ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 @media (max-height: 31.25rem) and (orientation: landscape) {
   :root {
     --bottom-nav-h: 0px;
@@ -634,7 +634,7 @@ code {
   }
 }
 
-/* ©¤©¤ Reduce Motion ©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤©¤ */
+/* ï¿½ï¿½ï¿½ï¿½ Reduce Motion ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration:       0.01ms !important;

@@ -1,0 +1,183 @@
+<div id="adminPanel" class="view" style="display:none;">
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <h2>🛡️ Panel de Comandancia & Administración</h2>
+      <p class="subtitle">Supervisión táctica de miembros, eventos y auditoría de escuadrón</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="refreshAdminStats()" class="btn-secondary">🔄 Actualizar</button>
+      <button onclick="showUploadEventModal()" class="btn-primary">⚡ Carga Masiva de Evento</button>
+    </div>
+  </div>
+
+  <!-- Admin General Stats -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="border-left:4px solid #2ecc71;">
+      <h4>Pilotos Activos</h4>
+      <div id="totalMembers" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #d4af37;">
+      <h4>Promedio de Escuadrón</h4>
+      <div id="adminAvgTokens" style="font-size:1.8rem;font-weight:700;color:#d4af37;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #e74c3c;">
+      <h4>Pilotos en Riesgo</h4>
+      <div id="atRiskMembers" style="font-size:1.8rem;font-weight:700;color:#e74c3c;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #3498db;">
+      <h4>Última Sincronización</h4>
+      <div id="lastUpdate" style="font-size:1rem;font-weight:600;color:#cbd5e0;margin-top:8px;">-</div>
+    </div>
+  </div>
+
+  <!-- Distribution of Pilots by Status -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3 style="margin-bottom:1rem;">📊 Distribución de Rendimiento Actual</h3>
+    <div id="pilotsByStatus"></div>
+  </div>
+
+  <!-- Black Market Control -->
+  <div class="card" style="margin-bottom:1.5rem;border:1.5px solid rgba(231,76,60,0.4);">
+    <h3 style="color:#e74c3c;margin-bottom:1rem;">⚡ Control Operativo Black Market</h3>
+    <div id="blackMarketInfo"></div>
+  </div>
+
+  <!-- Members Management Section -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleMembersSection()">
+      <h3>👥 Registro Oficial de Pilotos</h3>
+      <span id="membersSectionToggleIcon" style="font-size:1.2rem;transition:transform 0.2s ease;">▼</span>
+    </div>
+
+    <div id="membersSectionBody" style="margin-top:1.2rem;">
+      <!-- Filters -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.2rem;align-items:end;">
+        <div>
+          <label for="memberSearch" style="font-size:0.8rem;color:#a0aec0;">Buscar Piloto</label>
+          <input type="text" id="memberSearch" placeholder="Nick..." oninput="filterMembers()" />
+        </div>
+        <div>
+          <label for="roleFilter" style="font-size:0.8rem;color:#a0aec0;">Rango / Rol</label>
+          <select id="roleFilter" onchange="filterMembers()">
+            <option value="">Todos</option>
+            <option value="MIEMBRO">Miembro</option>
+            <option value="VETERANO">Veterano</option>
+            <option value="ADMIN">Admin</option>
+            <option value="OWNER">Owner</option>
+          </select>
+        </div>
+        <div>
+          <label for="weeksFilter" style="font-size:0.8rem;color:#a0aec0;">Semanas</label>
+          <select id="weeksFilter" onchange="filterMembers()">
+            <option value="">Todas</option>
+            <option value="1">1 sem</option>
+            <option value="2">2 sem</option>
+            <option value="3">3 sem</option>
+            <option value="4+">4+ sem</option>
+          </select>
+        </div>
+        <div>
+          <label for="perfStatusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado Rendimiento</label>
+          <select id="perfStatusFilter" onchange="filterMembers()">
+            <option value="">Todos</option>
+            <option value="VERDE">Verde</option>
+            <option value="NARANJA">Naranja</option>
+            <option value="ROJO">Rojo</option>
+            <option value="NEGRO">Negro</option>
+            <option value="PENDIENTE">Pendiente</option>
+          </select>
+        </div>
+        <div>
+          <label for="squadStatusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado Escuadrón</label>
+          <select id="squadStatusFilter" onchange="filterMembers()">
+            <option value="">Todos</option>
+            <option value="ACTIVE">Activo</option>
+            <option value="INACTIVE">Inactivo</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="resetMemberFilters()" class="btn-secondary" style="width:100%;">🔄 Limpiar</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table" style="width:100%;font-size:0.88rem;">
+          <thead>
+            <tr>
+              <th>Piloto</th>
+              <th>Rol</th>
+              <th>Últ. Actividad</th>
+              <th>Prom. Tokens</th>
+              <th>Semanas</th>
+              <th>Tendencia</th>
+              <th>Rendimiento</th>
+              <th>Escuadrón</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="membersTableBody"></tbody>
+        </table>
+        <div id="noResultsMessage" style="display:none;padding:1.5rem;text-align:center;color:#a0aec0;">
+          No se encontraron pilotos con los filtros seleccionados
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Member Form -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3 style="margin-bottom:1rem;">➕ Registrar Nuevo Piloto al Escuadrón</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
+      <div>
+        <label for="newMemberNick" style="font-size:0.8rem;color:#a0aec0;">Nickname en MetalStorm</label>
+        <input type="text" id="newMemberNick" placeholder="Ej: PRY_Viper" />
+      </div>
+      <div>
+        <label for="newMemberEmail" style="font-size:0.8rem;color:#a0aec0;">Correo Electrónico</label>
+        <input type="email" id="newMemberEmail" placeholder="piloto@ffaa.com" />
+      </div>
+      <div>
+        <label for="newMemberRole" style="font-size:0.8rem;color:#a0aec0;">Rol Inicial</label>
+        <select id="newMemberRole">
+          <option value="MIEMBRO">MIEMBRO</option>
+          <option value="VETERANO">VETERANO</option>
+          <option value="ADMIN">ADMIN</option>
+        </select>
+      </div>
+      <div>
+        <button onclick="addNewMember()" class="btn-primary" style="width:100%;">Registrar Piloto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Events List -->
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">📅 Registro de Eventos del Escuadrón</h3>
+    <div id="adminEventsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
+  </div>
+</div>
+
+<!-- Modal Carga Masiva de Evento -->
+<div id="uploadEventModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header">
+      <h3>⚡ Carga Masiva de Evento</h3>
+      <span class="close-btn" onclick="closeModal('uploadEventModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="eventIdInput">Identificador de Evento</label>
+        <input type="text" id="eventIdInput" placeholder="Ej: SQUADRON-2026-07" required />
+      </div>
+
+      <div class="form-group">
+        <label for="eventBulkData">Datos (Formato: Nick, Tokens, Rol por línea)</label>
+        <textarea id="eventBulkData" rows="6" placeholder="PRY_Alpha, 195, MIEMBRO&#10;PRY_Bravo, 180, VETERANO" style="font-family:monospace;font-size:0.85rem;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('uploadEventModal')" class="btn-secondary">Cancelar</button>
+      <button onclick="uploadEventBulk()" class="btn-primary">Procesar Carga Masiva</button>
+    </div>
+  </div>
+</div>
