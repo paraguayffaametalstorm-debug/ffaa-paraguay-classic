@@ -137,6 +137,15 @@ app.use('/api/dashboard', dashboardRoutes);
 // Compatibility aliases
 app.use('/api/catalog', planesRoutes);
 
+// Explicit 404 handler for unmatched API routes - guarantees JSON, NEVER HTML
+app.all('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Ruta de API no encontrada: ${req.method} ${req.originalUrl}`,
+    code: 'API_ENDPOINT_NOT_FOUND'
+  });
+});
+
 // ============================================================
 // STATIC FILES & SPA SERVING
 // ============================================================

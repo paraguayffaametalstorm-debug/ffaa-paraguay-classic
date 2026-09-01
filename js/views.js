@@ -502,17 +502,30 @@ function loadPerformanceForm() {
 }
 
 function loadActiveMembers() {
-  fetch(`${API_BASE}/api/admin/members/active`, { headers: getAuthHeaders() })
-  .then(res => res.json())
+  fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() })
+  .then(async res => {
+    if (!res.ok) {
+      const fallback = await fetch(`${API_BASE}/api/admin/members/active`, { headers: getAuthHeaders() });
+      if (!fallback.ok) throw new Error(`HTTP ${fallback.status}`);
+      return fallback.json();
+    }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      throw new Error('Response is not JSON');
+    }
+    return res.json();
+  })
   .then(data => {
     const sel = document.getElementById('performanceTarget');
     if (!sel) return;
     sel.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
-    (data.members || []).forEach(m => {
-      if (m.user_id === currentUser.user_id) return;
+    const members = data.activeMembers || data.members || [];
+    members.forEach(m => {
+      const uid = m.user_id || m.id;
+      if (currentUser && (uid === currentUser.user_id || uid === currentUser.id)) return;
       const opt = document.createElement('option');
-      opt.value = m.user_id;
-      opt.textContent = `${m.nick} (${m.role})`;
+      opt.value = uid;
+      opt.textContent = `${m.nick || m.email} (${m.role || 'MIEMBRO'})`;
       sel.appendChild(opt);
     });
     sel.value = 'self';
@@ -527,28 +540,48 @@ function loadOpenEvents() {
   fetch(`${API_BASE}/api/events/open`, {
     headers: getAuthHeaders()
   })
-  .then(res => res.json())
+  .then(async res => {
+    if (!res.ok) {
+      const fallback = await fetch(`${API_BASE}/api/events`, { headers: getAuthHeaders() });
+      if (!fallback.ok) throw new Error(`HTTP ${fallback.status}`);
+      return fallback.json();
+    }
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      throw new Error('Response is not JSON');
+    }
+    return res.json();
+  })
   .then(data => {
     const prev = document.getElementById('windowClosedNotice');
     if (prev) prev.remove();
 
-    if (data.event) {
-      displayEventInfo(data.event, data.inWindow, data.windowCloseMs);
+    const ev = data.event || (data.events && data.events[0]);
+    if (ev) {
+      const inWin = typeof data.inWindow === 'boolean' ? data.inWindow : Boolean(ev.is_open || ev.status === 'OPEN');
+      const winCloseMs = typeof data.windowCloseMs === 'number' ? data.windowCloseMs : 86400000;
+      displayEventInfo(ev, inWin, winCloseMs);
       const fieldsEl = document.getElementById('performanceFields');
-      if (data.inWindow) {
-        fieldsEl.style.display = 'block';
-      } else {
-        fieldsEl.style.display = 'none';
-        renderWindowClosedNotice(data.event.type);
+      if (fieldsEl) {
+        if (inWin) {
+          fieldsEl.style.display = 'block';
+        } else {
+          fieldsEl.style.display = 'none';
+          renderWindowClosedNotice(ev.type);
+        }
       }
     } else {
-      document.getElementById('eventInfo').innerHTML = `
+      const evInfo = document.getElementById('eventInfo');
+      if (evInfo) {
+        evInfo.innerHTML = `
 <div class="black-market-warning">
 <p>⚠️ No hay evento abierto actualmente</p>
 <p>Espera a que el liderazgo habilite el próximo evento</p>
 </div>
 `;
-      document.getElementById('performanceFields').style.display = 'none';
+      }
+      const fieldsEl = document.getElementById('performanceFields');
+      if (fieldsEl) fieldsEl.style.display = 'none';
     }
   })
   .catch(err => {
