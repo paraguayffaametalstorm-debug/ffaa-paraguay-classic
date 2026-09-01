@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
 import bcrypt from 'bcryptjs';
 import { ENV } from '../config/env.js';
+
+// Polyfill native WebSocket in Node.js runtime if not present
+if (!globalThis.WebSocket) {
+  globalThis.WebSocket = WebSocket;
+}
 
 let supabaseClient = null;
 let isConfigured = false;
