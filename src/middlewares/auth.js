@@ -8,19 +8,19 @@ import { memoryStore, getSupabase } from '../db/supabase.js';
  * Si no es válido o no existe, retorna 401 Unauthorized sin excepciones ni bypasses.
  */
 export async function requireAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const rawHeader = req.headers.authorization || req.headers.authtoken || req.headers['auth-token'];
+  if (!rawHeader) {
     return res.status(401).json({
       error: 'Acceso no autorizado: Token de autenticación requerido',
       code: 'AUTH_TOKEN_REQUIRED'
     });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = rawHeader.startsWith('Bearer ') ? rawHeader.slice(7).trim() : rawHeader.trim();
 
   try {
     const decoded = jwt.verify(token, ENV.JWT_SECRET);
-    if (!decoded || !decoded.user_id) {
+    if (!decoded || (!decoded.user_id && !decoded.email)) {
       return res.status(401).json({
         error: 'Acceso no autorizado: Formato de token inválido',
         code: 'AUTH_TOKEN_INVALID'
@@ -32,16 +32,21 @@ export async function requireAuth(req, res, next) {
 
     if (supabase) {
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .or(`user_id.eq.${decoded.user_id},id.eq.${decoded.user_id}`)
-          .limit(1);
+        let query = supabase.from('users').select('*');
+        if (decoded.email) {
+          query = query.eq('email', decoded.email);
+        } else if (decoded.user_id && (typeof decoded.user_id === 'number' || /^\d+$/.test(String(decoded.user_id)))) {
+          query = query.eq('user_id', Number(decoded.user_id));
+        } else if (decoded.user_id) {
+          query = query.eq('id', decoded.user_id);
+        }
+
+        const { data, error } = await query.limit(1);
         if (!error && data && data.length > 0) {
           const u = data[0];
           user = {
             ...u,
-            user_id: u.user_id || u.id,
+            user_id: u.user_id ? Number(u.user_id) : (Number.isInteger(Number(u.id)) ? Number(u.id) : u.id),
             squad_status: u.squad_status || u.status || 'ACTIVE'
           };
         }
@@ -50,8 +55,11 @@ export async function requireAuth(req, res, next) {
       }
     }
 
-    if (!user) {
-      user = memoryStore.users.find(u => u.user_id === decoded.user_id);
+    if (!user && memoryStore && memoryStore.users) {
+      user = memoryStore.users.find(u => 
+        (decoded.user_id && (u.user_id === decoded.user_id || u.id === decoded.user_id)) ||
+        (decoded.email && u.email?.toLowerCase() === decoded.email?.toLowerCase())
+      );
     }
 
     if (!user) {
