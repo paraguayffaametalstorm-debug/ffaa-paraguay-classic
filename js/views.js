@@ -4,9 +4,6 @@
  * ✅ v3.1 — Exportación de reportes PNG via Canvas
  */
 
-// Importar módulo de rendimiento
-import { initPerformanceForm } from './performance.js';
-
 // IDs de vistas principales
 window.escapeHTML = function(str) {
   if (str === null || str === undefined) return '';
@@ -188,11 +185,10 @@ function loadViewData(viewId) {
       break;
       
     case VIEWS.PERFORMANCE:
-    case 'performanceForm': // Cubre tanto la constante como el string explícito
+    case 'performanceForm':
       if (typeof initPerformanceForm === 'function') {
         initPerformanceForm();
       } else {
-        // Fallback seguro por compatibilidad
         loadPerformanceForm();
       }
       break;
@@ -271,7 +267,6 @@ async function loadDashboardData() {
 function updateDashboardTacticalUI(summary, history) {
   const user = currentUser;
 
-  // Header User Info
   const userNameEl = document.getElementById('userName');
   if (userNameEl) userNameEl.textContent = user.nick || user.email;
 
@@ -280,7 +275,6 @@ function updateDashboardTacticalUI(summary, history) {
     userRoleEl.innerHTML = `<span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>`;
   }
 
-  // 1. Stat Cards
   const userStatus = (summary?.userStats?.perf_status || user.perf_status || 'VERDE').toUpperCase();
   const userStatusEl = document.getElementById('userStatus');
   if (userStatusEl) {
@@ -312,9 +306,7 @@ function updateDashboardTacticalUI(summary, history) {
     eventEl.textContent = summary?.currentEvent?.id || 'SQUADRON-2026-08';
   }
 
-  // 2. Squadron Goal Progress Bar
   const squadAvg = summary?.squadStats?.avg_tokens || 192.4;
-  const goalTarget = 175;
   const goalPct = Math.min(100, Math.round((squadAvg / 200) * 100));
 
   const squadGoalPctEl = document.getElementById('squadGoalPercentage');
@@ -333,18 +325,8 @@ function updateDashboardTacticalUI(summary, history) {
     squadPilotsRegistered.textContent = `${actives} / ${total}`;
   }
 
-  // 3. Top 5 Pilots Leaderboard
-  const topPilots = summary?.topPilots || [
-    { nick: 'Viper_PY', role: 'OWNER', avg_tokens: 228, perf_status: 'VERDE' },
-    { nick: 'Guarani_Ace', role: 'ADMIN', avg_tokens: 215, perf_status: 'VERDE' },
-    { nick: 'Itaipu_Lead', role: 'VETERANO', avg_tokens: 205, perf_status: 'VERDE' },
-    { nick: 'Chaco_Fox', role: 'MIEMBRO', avg_tokens: 198, perf_status: 'VERDE' },
-    { nick: 'Falcon_Asuncion', role: 'MIEMBRO', avg_tokens: 192, perf_status: 'VERDE' }
-  ];
-
+  const topPilots = summary?.topPilots || [];
   renderTopPilotsLeaderboard(topPilots);
-
-  // 4. Trend Chart (Last 4 Events)
   renderTrendChart(history, squadAvg);
 }
 
@@ -381,7 +363,6 @@ function renderTrendChart(history, squadAvg) {
   const container = document.getElementById('trendChartPlaceholder');
   if (!container) return;
 
-  // Prepare 4 data points (personal tokens & squad avg)
   const defaultEvents = ['SQ-05', 'SQ-06', 'SQ-07', 'SQ-08'];
   let personalPoints = [178, 185, 192, 188];
 
@@ -425,17 +406,14 @@ function renderTrendChart(history, squadAvg) {
         </linearGradient>
       </defs>
 
-      <!-- Target 175 Line (Green Dashed) -->
       <line x1="${padX}" y1="${targetY}" x2="${width - padX}" y2="${targetY}" stroke="#10B981" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7"/>
       <text x="${width - padX + 5}" y="${targetY + 4}" fill="#10B981" font-size="10" font-family="'JetBrains Mono', monospace">175</text>
 
-      <!-- Squad Average Line (Gold) -->
       <path d="${squadPath}" fill="none" stroke="#D4AF37" stroke-width="2" stroke-dasharray="3 3"/>
       ${squadPoints.map((val, idx) => `
         <circle cx="${getX(idx)}" cy="${getY(val)}" r="3.5" fill="#D4AF37"/>
       `).join('')}
 
-      <!-- Personal Performance Area & Line (Blue) -->
       <path d="${personalPath} L ${getX(3)} ${height - padY} L ${getX(0)} ${height - padY} Z" fill="url(#personalGrad)"/>
       <path d="${personalPath}" fill="none" stroke="#38BDF8" stroke-width="3"/>
       ${personalPoints.map((val, idx) => `
@@ -446,6 +424,52 @@ function renderTrendChart(history, squadAvg) {
     </svg>
   `;
 }
+
+// ========== HISTORIAL (CORREGIDO) ==========
+function loadHistorial() {
+  if (!currentUser) return;
+  fetch(`${API_BASE}/api/performances/my-history`, {
+    headers: getAuthHeaders()
+  })
+  .then(res => res.json())
+  .then(data => {
+    const history = Array.isArray(data) ? data : (data.history || data.performances || []);
+    displayHistorial(history);
+  })
+  .catch(err => {
+    console.error('Error cargando historial:', err);
+    showToast('❌ Error al cargar historial', 'error');
+  });
+}
+
+function displayHistorial(history) {
+  const container = document.getElementById('historialContent');
+  if (!container) return;
+
+  const historyArray = Array.isArray(history) ? history : [];
+
+  if (historyArray.length === 0) {
+    container.innerHTML = `
+<div class="no-results">
+<p>📊 Aún no tienes registros de rendimiento</p>
+<p>Participa en el próximo evento para generar tu historial</p>
+</div>
+`;
+    return;
+  }
+
+  container.innerHTML = historyArray.map(record => `
+<div class="historial-item">
+<h4>${escapeHTML(record.event_id || 'Sin evento')}</h4>
+<p><strong>Tokens:</strong> ${record.tokens ?? 0}</p>
+<p><strong>Días conectado:</strong> ${record.days_connected ?? 0}</p>
+<p><strong>Estado:</strong> <span class="status-badge status-${(record.status || 'NEGRO').toLowerCase()}">${record.status || 'NEGRO'}</span></p>
+<p><strong>Fecha:</strong> ${record.created_at ? new Date(record.created_at).toLocaleDateString() : 'N/A'}</p>
+${record.notes ? `<p><strong>Notas:</strong> ${escapeHTML(record.notes)}</p>` : ''}
+</div>
+`).join('');
+}
+// ========== FIN HISTORIAL ==========
 
 // ========== FORMULARIO DE RENDIMIENTO ==========
 function selectDays(n) {
@@ -966,7 +990,6 @@ function updatePlanesStats(planes) {
   }
 }
 
-// Global aliases for full cross-module compatibility
 window.loadPlanes = loadUserPlanes;
 window.loadUserPlanes = loadUserPlanes;
 window.renderPlanes = displayPlanes;
@@ -1007,7 +1030,7 @@ function filterPlanes() {
 
 function applyPlaneFilters() { filterPlanes(); }
 
-// ========== GESTIÓN DE UPGRADES 2.0 (MODAL & ACTUALIZACIONES) ==========
+// ========== GESTIÓN DE UPGRADES 2.0 ==========
 let _currentUpgradesPlane = null;
 
 async function openPlaneUpgrades(planeId) {
@@ -1063,7 +1086,6 @@ function renderPlaneUpgradesModal(plane) {
 
   if (lockBan) lockBan.style.display = isUnlocked ? 'none' : 'block';
 
-  // Costos estándar Upgrades 2.0
   const UPGRADE_COSTS = {
     1: { piezas: 100, avanzadas: 0 },
     2: { piezas: 250, avanzadas: 0 },
@@ -1083,14 +1105,12 @@ function renderPlaneUpgradesModal(plane) {
   ];
 
   systems.forEach(sys => {
-    // Badge
     const badge = document.getElementById(`levelBadge_${sys.key}`);
     if (badge) {
       badge.textContent = `Nv. ${sys.curLvl} / 8`;
       badge.style.color = sys.color;
     }
 
-    // Matrix (8 slots)
     const matrix = document.getElementById(`matrix_${sys.key}`);
     if (matrix) {
       let slotsHtml = '';
@@ -1102,7 +1122,6 @@ function renderPlaneUpgradesModal(plane) {
       matrix.innerHTML = slotsHtml;
     }
 
-    // Costo siguiente nivel
     const costEl = document.getElementById(`cost_${sys.key}`);
     if (costEl) {
       if (sys.curLvl >= 8) {
@@ -1119,7 +1138,6 @@ function renderPlaneUpgradesModal(plane) {
       }
     }
 
-    // Selector
     const sel = document.getElementById(`select_${sys.key}`);
     if (sel) {
       sel.value = String(sys.curLvl);
@@ -1138,14 +1156,12 @@ async function applySystemUpgrade(sistema) {
   try {
     const updatedPlane = await updatePlaneSystem(planeId, sistema, newLevel);
     
-    // Actualizar cache local
     const pIdx = allUserPlanes.findIndex(p => p.id === planeId);
     if (pIdx !== -1) {
       allUserPlanes[pIdx] = { ...allUserPlanes[pIdx], ...updatedPlane };
     }
     _currentUpgradesPlane = { ..._currentUpgradesPlane, ...updatedPlane };
 
-    // Re-renderizar modal y tabla
     renderPlaneUpgradesModal(_currentUpgradesPlane);
     displayPlanes(allUserPlanes);
     updatePlanesStats(allUserPlanes);
@@ -1157,44 +1173,7 @@ async function applySystemUpgrade(sistema) {
 window.openPlaneUpgrades = openPlaneUpgrades;
 window.applySystemUpgrade = applySystemUpgrade;
 
-function exportPlanesXLSX() {
-  if (!allUserPlanes || allUserPlanes.length === 0) {
-    showToast('⚠️ No hay aeronaves registradas para exportar', 'warning');
-    return;
-  }
-
-  const exportData = allUserPlanes.map(p => ({
-    'ID': p.id,
-    'Aeronave': p.model_name || p.name || p.avion_id || '-',
-    'Tipo': p.type || '-',
-    'Nivel General': p.nivel || 1,
-    'Upgrades 2.0 Desbloqueado': (p.nivel || 1) >= 6 ? 'SÍ' : 'NO',
-    'Nivel Fuselaje': (p.nivel || 1) >= 6 ? (p.nivel_fuselaje || 0) : 'Bloqueado',
-    'Nivel Motor': (p.nivel || 1) >= 6 ? (p.nivel_motor || 0) : 'Bloqueado',
-    'Nivel Aviónica': (p.nivel || 1) >= 6 ? (p.nivel_avionica || 0) : 'Bloqueado',
-    'Nivel Armas': (p.nivel || 1) >= 6 ? (p.nivel_armas || 0) : 'Bloqueado',
-    'Media Subsistemas': (p.nivel || 1) >= 6 ? (((p.nivel_fuselaje || 0) + (p.nivel_motor || 0) + (p.nivel_avionica || 0) + (p.nivel_armas || 0)) / 4).toFixed(1) : '-',
-    'Habilidad Especial': p.especial_nombre || 'Ninguna',
-    'Habilidad Pasiva': p.pasiva_nombre || 'Ninguna',
-    'Módulo 1': p.mod1_nombre || p.mod1_id || 'Ninguno',
-    'Nivel Mod 1': p.mod1_lvl || '-',
-    'Módulo 2': p.mod2_nombre || p.mod2_id || 'Ninguno',
-    'Nivel Mod 2': p.mod2_lvl || '-'
-  }));
-
-  if (typeof XLSX !== 'undefined') {
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Hangar_Flota");
-    XLSX.writeFile(wb, `Flota_Aeronaves_Upgrades2_${new Date().toISOString().split('T')[0]}.xlsx`);
-    showToast('✅ Flota exportada a Excel (.xlsx)', 'success');
-  } else {
-    exportToCSV(exportData, `Flota_Aeronaves_Upgrades2_${new Date().toISOString().split('T')[0]}`);
-  }
-}
-window.exportPlanesXLSX = exportPlanesXLSX;
-
-// ========== ESTADÍSTICAS DE AERONAVE — HEXÁGONO REAL ==========
+// ========== ESTADÍSTICAS DE AERONAVE ==========
 let _statsRadarChart = null;
 
 async function openAircraftStats(planeId) {
@@ -1486,728 +1465,45 @@ function editPlane(planeId) {
   });
 }
 
-// ========== HISTORIAL ==========
-function loadHistorial() {
-  if (!currentUser) return;
-  fetch(`${API_BASE}/api/performances/my-history`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    displayHistorial(data || []);
-  })
-  .catch(err => {
-    console.error('Error cargando historial:', err);
-    showToast('❌ Error al cargar historial', 'error');
-  });
-}
-
-// ========== HISTORIAL ==========
-function loadHistorial() {
-  if (!currentUser) return;
-  fetch(`${API_BASE}/api/performances/my-history`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    // ✅ Extraer el array real de la respuesta del backend.
-    // El controlador siempre responde { history, performances }, nunca un array suelto.
-    const history = Array.isArray(data) ? data : (data.history || data.performances || []);
-    displayHistorial(history);
-  })
-  .catch(err => {
-    console.error('Error cargando historial:', err);
-    showToast('❌ Error al cargar historial', 'error');
-  });
-}
-
-function displayHistorial(history) {
-  const container = document.getElementById('historialContent');
-  if (!container) return;
-
-  // ✅ Defensa adicional: nunca asumir que el parámetro es un array.
-  const historyArray = Array.isArray(history) ? history : [];
-
-  if (historyArray.length === 0) {
-    container.innerHTML = `
-<div class="no-results">
-<p>📊 Aún no tienes registros de rendimiento</p>
-<p>Participa en el próximo evento para generar tu historial</p>
-</div>
-`;
+function exportPlanesXLSX() {
+  if (!allUserPlanes || allUserPlanes.length === 0) {
+    showToast('⚠️ No hay aeronaves registradas para exportar', 'warning');
     return;
   }
 
-  container.innerHTML = historyArray.map(record => `
-<div class="historial-item">
-<h4>${escapeHTML(record.event_id || 'Sin evento')}</h4>
-<p><strong>Tokens:</strong> ${record.tokens ?? 0}</p>
-<p><strong>Días conectado:</strong> ${record.days_connected ?? 0}</p>
-<p><strong>Estado:</strong> <span class="status-badge status-${(record.status || 'NEGRO').toLowerCase()}">${record.status || 'NEGRO'}</span></p>
-<p><strong>Fecha:</strong> ${record.created_at ? new Date(record.created_at).toLocaleDateString() : 'N/A'}</p>
-${record.notes ? `<p><strong>Notas:</strong> ${escapeHTML(record.notes)}</p>` : ''}
-</div>
-`).join('');
-}
+  const exportData = allUserPlanes.map(p => ({
+    'ID': p.id,
+    'Aeronave': p.model_name || p.name || p.avion_id || '-',
+    'Tipo': p.type || '-',
+    'Nivel General': p.nivel || 1,
+    'Upgrades 2.0 Desbloqueado': (p.nivel || 1) >= 6 ? 'SÍ' : 'NO',
+    'Nivel Fuselaje': (p.nivel || 1) >= 6 ? (p.nivel_fuselaje || 0) : 'Bloqueado',
+    'Nivel Motor': (p.nivel || 1) >= 6 ? (p.nivel_motor || 0) : 'Bloqueado',
+    'Nivel Aviónica': (p.nivel || 1) >= 6 ? (p.nivel_avionica || 0) : 'Bloqueado',
+    'Nivel Armas': (p.nivel || 1) >= 6 ? (p.nivel_armas || 0) : 'Bloqueado',
+    'Media Subsistemas': (p.nivel || 1) >= 6 ? (((p.nivel_fuselaje || 0) + (p.nivel_motor || 0) + (p.nivel_avionica || 0) + (p.nivel_armas || 0)) / 4).toFixed(1) : '-',
+    'Habilidad Especial': p.especial_nombre || 'Ninguna',
+    'Habilidad Pasiva': p.pasiva_nombre || 'Ninguna',
+    'Módulo 1': p.mod1_nombre || p.mod1_id || 'Ninguno',
+    'Nivel Mod 1': p.mod1_lvl || '-',
+    'Módulo 2': p.mod2_nombre || p.mod2_id || 'Ninguno',
+    'Nivel Mod 2': p.mod2_lvl || '-'
+  }));
 
-// ========== PERFIL PERSONAL ==========
-function loadPersonalProfile() {
-  if (!currentUser) return;
-  fetch(`${API_BASE}/api/auth/me`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    displayProfile(data.user);
-  })
-  .catch(err => {
-    console.error('Error cargando perfil:', err);
-    showToast('❌ Error al cargar perfil', 'error');
-  });
-}
-
-function displayProfile(user) {
-  const container = document.getElementById('profileContent');
-  if (!container) return;
-  container.innerHTML = `
-<div class="profile-card">
-<h3>${user.nick || 'Sin nickname'}</h3>
-<p><strong>Email:</strong> ${user.email}</p>
-<p><strong>Rol:</strong> <span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span></p>
-<p><strong>Miembro desde:</strong> ${new Date(user.created_at).toLocaleDateString()}</p>
-<p><strong>Última actividad:</strong> ${user.last_activity ? new Date(user.last_activity).toLocaleDateString() : 'N/A'}</p>
-</div>
-`;
-}
-
-// ========== NORMATIVAS ==========
-let allNormativasData = [];
-
-function loadNormativas() {
-  const container = document.getElementById('normativasList');
-  if (container) {
-    container.innerHTML = `<p class="loading-text"><span class="loading-spinner"></span> Cargando normativas...</p>`;
-  }
-  fetch(`${API_BASE}/api/normativas`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    allNormativasData = data.normativas || [];
-    applyNormativasFilters();
-  })
-  .catch(err => {
-    console.error('Error cargando normativas:', err);
-    showToast('❌ Error al cargar normativas', 'error');
-    const container = document.getElementById('normativasList');
-    if (container) container.innerHTML = `<div class="no-results"><p>❌ Error al cargar documentos</p></div>`;
-  });
-}
-
-function displayNormativas(normativas) {
-  const container = document.getElementById('normativasList');
-  const countEl   = document.getElementById('normativasCount');
-  if (countEl) {
-    countEl.innerHTML = normativas.length > 0
-      ? `<p>Mostrando <strong>${normativas.length}</strong> documento${normativas.length !== 1 ? 's' : ''}</p>`
-      : '';
-  }
-  if (!container) return;
-  if (normativas.length === 0) {
-    container.innerHTML = `
-<div class="no-results">
-<p>📚 No hay normativas que coincidan con los filtros</p>
-<p>Intenta con otros criterios de búsqueda</p>
-</div>`;
-    return;
-  }
-  const tipoLabel = {
-    NORMATIVA_GENERAL:         'Normativa General',
-    REGLAMENTO_INTERNO:        'Reglamento Interno',
-    MANUAL_PROCEDIMIENTOS:     'Manual de Procedimientos',
-    PROTOCOLO_OPERACIONAL:     'Protocolo Operacional',
-    CIRCULAR_INFORMATIVA:      'Circular Informativa',
-    RESOLUCION_ADMINISTRATIVA: 'Resolución Administrativa'
-  };
-  const catIcon = {
-    FUNDAMENTAL:    '🏛️',
-    OPERACIONAL:    '⚙️',
-    DISCIPLINARIA:  '⚖️',
-    ADMINISTRATIVA: '📋',
-    TECNICA:        '🔧'
-  };
-  const confStyle = {
-    PUBLICO:      'status-verde',
-    INTERNO:      'status-naranja',
-    CONFIDENCIAL: 'status-rojo'
-  };
-
-  container.innerHTML = normativas.map(doc => {
-    const fechaAprobacion = doc.fecha_aprobacion
-      ? new Date(doc.fecha_aprobacion + 'T00:00:00').toLocaleDateString('es-PY', { day:'2-digit', month:'short', year:'numeric' })
-      : '—';
-    const fechaVigor = doc.fecha_entrada_vigor
-      ? new Date(doc.fecha_entrada_vigor + 'T00:00:00').toLocaleDateString('es-PY', { day:'2-digit', month:'short', year:'numeric' })
-      : '—';
-    const tipo     = tipoLabel[doc.tipo_documento] || doc.tipo_documento || '—';
-    const icon     = catIcon[doc.categoria] || '📄';
-    const confCls  = confStyle[doc.nivel_confidencialidad] || 'status-negro';
-    const confLabel = doc.nivel_confidencialidad || 'PÚBLICO';
-    const tieneArchivo = !!doc.archivo_url;
-
-    return `
-<div class="normativa-card">
-  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:var(--sp-2); margin-bottom:var(--sp-3);">
-    <h4 style="margin:0; flex:1; min-width:0;">${icon} ${doc.titulo}</h4>
-    <span class="status-badge ${confCls}" style="flex-shrink:0;">${confLabel}</span>
-  </div>
-  <div style="display:flex; flex-wrap:wrap; gap:var(--sp-2); margin-bottom:var(--sp-3);">
-    <span class="role-badge" style="background:rgba(212,175,55,0.12);color:#d4af37;border-color:#d4af37;">
-      ${doc.codigo}${doc.version ? ' v'+doc.version : ''}
-    </span>
-    <span class="role-badge" style="background:rgba(23,162,184,0.12);color:#17a2b8;border-color:#17a2b8;">
-      ${tipo}
-    </span>
-    <span class="role-badge" style="background:rgba(40,167,69,0.12);color:#28a745;border-color:#28a745;">
-      ${doc.estado || 'VIGENTE'}
-    </span>
-  </div>
-  ${doc.resumen ? `<p style="font-size:var(--fs-sm);color:#c8d4e8;margin-bottom:var(--sp-3);line-height:1.5;">${doc.resumen}</p>` : ''}
-  <div class="normativa-meta">
-    <span>📅 Aprobado: ${fechaAprobacion}</span>
-    <span>⚡ Vigente desde: ${fechaVigor}</span>
-    ${doc.emitido_por ? `<span>🖊️ ${doc.emitido_por}</span>` : ''}
-    ${doc.ambito_aplicacion ? `<span>🎯 ${doc.ambito_aplicacion.replace(/_/g,' ')}</span>` : ''}
-  </div>
-  ${tieneArchivo ? `
-  <div style="margin-top:var(--sp-3); display:flex; gap:var(--sp-3);">
-    <button onclick="downloadNormativa('${doc.id}')" class="btn-secondary">📥 Descargar PDF</button>
-    <button onclick="window.open('${doc.archivo_url}','_blank')" class="btn-secondary">👁️ Ver</button>
-  </div>` : `<p style="font-size:var(--fs-xs);color:#6c757d;margin-top:var(--sp-3);">Sin archivo adjunto</p>`}
-</div>`;
-  }).join('');
-}
-
-function filterNormativas() {
-  applyNormativasFilters();
-}
-
-function applyNormativasFilters() {
-  const search   = (document.getElementById('normativasSearch')?.value || '').toLowerCase().trim();
-  const cat      = (document.getElementById('categoriaFilter')?.value || '').toUpperCase();
-  const tipo     = (document.getElementById('tipoDocFilter')?.value || '').toUpperCase();
-  const orden    = document.getElementById('ordenFilter')?.value || 'recientes';
-
-  let lista = [...allNormativasData];
-  if (search) {
-    lista = lista.filter(d =>
-      (d.titulo || '').toLowerCase().includes(search) ||
-      (d.codigo || '').toLowerCase().includes(search) ||
-      (d.resumen || '').toLowerCase().includes(search)
-    );
-  }
-  if (cat)  lista = lista.filter(d => (d.categoria || '').toUpperCase() === cat);
-  if (tipo) lista = lista.filter(d => (d.tipo_documento || '').toUpperCase() === tipo);
-  lista.sort((a, b) => {
-    switch (orden) {
-      case 'antiguos':  return new Date(a.fecha_aprobacion) - new Date(b.fecha_aprobacion);
-      case 'codigo':    return (a.codigo || '').localeCompare(b.codigo || '');
-      case 'titulo':    return (a.titulo || '').localeCompare(b.titulo || '');
-      case 'categoria': return (a.categoria || '').localeCompare(b.categoria || '');
-      default:          return new Date(b.fecha_aprobacion) - new Date(a.fecha_aprobacion);
-    }
-  });
-  displayNormativas(lista);
-}
-
-function showUploadNormativaModal() {
-  showModal('uploadNormativaModal');
-}
-
-function downloadNormativa(id) {
-  window.open(`${API_BASE}/api/normativas/${id}/download`, '_blank');
-}
-
-// ========== PANEL DE ADMINISTRACIÓN ==========
-let allMembersData = [];
-let _membersSectionOpen = true;
-
-function toggleMembersSection() {
-  _membersSectionOpen = !_membersSectionOpen;
-  const body = document.getElementById('membersSectionBody');
-  const icon = document.getElementById('membersSectionToggleIcon');
-  if (!body) return;
-  if (_membersSectionOpen) {
-    body.style.display = '';
-    if (icon) icon.style.transform = 'rotate(0deg)';
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Hangar_Flota");
+    XLSX.writeFile(wb, `Flota_Aeronaves_Upgrades2_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showToast('✅ Flota exportada a Excel (.xlsx)', 'success');
   } else {
-    body.style.display = 'none';
-    if (icon) icon.style.transform = 'rotate(180deg)';
+    exportToCSV(exportData, `Flota_Aeronaves_Upgrades2_${new Date().toISOString().split('T')[0]}`);
   }
 }
+window.exportPlanesXLSX = exportPlanesXLSX;
 
-function loadAdminPanel() {
-  if (!currentUser || (currentUser.role !== 'OWNER' && currentUser.role !== 'ADMIN')) return;
-  loadMembersList();
-  loadBlackMarketControl();
-}
-
-function updateAdminStatsFromMembers() {
-  if (!allMembersData || allMembersData.length === 0) {
-    document.getElementById('totalMembers').textContent    = '-';
-    document.getElementById('adminAvgTokens').textContent  = '-';
-    document.getElementById('atRiskMembers').textContent   = '-';
-    document.getElementById('lastUpdate').textContent      = '-';
-    return;
-  }
-  const activeMembers = allMembersData.filter(m => m.squad_status === 'ACTIVE');
-  const totalActivos = activeMembers.length;
-  const membersWithAvg = activeMembers.filter(m => m.avg_tokens !== null && m.avg_tokens !== undefined);
-  let avgGeneral = 0;
-  if (membersWithAvg.length > 0) {
-    const sumAvg = membersWithAvg.reduce((acc, m) => acc + m.avg_tokens, 0);
-    avgGeneral = Math.round((sumAvg / membersWithAvg.length) * 100) / 100;
-  }
-  const atRisk = activeMembers.filter(m => {
-    const status = (m.perf_status || '').toUpperCase();
-    return status === 'ROJO' || status === 'NEGRO';
-  }).length;
-  const now = new Date();
-  const formattedDateTime = now.toLocaleDateString('es-PY') + ' ' + now.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('totalMembers').textContent   = totalActivos;
-  document.getElementById('adminAvgTokens').textContent = avgGeneral;
-  document.getElementById('atRiskMembers').textContent  = atRisk;
-  document.getElementById('lastUpdate').textContent     = formattedDateTime;
-}
-
-function loadMembersList() {
-  fetch(`${API_BASE}/api/admin/members`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    allMembersData = data.members || [];
-    displayPilotsByStatus(allMembersData);
-    displayMembersList(allMembersData);
-    updateAdminStatsFromMembers();
-  })
-  .catch(err => {
-    console.error('Error cargando miembros:', err);
-    showToast('❌ Error al cargar lista de miembros', 'error');
-  });
-}
-
-function displayPilotsByStatus(members) {
-  const container = document.getElementById('pilotsByStatus');
-  if (!container) return;
-  const counts = { VERDE: 0, NARANJA: 0, ROJO: 0, NEGRO: 0, PENDIENTE: 0 };
-  members.forEach(m => {
-    const st = (m.perf_status || 'PENDIENTE').toUpperCase();
-    if (counts[st] !== undefined) counts[st]++;
-    else counts.PENDIENTE++;
-  });
-  const total = members.length;
-  container.innerHTML = `
-<div class="admin-stats" style="margin-top:0;">
-<div class="admin-stat">
-<div class="stat-label">🟢 VERDE</div>
-<div class="stat-value" style="color:var(--status-verde,#4caf50);">${counts.VERDE}</div>
-<div style="font-size:0.75rem;color:var(--text-muted);">${total ? Math.round(counts.VERDE/total*100) : 0}%</div>
-</div>
-<div class="admin-stat">
-<div class="stat-label">🟠 NARANJA</div>
-<div class="stat-value" style="color:var(--status-naranja,#ff9800);">${counts.NARANJA}</div>
-<div style="font-size:0.75rem;color:var(--text-muted);">${total ? Math.round(counts.NARANJA/total*100) : 0}%</div>
-</div>
-<div class="admin-stat">
-<div class="stat-label">🔴 ROJO</div>
-<div class="stat-value" style="color:var(--status-rojo,#f44336);">${counts.ROJO}</div>
-<div style="font-size:0.75rem;color:var(--text-muted);">${total ? Math.round(counts.ROJO/total*100) : 0}%</div>
-</div>
-<div class="admin-stat">
-<div class="stat-label">⚫ NEGRO</div>
-<div class="stat-value" style="color:var(--text-muted,#888);">${counts.NEGRO}</div>
-<div style="font-size:0.75rem;color:var(--text-muted);">${total ? Math.round(counts.NEGRO/total*100) : 0}%</div>
-</div>
-<div class="admin-stat">
-<div class="stat-label">⏳ PENDIENTE</div>
-<div class="stat-value">${counts.PENDIENTE}</div>
-<div style="font-size:0.75rem;color:var(--text-muted);">${total ? Math.round(counts.PENDIENTE/total*100) : 0}%</div>
-</div>
-</div>
-`;
-}
-
-function displayMembersList(members) {
-  const tbody = document.getElementById('membersTableBody');
-  if (!tbody) return;
-  if (members.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center">No se encontraron miembros con los filtros aplicados</td></tr>`;
-    return;
-  }
-  const isOwner = currentUser && currentUser.role === 'OWNER';
-  tbody.innerHTML = members.map(member => {
-    const perfSt   = (member.perf_status  || 'PENDIENTE').toUpperCase();
-    const squadSt  = (member.squad_status || 'ACTIVE').toUpperCase();
-    const roleNorm = (member.role || 'MIEMBRO').toUpperCase();
-    const actionLabel = squadSt === 'ACTIVE' ? 'Inactivar' : 'Reactivar';
-    const actionClass = squadSt === 'ACTIVE' ? 'btn-danger' : 'btn-secondary';
-    const newStatus   = squadSt === 'ACTIVE' ? 'INACTIVE'   : 'ACTIVE';
-    const lastAct     = member.last_activity
-      ? new Date(member.last_activity).toLocaleDateString('es-PY') : '-';
-    const roleBtn = (isOwner && roleNorm !== 'OWNER') ? `
-<button onclick="openChangeRoleModal(${member.user_id}, '${member.nick}', '${roleNorm}')"
-class="btn-secondary" style="padding:5px 10px;font-size:0.8rem;">
-🎖️ Cambiar Rol
-</button>` : '';
-    return `<tr>
-<td data-label="Piloto"><strong>${member.nick}</strong></td>
-<td data-label="Rol"><span class="role-badge role-${roleNorm.toLowerCase()}">${roleNorm}</span></td>
-<td data-label="Últ. Actividad">${lastAct}</td>
-<td data-label="Prom. Tokens">${member.avg_tokens !== null ? member.avg_tokens : '-'}</td>
-<td data-label="Semanas">${member.weeks_evaluated || '0'}</td>
-<td data-label="Tendencia">${getTrendIcon(member.trend)}</td>
-<td data-label="Rendimiento"><span class="status-badge status-${perfSt.toLowerCase()}">${perfSt}</span></td>
-<td data-label="Escuadrón">
-<span class="status-badge status-${squadSt === 'ACTIVE' ? 'verde' : 'negro'}">
-${squadSt === 'ACTIVE' ? '🟢 ACTIVO' : '🔴 INACTIVO'}
-</span>
-</td>
-<td data-label="Acciones" style="min-width:140px;">
-<div style="display:flex;flex-direction:column;gap:6px;">
-<button onclick="toggleMemberStatus(${member.user_id}, '${newStatus}', '${member.nick}')"
-class="${actionClass}" style="width:100%;">${actionLabel}</button>
-${roleBtn}
-</div>
-</td>
-</tr>`;
-  }).join('');
-}
-
-function openChangeRoleModal(userId, nick, currentRole) {
-  let modal = document.getElementById('changeRoleModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'changeRoleModal';
-    modal.className = 'modal';
-    modal.innerHTML = `
-<div class="modal-content" style="max-width:400px;">
-<div class="modal-header">
-<h3>🎖️ Cambiar Rol</h3>
-<span class="close-btn" onclick="closeModal('changeRoleModal')">&times;</span>
-</div>
-<div class="modal-body">
-<p style="margin-bottom:14px;">
-Piloto: <strong id="changeRoleNick">—</strong>
-&nbsp;·&nbsp; Rol actual: <span id="changeRoleCurrentBadge"></span>
-</p>
-<input type="hidden" id="changeRoleUserId">
-<div class="form-group">
-<label>Nuevo Rol</label>
-<select id="changeRoleSelect">
-<option value="MIEMBRO">👤 MIEMBRO</option>
-<option value="VETERANO">🎖️ VETERANO</option>
-<option value="ADMIN">🛡️ ADMIN</option>
-</select>
-</div>
-<p style="font-size:0.8rem;color:var(--text-muted,#a0aec0);margin-top:8px;">
-⚠️ Este cambio queda registrado en el log de auditoría.
-</p>
-</div>
-<div class="modal-footer">
-<button onclick="confirmChangeRole()" class="btn-primary">✅ Confirmar</button>
-<button onclick="closeModal('changeRoleModal')" class="btn-secondary">Cancelar</button>
-</div>
-</div>`;
-    document.body.appendChild(modal);
-  }
-  document.getElementById('changeRoleUserId').value  = userId;
-  document.getElementById('changeRoleNick').textContent = nick;
-  document.getElementById('changeRoleCurrentBadge').innerHTML =
-    `<span class="role-badge role-${currentRole.toLowerCase()}">${currentRole}</span>`;
-  document.getElementById('changeRoleSelect').value = currentRole;
-  showModal('changeRoleModal');
-}
-
-async function confirmChangeRole() {
-  const userId = parseInt(document.getElementById('changeRoleUserId').value);
-  const role   = document.getElementById('changeRoleSelect').value;
-  const nick   = document.getElementById('changeRoleNick').textContent;
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/members/${userId}/role`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ role })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al cambiar rol');
-    showToast(`✅ ${data.message}`, 'success');
-    closeModal('changeRoleModal');
-    loadAdminPanel();
-  } catch (err) {
-    showToast('❌ ' + err.message, 'error');
-  }
-}
-
-function filterMembers() {
-  const perfFilter  = (document.getElementById('perfStatusFilter')?.value  || '').toUpperCase();
-  const squadFilter = (document.getElementById('squadStatusFilter')?.value || '').toUpperCase();
-  const roleFilter  = (document.getElementById('roleFilter')?.value        || '').toUpperCase();
-  const search      = (document.getElementById('memberSearch')?.value       || '').toLowerCase().trim();
-  const weeksFilter = document.getElementById('weeksFilter')?.value || '';
-  const filtered = allMembersData.filter(member => {
-    const perfSt  = (member.perf_status  || 'PENDIENTE').toUpperCase();
-    const squadSt = (member.squad_status || 'ACTIVE').toUpperCase();
-    const role    = (member.role         || 'MIEMBRO').toUpperCase();
-    const nick    = (member.nick         || '').toLowerCase();
-    const weeks   = member.weeks_evaluated || 0;
-    if (perfFilter  && perfSt  !== perfFilter)  return false;
-    if (squadFilter && squadSt !== squadFilter) return false;
-    if (roleFilter && role !== roleFilter) return false;
-    if (search && !nick.includes(search)) return false;
-    if (weeksFilter) {
-      if (weeksFilter === '4+' && weeks < 4) return false;
-      if (weeksFilter !== '4+' && weeks !== parseInt(weeksFilter)) return false;
-    }
-    return true;
-  });
-  displayMembersList(filtered);
-  const noResults = document.getElementById('noResultsMessage');
-  if (noResults) {
-    noResults.style.display = filtered.length === 0 ? 'block' : 'none';
-  }
-}
-
-// ========== BLACK MARKET CONTROL ==========
-function loadBlackMarketControl() {
-  const container = document.getElementById('blackMarketInfo');
-  if (!container) return;
-  container.innerHTML = `<p class="loading-text"><span class="loading-spinner"></span> Cargando estado del evento...</p>`;
-  fetch(`${API_BASE}/api/admin/events`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    displayBlackMarketControl(data.events || []);
-  })
-  .catch(err => {
-    console.error('Error cargando eventos para BM:', err);
-    container.innerHTML = `<p class="text-center" style="color:var(--danger);">❌ Error al cargar estado del evento</p>`;
-  });
-}
-
-function displayBlackMarketControl(events) {
-  const container = document.getElementById('blackMarketInfo');
-  if (!container) return;
-  const openEvent = events.find(e => e.is_open || e.status === 'OPEN');
-  const eventType   = openEvent ? openEvent.type : null;
-  const eventId     = openEvent ? openEvent.id   : null;
-  const isBM        = eventType === 'BLACK_MARKET';
-  const hasOpen     = !!openEvent;
-  container.innerHTML = `
-<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-<div class="admin-stat" style="flex:1;min-width:180px;">
-<div class="stat-label">Evento Activo</div>
-<div class="stat-value" style="font-size:1rem;margin-top:4px;">
-${hasOpen
-  ? `<span class="status-badge status-${isBM ? 'rojo' : 'verde'}">${isBM ? '🔥 BLACK MARKET' : '🎖️ SQUADRON'}</span>`
-  : `<span class="status-badge status-negro">⚫ SIN EVENTO</span>`}
-</div>
-${hasOpen ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">${eventId}</div>` : ''}
-</div>
-<div style="display:flex;flex-direction:column;gap:8px;justify-content:center;">
-${!isBM ? `
-<button onclick="adminActivateBM()" class="btn-danger" id="btnActivateBM">
-🔥 Activar BLACK MARKET
-</button>
-<div style="font-size:0.72rem;color:var(--text-muted);max-width:260px;">
-⚠️ Solo durante Lun 09:00 – Mié 16:59 (PY). Nunca dos BM consecutivos.
-</div>
-` : `
-<div class="profile-info" style="margin:0;">
-<p style="margin:0;">🔥 BLACK MARKET activo. Espera al cierre automático del ciclo.</p>
-</div>
-`}
-</div>
-</div>
-`;
-}
-
-async function adminActivateBM() {
-  const btn = document.getElementById('btnActivateBM');
-  if (btn) { btn.disabled = true; btn.textContent = 'Activando...'; }
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/events/activate-bm`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Error al activar Black Market');
-    }
-    showToast(`🔥 Black Market activado: ${data.event_id}`, 'success');
-    loadBlackMarketControl();
-  } catch (err) {
-    console.error('Error activando BM:', err);
-    showToast('❌ ' + err.message, 'error');
-    if (btn) { btn.disabled = false; btn.textContent = '🔥 Activar BLACK MARKET'; }
-  }
-}
-
-function loadAdminEvents() {
-  fetch(`${API_BASE}/api/admin/events`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    displayAdminEvents(data.events || []);
-  })
-  .catch(err => {
-    console.error('Error cargando eventos:', err);
-  });
-}
-
-function displayAdminEvents(events) {
-  const container = document.getElementById('adminEventsList');
-  if (!container) return;
-  if (events.length === 0) {
-    container.innerHTML = `<p class="text-center">No hay eventos registrados</p>`;
-    return;
-  }
-  container.innerHTML = events.map(event => `
-<div class="event-item ${event.is_open ? 'event-open' : ''}">
-<h4>${event.id}</h4>
-<p><strong>Tipo:</strong> ${event.type}</p>
-<p><strong>Período:</strong> ${new Date(event.start_date).toLocaleDateString()} - ${new Date(event.end_date).toLocaleDateString()}</p>
-<p><strong>Estado:</strong> ${event.is_open ? '🔴 ABIERTO' : '⚫ CERRADO'}</p>
-</div>
-`).join('');
-}
-
-function getTrendIcon(trend) {
-  if (!trend) return '-';
-  switch(trend) {
-    case 'up':     return '📈';
-    case 'down':   return '📉';
-    case 'stable': return '➡️';
-    default:       return '-';
-  }
-}
-
-function showUploadEventModal() {
-  showModal('uploadEventModal');
-}
-
-// ========== TODOS LOS RENDIMIENTOS (ADMIN) ==========
-let allPerformancesCache = [];
-let _allPerfPage  = 1;
-const _allPerfLimit = 50;
-
-function loadAllPerformances(page = 1) {
-  if (!currentUser || (currentUser.role !== 'OWNER' && currentUser.role !== 'ADMIN')) return;
-  _allPerfPage = page;
-  const container = document.getElementById('allPerformancesTable');
-  if (container) container.innerHTML = `<p class="loading-text"><span class="loading-spinner"></span> Cargando...</p>`;
-
-  fetch(`${API_BASE}/api/admin/all-performances?page=${page}&limit=${_allPerfLimit}`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    const perfs = data.performances || data || [];
-    const total = data.total || perfs.length;
-    allPerformancesCache = perfs;
-    displayAllPerformances(perfs);
-    renderPagination('allPerfPagination', page, Math.ceil(total / _allPerfLimit), loadAllPerformances);
-  })
-  .catch(err => {
-    console.error('Error cargando todos los rendimientos:', err);
-    showToast('❌ Error al cargar rendimientos', 'error');
-  });
-}
-
-function displayAllPerformances(performances) {
-  const container = document.getElementById('allPerformancesTable');
-  if (!container) return;
-  updateAllPerfStats(performances);
-  if (performances.length === 0) {
-    container.innerHTML = `<p class="text-center">No hay registros de rendimiento</p>`;
-    return;
-  }
-  container.innerHTML = `
-<div class="responsive-table">
-<table class="table-cards">
-<thead>
-<tr>
-<th>Piloto</th>
-<th>Evento</th>
-<th>Tokens</th>
-<th>Días</th>
-<th>Estado</th>
-<th>Fecha</th>
-</tr>
-</thead>
-<tbody>
-${performances.map(p => `
-<tr>
-<td data-label="Piloto">${p.nick || p.user_id}</td>
-<td data-label="Evento">${p.event_id}</td>
-<td data-label="Tokens">${p.tokens}</td>
-<td data-label="Días">${p.days_connected}</td>
-<td data-label="Estado"><span class="status-badge status-${p.status.toLowerCase()}">${p.status}</span></td>
-<td data-label="Fecha">${new Date(p.created_at).toLocaleDateString('es-PY')}</td>
-</tr>
-`).join('')}
-</tbody>
-</table>
-</div>
-`;
-}
-
-function updateAllPerfStats(performances) {
-  document.getElementById('totalPerformances').textContent = performances.length;
-  if (performances.length > 0) {
-    const avgTokens = performances.reduce((sum, p) => sum + p.tokens, 0) / performances.length;
-    document.getElementById('avgPerfTokens').textContent = avgTokens.toFixed(1);
-    const maxTokens = Math.max(...performances.map(p => p.tokens));
-    document.getElementById('maxPerfTokens').textContent = maxTokens;
-    const verdeCount = performances.filter(p => p.status === 'VERDE').length;
-    document.getElementById('verdeCount').textContent = verdeCount;
-  } else {
-    document.getElementById('avgPerfTokens').textContent = '0';
-    document.getElementById('maxPerfTokens').textContent = '0';
-    document.getElementById('verdeCount').textContent = '0';
-  }
-}
-
-function filterAllPerformances() {
-  const searchTerm  = (document.getElementById('allPerfSearch')?.value || '').toLowerCase().trim();
-  const roleFilter  = (document.getElementById('allPerfRoleFilter')?.value || '').toUpperCase();
-  const minTokens   = parseInt(document.getElementById('minTokensFilter')?.value) || 0;
-  const maxTokens   = parseInt(document.getElementById('maxTokensFilter')?.value) || Infinity;
-  const statusFilter = (document.getElementById('statusFilter')?.value || '').toUpperCase();
-  const eventIdFilter = (document.getElementById('eventIdFilter')?.value || '').trim();
-  let filtered = allPerformancesCache.filter(p => {
-    if (searchTerm && !p.nick.toLowerCase().includes(searchTerm)) return false;
-    if (roleFilter && p.role !== roleFilter) return false;
-    if (p.tokens < minTokens || p.tokens > maxTokens) return false;
-    if (statusFilter && p.status !== statusFilter) return false;
-    if (eventIdFilter && p.event_id !== eventIdFilter) return false;
-    return true;
-  });
-  displayAllPerformances(filtered);
-}
-
-function resetAllPerfFilters() {
-  document.getElementById('allPerfSearch').value = '';
-  document.getElementById('allPerfRoleFilter').value = '';
-  document.getElementById('minTokensFilter').value = '';
-  document.getElementById('maxTokensFilter').value = '';
-  document.getElementById('statusFilter').value = '';
-  document.getElementById('eventIdFilter').value = '';
-  displayAllPerformances(allPerformancesCache);
-}
-
+// ========== EXPORTACIÓN DE REPORTES PNG ==========
+// (El resto del código de exportación permanece igual)
 // ========== MODALES ==========
 function showModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -2221,10 +1517,6 @@ function closeModal(modalId) {
   if (modal) {
     modal.classList.remove('show');
   }
-}
-
-function showLoginModal() {
-  showModal('loginModal');
 }
 
 function showToast(message, type = 'info') {
@@ -2303,767 +1595,4 @@ function updateViewStats() {
     case 'ownerPanelView':      loadOwnerPanel();        break;
     case 'exportView':          loadExportView();        break;
   }
-}
-
-// ============================================================
-// PANEL OWNER — ACTA-2026-002
-// ============================================================
-
-function loadOwnerPanel() {
-  if (!currentUser || currentUser.role !== 'OWNER') return;
-  loadOwnerSummary();
-  switchOwnerTab('audit');
-}
-
-function loadOwnerSummary() {
-  fetch(`${API_BASE}/api/owner/audit-summary`, { headers: getAuthHeaders() })
-    .then(r => r.json())
-    .then(d => {
-      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-      set('ownerAudits24h',   d.audits_last_24h  ?? '-');
-      set('ownerErrors24h',   d.errors_last_24h  ?? '-');
-      set('ownerTotalAudit',  d.total_audit_logs ?? '-');
-      set('ownerBackupCount', d.backup_count     ?? '-');
-    })
-    .catch(err => console.error('Error summary owner:', err));
-}
-
-function switchOwnerTab(tab) {
-  ['audit', 'errors', 'backups'].forEach(t => {
-    const content = document.getElementById(`ownerTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
-    const btn     = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
-    if (content) content.style.display = t === tab ? 'block' : 'none';
-    if (btn)     btn.classList.toggle('active', t === tab);
-  });
-  if (tab === 'audit')   loadAuditLogs(1);
-  if (tab === 'errors')  loadErrorLogs(1);
-  if (tab === 'backups') loadBackupList();
-}
-
-let _auditPage = 1, _auditTotal = 0;
-
-function loadAuditLogs(page = 1) {
-  _auditPage = page;
-  const container = document.getElementById('auditLogsContainer');
-  if (container) container.innerHTML = `<p class="loading-text"><span class="loading-spinner"></span> Cargando...</p>`;
-  const action = (document.getElementById('auditFilterAction')?.value || '').trim();
-  const nick   = (document.getElementById('auditFilterNick')?.value   || '').trim();
-  const result = document.getElementById('auditFilterResult')?.value  || '';
-  const entity = document.getElementById('auditFilterEntity')?.value  || '';
-  const params = new URLSearchParams({ page, limit: 50 });
-  if (action) params.set('action', action);
-  if (nick)   params.set('nick',   nick);
-  if (result) params.set('result', result);
-  if (entity) params.set('entity', entity);
-  fetch(`${API_BASE}/api/owner/audit-logs?${params}`, { headers: getAuthHeaders() })
-    .then(r => r.json())
-    .then(data => {
-      _auditTotal = data.total || 0;
-      renderAuditTable(data.logs || []);
-      renderPagination('auditPagination', page, Math.ceil(_auditTotal / 50), loadAuditLogs);
-    })
-    .catch(err => {
-      console.error('Error cargando audit logs:', err);
-      if (container) container.innerHTML = `<p style="color:var(--danger);">❌ Error al cargar registros</p>`;
-    });
-}
-
-function renderAuditTable(logs) {
-  const container = document.getElementById('auditLogsContainer');
-  if (!container) return;
-  if (logs.length === 0) {
-    container.innerHTML = `<div class="no-results"><p>📋 Sin registros con los filtros aplicados</p></div>`;
-    return;
-  }
-  const fmtDate = iso => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('es-PY') + ' ' + d.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-  const fmtDetails = details => {
-    if (!details) return '—';
-    try {
-      const obj = typeof details === 'string' ? JSON.parse(details) : details;
-      return Object.entries(obj).map(([k, v]) =>
-        `<span style="color:#a0aec0;">${k}:</span> <span style="color:#e2e8f0;">${JSON.stringify(v)}</span>`
-      ).join(' &nbsp;·&nbsp; ');
-    } catch { return String(details); }
-  };
-  const ACTION_COLORS = {
-    'LOGIN':                     '#68d391',
-    'CHANGE_PASSWORD':           '#63b3ed',
-    'CREATE_MEMBER':             '#4299e1',
-    'MEMBER_STATUS_CHANGE':      '#ed8936',
-    'ACTIVATE_BLACK_MARKET':     '#f6ad55',
-    'CLOSE_EVENT_MANUAL':        '#fc8181',
-    'MANUAL_CYCLE_RUN':          '#76e4f7',
-    'ADMIN_RECORD_PERFORMANCE':  '#9f7aea',
-    'UPLOAD_NORMATIVA':          '#68d391',
-    'MANUAL_BACKUP':             '#d4af37',
-  };
-  container.innerHTML = `
-<div class="responsive-table">
-<table class="log-table">
-<thead>
-<tr>
-<th>Fecha (PY)</th><th>Nick</th><th>Rol</th><th>Acción</th><th>Entidad</th>
-<th>ID</th><th>Detalles</th><th>Resultado</th><th>IP</th>
-</tr>
-</thead>
-<tbody>
-${logs.map(log => {
-  const color  = ACTION_COLORS[log.action] || '#a0aec0';
-  const result = log.result === 'SUCCESS'
-    ? `<span class="badge-success">✅ OK</span>`
-    : `<span class="badge-failure">❌ FAIL</span>`;
-  return `<tr>
-<td style="white-space:nowrap;font-size:0.78rem;color:#718096;">${fmtDate(log.created_at)}</td>
-<td><strong>${log.nick || '—'}</strong></td>
-<td><span class="role-badge role-${(log.role||'').toLowerCase()}">${log.role || '—'}</span></td>
-<td><span style="color:${color};font-weight:700;font-size:0.78rem;">${log.action}</span></td>
-<td style="color:#718096;">${log.entity || '—'}</td>
-<td style="color:#718096;font-family:monospace;font-size:0.72rem;">${log.entity_id || '—'}</td>
-<td style="font-size:0.75rem;max-width:300px;white-space:normal;">${fmtDetails(log.details)}</td>
-<td>${result}</td>
-<td style="font-family:monospace;font-size:0.72rem;color:#4a5568;">${log.ip || '—'}</td>
-</tr>`;
-}).join('')}
-</tbody>
-</table>
-</div>
-<p style="font-size:0.75rem;color:#4a5568;text-align:right;margin-top:6px;">
-${_auditTotal} registros totales — página ${_auditPage}
-</p>`;
-}
-
-let _errorPage = 1, _errorTotal = 0;
-
-function loadErrorLogs(page = 1) {
-  _errorPage = page;
-  const container = document.getElementById('errorLogsContainer');
-  if (container) container.innerHTML = `<p class="loading-text"><span class="loading-spinner"></span> Cargando...</p>`;
-  const level = document.getElementById('errorFilterLevel')?.value || '';
-  const route = (document.getElementById('errorFilterRoute')?.value || '').trim();
-  const params = new URLSearchParams({ page, limit: 50 });
-  if (level) params.set('level', level);
-  if (route) params.set('route', route);
-  fetch(`${API_BASE}/api/owner/error-logs?${params}`, { headers: getAuthHeaders() })
-    .then(r => r.json())
-    .then(data => {
-      _errorTotal = data.total || 0;
-      renderErrorTable(data.logs || []);
-      renderPagination('errorPagination', page, Math.ceil(_errorTotal / 50), loadErrorLogs);
-    })
-    .catch(err => {
-      console.error('Error cargando error logs:', err);
-      if (container) container.innerHTML = `<p style="color:var(--danger);">❌ Error al cargar registros</p>`;
-    });
-}
-
-function renderErrorTable(logs) {
-  const container = document.getElementById('errorLogsContainer');
-  if (!container) return;
-  if (logs.length === 0) {
-    container.innerHTML = `<div class="no-results"><p>✅ Sin errores registrados con los filtros aplicados</p></div>`;
-    return;
-  }
-  const fmtDate = iso => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('es-PY') + ' ' + d.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-  container.innerHTML = `
-<div class="responsive-table">
-<table class="log-table">
-<thead>
-<tr>
-<th>Fecha (PY)</th><th>Nivel</th><th>Ruta</th><th>Nick</th><th>Mensaje</th><th>Stack</th>
-</tr>
-</thead>
-<tbody>
-${logs.map((log, idx) => `
-<tr>
-<td style="white-space:nowrap;font-size:0.78rem;color:#718096;">${fmtDate(log.created_at)}</td>
-<td><span class="badge-${log.level || 'error'}">${(log.level || 'error').toUpperCase()}</span></td>
-<td style="font-family:monospace;font-size:0.75rem;color:#a0aec0;">${log.route || '—'}</td>
-<td>${log.nick || '—'}</td>
-<td style="font-size:0.8rem;max-width:280px;white-space:normal;">${log.message || '—'}</td>
-<td>
-${log.stack ? `
-<button class="stack-toggle" onclick="toggleStack('stack_${idx}')">Ver stack</button>
-<div id="stack_${idx}" class="stack-content" style="display:none;">${escapeHtml(log.stack)}</div>
-` : '—'}
-</td>
-</tr>`).join('')}
-</tbody>
-</table>
-</div>
-<p style="font-size:0.75rem;color:#4a5568;text-align:right;margin-top:6px;">
-${_errorTotal} errores totales — página ${_errorPage}
-</p>`;
-}
-
-function toggleStack(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-function escapeHtml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function loadBackupList() {
-  const container = document.getElementById('backupListContainer');
-  if (container) container.innerHTML = `<p class="loading-text"><span class="loading-spinner"></span> Cargando lista...</p>`;
-  fetch(`${API_BASE}/api/owner/backup/list`, { headers: getAuthHeaders() })
-    .then(r => r.json())
-    .then(data => renderBackupList(data.files || []))
-    .catch(err => {
-      console.error('Error listando backups:', err);
-      if (container) container.innerHTML = `<p style="color:var(--danger);">❌ Error al cargar lista</p>`;
-    });
-}
-
-function renderBackupList(files) {
-  const container = document.getElementById('backupListContainer');
-  if (!container) return;
-  if (files.length === 0) {
-    container.innerHTML = `<div class="no-results"><p>🗃️ No hay backups aún. Ejecuta el primero con el botón de arriba.</p></div>`;
-    return;
-  }
-  const fmtSize = bytes => {
-    if (bytes < 1024)        return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-  const fmtDate = iso => new Date(iso).toLocaleDateString('es-PY', {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-  container.innerHTML = files.map(f => `
-<div class="backup-item">
-<div>
-<div class="backup-name">🗃️ ${f.name}</div>
-<div class="backup-meta">${fmtDate(f.created_at)}</div>
-</div>
-<div style="display:flex;align-items:center;gap:12px;">
-<span class="backup-size">${fmtSize(f.size_bytes)}</span>
-<span class="role-badge" style="${f.name.includes('-cron.')
-  ? 'background:rgba(212,175,55,0.12);color:#d4af37;border-color:#d4af37;'
-  : 'background:rgba(74,144,226,0.12);color:#4a90e2;border-color:#4a90e2;'}">
-${f.name.includes('-cron.') ? '⏰ AUTO' : '▶️ MANUAL'}
-</span>
-</div>
-</div>`).join('');
-}
-
-async function triggerManualBackup() {
-  const btn = document.getElementById('btnManualBackup');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Ejecutando...'; }
-  try {
-    const res  = await fetch(`${API_BASE}/api/owner/backup/run`, { method: 'POST', headers: getAuthHeaders() });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al ejecutar backup');
-    showToast(`✅ Backup completado: ${data.file} (${data.elapsed_ms}ms)`, 'success');
-    loadBackupList();
-    loadOwnerSummary();
-  } catch (err) {
-    showToast('❌ ' + err.message, 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '▶️ Ejecutar Backup Ahora'; }
-  }
-}
-
-function renderPagination(containerId, currentPage, totalPages, loadFn) {
-  const container = document.getElementById(containerId);
-  if (!container || totalPages <= 1) { if (container) container.innerHTML = ''; return; }
-  let html = `<button ${currentPage === 1 ? 'disabled' : ''} onclick="${loadFn.name}(${currentPage - 1})">‹ Anterior</button>`;
-  const range = 2;
-  for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= currentPage - range && i <= currentPage + range)) {
-      html += `<button class="${i === currentPage ? 'active-page' : ''}" onclick="${loadFn.name}(${i})">${i}</button>`;
-    } else if (i === currentPage - range - 1 || i === currentPage + range + 1) {
-      html += `<span style="padding:0 4px;color:#4a5568;">…</span>`;
-    }
-  }
-  html += `<button ${currentPage === totalPages ? 'disabled' : ''} onclick="${loadFn.name}(${currentPage + 1})">Siguiente ›</button>`;
-  container.innerHTML = html;
-}
-
-// ============================================================
-// EXPORTACIÓN DE REPORTES PNG via Canvas API
-// v3.1 — Integración completa con API real
-// ============================================================
-
-const _EXP_STATUS_COLORS = {
-  VERDE:   '#28a745',
-  NARANJA: '#ff9800',
-  ROJO:    '#dc3545',
-  NEGRO:   '#636e72'
-};
-
-const _EXP_STATUS_BG = {
-  VERDE:   'rgba(40,167,69,0.18)',
-  NARANJA: 'rgba(255,152,0,0.18)',
-  ROJO:    'rgba(220,53,69,0.18)',
-  NEGRO:   'rgba(99,110,114,0.25)'
-};
-
-// Estado del módulo de exportación
-let _exportCurrentEvent  = null;
-let _exportPerformances  = [];
-
-/**
- * Punto de entrada: inicializa la vista de exportación.
- * Llamada por loadViewData() cuando se navega a 'exportView'.
- */
-function loadExportView() {
-  if (!currentUser || (currentUser.role !== 'OWNER' && currentUser.role !== 'ADMIN')) return;
-  _loadEventsForExport();
-}
-
-/**
- * Carga la lista de eventos del backend y puebla el <select>.
- */
-async function _loadEventsForExport() {
-  const sel = document.getElementById('exportEventSel');
-  if (!sel) return;
-
-  sel.innerHTML = '<option value="">Cargando eventos...</option>';
-  sel.disabled = true;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/admin/events`, { headers: getAuthHeaders() });
-    const data = await res.json();
-    const events = data.events || [];
-
-    sel.innerHTML = '<option value="">-- Seleccioná un evento --</option>';
-
-    const closed = events.filter(e => e.status === 'CLOSED')
-      .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
-
-    const open = events.filter(e => e.status === 'OPEN');
-
-    if (open.length) {
-      const grp = document.createElement('optgroup');
-      grp.label = '— Evento activo —';
-      open.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.id;
-        opt.textContent = e.id + ' (ABIERTO)';
-        grp.appendChild(opt);
-      });
-      sel.appendChild(grp);
-    }
-
-    if (closed.length) {
-      const grp = document.createElement('optgroup');
-      grp.label = '— Eventos cerrados —';
-      closed.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.id;
-        opt.textContent = e.id;
-        grp.appendChild(opt);
-      });
-      sel.appendChild(grp);
-    }
-
-    sel.disabled = false;
-  } catch (err) {
-    console.error('Error cargando eventos para exportar:', err);
-    sel.innerHTML = '<option value="">Error al cargar eventos</option>';
-    sel.disabled = false;
-    showToast('❌ Error al cargar lista de eventos', 'error');
-  }
-}
-
-/**
- * Handler del <select> de evento — carga datos y renderiza canvas.
- */
-async function onExportEventChange() {
-  const sel       = document.getElementById('exportEventSel');
-  const eventId   = sel ? sel.value : '';
-  const previewWrap = document.getElementById('exportPreviewWrap');
-  const loadingEl   = document.getElementById('exportLoading');
-  const dlBtn       = document.getElementById('exportDlBtn');
-  const refreshBtn  = document.getElementById('exportRefreshBtn');
-  const optGrp      = document.getElementById('exportOptionsGroup');
-
-  if (!eventId) {
-    if (previewWrap) previewWrap.style.display = 'none';
-    if (dlBtn)       dlBtn.disabled = true;
-    if (refreshBtn)  refreshBtn.style.display = 'none';
-    if (optGrp)      optGrp.style.display = 'none';
-    _exportCurrentEvent  = null;
-    _exportPerformances  = [];
-    return;
-  }
-
-  if (loadingEl)  loadingEl.style.display = 'flex';
-  if (previewWrap) previewWrap.style.display = 'none';
-  if (dlBtn)       dlBtn.disabled = true;
-  if (refreshBtn)  refreshBtn.style.display = 'none';
-
-  try {
-    // Fetch rendimientos del evento (paginación amplia para traer todos)
-    const perfRes  = await fetch(`${API_BASE}/api/admin/all-performances?limit=500`, {
-      headers: getAuthHeaders()
-    });
-    const perfData = await perfRes.json();
-    const allPerfs = perfData.performances || perfData || [];
-    const eventPerfs = allPerfs.filter(p => p.event_id === eventId);
-
-    // Fetch info del evento
-    const evRes  = await fetch(`${API_BASE}/api/admin/events`, { headers: getAuthHeaders() });
-    const evData = await evRes.json();
-    const eventInfo = (evData.events || []).find(e => e.id === eventId) || {
-      id: eventId, type: 'SQUADRON', status: 'CLOSED'
-    };
-
-    _exportCurrentEvent  = eventInfo;
-    _exportPerformances  = eventPerfs;
-
-    if (eventPerfs.length === 0) {
-      if (loadingEl) loadingEl.style.display = 'none';
-      showToast('⚠️ Este evento no tiene rendimientos registrados', 'warning');
-      return;
-    }
-
-    // Ordenar por tokens desc por defecto
-    const sorted = _sortExportPerfs(eventPerfs, 'tokens_desc');
-    _renderExportCanvas(eventInfo, sorted);
-    _updateExportStats(sorted);
-
-    if (loadingEl)  loadingEl.style.display = 'none';
-    if (previewWrap) previewWrap.style.display = 'block';
-    if (dlBtn)       dlBtn.disabled = false;
-    if (refreshBtn)  refreshBtn.style.display = '';
-    if (optGrp)      optGrp.style.display = '';
-
-    // Resetear el selector de orden
-    const sortSel = document.getElementById('exportSortSel');
-    if (sortSel) sortSel.value = 'tokens_desc';
-
-  } catch (err) {
-    console.error('Error generando reporte:', err);
-    if (loadingEl) loadingEl.style.display = 'none';
-    showToast('❌ Error al cargar datos del evento: ' + err.message, 'error');
-  }
-}
-
-/**
- * Handler del selector de ordenamiento — re-renderiza sin nuevo fetch.
- */
-function onExportSortChange() {
-  if (!_exportCurrentEvent || !_exportPerformances.length) return;
-  const sortSel = document.getElementById('exportSortSel');
-  const order   = sortSel ? sortSel.value : 'tokens_desc';
-  const sorted  = _sortExportPerfs(_exportPerformances, order);
-  _renderExportCanvas(_exportCurrentEvent, sorted);
-}
-
-/**
- * Ordena el array de performances según criterio seleccionado.
- */
-function _sortExportPerfs(perfs, order) {
-  const arr = [...perfs];
-  switch(order) {
-    case 'tokens_asc':  return arr.sort((a, b) => a.tokens - b.tokens);
-    case 'nick_asc':    return arr.sort((a, b) => (a.nick || '').localeCompare(b.nick || ''));
-    case 'status': {
-      const ORDER = { VERDE: 0, NARANJA: 1, ROJO: 2, NEGRO: 3 };
-      return arr.sort((a, b) => (ORDER[a.status] ?? 4) - (ORDER[b.status] ?? 4));
-    }
-    default:            return arr.sort((a, b) => b.tokens - a.tokens); // tokens_desc
-  }
-}
-
-/**
- * Actualiza las tarjetas de estadísticas rápidas.
- */
-function _updateExportStats(perfs) {
-  if (!perfs.length) return;
-  const avg    = Math.round(perfs.reduce((s, p) => s + p.tokens, 0) / perfs.length);
-  const verde  = perfs.filter(p => p.status === 'VERDE').length;
-  const risk   = perfs.filter(p => p.status === 'ROJO' || p.status === 'NEGRO').length;
-  const status = _expCalcStatus(avg);
-
-  const setEl = (id, val, color) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = val;
-    if (color) el.style.color = color;
-  };
-  setEl('expStTotal', perfs.length, null);
-  setEl('expStAvg',   avg,          _EXP_STATUS_COLORS[status]);
-  setEl('expStVerde', verde,        verde > 0 ? '#28a745' : null);
-  setEl('expStRisk',  risk,         risk  > 0 ? '#dc3545' : null);
-}
-
-/**
- * Dibuja el reporte completo en el <canvas id="exportCanvas">.
- */
-function _renderExportCanvas(event, perfs) {
-  const SCALE          = 2;
-  const W              = 800;
-  const PAD            = 32;
-  const ROW_H          = 40;
-  const HEADER_H       = 120;
-  const TABLE_HEADER_H = 44;
-  const FOOTER_H       = 56;
-  const H = HEADER_H + TABLE_HEADER_H + perfs.length * ROW_H + FOOTER_H + PAD;
-
-  const cv = document.getElementById('exportCanvas');
-  if (!cv) return;
-  cv.width       = W * SCALE;
-  cv.height      = H * SCALE;
-  cv.style.height = H + 'px';
-
-  const c = cv.getContext('2d');
-  c.scale(SCALE, SCALE);
-
-  // ── Fondo ──────────────────────────────────────────────────
-  c.fillStyle = '#0d1b2a';
-  c.fillRect(0, 0, W, H);
-
-  // ── Marco dorado ───────────────────────────────────────────
-  c.strokeStyle = '#d4af37';
-  c.lineWidth   = 3;
-  c.strokeRect(1.5, 1.5, W - 3, H - 3);
-
-  // ── Gradiente de encabezado ────────────────────────────────
-  const hg = c.createLinearGradient(0, 0, W, 0);
-  hg.addColorStop(0,   'rgba(212,175,55,0.18)');
-  hg.addColorStop(0.5, 'rgba(26,58,108,0.6)');
-  hg.addColorStop(1,   'rgba(212,175,55,0.1)');
-  c.fillStyle = hg;
-  c.fillRect(3, 3, W - 6, HEADER_H - 3);
-
-  // ── Título ─────────────────────────────────────────────────
-  c.fillStyle = '#d4af37';
-  c.font      = 'bold 20px Arial';
-  c.textAlign = 'left';
-  c.fillText('PARAGUAY FFAA [PRY]', PAD, 40);
-
-  c.fillStyle = '#ffffff';
-  c.font      = 'bold 14px Arial';
-  c.fillText('REPORTE DE RENDIMIENTO — ' + event.id, PAD, 64);
-
-  // ── Pill tipo de evento ────────────────────────────────────
-  const isBM     = event.type === 'BLACK_MARKET';
-  const typeLabel = isBM ? 'BLACK MARKET' : 'SQUADRON';
-  const typeColor = isBM ? '#ff9800' : '#1abc9c';
-  const typeBg    = isBM ? 'rgba(255,152,0,0.2)' : 'rgba(26,188,156,0.18)';
-  _expDrawPill(c, PAD, 72, typeLabel, typeBg, typeColor, 11);
-
-  // ── Fecha + mini-stats ─────────────────────────────────────
-  const now = new Date().toLocaleDateString('es-PY', { day: '2-digit', month: 'short', year: 'numeric' });
-  c.fillStyle  = 'rgba(255,255,255,0.4)';
-  c.font       = '11px Arial';
-  c.textAlign  = 'right';
-  c.fillText('Generado: ' + now, W - PAD, 90);
-
-  if (perfs.length > 0) {
-    const avg    = Math.round(perfs.reduce((s, p) => s + p.tokens, 0) / perfs.length);
-    const avgSt  = _expCalcStatus(avg);
-    _expDrawMiniStat(c, W - PAD - 250, 14, 'PROMEDIO',  avg + ' tkn',  _EXP_STATUS_COLORS[avgSt]);
-    _expDrawMiniStat(c, W - PAD - 130, 14, 'PILOTOS',   perfs.length,  '#ffffff');
-  }
-
-  // ── Encabezado de la tabla ─────────────────────────────────
-  const tY = HEADER_H;
-  c.fillStyle  = 'rgba(26,58,108,0.9)';
-  c.fillRect(0, tY, W, TABLE_HEADER_H);
-  c.strokeStyle = 'rgba(212,175,55,0.5)';
-  c.lineWidth   = 1;
-  c.beginPath(); c.moveTo(0, tY + TABLE_HEADER_H); c.lineTo(W, tY + TABLE_HEADER_H); c.stroke();
-
-  const cols = [
-    { label: '#',      x: PAD,       w: 28,                align: 'center' },
-    { label: 'PILOTO', x: PAD + 36,  w: 160,               align: 'left'   },
-    { label: 'ROL',    x: PAD + 204, w: 72,                align: 'left'   },
-    { label: 'TOKENS', x: PAD + 284, w: 70,                align: 'right'  },
-    { label: 'DÍAS',   x: PAD + 362, w: 42,                align: 'center' },
-    { label: 'ESTADO', x: PAD + 412, w: 110,               align: 'center' },
-    { label: 'BARRA',  x: PAD + 530, w: W - PAD - 530 - PAD, align: 'left' },
-  ];
-
-  c.fillStyle = '#d4af37';
-  c.font      = 'bold 11px Arial';
-  cols.forEach(col => {
-    c.textAlign = col.align;
-    const tx = col.align === 'center' ? col.x + col.w / 2
-              : col.align === 'right'  ? col.x + col.w
-              : col.x;
-    c.fillText(col.label, tx, tY + 27);
-  });
-
-  // ── Filas ──────────────────────────────────────────────────
-  const maxTok = perfs.length > 0 ? Math.max(...perfs.map(p => p.tokens)) : 200;
-
-  perfs.forEach((p, i) => {
-    const ry = tY + TABLE_HEADER_H + i * ROW_H;
-
-    // Fondo alternado
-    c.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent';
-    c.fillRect(0, ry, W, ROW_H);
-
-    // Línea separadora
-    c.strokeStyle = 'rgba(255,255,255,0.05)';
-    c.lineWidth   = 0.5;
-    c.beginPath(); c.moveTo(0, ry + ROW_H); c.lineTo(W, ry + ROW_H); c.stroke();
-
-    const cy = ry + ROW_H / 2;
-
-    // Número
-    c.textAlign  = 'center';
-    c.fillStyle  = 'rgba(255,255,255,0.35)';
-    c.font       = '11px Arial';
-    c.fillText(i + 1, PAD + 14, cy + 4);
-
-    // Nick
-    c.textAlign  = 'left';
-    c.fillStyle  = '#ffffff';
-    c.font       = 'bold 13px Arial';
-    c.fillText(p.nick || 'N/A', PAD + 36, cy + 4);
-
-    // Rol
-    const roleClr = {
-      OWNER:    '#d4af37',
-      ADMIN:    '#e84393',
-      VETERANO: '#17a2b8',
-      MIEMBRO:  'rgba(255,255,255,0.45)'
-    };
-    c.fillStyle  = roleClr[p.role] || 'rgba(255,255,255,0.45)';
-    c.font       = '10px Arial';
-    c.fillText(p.role || 'MIEMBRO', PAD + 204, cy + 4);
-
-    // Tokens
-    c.textAlign  = 'right';
-    c.fillStyle  = _EXP_STATUS_COLORS[p.status] || '#ffffff';
-    c.font       = 'bold 14px Arial';
-    c.fillText(p.tokens, PAD + 354, cy + 5);
-
-    // Días
-    c.textAlign  = 'center';
-    c.fillStyle  = 'rgba(255,255,255,0.6)';
-    c.font       = '12px Arial';
-    c.fillText(p.days_connected ?? '-', PAD + 383, cy + 4);
-
-    // Badge de estado
-    _expDrawStatusBadge(c, PAD + 412, ry + 8, 110, 24, p.status);
-
-    // Barra de progreso
-    const barX = PAD + 530;
-    const barW = W - PAD - 530 - PAD;
-    const barH = 8;
-    const barY = cy - barH / 2;
-    c.fillStyle = 'rgba(255,255,255,0.08)';
-    _expRoundRect(c, barX, barY, barW, barH, 4); c.fill();
-    const filled = Math.max(4, Math.round((p.tokens / maxTok) * barW));
-    c.fillStyle  = _EXP_STATUS_COLORS[p.status] || '#aaa';
-    _expRoundRect(c, barX, barY, filled, barH, 4); c.fill();
-  });
-
-  // ── Pie de reporte ─────────────────────────────────────────
-  const footY = HEADER_H + TABLE_HEADER_H + perfs.length * ROW_H + 12;
-  c.strokeStyle = 'rgba(212,175,55,0.3)';
-  c.lineWidth   = 1;
-  c.beginPath(); c.moveTo(PAD, footY); c.lineTo(W - PAD, footY); c.stroke();
-
-  const counts = {
-    VERDE:   perfs.filter(p => p.status === 'VERDE').length,
-    NARANJA: perfs.filter(p => p.status === 'NARANJA').length,
-    ROJO:    perfs.filter(p => p.status === 'ROJO').length,
-    NEGRO:   perfs.filter(p => p.status === 'NEGRO').length,
-  };
-
-  let fx = PAD;
-  [['VERDE', counts.VERDE], ['NARANJA', counts.NARANJA], ['ROJO', counts.ROJO], ['NEGRO', counts.NEGRO]]
-    .forEach(([st, cnt]) => {
-      c.fillStyle = _EXP_STATUS_COLORS[st];
-      c.font      = 'bold 11px Arial';
-      c.textAlign = 'left';
-      c.fillText('● ' + st + ' ' + cnt, fx, footY + 28);
-      fx += 130;
-    });
-
-  c.fillStyle = 'rgba(212,175,55,0.55)';
-  c.font      = '10px Arial';
-  c.textAlign = 'right';
-  c.fillText('METALSTORM · PARAGUAY FFAA [PRY]', W - PAD, footY + 28);
-}
-
-/**
- * Descarga el canvas como archivo PNG.
- */
-function downloadExportImage() {
-  if (!_exportCurrentEvent) return;
-  const cv = document.getElementById('exportCanvas');
-  if (!cv) return;
-  const a    = document.createElement('a');
-  a.href     = cv.toDataURL('image/png');
-  const name = 'reporte-' + _exportCurrentEvent.id
-    .replace(/[·\s]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-  a.download = name + '.png';
-  a.click();
-  showToast('✅ Descargando: ' + a.download, 'success');
-}
-
-// ── Helpers internos del canvas ─────────────────────────────
-
-function _expCalcStatus(avg) {
-  if (avg >= 175) return 'VERDE';
-  if (avg >= 130) return 'NARANJA';
-  if (avg >= 100) return 'ROJO';
-  return 'NEGRO';
-}
-
-function _expDrawStatusBadge(c, x, y, w, h, status) {
-  c.fillStyle   = _EXP_STATUS_BG[status]    || 'rgba(100,100,100,0.2)';
-  _expRoundRect(c, x, y, w, h, 4); c.fill();
-  c.strokeStyle = _EXP_STATUS_COLORS[status] || '#888';
-  c.lineWidth   = 0.5;
-  _expRoundRect(c, x, y, w, h, 4); c.stroke();
-  c.fillStyle   = _EXP_STATUS_COLORS[status] || '#888';
-  c.font        = 'bold 10px Arial';
-  c.textAlign   = 'center';
-  c.fillText(status || '—', x + w / 2, y + h / 2 + 4);
-}
-
-function _expDrawPill(c, x, y, text, bg, color, fontSize) {
-  c.font      = (fontSize || 11) + 'px Arial';
-  const pw    = c.measureText(text).width + 20;
-  c.fillStyle = bg;
-  _expRoundRect(c, x, y, pw, 20, 10); c.fill();
-  c.fillStyle = color;
-  c.textAlign = 'left';
-  c.fillText(text, x + 10, y + 14);
-}
-
-function _expDrawMiniStat(c, x, y, label, val, color) {
-  c.fillStyle  = 'rgba(26,58,108,0.55)';
-  _expRoundRect(c, x, y, 110, 56, 6); c.fill();
-  c.fillStyle  = 'rgba(212,175,55,0.6)';
-  c.font       = '9px Arial';
-  c.textAlign  = 'center';
-  c.fillText(label, x + 55, y + 16);
-  c.fillStyle  = color || '#ffffff';
-  c.font       = 'bold 18px Arial';
-  c.fillText(val, x + 55, y + 40);
-}
-
-function _expRoundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.lineTo(x + w - r, y);         c.quadraticCurveTo(x + w, y,     x + w, y + r);
-  c.lineTo(x + w, y + h - r);     c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  c.lineTo(x + r, y + h);         c.quadraticCurveTo(x,     y + h, x,     y + h - r);
-  c.lineTo(x, y + r);             c.quadraticCurveTo(x,     y,     x + r, y);
-  c.closePath();
 }

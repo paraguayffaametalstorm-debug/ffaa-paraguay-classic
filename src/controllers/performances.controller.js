@@ -50,17 +50,14 @@ export async function savePerformance(req, res, next) {
 
     if (supabase) {
       try {
-        // Upsert into Supabase performances
         const { error: upsertErr } = await supabase
           .from('performances')
           .upsert(record, { onConflict: 'user_id,event_id' });
 
         if (upsertErr) {
-          // Retry standard insert if onConflict index isn't created
           await supabase.from('performances').insert(record);
         }
 
-        // Recalculate average tokens for this user in Supabase
         const { data: userPerfs } = await supabase
           .from('performances')
           .select('tokens')
@@ -82,7 +79,6 @@ export async function savePerformance(req, res, next) {
       }
     }
 
-    // Local fallback average recalculation
     const localUserPerfs = memoryStore.performances.filter(p => p.user_id === targetUserId);
     if (localUserPerfs.length > 0) {
       targetUser.avg_tokens = Math.round(localUserPerfs.reduce((s, p) => s + p.tokens, 0) / localUserPerfs.length);
@@ -254,4 +250,3 @@ export async function exportPerformancesCSV(req, res, next) {
     next(err);
   }
 }
-

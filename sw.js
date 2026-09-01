@@ -1,5 +1,6 @@
 // Service Worker - PARAGUAY-FFAA | METALSTORM PWA
-const CACHE_NAME = 'PARAGUAY-FFAA | METALSTORM-v2.1';
+const CACHE_NAME = 'PARAGUAY-FFAA | METALSTORM-v2.2'; // ⬅️ BUMP DE VERSIÓN
+
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -46,7 +47,6 @@ self.addEventListener('install', (event) => {
       })
       .catch((err) => {
         console.error('[SW] Error en instalación:', err);
-        // Si falla el cacheo, igual activamos el SW
         return self.skipWaiting();
       })
   );
@@ -86,9 +86,7 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      // Si está en cache, devolverlo
       if (cachedResponse) {
-        // Actualizar en background (stale-while-revalidate)
         fetch(request)
           .then((networkResponse) => {
             if (networkResponse.ok) {
@@ -102,7 +100,6 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
 
-      // Si no está en cache, fetch y cachear
       return fetch(request)
         .then((networkResponse) => {
           if (!networkResponse || !networkResponse.ok) {
@@ -118,7 +115,6 @@ self.addEventListener('fetch', (event) => {
         })
         .catch((error) => {
           console.error('[SW] Fetch fallido:', error);
-          // Si es una navegación, mostrar página offline
           if (request.mode === 'navigate') {
             return caches.match('/index.html');
           }
