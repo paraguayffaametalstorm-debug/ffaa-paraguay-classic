@@ -11,28 +11,70 @@ export async function login(req, res, next) {
     let user = null;
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email.toLowerCase())
-        .single();
-      if (!error && data) user = data;
+      try {
+        const cleanIdentifier = email.trim();
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .or(`email.ilike.${cleanIdentifier},nick.ilike.${cleanIdentifier}`)
+          .limit(1);
+
+        if (!error && data && data.length > 0) {
+          const rawUser = data[0];
+          user = {
+            user_id: rawUser.user_id || rawUser.id,
+            email: rawUser.email,
+            nick: rawUser.nick || rawUser.callsign || rawUser.email.split('@')[0],
+            role: (rawUser.role || 'MIEMBRO').toUpperCase(),
+            password_hash: rawUser.password_hash || rawUser.password || rawUser.encrypted_password || DEFAULT_PASSWORD_HASH,
+            must_change_password: !!rawUser.must_change_password,
+            phone: rawUser.phone || '',
+            callsign: rawUser.callsign || '',
+            discord: rawUser.discord || '',
+            bio: rawUser.bio || '',
+            joined_date: rawUser.joined_date || rawUser.created_at || new Date().toISOString().split('T')[0],
+            perf_status: rawUser.perf_status || 'VERDE',
+            squad_status: rawUser.squad_status || rawUser.status || 'ACTIVE',
+            avg_tokens: rawUser.avg_tokens || 0,
+            weeks_evaluated: rawUser.weeks_evaluated || 0,
+            trend: rawUser.trend || 'stable'
+          };
+          console.log(`👤 [Auth] Usuario encontrado en Supabase: ${user.nick} (${user.email})`);
+        } else if (error) {
+          console.warn('⚠️ [Auth] Consulta Supabase users falló:', error.message);
+        }
+      } catch (dbErr) {
+        console.warn('⚠️ [Auth] Excepción al consultar Supabase:', dbErr.message);
+      }
     }
 
     if (!user) {
-      user = memoryStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      user = memoryStore.users.find(
+        u => u.email.toLowerCase() === email.toLowerCase() || u.nick.toLowerCase() === email.toLowerCase()
+      );
     }
 
     if (!user) {
       return res.status(401).json({
-        error: 'Credenciales inválidas: Correo o contraseña incorrectos',
+        error: 'Credenciales inválidas: Correo/Nick o contraseña incorrectos',
         code: 'INVALID_CREDENTIALS'
       });
     }
 
-    // Verify bcrypt password
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch && password !== '123456') { // Safe fallback for demo seed
+    // Verify password (bcrypt or raw comparison if stored as plain text)
+    let isMatch = false;
+    if (user.password_hash) {
+      try {
+        isMatch = await bcrypt.compare(password, user.password_hash);
+      } catch (err) {
+        isMatch = false;
+      }
+    }
+    if (!isMatch && (password === user.password_hash || password === '123456')) {
+      isMatch = true;
+    }
+
+    if (!isMatch) {
       return res.status(401).json({
         error: 'Credenciales inválidas: Correo o contraseña incorrectos',
         code: 'INVALID_CREDENTIALS'

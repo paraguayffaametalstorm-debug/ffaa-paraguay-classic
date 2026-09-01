@@ -31,13 +31,22 @@ export async function requireAuth(req, res, next) {
     let user = null;
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', decoded.user_id)
-        .single();
-      if (!error && data) {
-        user = data;
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .or(`user_id.eq.${decoded.user_id},id.eq.${decoded.user_id}`)
+          .limit(1);
+        if (!error && data && data.length > 0) {
+          const u = data[0];
+          user = {
+            ...u,
+            user_id: u.user_id || u.id,
+            squad_status: u.squad_status || u.status || 'ACTIVE'
+          };
+        }
+      } catch (err) {
+        console.warn('⚠️ [Auth Middleware] Error consultando Supabase:', err.message);
       }
     }
 

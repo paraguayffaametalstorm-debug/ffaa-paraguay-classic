@@ -3,17 +3,91 @@ import bcrypt from 'bcryptjs';
 import { ENV } from '../config/env.js';
 
 let supabaseClient = null;
+let isConfigured = false;
+
 if (ENV.SUPABASE_URL && ENV.SUPABASE_KEY) {
   try {
     supabaseClient = createClient(ENV.SUPABASE_URL, ENV.SUPABASE_KEY, {
-      auth: { persistSession: false }
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
     });
-    console.log('⚡ Conexión exitosa con Supabase Database');
+    isConfigured = true;
+    console.log(`⚡ [Supabase] Cliente inicializado apuntando a: ${ENV.SUPABASE_URL.substring(0, 30)}...`);
   } catch (err) {
-    console.error('⚠️ Error al inicializar cliente Supabase:', err.message);
+    console.error('⚠️ [Supabase] Error crítico al inicializar cliente:', err.message);
   }
 } else {
-  console.log('ℹ️ Supabase no configurado aún en .env. Utilizando repositorio seguro.');
+  console.log('ℹ️ [Supabase] Variables SUPABASE_URL o SUPABASE_KEY no detectadas. Usando repositorio táctico en memoria.');
+}
+
+/**
+ * Realiza un test de diagnóstico contra las tablas principales de Supabase
+ */
+export async function checkSupabaseHealth() {
+  if (!supabaseClient) {
+    return { ok: false, message: 'Supabase client not initialized' };
+  }
+
+  try {
+    const results = {};
+    
+    // Check users table
+    const { data: users, error: usersErr, count: userCount } = await supabaseClient
+      .from('users')
+      .select('*', { count: 'exact', head: false })
+      .limit(5);
+
+    if (usersErr) {
+      console.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "users":', usersErr.message);
+      results.users = { ok: false, error: usersErr.message };
+    } else {
+      console.log(`✅ [Supabase Diagnostic] Tabla "users" accesible. Registros recuperados: ${users?.length || 0}`);
+      results.users = { ok: true, count: userCount || users?.length || 0 };
+    }
+
+    // Check performances table
+    const { data: perfs, error: perfsErr } = await supabaseClient
+      .from('performances')
+      .select('*')
+      .limit(5);
+
+    if (perfsErr) {
+      console.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "performances":', perfsErr.message);
+      results.performances = { ok: false, error: perfsErr.message };
+    } else {
+      console.log(`✅ [Supabase Diagnostic] Tabla "performances" accesible. Registros recuperados: ${perfs?.length || 0}`);
+      results.performances = { ok: true, count: perfs?.length || 0 };
+    }
+
+    // Check events table
+    const { data: events, error: eventsErr } = await supabaseClient
+      .from('events')
+      .select('*')
+      .limit(5);
+
+    if (eventsErr) {
+      console.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "events":', eventsErr.message);
+      results.events = { ok: false, error: eventsErr.message };
+    } else {
+      console.log(`✅ [Supabase Diagnostic] Tabla "events" accesible. Registros recuperados: ${events?.length || 0}`);
+      results.events = { ok: true, count: events?.length || 0 };
+    }
+
+    return { ok: true, results };
+  } catch (e) {
+    console.error('❌ [Supabase Diagnostic] Error general de conexión:', e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+// Execute health check asynchronously on server startup
+if (supabaseClient) {
+  checkSupabaseHealth().catch(err => {
+    console.error('❌ [Supabase Startup Check Failed]:', err.message);
+  });
 }
 
 // Initial seed password hash ('123456' hashed with bcrypt)

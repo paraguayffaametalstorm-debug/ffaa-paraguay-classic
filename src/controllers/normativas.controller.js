@@ -1,8 +1,24 @@
 import { memoryStore, getSupabase } from '../db/supabase.js';
 import { NormativaSchema } from '../utils/schemas.js';
 
-export function getNormativas(req, res) {
-  res.json({ normativas: memoryStore.normativas });
+export async function getNormativas(req, res, next) {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('normativas')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return res.json({ normativas: data });
+      }
+    }
+
+    res.json({ normativas: memoryStore.normativas });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function uploadNormativa(req, res, next) {
