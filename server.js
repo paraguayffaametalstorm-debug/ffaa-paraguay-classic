@@ -138,7 +138,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/catalog', planesRoutes);
 
 // Explicit 404 handler for unmatched API routes - guarantees JSON, NEVER HTML
-app.all('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
   res.status(404).json({
     success: false,
     error: `Ruta de API no encontrada: ${req.method} ${req.originalUrl}`,
