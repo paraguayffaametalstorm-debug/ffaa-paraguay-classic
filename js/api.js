@@ -503,8 +503,12 @@ let planeModsCache   = [];
 // ========== CARGA DE MODELOS DE AVIÓN ==========
 // Devuelve Promise para que editPlane pueda encadenar sin race conditions
 function loadPlaneModels() {
-  return fetch(`${API_BASE}/api/catalog/plane-models`, { headers: getAuthHeaders() })
-    .then(res => res.json())
+  const url = `${API_BASE}/api/catalog/plane-models`;
+  return fetch(url, { headers: getAuthHeaders() })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then(data => {
       planeModelsCache = Array.isArray(data) ? data : (data.models || []);
       const select = document.getElementById('planeModel');
@@ -523,10 +527,14 @@ function loadPlaneModels() {
 // ========== CARGA DE MÓDULOS ==========
 // Devuelve Promise para encadenar
 function loadPlaneMods() {
-  return fetch(`${API_BASE}/api/catalog/plane-mods`, { headers: getAuthHeaders() })
-    .then(res => res.json())
+  const url = `${API_BASE}/api/catalog/plane-mods`;
+  return fetch(url, { headers: getAuthHeaders() })
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then(data => {
-      planeModsCache = Array.isArray(data) ? data : [];
+      planeModsCache = Array.isArray(data) ? data : (data.mods || []);
       ['mod1', 'mod2'].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;

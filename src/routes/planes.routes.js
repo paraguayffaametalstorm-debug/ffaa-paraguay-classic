@@ -13,9 +13,11 @@ import { requireAuth } from '../middlewares/auth.js';
 
 const router = Router();
 
-// Public catalog routes (or authenticated)
+// Public catalog routes (both formats supported)
 router.get('/catalog/plane-models', getCatalogModels);
 router.get('/catalog/plane-mods', getCatalogMods);
+router.get('/plane-models', getCatalogModels);
+router.get('/plane-mods', getCatalogMods);
 
 // Authenticated hangar routes
 router.use(requireAuth);

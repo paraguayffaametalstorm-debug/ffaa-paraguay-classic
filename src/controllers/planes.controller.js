@@ -2,12 +2,44 @@ import { memoryStore, getSupabase } from '../db/supabase.js';
 import { PlaneSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 
-export function getCatalogModels(req, res) {
-  res.json(memoryStore.planeModels);
+export async function getCatalogModels(req, res) {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('plane_models')
+        .select('*')
+        .order('name');
+      
+      if (!error && data && data.length > 0) {
+        return res.json({ success: true, models: data });
+      }
+    }
+    return res.json({ success: true, models: memoryStore.planeModels || [] });
+  } catch (error) {
+    console.error('❌ Error en getCatalogModels:', error);
+    return res.json({ success: true, models: memoryStore.planeModels || [] });
+  }
 }
 
-export function getCatalogMods(req, res) {
-  res.json(memoryStore.planeMods);
+export async function getCatalogMods(req, res) {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('plane_mods')
+        .select('*')
+        .order('name');
+      
+      if (!error && data && data.length > 0) {
+        return res.json({ success: true, mods: data });
+      }
+    }
+    return res.json({ success: true, mods: memoryStore.planeMods || [] });
+  } catch (error) {
+    console.error('❌ Error en getCatalogMods:', error);
+    return res.json({ success: true, mods: memoryStore.planeMods || [] });
+  }
 }
 
 export async function getMyPlanes(req, res, next) {
