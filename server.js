@@ -47,28 +47,39 @@ app.use(
 app.use(compression());
 
 // CORS Whitelist Protection
+const allowedOriginPatterns = [
+  'https://paraguay-ffaa-metalstorm.fly.dev',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, same-origin)
+      // Allow requests with no origin (e.g. mobile apps, curl, same-origin, PWA)
       if (!origin) return callback(null, true);
+
+      const normalizedOrigin = origin.replace(/\/+$/, '');
       const isAllowed =
-        ENV.ALLOWED_ORIGINS.includes(origin) ||
-        origin.endsWith('.fly.dev') ||
-        origin.endsWith('.run.app') ||
-        origin.endsWith('.google.com') ||
-        origin.includes('localhost') ||
-        origin.includes('127.0.0.1');
+        ENV.ALLOWED_ORIGINS.some(o => o.replace(/\/+$/, '') === normalizedOrigin) ||
+        allowedOriginPatterns.includes(normalizedOrigin) ||
+        normalizedOrigin.includes('paraguay-ffaa-metalstorm.fly.dev') ||
+        normalizedOrigin.endsWith('.fly.dev') ||
+        normalizedOrigin.endsWith('.run.app') ||
+        normalizedOrigin.endsWith('.google.com') ||
+        normalizedOrigin.includes('localhost') ||
+        normalizedOrigin.includes('127.0.0.1');
 
       if (isAllowed) {
         callback(null, true);
       } else {
+        console.warn(`⚠️ [CORS] Origen bloqueado: ${origin}`);
         callback(new Error(`Acceso CORS bloqueado para el origen: ${origin}`));
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
   })
 );
 

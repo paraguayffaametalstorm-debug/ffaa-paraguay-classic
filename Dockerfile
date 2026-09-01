@@ -1,5 +1,5 @@
-# Utilizar imagen oficial ligera de Node.js 20 basada en Alpine Linux
-FROM node:20-alpine
+# Utilizar imagen oficial ligera de Node.js 22 basada en Alpine Linux (con soporte nativo WebSocket)
+FROM node:22-alpine
 
 # Establecer directorio de trabajo en el contenedor
 WORKDIR /app
