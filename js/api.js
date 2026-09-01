@@ -5,6 +5,16 @@
  * Actualizado: 12 de febrero de 2026
  */
 
+// ========== HELPER DE AUTENTICACIÓN ==========
+function getAuthHeaders() {
+  const token = localStorage.getItem('authToken') || localStorage.getItem('tempToken');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+}
+window.getAuthHeaders = getAuthHeaders;
+
 // ========== RENDIMIENTO ==========
 async function savePerformance() {
   try {
@@ -338,10 +348,7 @@ async function uploadNormativa() {
 
     const res = await fetch(`${API_BASE}/api/normativas`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
 

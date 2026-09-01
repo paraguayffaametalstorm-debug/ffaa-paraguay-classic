@@ -185,10 +185,11 @@ function logout() {
 function getAuthHeaders() {
   const token = localStorage.getItem('authToken') || localStorage.getItem('tempToken');
   return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
   };
 }
+window.getAuthHeaders = getAuthHeaders;
 
 // ========== TOGGLE VISIBILITY DE PASSWORD ==========
 function togglePasswordVisibility(inputId) {
