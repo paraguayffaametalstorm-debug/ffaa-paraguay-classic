@@ -1,12 +1,12 @@
 // Utilidades de seguridad: generación de contraseñas temporales
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // excluye I, O, 0, 1 para evitar confusiones
 
 /**
  * Genera contraseña temporal aleatoria de 12 caracteres
  * Formato: MS-XXXX-XXXX (ej: MS-4K7P-X9Q2)
- * Usa crypto.randomBytes para RNG criptográficamente seguro
+ * Usa crypto.randomInt para RNG criptográficamente seguro
  */
 export function generateTemporaryPassword() {
     const chars = CHARSET;
@@ -28,7 +28,7 @@ export function generateTemporaryPassword() {
 /**
  * Genera código de recuperación de 12 caracteres
  * Formato: XXXX-XXXX-XXXX (ej: 7K4P-92QX-8F3M)
- * Usa crypto.randomBytes para RNG criptográficamente seguro
+ * Usa crypto.randomInt para RNG criptográficamente seguro
  */
 export function generateRecoveryCode() {
     const chars = CHARSET;

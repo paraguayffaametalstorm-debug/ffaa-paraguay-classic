@@ -13,6 +13,8 @@ import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { bulkLimiter } from '../middlewares/rateLimiter.js';
 import { memoryStore, getSupabase } from '../db/supabase.js';
 import bcrypt from 'bcryptjs';
+import { generateTemporaryPassword } from '../utils/security.js';
+import { logSecurityEvent } from '../utils/audit.js';
 
 const router = Router();
 
@@ -31,7 +33,7 @@ router.get('/export-performances', exportPerformancesCSV);
 router.get('/events', (req, res) => res.json({ events: memoryStore.events }));
 router.post('/events/activate-bm', activateBlackMarket);
 
-// ========== RESETEAR CONTRASEÑA DE USUARIO ==========
+// ========== RESETEAR CONTRASEÑA DE USUARIO (CORREGIDO) ==========
 router.post('/users/:userId/reset-password', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -41,7 +43,7 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             return res.status(500).json({ error: 'Base de datos no disponible' });
         }
 
-        // Verificar que el usuario existe y obtener su token_version actual
+        // Verificar que el usuario existe
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('id, nick, email, token_version')
@@ -52,11 +54,9 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
-        // Resetear a '123456' y forzar cambio
-        const tempPassword = '123456';
+        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA (no 123456)
+        const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-        // Incrementar token_version para invalidar sesiones anteriores de forma segura
         const newTokenVersion = (user.token_version || 0) + 1;
 
         const { error: updateError } = await supabase
@@ -65,7 +65,8 @@ router.post('/users/:userId/reset-password', async (req, res) => {
                 password_hash: hashedPassword,
                 must_change_password: true,
                 password_changed_at: new Date().toISOString(),
-                token_version: newTokenVersion
+                token_version: newTokenVersion,
+                updated_at: new Date().toISOString()
             })
             .eq('id', userId);
 
@@ -74,9 +75,25 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             return res.status(500).json({ error: 'Error al resetear la contraseña' });
         }
 
+        // Registrar evento de auditoría
+        await logSecurityEvent({
+            supabase,
+            userId: user.id,
+            nick: user.nick,
+            event: 'ADMIN_PASSWORD_RESET',
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            metadata: { 
+                reset_by: req.user.nick,
+                reset_by_role: req.user.role
+            }
+        });
+
+        // ✅ La contraseña se muestra UNA SOLA VEZ
         res.json({
             success: true,
-            message: `Contraseña de ${user.nick} reseteada a '123456'. Deberá cambiarla al iniciar sesión.`
+            message: `Contraseña de ${user.nick} reseteada. Entrégasela por WhatsApp/Discord — no volverá a mostrarse.`,
+            temporaryPassword: tempPassword
         });
 
     } catch (error) {

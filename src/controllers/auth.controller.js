@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
 import { getSupabase, memoryStore } from '../db/supabase.js';
 import { logSecurityEvent } from '../utils/audit.js';
+import { generateTemporaryPassword } from '../utils/security.js';
 
 // ========== LOGIN ==========
 export const login = async (req, res) => {
@@ -39,15 +40,14 @@ export const login = async (req, res) => {
         }
 
         if (!user) {
-            // Registrar evento de fallo
             await logSecurityEvent({
                 supabase,
-                userId: user?.id || null,
+                userId: null,
                 nick: email || null,
                 event: 'LOGIN_FAILED',
                 ip: req.ip,
                 userAgent: req.headers['user-agent'],
-                metadata: { reason: 'invalid_credentials' }
+                metadata: { reason: 'user_not_found' }
             });
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
@@ -55,15 +55,14 @@ export const login = async (req, res) => {
         // 3. Verificar contraseña
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
-            // Registrar evento de fallo
             await logSecurityEvent({
                 supabase,
-                userId: user?.id || null,
-                nick: email || null,
+                userId: user.id,
+                nick: user.nick,
                 event: 'LOGIN_FAILED',
                 ip: req.ip,
                 userAgent: req.headers['user-agent'],
-                metadata: { reason: 'invalid_credentials' }
+                metadata: { reason: 'invalid_password' }
             });
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
@@ -83,7 +82,6 @@ export const login = async (req, res) => {
             { expiresIn: ENV.JWT_EXPIRES_IN || '7d' }
         );
 
-        // Registrar evento de éxito
         await logSecurityEvent({
             supabase,
             userId: user.id,
@@ -106,10 +104,9 @@ export const login = async (req, res) => {
             }
         }
 
-        // 7. Preparar respuesta (sin password_hash)
+        // 7. Preparar respuesta
         const { password_hash, ...safeUser } = user;
         
-        // Asegurar que user_id es INTEGER
         const userResponse = {
             ...safeUser,
             user_id: user.user_id || user.id,
@@ -153,7 +150,6 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: 'Email y nick son requeridos' });
         }
 
-        // Verificar si el usuario ya existe
         const { data: existing, error: checkError } = await supabase
             .from('users')
             .select('id')
@@ -169,8 +165,8 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
-        // Crear usuario con contraseña temporal
-        const tempPassword = '123456';
+        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA (no 123456)
+        const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
         const newUser = {
@@ -199,7 +195,8 @@ export const register = async (req, res) => {
         const { password_hash, ...safeUser } = data;
         res.status(201).json({
             success: true,
-            message: 'Usuario creado correctamente. Contraseña temporal: 123456',
+            message: 'Usuario creado correctamente. Contraseña temporal generada.',
+            temporaryPassword: tempPassword, // ⚠️ Se muestra UNA SOLA VEZ
             user: safeUser
         });
 
@@ -209,7 +206,7 @@ export const register = async (req, res) => {
     }
 };
 
-// ========== CAMBIO DE CONTRASEÑA ==========
+// ========== CAMBIO DE CONTRASEÑA (CORREGIDO) ==========
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
@@ -220,17 +217,17 @@ export const changePassword = async (req, res) => {
             return res.status(500).json({ error: 'Base de datos no disponible' });
         }
 
-        // Validar nueva contraseña
-        if (!newPassword || newPassword.length < 6) {
+        // Validar nueva contraseña (mínimo 8 caracteres)
+        if (!newPassword || newPassword.length < 8) {
             return res.status(400).json({
-                error: 'La nueva contraseña debe tener al menos 6 caracteres'
+                error: 'La nueva contraseña debe tener al menos 8 caracteres'
             });
         }
 
-        // 1. Obtener usuario con su contraseña actual
+        // 1. Obtener usuario completo
         const { data: user, error: userError } = await supabase
             .from('users')
-            .select('password_hash')
+            .select('password_hash, must_change_password, token_version, nick, id')
             .eq('id', userId)
             .single();
 
@@ -238,14 +235,33 @@ export const changePassword = async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
-        // 2. Verificar contraseña actual
-        const valid = await bcrypt.compare(currentPassword, user.password_hash);
-        if (!valid) {
-            return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+        // 2. Verificar contraseña actual SOLO si NO es cambio forzado
+        // Si must_change_password = true, NO pedimos currentPassword
+        if (!user.must_change_password) {
+            if (!currentPassword) {
+                return res.status(400).json({ 
+                    error: 'Debes indicar tu contraseña actual',
+                    code: 'CURRENT_PASSWORD_REQUIRED'
+                });
+            }
+            const valid = await bcrypt.compare(currentPassword, user.password_hash);
+            if (!valid) {
+                await logSecurityEvent({
+                    supabase,
+                    userId: user.id,
+                    nick: user.nick,
+                    event: 'PASSWORD_CHANGE_FAILED',
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    metadata: { reason: 'wrong_current_password' }
+                });
+                return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+            }
         }
 
         // 3. Hashear nueva contraseña
         const newHash = await bcrypt.hash(newPassword, 10);
+        const newTokenVersion = (user.token_version || 0) + 1;
 
         // 4. Actualizar en Supabase
         const { error: updateError } = await supabase
@@ -253,6 +269,8 @@ export const changePassword = async (req, res) => {
             .update({
                 password_hash: newHash,
                 must_change_password: false,
+                password_changed_at: new Date().toISOString(),
+                token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
             })
             .eq('id', userId);
@@ -262,9 +280,30 @@ export const changePassword = async (req, res) => {
             return res.status(500).json({ error: 'Error al actualizar la contraseña' });
         }
 
+        await logSecurityEvent({
+            supabase,
+            userId: user.id,
+            nick: user.nick,
+            event: 'PASSWORD_CHANGED',
+            ip: req.ip,
+            userAgent: req.headers['user-agent'],
+            metadata: { forced_change: user.must_change_password }
+        });
+
+        // 5. Generar nuevo JWT con token_version actualizado
+        const newToken = jwt.sign(
+            { 
+                user_id: req.user.user_id,
+                token_version: newTokenVersion 
+            },
+            ENV.JWT_SECRET,
+            { expiresIn: ENV.JWT_EXPIRES_IN || '7d' }
+        );
+
         res.json({
             success: true,
-            message: 'Contraseña actualizada correctamente'
+            message: 'Contraseña actualizada correctamente',
+            token: newToken
         });
 
     } catch (error) {
@@ -273,7 +312,7 @@ export const changePassword = async (req, res) => {
     }
 };
 
-// ========== OLVIDO DE CONTRASEÑA (SIN EMAIL) ==========
+// ========== OLVIDO DE CONTRASEÑA (DEPRECADO - USAR RECOVERY) ==========
 export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -287,7 +326,6 @@ export const forgotPassword = async (req, res) => {
             return res.status(400).json({ error: 'El correo es requerido' });
         }
 
-        // Buscar usuario por email
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('id, nick, email')
@@ -295,23 +333,24 @@ export const forgotPassword = async (req, res) => {
             .single();
 
         if (userError || !user) {
-            // No revelar si el usuario existe o no (seguridad)
             return res.json({
                 success: true,
                 message: 'Si el correo existe, se enviarán instrucciones'
             });
         }
 
-        // Resetear a '123456' y forzar cambio
-        const tempPassword = '123456';
+        // ✅ USAR CONTRASEÑA TEMPORAL ALEATORIA
+        const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        const newTokenVersion = (user.token_version || 0) + 1;
 
         const { error: updateError } = await supabase
             .from('users')
             .update({
                 password_hash: hashedPassword,
                 must_change_password: true,
-                updated_at: new Date().toISOString()
+                password_changed_at: new Date().toISOString(),
+                token_version: newTokenVersion
             })
             .eq('id', user.id);
 
@@ -322,7 +361,7 @@ export const forgotPassword = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Contraseña de ${user.nick} reseteada a '123456'. Deberá cambiarla al iniciar sesión.`
+            message: `Contraseña de ${user.nick} reseteada. Deberá cambiarla al iniciar sesión.`
         });
 
     } catch (error) {

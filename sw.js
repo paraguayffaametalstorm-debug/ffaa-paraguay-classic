@@ -1,9 +1,9 @@
 // Service Worker - PARAGUAY-FFAA | METALSTORM PWA
-const CACHE_NAME = 'PARAGUAY-FFAA | METALSTORM-v2.2'; // ⬅️ BUMP DE VERSIÓN
+// ⬇️ BUMP DE VERSIÓN EN CADA DEPLOY
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.3.0';
 
+// ✅ SOLO assets versionados (NO index.html ni /)
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/css/global.css',
   '/css/components.css',
   '/css/views.css',
@@ -32,7 +32,7 @@ const STATIC_ASSETS = [
   '/components/aircraft-stats-modal.html'
 ];
 
-// Instalación - Precache de assets críticos
+// Instalación - Precache de assets
 self.addEventListener('install', (event) => {
   console.log('[SW] Instalando...');
   event.waitUntil(
@@ -72,7 +72,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Estrategia de fetch: Cache First, luego Network
+// ✅ Network-first para navegación, Cache-first para assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -84,42 +84,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse.ok) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(request, networkResponse.clone());
-              });
-            }
-          })
-          .catch(() => {});
-        
-        return cachedResponse;
-      }
-
-      return fetch(request)
-        .then((networkResponse) => {
-          if (!networkResponse || !networkResponse.ok) {
-            return networkResponse;
-          }
-          
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
-          });
-          
-          return networkResponse;
+  // ✅ Network-first para navegación (index.html) — SIEMPRE la versión más nueva
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then(res => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          return res;
         })
-        .catch((error) => {
-          console.error('[SW] Fetch fallido:', error);
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          throw error;
-        });
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // ✅ Cache-first para assets estáticos versionados
+  event.respondWith(
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+      return fetch(request).then(res => {
+        if (res.ok) {
+          caches.open(CACHE_NAME).then(cache => cache.put(request, res.clone()));
+        }
+        return res;
+      });
     })
   );
 });
