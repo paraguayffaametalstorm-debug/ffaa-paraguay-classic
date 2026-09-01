@@ -81,21 +81,30 @@ function extendSession() {
     showToast('a??Sesi?3n extendida', 'success');
 }
 
-// Funci?3n para actualizar el estado del usuario en la UI
+// Función para actualizar el estado del usuario en la UI
 function updateUserUI(user) {
     currentUser = user;
     
     // === OCULTAR LOGIN / MOSTRAR LOGOUT ===
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
+    const drawerLoginBtn = document.getElementById('drawerLoginBtn');
+    const drawerLogoutBtn = document.getElementById('drawerLogoutBtn');
     
-    if (loginBtn) loginBtn.style.display = 'none';      // Ocultar bot?3n de login
-    if (logoutBtn) logoutBtn.style.display = 'block';   // Mostrar bot?3n de logout
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'block';
+    if (drawerLoginBtn) drawerLoginBtn.style.display = 'none';
+    if (drawerLogoutBtn) drawerLogoutBtn.style.display = 'flex';
     
     // === ACTUALIZAR NOMBRE DE USUARIO ===
     const userNameEl = document.getElementById('userName');
     if (userNameEl) {
         userNameEl.textContent = user.nick || user.email;
+    }
+
+    const drawerUserNickEl = document.getElementById('drawerUserNick');
+    if (drawerUserNickEl) {
+        drawerUserNickEl.textContent = user.nick || user.email;
     }
     
     // === ACTUALIZAR ROL ===
@@ -108,6 +117,29 @@ function updateUserUI(user) {
         userRoleEl.innerHTML = '';
         userRoleEl.appendChild(roleBadge);
     }
+
+    const drawerUserRoleEl = document.getElementById('drawerUserRole');
+    if (drawerUserRoleEl) {
+        const roleBadge = document.createElement('span');
+        roleBadge.className = `role-badge role-${user.role}`;
+        roleBadge.textContent = user.role.toUpperCase();
+        
+        drawerUserRoleEl.innerHTML = '';
+        drawerUserRoleEl.appendChild(roleBadge);
+    }
+
+    // Actualizar stats rápidos en el drawer
+    const drawerAvgTokensEl = document.getElementById('drawerAvgTokens');
+    if (drawerAvgTokensEl) {
+        drawerAvgTokensEl.textContent = user.avg_tokens || '185';
+    }
+
+    const drawerPerfStatusEl = document.getElementById('drawerPerfStatus');
+    if (drawerPerfStatusEl) {
+        const st = (user.perf_status || 'VERDE').toUpperCase();
+        drawerPerfStatusEl.textContent = st;
+        drawerPerfStatusEl.className = `d-stat-val status-badge status-${st.toLowerCase()}`;
+    }
     
     // === MOSTRAR/OCULTAR BOTONES DE ADMIN ===
     const adminBtn = document.getElementById('adminBtn');
@@ -116,6 +148,8 @@ function updateUserUI(user) {
     const viewAllNormativasBtn = document.getElementById('viewAllNormativasBtn');
     const uploadEventBtn = document.getElementById('uploadEventBtn');
     const mobileAdminNavItem = document.getElementById('mobileAdminNavItem');
+    const drawerAdminSection = document.getElementById('drawerAdminSection');
+    const drawerOwnerBtn = document.getElementById('drawerOwnerBtn');
     
     if (user.role === 'OWNER' || user.role === 'ADMIN') {
         if (adminBtn) adminBtn.style.display = 'inline-flex';
@@ -124,17 +158,22 @@ function updateUserUI(user) {
         if (viewAllNormativasBtn) viewAllNormativasBtn.style.display = 'block';
         if (uploadEventBtn) uploadEventBtn.style.display = 'block';
         if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'flex';
+        if (drawerAdminSection) drawerAdminSection.style.display = 'block';
     } else {
         if (adminBtn) adminBtn.style.display = 'none';
         if (allPerformancesBtn) allPerformancesBtn.style.display = 'none';
         if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'none';
+        if (drawerAdminSection) drawerAdminSection.style.display = 'none';
     }
+    
     // Centro de Control exclusivo OWNER
     const ownerBtn = document.getElementById('ownerBtn');
     if (user.role === 'OWNER') {
         if (ownerBtn) ownerBtn.style.display = 'inline-flex';
+        if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'flex';
     } else {
         if (ownerBtn) ownerBtn.style.display = 'none';
+        if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'none';
     }
 }
 

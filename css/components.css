@@ -296,9 +296,23 @@
 /* ── DASHBOARD WIDGETS & STATS GRID ──────────────────────── */
 .stats-grid-tactical {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
   margin-bottom: 1.5rem;
+}
+
+@media (min-width: 480px) {
+  .stats-grid-tactical {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .stats-grid-tactical {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
 }
 
 .stat-card-tactical {

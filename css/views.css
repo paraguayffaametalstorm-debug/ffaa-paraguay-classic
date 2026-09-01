@@ -117,14 +117,20 @@
 /* ── DASHBOARD ──────────────────────────── */
 .dashboard-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--sp-3);
   margin-bottom: var(--sp-5);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 480px) {
   .dashboard-stats {
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--sp-5);
   }
 }

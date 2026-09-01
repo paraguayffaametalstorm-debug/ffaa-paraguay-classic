@@ -2,18 +2,19 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <meta name="description" content="Sistema de Rendimiento y Gestión para el Escuadrón PARAGUAY FFAA [PRY] en MetalStorm">
   <meta property="og:title" content="PARAGUAY-FFAA | METALSTORM">
   <meta property="og:description" content="Sistema de Rendimiento y Gestión para el Escuadrón PARAGUAY FFAA [PRY] en MetalStorm">
   
-  <!-- PWA Meta Tags -->
-  <meta name="theme-color" content="#1a3a6c">
+  <!-- PWA Meta Tags & Mobile Enhancements -->
+  <meta name="theme-color" content="#0B132B">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="PARAGUAY-FFAA | METALSTORM">
+  <meta name="apple-mobile-web-app-title" content="PARAGUAY-FFAA">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="PARAGUAY-FFAA | METALSTORM">
+  <meta name="format-detection" content="telephone=no">
   
   <!-- Icons para iOS -->
   <link rel="apple-touch-icon" href="/logo-escuadron.png">
@@ -253,31 +254,142 @@
     }
   </script>
 
-  <!-- ✅ Mobile Bottom Navigation Bar (Visible only on screens < 768px) -->
-  <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navegación Móvil">
-    <button class="mobile-nav-item active" onclick="showView('appView')" data-view="appView" aria-label="Dashboard">
+  <!-- ✅ Mobile Side Drawer Overlay -->
+  <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()" aria-hidden="true"></div>
+
+  <!-- ✅ Mobile Side Drawer (Táctico Militar) -->
+  <aside id="mobileSideDrawer" class="mobile-side-drawer" aria-label="Menú Lateral Táctico" aria-hidden="true">
+    <div class="drawer-header">
+      <div class="drawer-user-card" onclick="showView('profileView'); closeMobileDrawer();">
+        <div class="drawer-avatar">
+          <img src="/logo-escuadron.png" alt="Escuadrón" class="drawer-avatar-img" />
+          <span class="drawer-avatar-badge" id="drawerRoleInsignia">🇵🇾</span>
+        </div>
+        <div class="drawer-user-meta">
+          <div class="drawer-callsign" id="drawerUserName">Piloto Militar</div>
+          <div class="drawer-role-tag" id="drawerUserRole"><span class="role-badge role-miembro">MIEMBRO</span></div>
+        </div>
+      </div>
+      <button class="drawer-close-btn" onclick="closeMobileDrawer()" aria-label="Cerrar menú">✕</button>
+    </div>
+
+    <div class="drawer-quick-stats">
+      <div class="drawer-stat-item">
+        <span class="d-stat-label">Pilotos Activos</span>
+        <span class="d-stat-val" id="drawerOnlineCount">🟢 1</span>
+      </div>
+      <div class="drawer-stat-item">
+        <span class="d-stat-label">Estado</span>
+        <span class="d-stat-val" id="drawerUserStatus"><span class="status-badge status-verde" style="font-size:0.7rem;padding:2px 6px;">VERDE</span></span>
+      </div>
+    </div>
+
+    <div class="drawer-content">
+      <div class="drawer-section-title">OPERACIONES DE VUELO</div>
+      <div class="drawer-nav-list">
+        <button class="drawer-nav-btn active" onclick="showView('appView'); closeMobileDrawer();" data-view="appView">
+          <span class="drawer-nav-icon">📊</span>
+          <span class="drawer-nav-text">Cuadro de Mando</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('performanceForm'); closeMobileDrawer();" data-view="performanceForm">
+          <span class="drawer-nav-icon">📝</span>
+          <span class="drawer-nav-text">Cargar Rendimiento (Tokens)</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('planesView'); closeMobileDrawer();" data-view="planesView">
+          <span class="drawer-nav-icon">✈️</span>
+          <span class="drawer-nav-text">Hangar de Aeronaves</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('historialView'); closeMobileDrawer();" data-view="historialView">
+          <span class="drawer-nav-icon">📜</span>
+          <span class="drawer-nav-text">Mi Historial de Eventos</span>
+        </button>
+      </div>
+
+      <div class="drawer-section-title">INFORMACIÓN & DOCTRINA</div>
+      <div class="drawer-nav-list">
+        <button class="drawer-nav-btn" onclick="showView('normativasView'); closeMobileDrawer();" data-view="normativasView">
+          <span class="drawer-nav-icon">📚</span>
+          <span class="drawer-nav-text">Normativas & Reglamentos</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('helpView'); closeMobileDrawer();" data-view="helpView">
+          <span class="drawer-nav-icon">ℹ️</span>
+          <span class="drawer-nav-text">Manual de Piloto & FAQ</span>
+        </button>
+        <button id="drawerExportBtn" class="drawer-nav-btn" onclick="showView('exportView'); closeMobileDrawer();" data-view="exportView" style="display:none;">
+          <span class="drawer-nav-icon">🖼️</span>
+          <span class="drawer-nav-text">Exportar Reporte PNG</span>
+        </button>
+      </div>
+
+      <!-- Sección Administrativa (Sólo Admin/Owner) -->
+      <div id="drawerAdminSection" style="display:none;">
+        <div class="drawer-section-title drawer-admin-title">MANDO & COMANDO</div>
+        <div class="drawer-nav-list">
+          <button id="drawerAdminBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('adminPanel'); closeMobileDrawer();" data-view="adminPanel">
+            <span class="drawer-nav-icon">🛡️</span>
+            <span class="drawer-nav-text">Panel de Administración</span>
+          </button>
+          <button id="drawerAllPerfBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('allPerformancesView'); closeMobileDrawer();" data-view="allPerformancesView">
+            <span class="drawer-nav-icon">📈</span>
+            <span class="drawer-nav-text">Rendimientos Globales</span>
+          </button>
+          <button id="drawerOwnerBtn" class="drawer-nav-btn drawer-btn-owner" onclick="showView('ownerPanelView'); closeMobileDrawer();" data-view="ownerPanelView" style="display:none;">
+            <span class="drawer-nav-icon">👑</span>
+            <span class="drawer-nav-text">Centro de Control Owner</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="drawer-section-title">SISTEMA</div>
+      <div class="drawer-nav-list">
+        <button class="drawer-nav-btn" onclick="showView('profileView'); closeMobileDrawer();" data-view="profileView">
+          <span class="drawer-nav-icon">👤</span>
+          <span class="drawer-nav-text">Mi Perfil Militar</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('settingsView'); closeMobileDrawer();" data-view="settingsView">
+          <span class="drawer-nav-icon">⚙️</span>
+          <span class="drawer-nav-text">Configuración de Cuenta</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="refreshCurrentView(); closeMobileDrawer();">
+          <span class="drawer-nav-icon">🔄</span>
+          <span class="drawer-nav-text">Sincronizar Datos</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button id="drawerLoginBtn" onclick="showLoginModal(); closeMobileDrawer();" class="btn-primary" style="width:100%;display:none;">
+        🔑 Iniciar Sesión
+      </button>
+      <button id="drawerLogoutBtn" onclick="logout(); closeMobileDrawer();" class="btn-danger" style="width:100%;display:none;">
+        🚪 Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ✅ Mobile Bottom Navigation Bar (5 core tabs: Inicio, Pilotos, Rendimiento, Perfil, Configuración) -->
+  <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navegación Móvil Principal">
+    <button class="mobile-nav-item active" onclick="showView('appView')" data-view="appView" aria-label="Inicio">
       <span class="mobile-nav-icon">📊</span>
-      <span class="mobile-nav-label">Mando</span>
+      <span class="mobile-nav-label">Inicio</span>
     </button>
-    <button class="mobile-nav-item" onclick="showView('performanceForm')" data-view="performanceForm" aria-label="Rendimiento">
-      <span class="mobile-nav-icon">📝</span>
-      <span class="mobile-nav-label">Tokens</span>
-    </button>
-    <button class="mobile-nav-item" onclick="showView('planesView')" data-view="planesView" aria-label="Hangar">
+    <button class="mobile-nav-item" onclick="showView('planesView')" data-view="planesView" aria-label="Pilotos y Flota">
       <span class="mobile-nav-icon">✈️</span>
-      <span class="mobile-nav-label">Hangar</span>
+      <span class="mobile-nav-label">Pilotos</span>
     </button>
-    <button class="mobile-nav-item" onclick="showView('historialView')" data-view="historialView" aria-label="Historial">
-      <span class="mobile-nav-icon">📜</span>
-      <span class="mobile-nav-label">Historial</span>
+    <button class="mobile-nav-item mobile-nav-highlight" onclick="showView('performanceForm')" data-view="performanceForm" aria-label="Rendimiento">
+      <div class="mobile-nav-icon-circle">
+        <span class="mobile-nav-icon">📝</span>
+      </div>
+      <span class="mobile-nav-label">Rendimiento</span>
     </button>
     <button class="mobile-nav-item" onclick="showView('profileView')" data-view="profileView" aria-label="Perfil">
       <span class="mobile-nav-icon">👤</span>
       <span class="mobile-nav-label">Perfil</span>
     </button>
-    <button class="mobile-nav-item mobile-nav-admin-btn" id="mobileAdminNavItem" onclick="showView('adminPanel')" data-view="adminPanel" style="display:none;" aria-label="Admin">
-      <span class="mobile-nav-icon">🛡️</span>
-      <span class="mobile-nav-label">Admin</span>
+    <button class="mobile-nav-item" onclick="showView('settingsView')" data-view="settingsView" aria-label="Configuración">
+      <span class="mobile-nav-icon">⚙️</span>
+      <span class="mobile-nav-label">Ajustes</span>
     </button>
   </nav>
 
