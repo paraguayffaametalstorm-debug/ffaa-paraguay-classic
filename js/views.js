@@ -69,17 +69,14 @@ function showView(viewId) {
 
   // Si los componentes aún no terminaron de inyectarse en el DOM, reintentar tras breve espera
   if (!targetView) {
-    const container = document.getElementById('viewsContainer');
-    if (!container || !container.children || container.children.length === 0) {
-      setTimeout(() => showView(viewId), 80);
+    const dashboardEl = document.getElementById(VIEWS.DASHBOARD);
+    if (!dashboardEl) {
+      // Las plantillas HTML aún se están inyectando en viewsContainer
+      setTimeout(() => showView(viewId || VIEWS.DASHBOARD), 100);
       return;
     }
-    // Fallback de seguridad al Dashboard si la vista solicitada no existe
-    targetView = document.getElementById(VIEWS.DASHBOARD);
-    if (!targetView) {
-      console.warn(`Vista no encontrada: ${viewId}`);
-      return;
-    }
+    // Si la vista solicitada no existe, fallback al Dashboard
+    targetView = dashboardEl;
   }
 
   document.querySelectorAll('.view').forEach(view => {
