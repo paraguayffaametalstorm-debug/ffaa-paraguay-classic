@@ -1,0 +1,16 @@
+<div id="sessionWarningModal" class="modal">
+  <div class="modal-content" style="max-width:420px;text-align:center;">
+    <div class="modal-header">
+      <h3 style="color:#f39c12;">⚠️ Sesión a punto de expirar</h3>
+    </div>
+    <div class="modal-body">
+      <p style="color:#e2e8f0;margin-bottom:12px;">Tu sesión militar se cerrará por inactividad en:</p>
+      <div id="sessionTimeoutCountdown" style="font-size:2rem;font-weight:700;color:#f39c12;margin-bottom:16px;">60s</div>
+      <p style="font-size:0.85rem;color:#a0aec0;">Haz clic abajo para mantener tu enlace operativo.</p>
+    </div>
+    <div class="modal-footer" style="justify-content:center;gap:12px;">
+      <button onclick="if(typeof extendSession==='function')extendSession();" class="btn-primary">Continuar Sesión</button>
+      <button onclick="logout()" class="btn-danger">Cerrar Ahora</button>
+    </div>
+  </div>
+</div>

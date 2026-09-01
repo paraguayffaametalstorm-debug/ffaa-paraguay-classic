@@ -1,0 +1,190 @@
+<div id="planesView" class="view" style="display:none;">
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <h2>✈️ Hangar de Aeronaves de Combate</h2>
+      <p class="subtitle">Gestión de tu flota aérea, habilidades y equipamiento</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="exportPlanesXLSX()" class="btn-secondary">📥 Exportar XLSX</button>
+      <button onclick="showAddPlaneModal()" class="btn-primary">➕ Agregar Aeronave</button>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Total de Flota</h4>
+      <div id="totalPlanes" style="font-size:1.8rem;font-weight:700;color:var(--color-secondary,#d4af37);">0</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Nivel Promedio</h4>
+      <div id="avgPlaneLevel" style="font-size:1.8rem;font-weight:700;color:#3498db;">0</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Nivel Máximo</h4>
+      <div id="maxPlaneLevel" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">0</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Con Habilidad Especial</h4>
+      <div id="planesWithSpecial" style="font-size:1.8rem;font-weight:700;color:#9b59b6;">0</div>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+      <div>
+        <label for="planeSearch" style="font-size:0.8rem;color:#a0aec0;">Buscar Aeronave</label>
+        <input type="text" id="planeSearch" placeholder="Nombre o código..." oninput="filterPlanes()" />
+      </div>
+      <div>
+        <label for="planeTypeFilter" style="font-size:0.8rem;color:#a0aec0;">Tipo / Rol</label>
+        <select id="planeTypeFilter" onchange="filterPlanes()">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label for="minLevelFilter" style="font-size:0.8rem;color:#a0aec0;">Nivel Mínimo</label>
+        <select id="minLevelFilter" onchange="filterPlanes()">
+          <option value="">-</option>
+        </select>
+      </div>
+      <div>
+        <label for="maxLevelFilter" style="font-size:0.8rem;color:#a0aec0;">Nivel Máximo</label>
+        <select id="maxLevelFilter" onchange="filterPlanes()">
+          <option value="">-</option>
+        </select>
+      </div>
+      <div>
+        <label for="specialSkillFilter" style="font-size:0.8rem;color:#a0aec0;">Hab. Especial</label>
+        <select id="specialSkillFilter" onchange="filterPlanes()">
+          <option value="">Todas</option>
+          <option value="with">Con Especial</option>
+          <option value="without">Sin Especial</option>
+        </select>
+      </div>
+      <div>
+        <label for="passiveSkillFilter" style="font-size:0.8rem;color:#a0aec0;">Hab. Pasiva</label>
+        <select id="passiveSkillFilter" onchange="filterPlanes()">
+          <option value="">Todas</option>
+          <option value="with">Con Pasiva</option>
+          <option value="without">Sin Pasiva</option>
+        </select>
+      </div>
+      <div>
+        <button onclick="resetPlaneFilters()" class="btn-secondary" style="width:100%;">🔄 Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Planes Table -->
+  <div class="card" style="overflow-x:auto;">
+    <table class="data-table" style="width:100%;font-size:0.9rem;">
+      <thead>
+        <tr>
+          <th>Aeronave</th>
+          <th>Tipo</th>
+          <th>Nivel</th>
+          <th>Especial (Nv 8+)</th>
+          <th>Pasiva (Nv 12+)</th>
+          <th>Mod 1 (Nv 16+)</th>
+          <th>Mod 2 (Nv 20)</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="planesTableBody">
+        <tr>
+          <td colspan="8" class="text-center">Cargando flota...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Agregar/Editar Avión -->
+<div id="addPlaneModal" class="modal">
+  <div class="modal-content" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="addPlaneModalTitle">➕ Agregar Nueva Aeronave</h3>
+      <span class="close-btn" onclick="closeModal('addPlaneModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editingPlaneId" value="" />
+      
+      <div class="form-group">
+        <label for="planeModel">Modelo de Aeronave <span style="color:#e74c3c;">*</span></label>
+        <select id="planeModel" onchange="onPlaneModelChange()" required>
+          <option value="">-- Seleccionar Avión --</option>
+        </select>
+        <small id="planeModelLockNote" style="display:none;color:#a0aec0;margin-top:4px;">
+          ℹ️ En modo edición el modelo está fijo.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="planeLevel">Nivel de la Aeronave (1 - 20) <span style="color:#e74c3c;">*</span></label>
+        <select id="planeLevel" onchange="loadPlaneSkills()" required>
+          <option value="">-- Seleccionar Nivel --</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="specialSkill">Habilidad Especial (Desbloquea en Nivel 8)</label>
+        <select id="specialSkill" disabled>
+          <option value="">-- Requiere Nivel 8+ --</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="passiveSkill">Habilidad Pasiva (Desbloquea en Nivel 12)</label>
+        <select id="passiveSkill" disabled>
+          <option value="">-- Requiere Nivel 12+ --</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label for="mod1">Modificación 1 (Nv 16+)</label>
+          <select id="mod1" disabled>
+            <option value="">-- Requiere Nivel 16+ --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="mod1Level">Nivel Mod 1</label>
+          <select id="mod1Level" disabled>
+            <option value="">-</option>
+            <option value="1">Nv 1</option>
+            <option value="2">Nv 2</option>
+            <option value="3">Nv 3</option>
+            <option value="4">Nv 4</option>
+            <option value="5">Nv 5</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label for="mod2">Modificación 2 (Nv 20)</label>
+          <select id="mod2" disabled>
+            <option value="">-- Requiere Nivel 20 --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="mod2Level">Nivel Mod 2</label>
+          <select id="mod2Level" disabled>
+            <option value="">-</option>
+            <option value="1">Nv 1</option>
+            <option value="2">Nv 2</option>
+            <option value="3">Nv 3</option>
+            <option value="4">Nv 4</option>
+            <option value="5">Nv 5</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('addPlaneModal')" class="btn-secondary">Cancelar</button>
+      <button onclick="savePlane()" class="btn-primary">💾 Guardar Aeronave</button>
+    </div>
+  </div>
+</div>

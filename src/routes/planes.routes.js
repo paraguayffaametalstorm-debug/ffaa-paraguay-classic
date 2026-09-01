@@ -1,0 +1,28 @@
+import { Router } from 'express';
+import {
+  getCatalogModels,
+  getCatalogMods,
+  getMyPlanes,
+  addPlane,
+  updatePlane,
+  deletePlane,
+  exportPlanesCSV
+} from '../controllers/planes.controller.js';
+import { requireAuth } from '../middlewares/auth.js';
+
+const router = Router();
+
+// Public catalog routes (or authenticated)
+router.get('/catalog/plane-models', getCatalogModels);
+router.get('/catalog/plane-mods', getCatalogMods);
+
+// Authenticated hangar routes
+router.use(requireAuth);
+router.get('/', getMyPlanes);
+router.get('/my-planes', getMyPlanes);
+router.post('/', addPlane);
+router.put('/:id', updatePlane);
+router.delete('/:id', deletePlane);
+router.get('/export', exportPlanesCSV);
+
+export default router;

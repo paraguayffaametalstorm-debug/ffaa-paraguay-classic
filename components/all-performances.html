@@ -1,0 +1,82 @@
+<div id="allPerformancesView" class="view" style="display:none;">
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <h2>📈 Rendimientos Globales del Escuadrón</h2>
+      <p class="subtitle">Visión consolidada de registros de combate de todos los pilotos</p>
+    </div>
+    <button onclick="exportAllPerformances()" class="btn-primary">📥 Exportar XLSX Consolidado</button>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Total Registros</h4>
+      <div id="totalPerformances" style="font-size:1.8rem;font-weight:700;color:var(--color-secondary,#d4af37);">0</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Promedio Global</h4>
+      <div id="avgPerfTokens" style="font-size:1.8rem;font-weight:700;color:#3498db;">0</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Máximo Tokens</h4>
+      <div id="maxPerfTokens" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">0</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Pilotos en Verde</h4>
+      <div id="verdeCount" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">0</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+      <div>
+        <label for="allPerfSearch" style="font-size:0.8rem;color:#a0aec0;">Buscar Piloto</label>
+        <input type="text" id="allPerfSearch" placeholder="Nick..." oninput="filterAllPerformances()" />
+      </div>
+      <div>
+        <label for="allPerfRoleFilter" style="font-size:0.8rem;color:#a0aec0;">Rango / Rol</label>
+        <select id="allPerfRoleFilter" onchange="filterAllPerformances()">
+          <option value="">Todos</option>
+          <option value="MIEMBRO">Miembro</option>
+          <option value="VETERANO">Veterano</option>
+          <option value="ADMIN">Admin</option>
+          <option value="OWNER">Owner</option>
+        </select>
+      </div>
+      <div>
+        <label for="minTokensFilter" style="font-size:0.8rem;color:#a0aec0;">Mín. Tokens</label>
+        <input type="number" id="minTokensFilter" placeholder="0" oninput="filterAllPerformances()" />
+      </div>
+      <div>
+        <label for="maxTokensFilter" style="font-size:0.8rem;color:#a0aec0;">Máx. Tokens</label>
+        <input type="number" id="maxTokensFilter" placeholder="250" oninput="filterAllPerformances()" />
+      </div>
+      <div>
+        <label for="statusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado</label>
+        <select id="statusFilter" onchange="filterAllPerformances()">
+          <option value="">Todos</option>
+          <option value="VERDE">Verde</option>
+          <option value="NARANJA">Naranja</option>
+          <option value="ROJO">Rojo</option>
+          <option value="NEGRO">Negro</option>
+        </select>
+      </div>
+      <div>
+        <label for="eventIdFilter" style="font-size:0.8rem;color:#a0aec0;">Evento</label>
+        <input type="text" id="eventIdFilter" placeholder="SQUADRON-..." oninput="filterAllPerformances()" />
+      </div>
+      <div>
+        <button onclick="resetAllPerfFilters()" class="btn-secondary" style="width:100%;">🔄 Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performances Table -->
+  <div class="card">
+    <div id="allPerformancesTable">
+      <div class="loading-text">Cargando rendimientos...</div>
+    </div>
+    <div id="allPerfPagination" class="pagination" style="display:flex;justify-content:center;gap:6px;margin-top:1.5rem;"></div>
+  </div>
+</div>

@@ -5,6 +5,17 @@
 */
 
 // IDs de vistas principales
+window.escapeHTML = function(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+const escapeHTML = window.escapeHTML;
+
 const VIEWS = {
   DASHBOARD:        'appView',
   PERFORMANCE:      'performanceForm',
