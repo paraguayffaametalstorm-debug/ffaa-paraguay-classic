@@ -818,7 +818,7 @@ function displayPlanes(planes) {
   if (planes.length === 0) {
     tbody.innerHTML = `
 <tr>
-<td colspan="8" class="text-center">
+<td colspan="9" class="text-center">
 <p>No tienes aeronaves registradas</p>
 <button onclick="showAddPlaneModal()" class="btn-primary mt-10">➕ Agregar primera aeronave</button>
 </td>
@@ -826,7 +826,32 @@ function displayPlanes(planes) {
 `;
     return;
   }
-  tbody.innerHTML = planes.map(plane => `
+  tbody.innerHTML = planes.map(plane => {
+    const isUnlocked = (plane.nivel || 1) >= 6;
+    const nf = plane.nivel_fuselaje || 0;
+    const nm = plane.nivel_motor || 0;
+    const na = plane.nivel_avionica || 0;
+    const nw = plane.nivel_armas || 0;
+    const avgSys = ((nf + nm + na + nw) / 4).toFixed(1);
+
+    let upgradesBadgeHtml = '';
+    if (isUnlocked) {
+      upgradesBadgeHtml = `
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+            <span class="status-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);font-size:0.7rem;padding:1px 5px;" title="Fuselaje">🛡️F:${nf}</span>
+            <span class="status-badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);font-size:0.7rem;padding:1px 5px;" title="Motor">⚙️M:${nm}</span>
+            <span class="status-badge" style="background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);font-size:0.7rem;padding:1px 5px;" title="Aviónica">📡A:${na}</span>
+            <span class="status-badge" style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);font-size:0.7rem;padding:1px 5px;" title="Armas">🎯W:${nw}</span>
+          </div>
+          <span style="font-size:0.7rem;color:#94a3b8;">Media subsistemas: <strong style="color:#38bdf8;">${avgSys}/8</strong></span>
+        </div>
+      `;
+    } else {
+      upgradesBadgeHtml = `<span style="color:#64748b;font-size:0.75rem;font-style:italic;" title="Desbloquea en Nivel 6">🔒 Bloqueado (Nv 6+)</span>`;
+    }
+
+    return `
 <tr>
 <td data-label="Aeronave"><strong>${plane.model_name || plane.name || plane.avion_id || '-'}</strong></td>
 <td data-label="Tipo">${plane.type || '-'}</td>
@@ -835,17 +860,21 @@ function displayPlanes(planes) {
 Nv. ${plane.nivel}
 </span>
 </td>
+<td data-label="Upgrades 2.0">${upgradesBadgeHtml}</td>
 <td data-label="Especial">${plane.especial_nombre || '<span style="color:#666">—</span>'}</td>
 <td data-label="Pasiva">${plane.pasiva_nombre || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 1">${plane.mod1_nombre || plane.mod1_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 2">${plane.mod2_nombre || plane.mod2_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
+<button onclick="openPlaneUpgrades(${plane.id})" class="btn-primary" style="padding:4px 8px; font-size:0.75rem; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#38bdf8;" title="Gestionar Upgrades 2.0"><i data-lucide="wrench" style="width:13px;height:13px;"></i> Upgrades</button>
 <button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-color:var(--blue-telemetry); color:var(--blue-telemetry);" title="Ver Telemetría"><i data-lucide="gauge" style="width:13px;height:13px;"></i> Radar</button>
 <button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem;" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
 <button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" title="Eliminar"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>
 </td>
 </tr>
-`).join('');
+`;
+  }).join('');
+
   if (typeof refreshLucideIcons === 'function') {
     setTimeout(refreshLucideIcons, 30);
   }
@@ -856,6 +885,7 @@ function updatePlanesStats(planes) {
   const avgEl   = document.getElementById('avgPlaneLevel');
   const maxEl   = document.getElementById('maxPlaneLevel');
   const specEl  = document.getElementById('planesWithSpecial');
+  const upgrEl  = document.getElementById('planesWithUpgrades');
 
   if (totalEl) totalEl.textContent = planes.length;
   if (planes.length > 0) {
@@ -863,14 +893,17 @@ function updatePlanesStats(planes) {
     const avg = sum / planes.length;
     const max = Math.max(...planes.map(p => parseInt(p.nivel, 10) || 0));
     const withSpecial = planes.filter(p => !!p.especial_nombre).length;
+    const withUpgrades = planes.filter(p => (parseInt(p.nivel, 10) || 0) >= 6).length;
 
     if (avgEl)  avgEl.textContent = avg.toFixed(1);
     if (maxEl)  maxEl.textContent = max;
     if (specEl) specEl.textContent = withSpecial;
+    if (upgrEl) upgrEl.textContent = withUpgrades;
   } else {
     if (avgEl)  avgEl.textContent = '0';
     if (maxEl)  maxEl.textContent = '0';
     if (specEl) specEl.textContent = '0';
+    if (upgrEl) upgrEl.textContent = '0';
   }
 }
 
@@ -889,6 +922,8 @@ function filterPlanes() {
   const maxLvl   = parseInt(document.getElementById('maxLevelFilter')?.value) || 999;
   const special  = document.getElementById('specialSkillFilter')?.value || '';
   const passive  = document.getElementById('passiveSkillFilter')?.value || '';
+  const upgrOpt  = document.getElementById('upgradesFilter')?.value || '';
+
   const filtered = allUserPlanes.filter(p => {
     const name = (p.model_name || p.avion_id || '').toLowerCase();
     if (search && !name.includes(search)) return false;
@@ -898,6 +933,13 @@ function filterPlanes() {
     if (special === 'without' &&  p.especial_nombre) return false;
     if (passive === 'with'    && !p.pasiva_nombre)   return false;
     if (passive === 'without' &&  p.pasiva_nombre)   return false;
+
+    if (upgrOpt === 'unlocked' && p.nivel < 6) return false;
+    if (upgrOpt === 'locked' && p.nivel >= 6) return false;
+    if (upgrOpt === 'upgraded') {
+      const totalSys = (p.nivel_fuselaje || 0) + (p.nivel_motor || 0) + (p.nivel_avionica || 0) + (p.nivel_armas || 0);
+      if (p.nivel < 6 || totalSys === 0) return false;
+    }
     return true;
   });
   displayPlanes(filtered);
@@ -905,6 +947,193 @@ function filterPlanes() {
 }
 
 function applyPlaneFilters() { filterPlanes(); }
+
+// ========== GESTIÓN DE UPGRADES 2.0 (MODAL & ACTUALIZACIONES) ==========
+let _currentUpgradesPlane = null;
+
+async function openPlaneUpgrades(planeId) {
+  showModal('planeUpgradesModal');
+  const pIdInput = document.getElementById('upgradesPlaneId');
+  if (pIdInput) pIdInput.value = planeId;
+
+  document.getElementById('upgradesPlaneName').textContent = 'Cargando datos del caza...';
+  document.getElementById('upgradesPlaneType').textContent = '—';
+  document.getElementById('upgradesPlaneLevel').textContent = '—';
+
+  try {
+    const details = typeof getPlaneDetails === 'function' 
+      ? await getPlaneDetails(planeId)
+      : null;
+
+    if (details) {
+      _currentUpgradesPlane = details;
+      renderPlaneUpgradesModal(details);
+    } else {
+      const cached = allUserPlanes.find(p => p.id === planeId);
+      if (cached) {
+        _currentUpgradesPlane = cached;
+        renderPlaneUpgradesModal(cached);
+      }
+    }
+  } catch (err) {
+    console.error('Error al abrir modal de Upgrades 2.0:', err);
+    showToast('❌ Error al cargar sistemas de la aeronave', 'error');
+  }
+}
+
+function renderPlaneUpgradesModal(plane) {
+  const nameEl  = document.getElementById('upgradesPlaneName');
+  const typeEl  = document.getElementById('upgradesPlaneType');
+  const lvlEl   = document.getElementById('upgradesPlaneLevel');
+  const badgeEl = document.getElementById('upgradesStatusBadge');
+  const lockBan = document.getElementById('upgradesLockBanner');
+  const gridEl  = document.getElementById('upgradesSystemsGrid');
+
+  const modelName = plane.model_name || plane.name || plane.avion_id || 'Aeronave';
+  if (nameEl) nameEl.textContent = modelName;
+  if (typeEl) typeEl.textContent = plane.type || 'Caza de Combate';
+  if (lvlEl) lvlEl.textContent = `Nv. ${plane.nivel || 1}`;
+
+  const isUnlocked = (plane.nivel || 1) >= 6;
+
+  if (badgeEl) {
+    badgeEl.innerHTML = isUnlocked
+      ? `<span class="status-badge" style="background:rgba(56,189,248,0.2);color:#38bdf8;border:1px solid #38bdf8;">🟢 UPGRADES 2.0 ACTIVO</span>`
+      : `<span class="status-badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid #ef4444;">🔒 BLOQUEADO (&lt; Nv 6)</span>`;
+  }
+
+  if (lockBan) lockBan.style.display = isUnlocked ? 'none' : 'block';
+
+  // Costos estándar Upgrades 2.0
+  const UPGRADE_COSTS = {
+    1: { piezas: 100, avanzadas: 0 },
+    2: { piezas: 250, avanzadas: 0 },
+    3: { piezas: 500, avanzadas: 10 },
+    4: { piezas: 800, avanzadas: 25 },
+    5: { piezas: 1200, avanzadas: 50 },
+    6: { piezas: 1800, avanzadas: 100 },
+    7: { piezas: 2500, avanzadas: 200 },
+    8: { piezas: 3500, avanzadas: 350 }
+  };
+
+  const systems = [
+    { key: 'fuselaje', label: 'Fuselaje', color: '#38bdf8', curLvl: plane.sistemas?.fuselaje?.nivel ?? plane.nivel_fuselaje ?? 0 },
+    { key: 'motor',    label: 'Motor',    color: '#fbbf24', curLvl: plane.sistemas?.motor?.nivel ?? plane.nivel_motor ?? 0 },
+    { key: 'avionica', label: 'Aviónica', color: '#c084fc', curLvl: plane.sistemas?.avionica?.nivel ?? plane.nivel_avionica ?? 0 },
+    { key: 'armas',    label: 'Armas',    color: '#f87171', curLvl: plane.sistemas?.armas?.nivel ?? plane.nivel_armas ?? 0 }
+  ];
+
+  systems.forEach(sys => {
+    // Badge
+    const badge = document.getElementById(`levelBadge_${sys.key}`);
+    if (badge) {
+      badge.textContent = `Nv. ${sys.curLvl} / 8`;
+      badge.style.color = sys.color;
+    }
+
+    // Matrix (8 slots)
+    const matrix = document.getElementById(`matrix_${sys.key}`);
+    if (matrix) {
+      let slotsHtml = '';
+      for (let i = 1; i <= 8; i++) {
+        const filled = i <= sys.curLvl;
+        const bg = filled ? sys.color : 'rgba(255,255,255,0.1)';
+        slotsHtml += `<div style="flex:1;height:6px;border-radius:2px;background:${bg};transition:background 0.3s;" title="Nivel ${i}"></div>`;
+      }
+      matrix.innerHTML = slotsHtml;
+    }
+
+    // Costo siguiente nivel
+    const costEl = document.getElementById(`cost_${sys.key}`);
+    if (costEl) {
+      if (sys.curLvl >= 8) {
+        costEl.innerHTML = `<span style="color:#22c55e;">✨ NIVEL MÁXIMO</span>`;
+      } else if (!isUnlocked) {
+        costEl.innerHTML = `<span style="color:#64748b;">Requiere Nivel 6</span>`;
+      } else {
+        const nextCost = UPGRADE_COSTS[sys.curLvl + 1];
+        if (nextCost) {
+          costEl.innerHTML = `🔩 ${nextCost.piezas} pzas` + (nextCost.avanzadas > 0 ? ` + 💎 ${nextCost.avanzadas} avanz.` : '');
+        } else {
+          costEl.textContent = '—';
+        }
+      }
+    }
+
+    // Selector
+    const sel = document.getElementById(`select_${sys.key}`);
+    if (sel) {
+      sel.value = String(sys.curLvl);
+      sel.disabled = !isUnlocked;
+    }
+  });
+}
+
+async function applySystemUpgrade(sistema) {
+  const planeId = parseInt(document.getElementById('upgradesPlaneId')?.value, 10);
+  const sel = document.getElementById(`select_${sistema}`);
+  if (!sel || !planeId) return;
+
+  const newLevel = parseInt(sel.value, 10);
+
+  try {
+    const updatedPlane = await updatePlaneSystem(planeId, sistema, newLevel);
+    
+    // Actualizar cache local
+    const pIdx = allUserPlanes.findIndex(p => p.id === planeId);
+    if (pIdx !== -1) {
+      allUserPlanes[pIdx] = { ...allUserPlanes[pIdx], ...updatedPlane };
+    }
+    _currentUpgradesPlane = { ..._currentUpgradesPlane, ...updatedPlane };
+
+    // Re-renderizar modal y tabla
+    renderPlaneUpgradesModal(_currentUpgradesPlane);
+    displayPlanes(allUserPlanes);
+    updatePlanesStats(allUserPlanes);
+  } catch (err) {
+    console.error('Error aplicando upgrade de sistema:', err);
+  }
+}
+
+window.openPlaneUpgrades = openPlaneUpgrades;
+window.applySystemUpgrade = applySystemUpgrade;
+
+function exportPlanesXLSX() {
+  if (!allUserPlanes || allUserPlanes.length === 0) {
+    showToast('⚠️ No hay aeronaves registradas para exportar', 'warning');
+    return;
+  }
+
+  const exportData = allUserPlanes.map(p => ({
+    'ID': p.id,
+    'Aeronave': p.model_name || p.name || p.avion_id || '-',
+    'Tipo': p.type || '-',
+    'Nivel General': p.nivel || 1,
+    'Upgrades 2.0 Desbloqueado': (p.nivel || 1) >= 6 ? 'SÍ' : 'NO',
+    'Nivel Fuselaje': (p.nivel || 1) >= 6 ? (p.nivel_fuselaje || 0) : 'Bloqueado',
+    'Nivel Motor': (p.nivel || 1) >= 6 ? (p.nivel_motor || 0) : 'Bloqueado',
+    'Nivel Aviónica': (p.nivel || 1) >= 6 ? (p.nivel_avionica || 0) : 'Bloqueado',
+    'Nivel Armas': (p.nivel || 1) >= 6 ? (p.nivel_armas || 0) : 'Bloqueado',
+    'Media Subsistemas': (p.nivel || 1) >= 6 ? (((p.nivel_fuselaje || 0) + (p.nivel_motor || 0) + (p.nivel_avionica || 0) + (p.nivel_armas || 0)) / 4).toFixed(1) : '-',
+    'Habilidad Especial': p.especial_nombre || 'Ninguna',
+    'Habilidad Pasiva': p.pasiva_nombre || 'Ninguna',
+    'Módulo 1': p.mod1_nombre || p.mod1_id || 'Ninguno',
+    'Nivel Mod 1': p.mod1_lvl || '-',
+    'Módulo 2': p.mod2_nombre || p.mod2_id || 'Ninguno',
+    'Nivel Mod 2': p.mod2_lvl || '-'
+  }));
+
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Hangar_Flota");
+    XLSX.writeFile(wb, `Flota_Aeronaves_Upgrades2_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showToast('✅ Flota exportada a Excel (.xlsx)', 'success');
+  } else {
+    exportToCSV(exportData, `Flota_Aeronaves_Upgrades2_${new Date().toISOString().split('T')[0]}`);
+  }
+}
+window.exportPlanesXLSX = exportPlanesXLSX;
 
 // ========== ESTADÍSTICAS DE AERONAVE — HEXÁGONO REAL ==========
 let _statsRadarChart = null;
@@ -941,6 +1170,28 @@ async function openAircraftStats(planeId) {
     document.getElementById('statsSpecial').textContent      = plane.especial || '—';
     document.getElementById('statsPassive').textContent      = plane.pasiva  || '—';
     document.getElementById('currentLevel').textContent      = plane.nivel;
+
+    const upgradesGrid = document.getElementById('statsUpgradesGrid');
+    if (upgradesGrid) {
+      if (plane.sistemas_desbloqueados || plane.nivel >= 6) {
+        upgradesGrid.innerHTML = `
+          <span class="mod-badge" style="border-color:rgba(56,189,248,0.4);color:#38bdf8;">
+            <strong style="color:#dde6f5;">🛡️ Fuselaje:</strong> Nv. ${plane.nivel_fuselaje || 0}/8
+          </span>
+          <span class="mod-badge" style="border-color:rgba(251,191,36,0.4);color:#fbbf24;">
+            <strong style="color:#dde6f5;">⚙️ Motor:</strong> Nv. ${plane.nivel_motor || 0}/8
+          </span>
+          <span class="mod-badge" style="border-color:rgba(168,85,247,0.4);color:#c084fc;">
+            <strong style="color:#dde6f5;">📡 Aviónica:</strong> Nv. ${plane.nivel_avionica || 0}/8
+          </span>
+          <span class="mod-badge" style="border-color:rgba(239,68,68,0.4);color:#f87171;">
+            <strong style="color:#dde6f5;">🎯 Armas:</strong> Nv. ${plane.nivel_armas || 0}/8
+          </span>
+        `;
+      } else {
+        upgradesGrid.innerHTML = '<span style="color:#64748b;font-style:italic;font-size:0.8rem;">🔒 Sistemas Upgrades 2.0 bloqueados (Requiere Nivel 6+)</span>';
+      }
+    }
 
     const modsGrid = document.getElementById('statsModsGrid');
     const mods = [];
@@ -1078,7 +1329,7 @@ ${m.lvl ? ` <span style="color:#d4af37;">Nv.${m.lvl}</span>` : ''}
 
 function resetPlaneFilters() {
   ['planeSearch'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  ['planeTypeFilter','minLevelFilter','maxLevelFilter','specialSkillFilter','passiveSkillFilter']
+  ['planeTypeFilter','minLevelFilter','maxLevelFilter','specialSkillFilter','passiveSkillFilter','upgradesFilter']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   displayPlanes(allUserPlanes);
   updatePlanesStats(allUserPlanes);
@@ -1100,6 +1351,12 @@ function showAddPlaneModal() {
   ['planeLevel','mod1Level','mod2Level'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  ['formNivelFuselaje','formNivelMotor','formNivelAvionica','formNivelArmas'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '0';
+  });
+  const upGrp = document.getElementById('formUpgradesGroup');
+  if (upGrp) upGrp.style.display = 'none';
+
   ['specialSkill','passiveSkill'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.disabled = true; el.innerHTML = `<option value="">${id === 'specialSkill' ? '-- Requiere Nivel 8+ --' : '-- Requiere Nivel 12+ --'}</option>`; }
@@ -1149,7 +1406,7 @@ function editPlane(planeId) {
     if (typeof loadPlaneSkillOptions === 'function') loadPlaneSkillOptions(false);
     if (typeof loadPlaneSkills       === 'function') loadPlaneSkills();
     const setSel = (id, val) => {
-      if (!val) return;
+      if (val === undefined || val === null) return;
       const el = document.getElementById(id);
       if (el) el.value = val;
     };
@@ -1159,6 +1416,14 @@ function editPlane(planeId) {
     setSel('mod1Level',    plane.mod1_lvl);
     setSel('mod2',         plane.mod2_id);
     setSel('mod2Level',    plane.mod2_lvl);
+
+    setSel('formNivelFuselaje', plane.nivel_fuselaje || 0);
+    setSel('formNivelMotor',    plane.nivel_motor || 0);
+    setSel('formNivelAvionica', plane.nivel_avionica || 0);
+    setSel('formNivelArmas',    plane.nivel_armas || 0);
+
+    const upGrp = document.getElementById('formUpgradesGroup');
+    if (upGrp) upGrp.style.display = (plane.nivel || 1) >= 6 ? 'block' : 'none';
   });
 }
 

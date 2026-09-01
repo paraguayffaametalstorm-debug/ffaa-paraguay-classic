@@ -7,7 +7,9 @@ import {
   updatePlane,
   deletePlane,
   exportPlanesCSV,
-  getPlaneStats
+  getPlaneStats,
+  getPlaneDetails,
+  updatePlaneSystem
 } from '../controllers/planes.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -24,6 +26,8 @@ router.use(requireAuth);
 router.get('/', getMyPlanes);
 router.get('/my-planes', getMyPlanes);
 router.get('/:id/stats', getPlaneStats);
+router.get('/:id/details', getPlaneDetails);
+router.put('/:id/system', updatePlaneSystem);
 router.post('/', addPlane);
 router.put('/:id', updatePlane);
 router.delete('/:id', deletePlane);

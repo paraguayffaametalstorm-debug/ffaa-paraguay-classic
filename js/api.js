@@ -169,6 +169,11 @@ async function savePlane() {
       if (duplicate) throw new Error('Ya posees este modelo de aeronave. No puedes tener duplicados.');
     }
 
+    const nivelFuselaje = planeLevel >= 6 ? (parseInt(document.getElementById('formNivelFuselaje')?.value, 10) || 0) : 0;
+    const nivelMotor    = planeLevel >= 6 ? (parseInt(document.getElementById('formNivelMotor')?.value, 10) || 0) : 0;
+    const nivelAvionica = planeLevel >= 6 ? (parseInt(document.getElementById('formNivelAvionica')?.value, 10) || 0) : 0;
+    const nivelArmas    = planeLevel >= 6 ? (parseInt(document.getElementById('formNivelArmas')?.value, 10) || 0) : 0;
+
     const data = {
       avion_id:       planeModel,
       nivel:          planeLevel,
@@ -177,7 +182,11 @@ async function savePlane() {
       mod1_id:         mod1,
       mod1_lvl:        mod1Level,
       mod2_id:         mod2,
-      mod2_lvl:        mod2Level
+      mod2_lvl:        mod2Level,
+      nivel_fuselaje:  nivelFuselaje,
+      nivel_motor:     nivelMotor,
+      nivel_avionica:  nivelAvionica,
+      nivel_armas:     nivelArmas
     };
 
     console.log(`✈️ ${isEditing ? 'Actualizando' : 'Creando'} avión`, data);
@@ -231,6 +240,55 @@ async function deletePlane(planeId) {
     showToast('❌ ' + err.message, 'error');
   }
 }
+
+// ========== UPGRADES 2.0 (SISTEMAS MEJORABLES) ==========
+async function getPlaneDetails(planeId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/planes/${planeId}/details`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al obtener detalles de la aeronave');
+    }
+    const data = await res.json();
+    return data.plane;
+  } catch (err) {
+    console.error('Error en getPlaneDetails:', err);
+    throw err;
+  }
+}
+
+async function updatePlaneSystem(planeId, sistema, nivel, piezas = 0, avanzadas = 0) {
+  try {
+    const res = await fetch(`${API_BASE}/api/planes/${planeId}/system`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        sistema,
+        nivel: parseInt(nivel, 10),
+        piezas: parseInt(piezas, 10) || 0,
+        avanzadas: parseInt(avanzadas, 10) || 0
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al actualizar sistema');
+    }
+
+    const data = await res.json();
+    showToast(`✅ ${data.message || 'Sistema actualizado con éxito'}`, 'success');
+    return data.plane;
+  } catch (err) {
+    console.error('Error en updatePlaneSystem:', err);
+    showToast('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
+window.getPlaneDetails = getPlaneDetails;
+window.updatePlaneSystem = updatePlaneSystem;
 
 // ========== NORMATIVAS ==========
 async function uploadNormativa() {
@@ -595,6 +653,12 @@ function onPlaneModelChange() {
 // ========== ESTADO DE CAMPOS SEGÚN NIVEL (SECCIÓN 6 DE REGLAS) ==========
 function loadPlaneSkills() {
   const level = parseInt(document.getElementById('planeLevel')?.value) || 0;
+
+  // Upgrades 2.0 (Sistemas Fuselaje, Motor, Aviónica, Armas) — Nivel 6+
+  const upgradesGrp = document.getElementById('formUpgradesGroup');
+  if (upgradesGrp) {
+    upgradesGrp.style.display = level >= 6 ? 'block' : 'none';
+  }
 
   // Helper: habilitar o deshabilitar con texto de placeholder correcto
   const setField = (id, enabled, placeholder) => {
