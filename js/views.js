@@ -29,8 +29,59 @@ const VIEWS = {
   EXPORT:           'exportView'
 };
 
+const VIEW_ALIASES = {
+  'dashboard':        VIEWS.DASHBOARD,
+  'dashboardView':    VIEWS.DASHBOARD,
+  'app':              VIEWS.DASHBOARD,
+  'appView':          VIEWS.DASHBOARD,
+  'performance':      VIEWS.PERFORMANCE,
+  'performanceForm':  VIEWS.PERFORMANCE,
+  'planes':           VIEWS.PLANES,
+  'planesView':       VIEWS.PLANES,
+  'hangar':           VIEWS.PLANES,
+  'historial':        VIEWS.HISTORIAL,
+  'historialView':    VIEWS.HISTORIAL,
+  'profile':          VIEWS.PROFILE,
+  'profileView':      VIEWS.PROFILE,
+  'normativas':       VIEWS.NORMATIVAS,
+  'normativasView':   VIEWS.NORMATIVAS,
+  'admin':            VIEWS.ADMIN,
+  'adminPanel':       VIEWS.ADMIN,
+  'adminView':        VIEWS.ADMIN,
+  'all-performances': VIEWS.ALL_PERFORMANCES,
+  'allPerformances':  VIEWS.ALL_PERFORMANCES,
+  'allPerformancesView': VIEWS.ALL_PERFORMANCES,
+  'settings':         VIEWS.SETTINGS,
+  'settingsView':     VIEWS.SETTINGS,
+  'help':             'helpView',
+  'helpView':         'helpView',
+  'owner':            'ownerPanelView',
+  'ownerPanel':       'ownerPanelView',
+  'ownerPanelView':   'ownerPanelView',
+  'export':           'exportView',
+  'exportView':       'exportView'
+};
+
 // Mostrar una vista específica
 function showView(viewId) {
+  const resolvedId = VIEW_ALIASES[viewId] || viewId;
+  let targetView = document.getElementById(resolvedId);
+
+  // Si los componentes aún no terminaron de inyectarse en el DOM, reintentar tras breve espera
+  if (!targetView) {
+    const container = document.getElementById('viewsContainer');
+    if (!container || !container.children || container.children.length === 0) {
+      setTimeout(() => showView(viewId), 80);
+      return;
+    }
+    // Fallback de seguridad al Dashboard si la vista solicitada no existe
+    targetView = document.getElementById(VIEWS.DASHBOARD);
+    if (!targetView) {
+      console.warn(`Vista no encontrada: ${viewId}`);
+      return;
+    }
+  }
+
   document.querySelectorAll('.view').forEach(view => {
     view.style.display = 'none';
   });
@@ -39,19 +90,16 @@ function showView(viewId) {
   });
   
   // Cerrar drawer lateral al cambiar de vista si está abierto
-  closeMobileDrawer();
-
-  const targetView = document.getElementById(viewId);
-  if (targetView) {
-    targetView.style.display = 'block';
-    window.currentActiveView = viewId;
-    updateActiveMenuButton(viewId);
-    loadViewData(viewId);
-    // Scroll arriba suavemente
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } else {
-    console.warn(`Vista no encontrada: ${viewId}`);
+  if (typeof closeMobileDrawer === 'function') {
+    closeMobileDrawer();
   }
+
+  const finalId = targetView.id;
+  targetView.style.display = 'block';
+  window.currentActiveView = finalId;
+  updateActiveMenuButton(finalId);
+  loadViewData(finalId);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function updateActiveMenuButton(activeViewId) {
