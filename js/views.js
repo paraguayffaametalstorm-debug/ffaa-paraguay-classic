@@ -37,12 +37,18 @@ function showView(viewId) {
   document.querySelectorAll('.modal').forEach(modal => {
     modal.classList.remove('show');
   });
+  
+  // Cerrar drawer lateral al cambiar de vista si está abierto
+  closeMobileDrawer();
+
   const targetView = document.getElementById(viewId);
   if (targetView) {
     targetView.style.display = 'block';
     window.currentActiveView = viewId;
     updateActiveMenuButton(viewId);
     loadViewData(viewId);
+    // Scroll arriba suavemente
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } else {
     console.warn(`Vista no encontrada: ${viewId}`);
   }
@@ -50,10 +56,10 @@ function showView(viewId) {
 
 function updateActiveMenuButton(activeViewId) {
   // Desktop Menu Tabs
-  document.querySelectorAll('.nav-menu button').forEach(btn => {
+  document.querySelectorAll('.nav-menu button, .desktop-nav-menu button').forEach(btn => {
     btn.classList.remove('active');
   });
-  const activeBtn = document.querySelector(`.nav-menu button[onclick*="${activeViewId}"]`);
+  const activeBtn = document.querySelector(`.nav-menu button[onclick*="${activeViewId}"], .desktop-nav-menu button[onclick*="${activeViewId}"]`);
   if (activeBtn) {
     activeBtn.classList.add('active');
   }
@@ -62,7 +68,56 @@ function updateActiveMenuButton(activeViewId) {
   document.querySelectorAll('.mobile-nav-item').forEach(item => {
     item.classList.toggle('active', item.getAttribute('data-view') === activeViewId);
   });
+
+  // Mobile Side Drawer Items
+  document.querySelectorAll('.drawer-nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-view') === activeViewId);
+  });
 }
+
+// ========== GESTIÓN DE SIDE DRAWER MÓVIL ==========
+function toggleMobileDrawer() {
+  const drawer = document.getElementById('mobileSideDrawer');
+  const isOpen = drawer && drawer.classList.contains('open');
+  if (isOpen) {
+    closeMobileDrawer();
+  } else {
+    openMobileDrawer();
+  }
+}
+
+function openMobileDrawer() {
+  const drawer = document.getElementById('mobileSideDrawer');
+  const overlay = document.getElementById('mobileDrawerOverlay');
+  if (drawer) {
+    drawer.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+  }
+  if (overlay) {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+  document.body.classList.add('drawer-open');
+}
+
+function closeMobileDrawer() {
+  const drawer = document.getElementById('mobileSideDrawer');
+  const overlay = document.getElementById('mobileDrawerOverlay');
+  if (drawer) {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+  }
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+  document.body.classList.remove('drawer-open');
+}
+
+// Exponer globalmente para eventos onclick
+window.toggleMobileDrawer = toggleMobileDrawer;
+window.openMobileDrawer   = openMobileDrawer;
+window.closeMobileDrawer  = closeMobileDrawer;
 
 function refreshCurrentView() {
   const current = window.currentActiveView || VIEWS.DASHBOARD;

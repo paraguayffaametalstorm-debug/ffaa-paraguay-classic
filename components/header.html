@@ -1,7 +1,14 @@
 <header id="header" class="tactical-header">
   <div class="header-container">
+    <!-- Mobile Hamburger Toggle Button (Visible on < 1024px) -->
+    <button id="mobileMenuToggleBtn" class="btn-hamburger" onclick="toggleMobileDrawer()" aria-label="Abrir Menú Táctico" title="Menú">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+
     <div class="logo-section" onclick="showView('appView')" style="cursor:pointer;" title="Volver al Cuadro de Mando">
-      <img src="/logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" class="logo" />
+      <img src="/logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" class="logo" loading="lazy" />
       <div class="logo-text">
         <h1 class="escuadron-title">PARAGUAY-FFAA</h1>
         <span class="escuadron-subtitle">[PRY] · METALSTORM</span>
@@ -17,7 +24,7 @@
       <!-- Live Online Indicator -->
       <div class="online-indicator-badge" title="Pilotos activos en la plataforma">
         <span class="online-pulse-dot"></span>
-        <span>Pilotos: <strong id="onlineCount">1</strong></span>
+        <span class="online-text">Pilotos: <strong id="onlineCount">1</strong></span>
       </div>
 
       <!-- Quick Sync / Refresh Button -->
@@ -26,7 +33,7 @@
       </button>
 
       <!-- User Identification Pill -->
-      <div id="userHeaderInfo" class="user-header-pill">
+      <div id="userHeaderInfo" class="user-header-pill" onclick="showView('profileView')" style="cursor:pointer;" title="Ver Mi Perfil">
         <span id="userName" class="user-callsign"></span>
         <span id="userRole" class="user-role-container"></span>
       </div>
@@ -34,53 +41,53 @@
       <button id="loginBtn" onclick="showLoginModal()" class="btn-primary btn-sm" style="display:none;">
         🔑 Iniciar Sesión
       </button>
-      <button id="logoutBtn" onclick="logout()" class="btn-danger btn-sm" style="display:none;">
-        🚪 Salir
+      <button id="logoutBtn" onclick="logout()" class="btn-danger btn-sm" style="display:none;" title="Cerrar Sesión">
+        🚪 <span class="btn-text-desktop">Salir</span>
       </button>
       <button id="helpBtn" class="btn-secondary btn-sm" title="Ayuda y Soporte">
-        ❓ Ayuda
+        ❓ <span class="btn-text-desktop">Ayuda</span>
       </button>
     </div>
   </div>
 
-  <!-- Desktop Navigation Strip -->
-  <nav class="nav-menu" aria-label="Menú Principal">
-    <button onclick="showView('appView')" class="nav-tab active">
+  <!-- Desktop Navigation Strip (Visible on Desktop >= 1024px) -->
+  <nav class="nav-menu desktop-nav-menu" aria-label="Menú Principal">
+    <button onclick="showView('appView')" class="nav-tab active" data-view="appView">
       <span>📊</span> Dashboard
     </button>
-    <button onclick="showView('performanceForm')" class="nav-tab">
+    <button onclick="showView('performanceForm')" class="nav-tab" data-view="performanceForm">
       <span>📝</span> Cargar Rendimiento
     </button>
-    <button onclick="showView('planesView')" class="nav-tab">
+    <button onclick="showView('planesView')" class="nav-tab" data-view="planesView">
       <span>✈️</span> Hangar Aeronaves
     </button>
-    <button onclick="showView('historialView')" class="nav-tab">
+    <button onclick="showView('historialView')" class="nav-tab" data-view="historialView">
       <span>📜</span> Mi Historial
     </button>
-    <button onclick="showView('normativasView')" class="nav-tab">
+    <button onclick="showView('normativasView')" class="nav-tab" data-view="normativasView">
       <span>📚</span> Normativas
     </button>
-    <button onclick="showView('profileView')" class="nav-tab">
+    <button onclick="showView('profileView')" class="nav-tab" data-view="profileView">
       <span>👤</span> Mi Perfil
     </button>
-    <button onclick="showView('settingsView')" class="nav-tab">
+    <button onclick="showView('settingsView')" class="nav-tab" data-view="settingsView">
       <span>⚙️</span> Configuración
     </button>
-    <button onclick="showView('helpView')" class="nav-tab">
+    <button onclick="showView('helpView')" class="nav-tab" data-view="helpView">
       <span>ℹ️</span> Guía & FAQ
     </button>
     
     <!-- Administrative Tabs -->
-    <button id="adminBtn" onclick="showView('adminPanel')" class="nav-tab nav-tab-admin" style="display:none;">
+    <button id="adminBtn" onclick="showView('adminPanel')" class="nav-tab nav-tab-admin" data-view="adminPanel" style="display:none;">
       <span>🛡️</span> Panel Admin
     </button>
-    <button id="allPerformancesBtn" onclick="showView('allPerformancesView')" class="nav-tab nav-tab-admin" style="display:none;">
+    <button id="allPerformancesBtn" onclick="showView('allPerformancesView')" class="nav-tab nav-tab-admin" data-view="allPerformancesView" style="display:none;">
       <span>📈</span> Rendimientos Globales
     </button>
-    <button id="ownerBtn" onclick="showView('ownerPanelView')" class="nav-tab nav-tab-owner" style="display:none;">
+    <button id="ownerBtn" onclick="showView('ownerPanelView')" class="nav-tab nav-tab-owner" data-view="ownerPanelView" style="display:none;">
       <span>👑</span> Centro de Control
     </button>
-    <button id="exportBtn" onclick="showView('exportView')" class="nav-tab" style="display:none;">
+    <button id="exportBtn" onclick="showView('exportView')" class="nav-tab" data-view="exportView" style="display:none;">
       <span>🖼️</span> Reporte PNG
     </button>
   </nav>
