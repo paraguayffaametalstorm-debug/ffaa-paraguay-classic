@@ -499,3 +499,17 @@ export default {
     onTargetPilotChange: window.onTargetPilotChange,
     clampTokens: window.clampTokens
 };
+
+// ============================================================
+// ✅ EXPORTACIÓN GLOBAL (AGREGAR AL FINAL DEL ARCHIVO)
+// ============================================================
+
+// Exponer funciones globalmente para que estén disponibles en window
+window.initPerformanceForm = initPerformanceForm;
+window.loadAdminPilotList = loadAdminPilotList;
+window.savePerformance = savePerformance;
+window.selectDays = selectDays;
+window.clampTokens = clampTokens;
+window.onTargetPilotChange = onTargetPilotChange;
+
+console.log('✅ [Performance] Funciones exportadas globalmente');
