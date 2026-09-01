@@ -99,6 +99,9 @@ function showView(viewId) {
   window.currentActiveView = finalId;
   updateActiveMenuButton(finalId);
   loadViewData(finalId);
+  if (typeof refreshLucideIcons === 'function') {
+    setTimeout(refreshLucideIcons, 50);
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -839,13 +842,16 @@ Nv. ${plane.nivel}
 <td data-label="Pasiva">${plane.pasiva_nombre || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 1">${plane.mod1_nombre || plane.mod1_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 2">${plane.mod2_nombre || plane.mod2_id || '<span style="color:#666">—</span>'}</td>
-<td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap;">
-<button onclick="openAircraftStats(${plane.id})" class="btn-info" style="padding:5px 10px; font-size:0.8rem;">Estadísticas</button>
-<button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:5px 10px; font-size:0.8rem;">Editar</button>
-<button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:5px 10px; font-size:0.8rem;">Eliminar</button>
+<td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
+<button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-color:var(--blue-telemetry); color:var(--blue-telemetry);" title="Ver Telemetría"><i data-lucide="gauge" style="width:13px;height:13px;"></i> Radar</button>
+<button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem;" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+<button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" title="Eliminar"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>
 </td>
 </tr>
 `).join('');
+  if (typeof refreshLucideIcons === 'function') {
+    setTimeout(refreshLucideIcons, 30);
+  }
 }
 
 function updatePlanesStats(planes) {

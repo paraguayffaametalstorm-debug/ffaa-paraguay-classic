@@ -122,7 +122,18 @@ function resetAllPerfFilters() {
 // y onPlaneModelChange están definidas en api.js (fuente única de verdad).
 // ============================================================================
 
-// ========== CONFIRMACIÓN ANTES DE SALIR ==========
+// ========== LUCIDE ICONS INITIALIZATION ==========
+function refreshLucideIcons() {
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    try {
+      lucide.createIcons();
+    } catch (e) {
+      console.warn('⚠️ Error al inicializar iconos Lucide:', e);
+    }
+  }
+}
+window.refreshLucideIcons = refreshLucideIcons;
+
 window.addEventListener('beforeunload', (e) => {
   // Verificar si hay formularios con cambios no guardados
   // (implementación opcional según necesidad)

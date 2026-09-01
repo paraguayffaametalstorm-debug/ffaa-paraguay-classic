@@ -29,7 +29,7 @@
 
       <!-- Quick Sync / Refresh Button -->
       <button onclick="refreshCurrentView()" class="btn-icon-tactical" title="Sincronizar Datos" aria-label="Actualizar">
-        🔄
+        <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
       </button>
 
       <!-- User Identification Pill -->
@@ -39,13 +39,13 @@
       </div>
 
       <button id="loginBtn" onclick="showLoginModal()" class="btn-primary btn-sm" style="display:none;">
-        🔑 Iniciar Sesión
+        <i data-lucide="log-in" style="width:15px;height:15px;"></i> Iniciar Sesión
       </button>
       <button id="logoutBtn" onclick="logout()" class="btn-danger btn-sm" style="display:none;" title="Cerrar Sesión">
-        🚪 <span class="btn-text-desktop">Salir</span>
+        <i data-lucide="log-out" style="width:15px;height:15px;"></i> <span class="btn-text-desktop">Salir</span>
       </button>
       <button id="helpBtn" class="btn-secondary btn-sm" title="Ayuda y Soporte">
-        ❓ <span class="btn-text-desktop">Ayuda</span>
+        <i data-lucide="help-circle" style="width:15px;height:15px;"></i> <span class="btn-text-desktop">Ayuda</span>
       </button>
     </div>
   </div>
@@ -53,42 +53,42 @@
   <!-- Desktop Navigation Strip (Visible on Desktop >= 1024px) -->
   <nav class="nav-menu desktop-nav-menu" aria-label="Menú Principal">
     <button onclick="showView('appView')" class="nav-tab active" data-view="appView">
-      <span>📊</span> Dashboard
+      <i data-lucide="layout-dashboard" class="lucide-icon"></i> Dashboard
     </button>
     <button onclick="showView('performanceForm')" class="nav-tab" data-view="performanceForm">
-      <span>📝</span> Cargar Rendimiento
+      <i data-lucide="clipboard-check" class="lucide-icon"></i> Cargar Rendimiento
     </button>
     <button onclick="showView('planesView')" class="nav-tab" data-view="planesView">
-      <span>✈️</span> Hangar Aeronaves
+      <i data-lucide="plane" class="lucide-icon"></i> Hangar Aeronaves
     </button>
     <button onclick="showView('historialView')" class="nav-tab" data-view="historialView">
-      <span>📜</span> Mi Historial
+      <i data-lucide="activity" class="lucide-icon"></i> Mi Historial
     </button>
     <button onclick="showView('normativasView')" class="nav-tab" data-view="normativasView">
-      <span>📚</span> Normativas
+      <i data-lucide="book-open" class="lucide-icon"></i> Normativas
     </button>
     <button onclick="showView('profileView')" class="nav-tab" data-view="profileView">
-      <span>👤</span> Mi Perfil
+      <i data-lucide="user-circle-2" class="lucide-icon"></i> Mi Perfil
     </button>
     <button onclick="showView('settingsView')" class="nav-tab" data-view="settingsView">
-      <span>⚙️</span> Configuración
+      <i data-lucide="settings" class="lucide-icon"></i> Configuración
     </button>
     <button onclick="showView('helpView')" class="nav-tab" data-view="helpView">
-      <span>ℹ️</span> Guía & FAQ
+      <i data-lucide="help-circle" class="lucide-icon"></i> Guía & FAQ
     </button>
     
     <!-- Administrative Tabs -->
     <button id="adminBtn" onclick="showView('adminPanel')" class="nav-tab nav-tab-admin" data-view="adminPanel" style="display:none;">
-      <span>🛡️</span> Panel Admin
+      <i data-lucide="shield-check" class="lucide-icon"></i> Panel Admin
     </button>
     <button id="allPerformancesBtn" onclick="showView('allPerformancesView')" class="nav-tab nav-tab-admin" data-view="allPerformancesView" style="display:none;">
-      <span>📈</span> Rendimientos Globales
+      <i data-lucide="trending-up" class="lucide-icon"></i> Rendimientos Globales
     </button>
     <button id="ownerBtn" onclick="showView('ownerPanelView')" class="nav-tab nav-tab-owner" data-view="ownerPanelView" style="display:none;">
-      <span>👑</span> Centro de Control
+      <i data-lucide="crown" class="lucide-icon"></i> Centro de Control
     </button>
     <button id="exportBtn" onclick="showView('exportView')" class="nav-tab" data-view="exportView" style="display:none;">
-      <span>🖼️</span> Reporte PNG
+      <i data-lucide="file-image" class="lucide-icon"></i> Reporte PNG
     </button>
   </nav>
 </header>
