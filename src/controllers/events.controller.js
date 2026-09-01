@@ -87,6 +87,9 @@ export const getOpenEvent = async (req, res) => {
     }
 };
 
+// ============================================================
+// ✅ CORREGIDO: Usa squad_status en lugar de status
+// ============================================================
 export const getActiveMembers = async (req, res) => {
     try {
         const supabase = getSupabase();
@@ -95,9 +98,9 @@ export const getActiveMembers = async (req, res) => {
             const { data, error } = await supabase
                 .from('users')
                 .select('id, user_id, email, nick, role, perf_status, status, squad_status, last_active, avg_tokens')
-                .eq('status', 'ACTIVE')
+                .eq('squad_status', 'ACTIVE')  // ✅ ANTES: .eq('status', 'ACTIVE')
                 .order('avg_tokens', { ascending: false })
-                .limit(57);
+                .limit(60); // ✅ ANTES: 57 (con margen)
             
             if (!error && data && data.length > 0) {
                 activeMembers = data.map(u => ({
