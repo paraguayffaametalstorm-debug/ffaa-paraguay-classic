@@ -27,6 +27,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Trust proxy for reverse proxies (Fly.io, Cloud Run, Nginx) so rate limiter and HTTPS detection work correctly
+app.set('trust proxy', 1);
+
 // ============================================================
 // SECURITY & PERFORMANCE MIDDLEWARES
 // ============================================================
@@ -51,6 +54,7 @@ app.use(
       if (!origin) return callback(null, true);
       const isAllowed =
         ENV.ALLOWED_ORIGINS.includes(origin) ||
+        origin.endsWith('.fly.dev') ||
         origin.endsWith('.run.app') ||
         origin.endsWith('.google.com') ||
         origin.includes('localhost') ||

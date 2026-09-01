@@ -10,6 +10,7 @@ primary_region = "gru"
 [env]
   NODE_ENV = "production"
   PORT = "3000"
+  ALLOWED_ORIGINS = "https://paraguay-ffaa-metalstorm.fly.dev,http://localhost:3000"
 
 [http_service]
   internal_port = 3000
