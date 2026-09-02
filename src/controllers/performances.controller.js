@@ -169,11 +169,10 @@ export async function getStats(req, res, next) {
       .or(`user_id.eq.${userId},nick.eq.${req.user.nick}`);
 
     const userList = users || [];
-    const actives = userList.filter(u => 
-      (u.squad_status && u.squad_status.toUpperCase() === 'ACTIVE') || 
-      (u.status && u.status.toUpperCase() === 'ACTIVE') ||
-      (!u.squad_status && !u.status)
-    );
+    const actives = userList.filter(u => {
+      const st = (u.status || '').toUpperCase();
+      return st === 'ACTIVE' || st === 'ACTIVO' || !st;
+    });
 
     const avgSquad = userList.length > 0
       ? Math.round(userList.reduce((acc, u) => acc + (Number(u.avg_tokens) || 0), 0) / userList.length)

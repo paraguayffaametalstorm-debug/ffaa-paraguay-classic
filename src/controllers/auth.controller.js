@@ -56,8 +56,18 @@ export const login = async (req, res) => {
         }
 
         // 3. Verificar estado del usuario
-        if (user.squad_status === 'INACTIVE' || user.status === 'INACTIVE') {
-            return res.status(403).json({ error: 'Cuenta inactiva. Contacta a un administrador.' });
+        const userStatus = (user.status || '').toUpperCase();
+        if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO') {
+            await logSecurityEvent({
+                supabase,
+                userId: user.id || user.user_id,
+                nick: user.nick,
+                event: 'LOGIN_FAILED_INACTIVE',
+                ip: req.ip,
+                userAgent: req.headers['user-agent'],
+                metadata: { reason: 'user_inactive' }
+            });
+            return res.status(403).json({ error: '⚠️ Tu cuenta ha sido desactivada. Contacta a un administrador.' });
         }
 
         // 4. Generar JWT con token_version
@@ -165,7 +175,6 @@ export const register = async (req, res) => {
             must_change_password: true,
             token_version: 1,
             status: 'ACTIVE',
-            squad_status: 'ACTIVE',
             avg_tokens: 0,
             weeks_evaluated: 0,
             perf_status: 'VERDE',

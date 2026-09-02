@@ -63,7 +63,7 @@ export async function requireAuth(req, res, next) {
           user = {
             ...u,
             user_id: u.user_id ? Number(u.user_id) : (Number.isInteger(Number(u.id)) ? Number(u.id) : u.id),
-            squad_status: u.squad_status || u.status || 'ACTIVE'
+            status: u.status || 'ACTIVE'
           };
         }
       } catch (err) {
@@ -78,9 +78,10 @@ export async function requireAuth(req, res, next) {
       });
     }
 
-    if (user.squad_status && user.squad_status !== 'ACTIVE') {
+    const uStatus = (user.status || '').toUpperCase();
+    if (uStatus === 'INACTIVE' || uStatus === 'INACTIVO') {
       return res.status(403).json({
-        error: 'Acceso restringido: Cuenta de piloto inactiva',
+        error: '⚠️ Tu cuenta ha sido desactivada. Contacta a un administrador.',
         code: 'USER_INACTIVE'
       });
     }

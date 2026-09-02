@@ -88,11 +88,11 @@
           </select>
         </div>
         <div>
-          <label for="squadStatusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado Escuadrón</label>
-          <select id="squadStatusFilter" onchange="filterMembers()">
+          <label for="statusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado</label>
+          <select id="statusFilter" onchange="filterMembers()">
             <option value="">Todos</option>
-            <option value="ACTIVE">Activo</option>
-            <option value="INACTIVE">Inactivo</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
           </select>
         </div>
         <div>
@@ -105,28 +105,15 @@
           <thead>
             <tr>
               <th>Piloto</th>
+              <th>Email</th>
               <th>Rol</th>
+              <th>Estado</th>
               <th>Últ. Actividad</th>
               <th>Prom. Tokens</th>
-              <th>Semanas</th>
-              <th>Tendencia</th>
-              <th>Rendimiento</th>
-              <th>Escuadrón</th>
-              <th>Acciones</th>
+              <th style="text-align:center;">Gestión & Acciones</th>
             </tr>
           </thead>
           <tbody id="membersTableBody">
-            <!-- 
-              ========================================================================
-              NOTA PARA EL RENDERIZADO DINÁMICO (JavaScript):
-              Al generar las filas (<tr>) de esta tabla, asegúrate de incluir el 
-              siguiente botón en la última celda (<td>) de la columna "Acciones":
-              
-              <button onclick="resetUserPassword('${user.user_id}')" class="btn-warning" style="padding: 4px 12px; font-size: 0.75rem;">
-                  🔄 Reset Pass
-              </button>
-              ========================================================================
-            -->
           </tbody>
         </table>
         <div id="noResultsMessage" style="display:none;padding:1.5rem;text-align:center;color:#a0aec0;">

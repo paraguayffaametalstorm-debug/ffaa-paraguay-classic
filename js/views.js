@@ -618,8 +618,8 @@ function loadActiveMembers() {
     // Filtrar solo activos y ordenar alfabéticamente
     const activeMembers = members
       .filter(p => {
-        const sq = (p.squad_status || p.status || '').toUpperCase();
-        return !sq || sq === 'ACTIVE' || sq === 'ACTIVO';
+        const st = (p.status || '').toUpperCase();
+        return !st || st === 'ACTIVE' || st === 'ACTIVO';
       })
       .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
 
@@ -1779,16 +1779,16 @@ let adminMembersCache = [];
 
 async function loadAdminPanel() {
   try {
-    const res = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
+    const res = await fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() });
     let members = [];
     if (res.ok) {
       const mData = await res.json();
-      members = mData.members || mData.activeMembers || (Array.isArray(mData) ? mData : []);
+      members = mData.users || mData.members || (Array.isArray(mData) ? mData : []);
     } else {
-      const fallback = await fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() });
+      const fallback = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
       if (fallback.ok) {
         const fbData = await fallback.json();
-        members = fbData.members || (Array.isArray(fbData) ? fbData : []);
+        members = fbData.users || fbData.members || (Array.isArray(fbData) ? fbData : []);
       }
     }
 
@@ -1811,7 +1811,9 @@ function renderAdminStats(members) {
   const avgEl = document.getElementById('adminAvgTokens');
   const riskEl = document.getElementById('atRiskMembers');
 
-  if (totalEl) totalEl.textContent = members.length;
+  const activeCount = members.filter(m => (m.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
+  if (totalEl) totalEl.textContent = `${activeCount} / ${members.length}`;
+  
   if (members.length > 0) {
     const sum = members.reduce((s, m) => s + (Number(m.avg_tokens) || 0), 0);
     const avg = (sum / members.length).toFixed(1);
@@ -1856,12 +1858,25 @@ function renderPilotsByStatus(members) {
   `;
 }
 
+function formatLastActivity(dateStr) {
+  if (!dateStr) return '<span style="color:#64748b;">Sin registro</span>';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '<span style="color:#64748b;">-</span>';
+    return d.toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return dateStr;
+  }
+}
+
 function renderAdminMembersTable(members) {
   const container = document.getElementById('membersSectionBody');
   if (!container) return;
 
   const existingTable = document.getElementById('adminMembersTable');
   if (existingTable) existingTable.remove();
+
+  const isOwner = currentUser && currentUser.role === 'OWNER';
 
   const tableDiv = document.createElement('div');
   tableDiv.id = 'adminMembersTable';
@@ -1871,32 +1886,121 @@ function renderAdminMembersTable(members) {
       <table class="data-table" style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
-            <th style="padding:8px;">Piloto / Nick</th>
-            <th style="padding:8px;">Email</th>
-            <th style="padding:8px;">Rol</th>
-            <th style="padding:8px;">Estado</th>
-            <th style="padding:8px;">Promedio</th>
-            <th style="padding:8px;text-align:center;">Acciones</th>
+            <th style="padding:10px 8px;">Piloto / Nick</th>
+            <th style="padding:10px 8px;">Email</th>
+            <th style="padding:10px 8px;">Rol / Rango</th>
+            <th style="padding:10px 8px;">Estado</th>
+            <th style="padding:10px 8px;">Últ. Actividad</th>
+            <th style="padding:10px 8px;">Promedio</th>
+            <th style="padding:10px 8px;text-align:center;">Gestión & Acciones</th>
           </tr>
         </thead>
         <tbody>
-          ${members.map(m => `
-            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
-              <td style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(m.nick || '-')}</td>
-              <td style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
-              <td style="padding:8px;"><span class="role-badge role-${m.role || 'MIEMBRO'}">${escapeHTML(m.role || 'MIEMBRO')}</span></td>
-              <td style="padding:8px;"><span class="status-badge status-${(m.perf_status || 'VERDE').toLowerCase()}">${escapeHTML(m.perf_status || 'VERDE')}</span></td>
-              <td style="padding:8px;font-family:'JetBrains Mono',monospace;">${m.avg_tokens || 0}</td>
-              <td style="padding:8px;text-align:center;">
-                <button onclick="resetPilotPassword(${m.user_id || m.id}, '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.75rem;" title="Resetear contraseña">🔑 Clave</button>
+          ${members.map(m => {
+            const userId = m.id || m.user_id;
+            const currentRole = (m.role || 'MIEMBRO').toUpperCase();
+            const currentStatus = (m.status || 'ACTIVE').toUpperCase();
+            const isActive = currentStatus === 'ACTIVE';
+
+            return `
+            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(231,76,60,0.05)' : 'transparent'};">
+              <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span>${escapeHTML(m.nick || '-')}</span>
+                  ${m.email === (currentUser?.email) ? '<span style="font-size:0.7rem;color:#d4af37;background:rgba(212,175,55,0.15);padding:1px 5px;border-radius:4px;">(Tú)</span>' : ''}
+                </div>
+              </td>
+              <td style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
+              <td style="padding:10px 8px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="role-badge role-${currentRole}">${escapeHTML(currentRole)}</span>
+                  <select onchange="changeUserRole('${userId}', this.value, '${escapeHTML(m.nick || '')}')" 
+                          style="background:#0f172a;color:#cbd5e1;border:1px solid #334155;border-radius:4px;padding:2px 4px;font-size:0.75rem;cursor:pointer;">
+                    <option value="MIEMBRO" ${currentRole === 'MIEMBRO' ? 'selected' : ''}>MIEMBRO</option>
+                    <option value="VETERANO" ${currentRole === 'VETERANO' ? 'selected' : ''}>VETERANO</option>
+                    <option value="ADMIN" ${currentRole === 'ADMIN' ? 'selected' : ''} ${!isOwner && currentRole !== 'ADMIN' ? 'disabled' : ''}>ADMIN</option>
+                    ${isOwner ? `<option value="OWNER" ${currentRole === 'OWNER' ? 'selected' : ''}>OWNER</option>` : ''}
+                  </select>
+                </div>
+              </td>
+              <td style="padding:10px 8px;">
+                ${isActive 
+                  ? '<span class="status-badge" style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid #2ecc71;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">ACTIVE</span>' 
+                  : '<span class="status-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid #e74c3c;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">INACTIVE</span>'
+                }
+              </td>
+              <td style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
+              <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</td>
+              <td style="padding:10px 8px;text-align:center;">
+                <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
+                  ${isActive 
+                    ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
+                    : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
+                  }
+                  <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
+                </div>
               </td>
             </tr>
-          `).join('')}
+          `;
+          }).join('')}
         </tbody>
       </table>
     </div>
   `;
   container.appendChild(tableDiv);
+}
+
+async function changeUserRole(userId, newRole, nick) {
+  if (!confirm(`¿Confirmas actualizar el rango militar de "${nick}" a "${newRole}"?`)) {
+    loadAdminPanel();
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/role`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ role: newRole })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al actualizar rango');
+    }
+    showToast(`✅ ${data.message || `Rango de ${nick} actualizado a ${newRole}`}`, 'success');
+    loadAdminPanel();
+  } catch (err) {
+    console.error('Error cambiando rol:', err);
+    showToast('❌ ' + err.message, 'error');
+    loadAdminPanel();
+  }
+}
+
+async function changeUserStatus(userId, newStatus, nick) {
+  const actionText = newStatus === 'ACTIVE' ? 'ACTIVAR' : 'DESACTIVAR';
+  if (!confirm(`¿Confirmas ${actionText} la cuenta de "${nick}"?`)) {
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al actualizar estado');
+    }
+    showToast(`✅ ${data.message || `Estado de ${nick} actualizado a ${newStatus}`}`, 'success');
+    loadAdminPanel();
+  } catch (err) {
+    console.error('Error actualizando estado:', err);
+    showToast('❌ ' + err.message, 'error');
+  }
 }
 
 async function resetPilotPassword(userId, nick) {
@@ -1919,7 +2023,7 @@ function filterMembers() {
   const search = (document.getElementById('memberSearch')?.value || '').toLowerCase();
   const role = document.getElementById('roleFilter')?.value || '';
   const perfStatus = document.getElementById('perfStatusFilter')?.value || '';
-  const squadStatus = document.getElementById('squadStatusFilter')?.value || '';
+  const status = document.getElementById('statusFilter')?.value || '';
 
   const filtered = adminMembersCache.filter(m => {
     const nick = (m.nick || '').toLowerCase();
@@ -1927,7 +2031,7 @@ function filterMembers() {
     if (search && !nick.includes(search) && !email.includes(search)) return false;
     if (role && m.role !== role) return false;
     if (perfStatus && m.perf_status !== perfStatus) return false;
-    if (squadStatus && (m.squad_status || m.status) !== squadStatus) return false;
+    if (status && (m.status || 'ACTIVE').toUpperCase() !== status.toUpperCase()) return false;
     return true;
   });
 
@@ -1935,7 +2039,7 @@ function filterMembers() {
 }
 
 function resetMemberFilters() {
-  ['memberSearch', 'roleFilter', 'weeksFilter', 'perfStatusFilter', 'squadStatusFilter'].forEach(id => {
+  ['memberSearch', 'roleFilter', 'weeksFilter', 'perfStatusFilter', 'statusFilter'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -2130,6 +2234,8 @@ window.loadAdminPanel = loadAdminPanel;
 window.renderAdminStats = renderAdminStats;
 window.renderPilotsByStatus = renderPilotsByStatus;
 window.renderAdminMembersTable = renderAdminMembersTable;
+window.changeUserRole = changeUserRole;
+window.changeUserStatus = changeUserStatus;
 window.resetPilotPassword = resetPilotPassword;
 window.filterMembers = filterMembers;
 window.resetMemberFilters = resetMemberFilters;
