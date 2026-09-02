@@ -501,12 +501,11 @@ function clampTokens(input) {
   if (input.value === '') return;
   let val = parseInt(input.value, 10);
   if (isNaN(val)) return;
-  if (val > maxT) val = maxT;
-  if (val < 0) val = 0;
   const rounded = Math.round(val / 5) * 5;
-  input.value = rounded;
+  const clamped = Math.min(Math.max(rounded, 0), maxT);
+  input.value = clamped;
   if (typeof window.autoCalculateDays === 'function') {
-    const d = window.autoCalculateDays(rounded);
+    const d = window.autoCalculateDays(clamped);
     selectDays(d);
   }
 }
