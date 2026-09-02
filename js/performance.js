@@ -617,13 +617,8 @@ async function getCurrentUser() {
     });
 }
 
-function showToast(message, type = 'info') {
-    if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
-    } else {
-        console.log(`[${type.toUpperCase()}] ${message}`);
-    }
-}
+// showToast ya está definida en views.js y exportada a window
+// Se utiliza window.showToast(message, type) o el showToast global directamente sin crear recursión
 
 // ============================================================
 // ✅ EXPORTACIÓN GLOBAL EN WINDOW
