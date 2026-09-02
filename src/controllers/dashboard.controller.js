@@ -26,7 +26,7 @@ export const getSummary = async (req, res, next) => {
         // Obtener usuarios activos
         const { data: users } = await supabase
           .from('users')
-          .select('id, user_id, email, nick, role, status, perf_status, weeks_evaluated')
+          .select('id, user_id, email, nick, role, status, perf_status')
           .order('nick', { ascending: true });
 
         const activeUsersList = (users || []).filter(u => {
@@ -54,7 +54,7 @@ export const getSummary = async (req, res, next) => {
             const keyNick = (u.nick || '').toLowerCase();
             const stats = avgMap[keyId] || avgMap[keyNick] || null;
             const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0;
-            const count = stats && stats.count > 0 ? stats.count : (Number(u.weeks_evaluated) || 0);
+            const count = stats && stats.count > 0 ? stats.count : 0;
 
             return {
               id: u.id || u.user_id,
