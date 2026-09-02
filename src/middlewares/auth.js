@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
-import { memoryStore, getSupabase } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 
 /**
  * Middleware: requireAuth
@@ -32,7 +32,7 @@ export async function requireAuth(req, res, next) {
 
     if (supabase) {
       try {
-        let query = supabase.from('users').select('*'); // Select '*' ya incluye token_version
+        let query = supabase.from('users').select('*');
         
         if (decoded.email) {
           query = query.eq('email', decoded.email);
@@ -71,17 +71,6 @@ export async function requireAuth(req, res, next) {
       }
     }
 
-    // Fallback a memoryStore (entornos de desarrollo/pruebas)
-    if (!user && memoryStore && memoryStore.users) {
-      user = memoryStore.users.find(u => 
-        (decoded.user_id && (u.user_id === decoded.user_id || u.id === decoded.user_id)) ||
-        (decoded.email && u.email?.toLowerCase() === decoded.email?.toLowerCase())
-      );
-      
-      // Nota: memoryStore no suele tener control estricto de token_version, 
-      // por lo que se permite el paso si es el único medio disponible.
-    }
-
     if (!user) {
       return res.status(401).json({
         error: 'Usuario no encontrado o sesión expirada',
@@ -110,11 +99,15 @@ export async function requireAuth(req, res, next) {
   }
 }
 
+export const authenticate = requireAuth;
+
 /**
  * Middleware: requireRole
  * Verifica que el usuario autenticado tenga uno de los roles militares requeridos.
  */
 export function requireRole(...allowedRoles) {
+  // Support both array and rest parameters: requireRole('ADMIN', 'OWNER') or requireRole(['ADMIN', 'OWNER'])
+  const roles = allowedRoles.flat();
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
@@ -123,9 +116,9 @@ export function requireRole(...allowedRoles) {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
-        error: `Permiso denegado: Se requiere rol militar [${allowedRoles.join(' o ')}]`,
+        error: `Permiso denegado: Se requiere rol militar [${roles.join(' o ')}]`,
         code: 'INSUFFICIENT_PERMISSIONS'
       });
     }

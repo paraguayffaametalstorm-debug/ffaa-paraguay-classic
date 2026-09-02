@@ -1,23 +1,15 @@
 import { ZodError } from 'zod';
-import { memoryStore } from '../db/supabase.js';
 
 export function errorHandler(err, req, res, next) {
   const errorLogEntry = {
-    id: memoryStore.errorLogs.length + 1,
     timestamp: new Date().toISOString(),
     route: req.originalUrl || req.url,
     method: req.method,
     ip: req.ip || req.socket?.remoteAddress || '127.0.0.1',
     user_id: req.user ? req.user.user_id : null,
     level: err.status >= 500 || !err.status ? 'error' : 'warn',
-    message: err.message || 'Error interno no especificado',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    message: err.message || 'Error interno no especificado'
   };
-
-  memoryStore.errorLogs.unshift(errorLogEntry);
-  if (memoryStore.errorLogs.length > 500) {
-    memoryStore.errorLogs.pop();
-  }
 
   console.error(`🚨 [ERROR] ${req.method} ${req.originalUrl}:`, err.message);
 

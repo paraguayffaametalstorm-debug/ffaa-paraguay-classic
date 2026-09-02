@@ -1,14 +1,17 @@
-import { memoryStore, getSupabase } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 import { ProfileUpdateSchema } from '../utils/schemas.js';
 
 export async function getProfile(req, res, next) {
   try {
     const supabase = getSupabase();
+    const userId = req.user.user_id || req.user.id;
+
     if (supabase) {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('user_id', req.user.user_id)
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .limit(1)
         .single();
 
       if (!error && data) {
@@ -17,8 +20,7 @@ export async function getProfile(req, res, next) {
       }
     }
 
-    const user = memoryStore.users.find(u => u.user_id === req.user.user_id) || req.user;
-    const { password_hash, ...safe } = user;
+    const { password_hash, password, encrypted_password, ...safe } = req.user;
     res.json({ profile: safe, user: safe });
   } catch (err) {
     next(err);
@@ -28,37 +30,34 @@ export async function getProfile(req, res, next) {
 export async function updateProfile(req, res, next) {
   try {
     const data = ProfileUpdateSchema.parse(req.body);
-    const user = memoryStore.users.find(u => u.user_id === req.user.user_id);
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado', code: 'USER_NOT_FOUND' });
-    }
-
-    if (data.phone !== undefined) user.phone = data.phone;
-    if (data.callsign !== undefined) user.callsign = data.callsign;
-    if (data.discord !== undefined) user.discord = data.discord;
-    if (data.bio !== undefined) user.bio = data.bio;
-    if (data.nick !== undefined && data.nick.trim()) user.nick = data.nick.trim();
-    if (data.full_name !== undefined) user.full_name = data.full_name;
-    if (data.email_personal !== undefined) user.email_personal = data.email_personal;
-    if (data.notifications_enabled !== undefined) user.notifications_enabled = data.notifications_enabled;
-
+    const userId = req.user.user_id || req.user.id;
     const supabase = getSupabase();
-    if (supabase) {
-      await supabase.from('users').update({
-        phone: user.phone,
-        callsign: user.callsign,
-        discord: user.discord,
-        bio: user.bio,
-        nick: user.nick,
-        full_name: user.full_name,
-        email_personal: user.email_personal,
-        notifications_enabled: user.notifications_enabled
-      }).eq('user_id', user.user_id);
+
+    if (!supabase) {
+      return res.status(500).json({ error: 'Base de datos no disponible' });
     }
 
-    const { password_hash, ...safe } = user;
-    res.json({ message: 'Perfil táctico actualizado correctamente', profile: safe, user: safe });
+    const updateFields = {};
+    if (data.phone !== undefined) updateFields.phone = data.phone;
+    if (data.callsign !== undefined) updateFields.callsign = data.callsign;
+    if (data.discord !== undefined) updateFields.discord = data.discord;
+    if (data.bio !== undefined) updateFields.bio = data.bio;
+    if (data.nick !== undefined && data.nick.trim()) updateFields.nick = data.nick.trim();
+    if (data.full_name !== undefined) updateFields.full_name = data.full_name;
+    if (data.email_personal !== undefined) updateFields.email_personal = data.email_personal;
+    if (data.notifications_enabled !== undefined) updateFields.notifications_enabled = data.notifications_enabled;
+
+    const { data: updated, error } = await supabase
+      .from('users')
+      .update(updateFields)
+      .or(`id.eq.${userId},user_id.eq.${userId}`)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const { password_hash, password, encrypted_password, ...safe } = updated || { ...req.user, ...updateFields };
+    res.json({ message: 'Perfil actualizado con éxito', profile: safe, user: safe });
   } catch (err) {
     next(err);
   }

@@ -1,26 +1,32 @@
 // src/routes/admin.users.routes.js
 import express from 'express';
-import { supabase } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 import { authenticate, requireRole } from '../middlewares/auth.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
 // Endpoint para verificar estado de usuarios (solo OWNER)
-router.get('/users/status', authenticate, requireRole(['OWNER']), async (req, res) => {
+router.get('/users/status', authenticate, requireRole('OWNER'), async (req, res) => {
   try {
-    const { data: users } = await supabase
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database client unavailable' });
+    }
+    const { data: users, error } = await supabase
       .from('users')
-      .select('nick, email, role, created_at, last_login');
+      .select('nick, email, role, created_at, last_activity, password_hash');
+    
+    if (error) throw error;
     
     const stats = {
-      total: users.length,
+      total: (users || []).length,
       byRole: {},
       withPassword: 0,
       withoutPassword: 0
     };
     
-    users.forEach(u => {
+    (users || []).forEach(u => {
       stats.byRole[u.role] = (stats.byRole[u.role] || 0) + 1;
       if (u.password_hash) stats.withPassword++;
       else stats.withoutPassword++;
@@ -29,7 +35,7 @@ router.get('/users/status', authenticate, requireRole(['OWNER']), async (req, re
     res.json({ 
       success: true, 
       stats,
-      users: users.map(u => ({
+      users: (users || []).map(u => ({
         nick: u.nick,
         email: u.email,
         role: u.role,
@@ -42,12 +48,16 @@ router.get('/users/status', authenticate, requireRole(['OWNER']), async (req, re
 });
 
 // Endpoint para resetear contraseña de usuario (solo OWNER)
-router.post('/users/reset-password', authenticate, requireRole(['OWNER']), async (req, res) => {
+router.post('/users/reset-password', authenticate, requireRole('OWNER'), async (req, res) => {
   try {
     const { email, newPassword } = req.body;
+    const supabase = getSupabase();
     
     if (!email) {
       return res.status(400).json({ error: 'Email requerido' });
+    }
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database client unavailable' });
     }
     
     const password = newPassword || Math.random().toString(36).slice(-8);
@@ -66,7 +76,7 @@ router.post('/users/reset-password', authenticate, requireRole(['OWNER']), async
     
     res.json({ 
       success: true, 
-      message: `Contraseña reseteda para ${email}`,
+      message: `Contraseña reseteada para ${email}`,
       newPassword: password 
     });
   } catch (error) {
