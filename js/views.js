@@ -1597,30 +1597,10 @@ function getAuthHeaders() {
 }
 window.getAuthHeaders = getAuthHeaders;
 
-// ========== INICIALIZACIÓN ==========
+// ========== INICIALIZACIÓN DE VISTAS ==========
 document.addEventListener('DOMContentLoaded', function() {
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    fetch(`${API_BASE}/api/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.user) {
-        window.currentUser = data.user;
-        updateViewStats();
-        showView(VIEWS.DASHBOARD);
-      }
-    })
-    .catch(err => {
-      console.error('Error validando token:', err);
-      localStorage.removeItem('authToken');
-      showLoginModal();
-    });
-  } else {
-    showLoginModal();
+  if (typeof restoreSession === 'function') {
+    restoreSession();
   }
 
   document.querySelectorAll('.nav-menu button').forEach(button => {

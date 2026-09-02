@@ -2,7 +2,7 @@
 // Script profesional de mantenimiento de usuarios
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 

@@ -3,8 +3,29 @@
  * ✅ SINCRONIZADO CON NUEVA BD (user_id INTEGER)
  * ✅ Incluye cambio de contraseña obligatorio para usuarios nuevos
  * ✅ Integrado con Sistema de Ayuda & Tour
- * Actualizado: 12 de febrero de 2026
+ * ✅ Persistencia robusta de usuario en localStorage y window.currentUser
+ * Actualizado: 01 de septiembre de 2026
  */
+
+// ========== RESTAURAR SESIÓN DESDE LOCALSTORAGE ==========
+function restoreSession() {
+  const token = localStorage.getItem('authToken');
+  const user = localStorage.getItem('user');
+  
+  if (token && user) {
+    try {
+      const parsedUser = JSON.parse(user);
+      currentUser = parsedUser;
+      window.currentUser = parsedUser;
+      console.log('✅ Sesión restaurada:', window.currentUser?.nick);
+      return true;
+    } catch (e) {
+      console.warn('⚠️ Error al restaurar sesión:', e);
+      return false;
+    }
+  }
+  return false;
+}
 
 // ========== VERIFICAR ESTADO DE AUTENTICACIÓN ==========
 function checkAuthStatus() {
@@ -13,10 +34,16 @@ function checkAuthStatus() {
   // ✅ SI NO HAY TOKEN → MOSTRAR LOGIN INMEDIATAMENTE
   if (!token) {
     console.log('🔒 No hay token - mostrando login');
+    localStorage.removeItem('user');
+    currentUser = null;
+    window.currentUser = null;
     showLoginModal();
     return;
   }
   
+  // ✅ Intentar restaurar sesión local rápidamente
+  restoreSession();
+
   // ✅ SI HAY TOKEN → VERIFICAR CON EL BACKEND
   console.log('🔑 Token encontrado - verificando con backend...');
   
@@ -35,12 +62,17 @@ function checkAuthStatus() {
   .then(data => {
     console.log('✅ Token válido - mostrando dashboard');
     currentUser = data.user;
+    window.currentUser = data.user;
+    localStorage.setItem('user', JSON.stringify(data.user));
     
     // ✅ VERIFICACIÓN CRÍTICA: currentUser.user_id DEBE ser INTEGER
     if (!Number.isInteger(currentUser.user_id)) {
       console.error('❌ ERROR CRÍTICO: user_id no es INTEGER', currentUser.user_id, 'tipo:', typeof currentUser.user_id);
       showToast('❌ Error de sincronización con BD (tipo incorrecto)', 'error');
       localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      currentUser = null;
+      window.currentUser = null;
       showLoginModal();
       return;
     }
@@ -66,82 +98,105 @@ function checkAuthStatus() {
   .catch(err => {
     console.error('❌ Error verificando autenticación:', err);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    currentUser = null;
+    window.currentUser = null;
     showLoginModal();
   });
 }
 
 // ========== LOGIN ==========
-function login() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
+async function login(emailParam, passwordParam) {
+  let email = typeof emailParam === 'string' ? emailParam.trim() : '';
+  let password = typeof passwordParam === 'string' ? passwordParam : '';
+
+  if (!email) {
+    const emailInput = document.getElementById('loginEmail');
+    if (emailInput) email = emailInput.value.trim();
+  }
+  if (!password) {
+    const passwordInput = document.getElementById('loginPassword');
+    if (passwordInput) password = passwordInput.value;
+  }
   
   if (!email || !password) {
     showToast('⚠️ Completa todos los campos', 'warning');
-    return;
+    return null;
   }
   
   console.log('🔐 Intentando login con:', email);
   
-  fetch(`${API_BASE}/api/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ email, password })
-  })
-  .then(res => {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await res.json();
+    
     if (res.ok) {
-      return res.json();
-    } else {
-      return res.json().then(err => { 
-        throw new Error(err.error || 'Credenciales incorrectas'); 
-      });
-    }
-  })
-  .then(data => {
-    console.log('✅ Login exitoso');
-    localStorage.setItem('authToken', data.token);
-    
-    currentUser = data.user;
-    
-    // ✅ VERIFICACIÓN CRÍTICA: currentUser.user_id DEBE ser INTEGER
-    if (!Number.isInteger(currentUser.user_id)) {
-      console.error('❌ ERROR CRÍTICO: user_id no es INTEGER después de login', currentUser.user_id);
-      showToast('❌ Error de sincronización con BD (tipo incorrecto)', 'error');
-      localStorage.removeItem('authToken');
-      return;
-    }
-    
-    console.log(`✅ user_id verificado: ${currentUser.user_id} (tipo: number)`);
-    
-    // 🔒 Verificar si debe cambiar contraseña
-    if (currentUser.must_change_password) {
-      console.log('⚠️ Debe cambiar contraseña');
-      showPasswordChangeModal();
-      return;
-    }
-    
-    // ✅ Flujo normal (contraseña ya cambiada)
-    updateUserUI(currentUser);
-    closeModal('loginModal');
-    showToast(`✅ Bienvenido, ${currentUser.nick || currentUser.email}`, 'success');
-    
-    // Marcar usuario como online
-    markUserOnline();
-    
-    // ✅ MOSTRAR DASHBOARD
-    showView('appView');
+      console.log('✅ Login exitoso:', data.user?.nick);
+      // ✅ Guardar token
+      localStorage.setItem('authToken', data.token);
+      
+      // ✅ GUARDAR USUARIO en localStorage
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      // ✅ Actualizar variables en memoria y window
+      currentUser = data.user;
+      window.currentUser = data.user;
+      
+      // ✅ VERIFICACIÓN CRÍTICA: currentUser.user_id DEBE ser INTEGER
+      if (!Number.isInteger(currentUser.user_id)) {
+        console.error('❌ ERROR CRÍTICO: user_id no es INTEGER después de login', currentUser.user_id);
+        showToast('❌ Error de sincronización con BD (tipo incorrecto)', 'error');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        currentUser = null;
+        window.currentUser = null;
+        return null;
+      }
+      
+      console.log(`✅ user_id verificado: ${currentUser.user_id} (tipo: number)`);
+      
+      // 🔒 Verificar si debe cambiar contraseña
+      if (currentUser.must_change_password) {
+        console.log('⚠️ Debe cambiar contraseña');
+        showPasswordChangeModal();
+        return data;
+      }
+      
+      // ✅ Flujo normal (contraseña ya cambiada)
+      updateUserUI(currentUser);
+      closeModal('loginModal');
+      showToast(`✅ Bienvenido, ${currentUser.nick || currentUser.email}`, 'success');
+      
+      // Marcar usuario como online
+      markUserOnline();
+      
+      // ✅ MOSTRAR DASHBOARD
+      showView('appView');
 
-    // ✅ AYUDA: Mostrar FAB, inicializar sistema de ayuda, lanzar tour si es primera vez
-    const helpFab = document.getElementById('helpFab');
-    if (helpFab) helpFab.style.display = '';
-    if (typeof initHelpSystem === 'function') initHelpSystem();
-    if (typeof startTourIfFirstTime === 'function') setTimeout(startTourIfFirstTime, 800);
-  })
-  .catch(err => {
+      // ✅ AYUDA: Mostrar FAB, inicializar sistema de ayuda, lanzar tour si es primera vez
+      const helpFab = document.getElementById('helpFab');
+      if (helpFab) helpFab.style.display = '';
+      if (typeof initHelpSystem === 'function') initHelpSystem();
+      if (typeof startTourIfFirstTime === 'function') setTimeout(startTourIfFirstTime, 800);
+
+      return data;
+    } else {
+      console.error('❌ Error:', data.error);
+      showToast('❌ ' + (data.error || 'Credenciales incorrectas'), 'error');
+      return null;
+    }
+  } catch (err) {
     console.error('❌ Error en login:', err);
-    showToast('❌ ' + err.message, 'error');
-  });
+    showToast('❌ ' + (err.message || 'Error al conectar con el servidor'), 'error');
+    return null;
+  }
 }
 
 // ========== LOGOUT ==========
@@ -153,7 +208,10 @@ function logout() {
   
   localStorage.removeItem('authToken');
   localStorage.removeItem('tempToken');
+  localStorage.removeItem('user');
+  localStorage.removeItem('currentUser');
   currentUser = null;
+  window.currentUser = null;
   
   if (typeof sessionTimeout !== 'undefined' && sessionTimeout) {
     clearTimeout(sessionTimeout);
@@ -599,6 +657,10 @@ async function resetUserPassword(userId) {
 }
 
 // Exportar funciones para uso global
+window.login = login;
+window.logout = logout;
+window.checkAuthStatus = checkAuthStatus;
+window.restoreSession = restoreSession;
 window.changePasswordFromProfile = changePasswordFromProfile;
 window.handleChangePassword = handleChangePassword;
 window.resetUserPassword = resetUserPassword;
