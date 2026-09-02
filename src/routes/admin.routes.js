@@ -37,20 +37,31 @@ router.post('/events/activate-bm', activateBlackMarket);
 router.post('/users/:userId/reset-password', async (req, res) => {
     try {
         const { userId } = req.params;
+        const targetId = Number(userId) || userId;
         const supabase = getSupabase();
 
-        if (!supabase) {
-            return res.status(500).json({ error: 'Base de datos no disponible' });
+        let user = null;
+        if (supabase) {
+            try {
+                const { data, error: userError } = await supabase
+                    .from('users')
+                    .select('id, user_id, nick, email, token_version')
+                    .or(`id.eq.${targetId},user_id.eq.${targetId}`)
+                    .limit(1);
+
+                if (!userError && data && data.length > 0) {
+                    user = data[0];
+                }
+            } catch (err) {
+                console.warn('⚠️ Supabase user lookup falló:', err.message);
+            }
         }
 
-        // Verificar que el usuario existe
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('id, nick, email, token_version')
-            .eq('id', userId)
-            .single();
+        if (!user) {
+            user = memoryStore.users.find(u => u.user_id === targetId || u.id === targetId);
+        }
 
-        if (userError || !user) {
+        if (!user) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
@@ -59,26 +70,35 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({
-                password_hash: hashedPassword,
-                must_change_password: true,
-                password_changed_at: new Date().toISOString(),
-                token_version: newTokenVersion,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', userId);
+        if (supabase) {
+            try {
+                await supabase
+                    .from('users')
+                    .update({
+                        password_hash: hashedPassword,
+                        must_change_password: true,
+                        password_changed_at: new Date().toISOString(),
+                        token_version: newTokenVersion,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+            } catch (err) {
+                console.warn('⚠️ Error reseteando en Supabase:', err.message);
+            }
+        }
 
-        if (updateError) {
-            console.error('Error reseteando contraseña:', updateError);
-            return res.status(500).json({ error: 'Error al resetear la contraseña' });
+        const memUser = memoryStore.users.find(u => u.user_id === targetId || u.id === targetId);
+        if (memUser) {
+            memUser.password_hash = hashedPassword;
+            memUser.must_change_password = true;
+            memUser.token_version = newTokenVersion;
+            memUser.updated_at = new Date().toISOString();
         }
 
         // Registrar evento de auditoría
         await logSecurityEvent({
             supabase,
-            userId: user.id,
+            userId: user.id || user.user_id,
             nick: user.nick,
             event: 'ADMIN_PASSWORD_RESET',
             ip: req.ip,

@@ -22,7 +22,7 @@ let targetUserId = null;
  * Inicializa el módulo de rendimiento
  * Se llama cuando se carga la vista
  */
-export async function initPerformanceForm() {
+async function initPerformanceForm() {
     try {
         // Obtener usuario actual
         currentUser = await getCurrentUser();
@@ -488,23 +488,9 @@ function showToast(message, type = 'info') {
 }
 
 // ============================================================
-// EXPORTACIÓN
+// ✅ EXPORTACIÓN GLOBAL EN WINDOW
 // ============================================================
 
-// Exportar para usar en la vista
-export default {
-    initPerformanceForm,
-    selectDays: window.selectDays,
-    savePerformance: window.savePerformance,
-    onTargetPilotChange: window.onTargetPilotChange,
-    clampTokens: window.clampTokens
-};
-
-// ============================================================
-// ✅ EXPORTACIÓN GLOBAL (AGREGAR AL FINAL DEL ARCHIVO)
-// ============================================================
-
-// Exponer funciones globalmente para que estén disponibles en window
 window.initPerformanceForm = initPerformanceForm;
 window.loadAdminPilotList = loadAdminPilotList;
 window.savePerformance = savePerformance;
@@ -512,4 +498,4 @@ window.selectDays = selectDays;
 window.clampTokens = clampTokens;
 window.onTargetPilotChange = onTargetPilotChange;
 
-console.log('✅ [Performance] Funciones exportadas globalmente');
+console.log('✅ [Performance] Funciones exportadas globalmente en window');
