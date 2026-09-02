@@ -1822,10 +1822,14 @@ let adminMembersCache = [];
 
 async function loadAdminPanel() {
   try {
-    const res = await fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() });
+    const [usersRes, eventsRes] = await Promise.all([
+      fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() }).catch(() => null),
+      fetch(`${API_BASE}/api/events/open`, { headers: getAuthHeaders() }).catch(() => null)
+    ]);
+
     let members = [];
-    if (res.ok) {
-      const mData = await res.json();
+    if (usersRes && usersRes.ok) {
+      const mData = await usersRes.json();
       members = mData.users || mData.members || (Array.isArray(mData) ? mData : []);
     } else {
       const fallback = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
@@ -1835,9 +1839,16 @@ async function loadAdminPanel() {
       }
     }
 
+    let activeEvent = null;
+    if (eventsRes && eventsRes.ok) {
+      const eData = await eventsRes.json();
+      activeEvent = eData.event || (eData.events && eData.events[0]) || null;
+    }
+
     adminMembersCache = members;
     renderAdminStats(members);
     renderPilotsByStatus(members);
+    renderAdminBlackMarketInfo(activeEvent);
     renderAdminMembersTable(members);
 
     const updateEl = document.getElementById('lastUpdate');
@@ -1846,6 +1857,87 @@ async function loadAdminPanel() {
   } catch (err) {
     console.error('Error cargando admin panel:', err);
     showToast('❌ Error al cargar panel de administración', 'error');
+  }
+}
+
+function renderAdminBlackMarketInfo(activeEvent) {
+  const bmInfo = document.getElementById('blackMarketInfo');
+  if (bmInfo) {
+    if (activeEvent?.type === 'BLACK_MARKET' || activeEvent?.type === 'BM') {
+      const startDate = activeEvent.start_date ? new Date(activeEvent.start_date).toLocaleDateString('es-PY') : '-';
+      const endDate = activeEvent.end_date ? new Date(activeEvent.end_date).toLocaleDateString('es-PY') : '-';
+      bmInfo.innerHTML = `
+        <div style="background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;padding:12px;">
+          <strong style="color:#e74c3c;">⚡ BLACK MARKET ACTIVO</strong>
+          <div style="font-size:0.85rem;color:#a0aec0;margin-top:4px;">
+            ${escapeHTML(activeEvent.id || 'BM-ACTIVO')} · ${startDate} → ${endDate}
+          </div>
+        </div>
+      `;
+    } else {
+      const evDesc = activeEvent?.id ? ` (${escapeHTML(activeEvent.id)})` : '';
+      bmInfo.innerHTML = `
+        <div style="background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;padding:12px;">
+          <strong style="color:#2ecc71;">✈️ SQUADRON ACTIVO${evDesc}</strong>
+          <div style="font-size:0.85rem;color:#a0aec0;margin-top:4px;">
+            El Black Market está disponible para activación
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Visibilidad de controles de activación según rol
+  const bmControls = document.getElementById('bmAdminControls');
+  if (bmControls) {
+    const role = (window.currentUser?.role || '').toUpperCase();
+    bmControls.style.display = ['ADMIN', 'OWNER'].includes(role) ? 'flex' : 'none';
+  }
+}
+
+async function activateBlackMarket() {
+  // Solo ADMIN/OWNER pueden activar
+  const userRole = (window.currentUser?.role || '').toUpperCase();
+  if (!['ADMIN', 'OWNER'].includes(userRole)) {
+    showToast('⛔ No tienes permisos para activar Black Market', 'error');
+    return;
+  }
+
+  // Confirmación
+  if (!confirm('⚠️ ¿Estás seguro de activar el Black Market?\n\nEsto cerrará el evento Squadron actual y abrirá un evento Black Market de 5 días.')) {
+    return;
+  }
+
+  try {
+    let res = await fetch(`${API_BASE}/api/events/activate-bm`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) {
+      // Fallback a ruta de admin si fuera necesario
+      const fallback = await fetch(`${API_BASE}/api/admin/events/activate-bm`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      if (fallback.ok) res = fallback;
+    }
+
+    const data = await res.json();
+
+    if (res.ok) {
+      showToast(`✅ Black Market activado correctamente: ${data.event_id || data.event?.id || 'BM-ACTIVO'}`, 'success');
+      // Recargar el panel de administración
+      loadAdminPanel();
+      // Actualizar la vista de eventos y dashboard
+      if (typeof loadOpenEvents === 'function') loadOpenEvents();
+      if (typeof loadDashboardData === 'function') loadDashboardData();
+    } else {
+      showToast(`❌ Error: ${data.error || 'No se pudo activar Black Market'}`, 'error');
+    }
+  } catch (err) {
+    console.error('Error activando Black Market:', err);
+    showToast('❌ Error al conectar con el servidor', 'error');
   }
 }
 
@@ -2770,5 +2862,7 @@ window.closePlaneCatalogModal = closePlaneCatalogModal;
 window.toggleAdvancedCatalogFields = toggleAdvancedCatalogFields;
 window.handleSavePlaneCatalog = handleSavePlaneCatalog;
 window.togglePlaneStatus = togglePlaneStatus;
+window.activateBlackMarket = activateBlackMarket;
+window.renderAdminBlackMarketInfo = renderAdminBlackMarketInfo;
 
 console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
