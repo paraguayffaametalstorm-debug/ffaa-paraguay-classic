@@ -26,7 +26,7 @@ export const getSummary = async (req, res, next) => {
         // Obtener usuarios activos
         const { data: users } = await supabase
           .from('users')
-          .select('id, user_id, email, nick, role, status, perf_status, avg_tokens, weeks_evaluated')
+          .select('id, user_id, email, nick, role, status, perf_status, weeks_evaluated')
           .order('nick', { ascending: true });
 
         const activeUsersList = (users || []).filter(u => {
@@ -53,7 +53,7 @@ export const getSummary = async (req, res, next) => {
             const keyId = u.user_id ? String(u.user_id) : (u.id ? String(u.id) : '');
             const keyNick = (u.nick || '').toLowerCase();
             const stats = avgMap[keyId] || avgMap[keyNick] || null;
-            const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : (Number(u.avg_tokens) || 0);
+            const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0;
             const count = stats && stats.count > 0 ? stats.count : (Number(u.weeks_evaluated) || 0);
 
             return {
@@ -128,7 +128,7 @@ export const getActiveMembers = async (req, res, next) => {
     if (supabase) {
       const { data: users, error } = await supabase
         .from('users')
-        .select('id, user_id, email, nick, role, status, perf_status, avg_tokens')
+        .select('id, user_id, email, nick, role, status, perf_status')
         .order('nick', { ascending: true });
 
       if (!error && users) {
@@ -145,9 +145,8 @@ export const getActiveMembers = async (req, res, next) => {
             role: (u.role || 'MIEMBRO').toUpperCase(),
             perf_status: u.perf_status || 'VERDE',
             status: (u.status || 'ACTIVE').toUpperCase(),
-            avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
-          }))
-          .sort((a, b) => b.avg_tokens - a.avg_tokens);
+            avg_tokens: 0
+          }));
       }
     }
 

@@ -20,7 +20,7 @@ export async function getUsers(req, res, next) {
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, user_id, nick, email, role, status, last_activity, avg_tokens, weeks_evaluated, perf_status, created_at, updated_at')
+      .select('id, user_id, nick, email, role, status, last_activity, weeks_evaluated, perf_status, created_at, updated_at')
       .order('nick', { ascending: true });
 
     if (error) {
@@ -35,7 +35,7 @@ export async function getUsers(req, res, next) {
       role: (u.role || 'MIEMBRO').toUpperCase(),
       status: (u.status || 'ACTIVE').toUpperCase(),
       last_activity: u.last_activity || u.updated_at || u.created_at || null,
-      avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0,
+      avg_tokens: 0,
       weeks_evaluated: typeof u.weeks_evaluated === 'number' ? u.weeks_evaluated : 0,
       perf_status: u.perf_status || 'VERDE',
       created_at: u.created_at || null,
@@ -333,7 +333,6 @@ export async function addMember(req, res, next) {
       joined_date: new Date().toISOString().split('T')[0],
       perf_status: 'VERDE',
       status: 'ACTIVE',
-      avg_tokens: 0,
       weeks_evaluated: 0,
       trend: 'stable',
       last_activity: new Date().toISOString(),
@@ -405,7 +404,6 @@ export async function bulkUploadEvent(req, res, next) {
             joined_date: new Date().toISOString().split('T')[0],
             perf_status: 'VERDE',
             status: 'ACTIVE',
-            avg_tokens: item.tokens,
             weeks_evaluated: 1,
             trend: 'stable',
             last_activity: new Date().toISOString(),

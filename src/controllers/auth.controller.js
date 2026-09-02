@@ -175,7 +175,6 @@ export const register = async (req, res) => {
             must_change_password: true,
             token_version: 1,
             status: 'ACTIVE',
-            avg_tokens: 0,
             weeks_evaluated: 0,
             perf_status: 'VERDE',
             created_at: new Date().toISOString(),
