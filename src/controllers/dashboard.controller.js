@@ -26,7 +26,7 @@ export const getSummary = async (req, res, next) => {
         // Obtener usuarios activos
         const { data: users } = await supabase
           .from('users')
-          .select('id, user_id, email, nick, role, status, perf_status')
+          .select('id, user_id, email, nick, role, status')
           .order('nick', { ascending: true });
 
         const activeUsersList = (users || []).filter(u => {
@@ -56,6 +56,11 @@ export const getSummary = async (req, res, next) => {
             const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0;
             const count = stats && stats.count > 0 ? stats.count : 0;
 
+            let stColor = 'VERDE';
+            if (avg > 0 && avg < 100) stColor = 'NEGRO';
+            else if (avg > 0 && avg < 130) stColor = 'ROJO';
+            else if (avg > 0 && avg < 175) stColor = 'NARANJA';
+
             return {
               id: u.id || u.user_id,
               user_id: u.user_id || u.id,
@@ -63,7 +68,7 @@ export const getSummary = async (req, res, next) => {
               nick: u.nick || u.email?.split('@')[0],
               role: (u.role || 'MIEMBRO').toUpperCase(),
               avg_tokens: avg,
-              perf_status: u.perf_status || 'VERDE',
+              perf_status: stColor,
               status: (u.status || 'ACTIVE').toUpperCase(),
               weeks_evaluated: count
             };
@@ -128,7 +133,7 @@ export const getActiveMembers = async (req, res, next) => {
     if (supabase) {
       const { data: users, error } = await supabase
         .from('users')
-        .select('id, user_id, email, nick, role, status, perf_status')
+        .select('id, user_id, email, nick, role, status')
         .order('nick', { ascending: true });
 
       if (!error && users) {
@@ -143,7 +148,7 @@ export const getActiveMembers = async (req, res, next) => {
             email: u.email,
             nick: u.nick || u.email?.split('@')[0],
             role: (u.role || 'MIEMBRO').toUpperCase(),
-            perf_status: u.perf_status || 'VERDE',
+            perf_status: 'VERDE',
             status: (u.status || 'ACTIVE').toUpperCase(),
             avg_tokens: 0
           }));
