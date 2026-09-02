@@ -478,17 +478,37 @@ ${record.notes ? `<p><strong>Notas:</strong> ${escapeHTML(record.notes)}</p>` : 
 
 // ========== FORMULARIO DE RENDIMIENTO ==========
 function selectDays(n) {
-  document.querySelectorAll('#daysSelectorGroup .day-btn').forEach(function(btn) {
-    btn.classList.toggle('active', parseInt(btn.dataset.day) === n);
+  if (typeof window.selectDays === 'function' && window.selectDays !== selectDays) {
+    return window.selectDays(n);
+  }
+  document.querySelectorAll('#daysSelectorGroup .day-btn, .day-btn').forEach(function(btn) {
+    const btnDay = parseInt(btn.dataset.day || btn.dataset.days || btn.textContent.trim(), 10);
+    btn.classList.toggle('active', btnDay === n);
   });
-  const inp = document.getElementById('daysConnected');
+  const inp = document.getElementById('daysConnected') || document.getElementById('daysConnectedInput');
   if (inp) inp.value = n;
+  if (typeof window.updateCalculatedStatus === 'function') {
+    window.updateCalculatedStatus();
+  }
 }
 
 function clampTokens(input) {
-  const maxT = (window.currentEvent && window.currentEvent.type === 'BLACK_MARKET') ? 250 : 200;
-  if (input.value > maxT) input.value = maxT;
-  if (input.value < 0)    input.value = 0;
+  if (typeof window.clampTokens === 'function' && window.clampTokens !== clampTokens) {
+    return window.clampTokens(input);
+  }
+  if (!input) return;
+  const maxT = (window.currentEvent && (window.currentEvent.type === 'BLACK_MARKET' || window.currentEvent.type === 'BM')) ? 250 : 200;
+  if (input.value === '') return;
+  let val = parseInt(input.value, 10);
+  if (isNaN(val)) return;
+  if (val > maxT) val = maxT;
+  if (val < 0) val = 0;
+  const rounded = Math.round(val / 5) * 5;
+  input.value = rounded;
+  if (typeof window.autoCalculateDays === 'function') {
+    const d = window.autoCalculateDays(rounded);
+    selectDays(d);
+  }
 }
 
 function adaptFormToEventType(eventType) {
