@@ -26,40 +26,98 @@ const VIEWS = {
   ADMIN:            'adminPanel',
   ALL_PERFORMANCES: 'allPerformancesView',
   SETTINGS:         'settingsView',
-  EXPORT:           'exportView'
+  EXPORT:           'exportView',
+  PLANE_CATALOG:    'planeCatalogAdminView'
 };
 
 const VIEW_ALIASES = {
-  'dashboard':        VIEWS.DASHBOARD,
-  'dashboardView':    VIEWS.DASHBOARD,
-  'app':              VIEWS.DASHBOARD,
-  'appView':          VIEWS.DASHBOARD,
-  'performance':      VIEWS.PERFORMANCE,
-  'performanceForm':  VIEWS.PERFORMANCE,
-  'planes':           VIEWS.PLANES,
-  'planesView':       VIEWS.PLANES,
-  'hangar':           VIEWS.PLANES,
-  'historial':        VIEWS.HISTORIAL,
-  'historialView':    VIEWS.HISTORIAL,
-  'profile':          VIEWS.PROFILE,
-  'profileView':      VIEWS.PROFILE,
-  'normativas':       VIEWS.NORMATIVAS,
-  'normativasView':   VIEWS.NORMATIVAS,
-  'admin':            VIEWS.ADMIN,
-  'adminPanel':       VIEWS.ADMIN,
-  'adminView':        VIEWS.ADMIN,
-  'all-performances': VIEWS.ALL_PERFORMANCES,
-  'allPerformances':  VIEWS.ALL_PERFORMANCES,
-  'allPerformancesView': VIEWS.ALL_PERFORMANCES,
-  'settings':         VIEWS.SETTINGS,
-  'settingsView':     VIEWS.SETTINGS,
-  'help':             'helpView',
-  'helpView':         'helpView',
-  'owner':            'ownerPanelView',
-  'ownerPanel':       'ownerPanelView',
-  'ownerPanelView':   'ownerPanelView',
-  'export':           'exportView',
-  'exportView':       'exportView'
+  'dashboard':            VIEWS.DASHBOARD,
+  'dashboardView':        VIEWS.DASHBOARD,
+  'app':                  VIEWS.DASHBOARD,
+  'appView':              VIEWS.DASHBOARD,
+  'performance':          VIEWS.PERFORMANCE,
+  'performanceForm':      VIEWS.PERFORMANCE,
+  'planes':               VIEWS.PLANES,
+  'planesView':           VIEWS.PLANES,
+  'hangar':               VIEWS.PLANES,
+  'historial':            VIEWS.HISTORIAL,
+  'historialView':        VIEWS.HISTORIAL,
+  'profile':              VIEWS.PROFILE,
+  'profileView':          VIEWS.PROFILE,
+  'normativas':           VIEWS.NORMATIVAS,
+  'normativasView':       VIEWS.NORMATIVAS,
+  'admin':                VIEWS.ADMIN,
+  'adminPanel':           VIEWS.ADMIN,
+  'adminView':            VIEWS.ADMIN,
+  'all-performances':     VIEWS.ALL_PERFORMANCES,
+  'allPerformances':      VIEWS.ALL_PERFORMANCES,
+  'allPerformancesView':  VIEWS.ALL_PERFORMANCES,
+  'settings':             VIEWS.SETTINGS,
+  'settingsView':         VIEWS.SETTINGS,
+  'help':                 'helpView',
+  'helpView':             'helpView',
+  'owner':                'ownerPanelView',
+  'ownerPanel':           'ownerPanelView',
+  'ownerPanelView':       'ownerPanelView',
+  'export':               'exportView',
+  'exportView':           'exportView',
+  'plane-catalog-admin':  VIEWS.PLANE_CATALOG,
+  'planeCatalogAdmin':    VIEWS.PLANE_CATALOG,
+  'planeCatalogAdminView':VIEWS.PLANE_CATALOG,
+  'plane-catalog':        VIEWS.PLANE_CATALOG,
+  'planeCatalog':         VIEWS.PLANE_CATALOG
+};
+
+// Lista y registro de vistas para enrutamiento modular
+const VIEWS_REGISTRY = {
+  'dashboard': {
+    title: 'Panel Táctico',
+    load: () => loadDashboardData()
+  },
+  'performance': {
+    title: 'Registro de Rendimiento',
+    load: () => typeof initPerformanceForm === 'function' ? initPerformanceForm() : loadPerformanceForm()
+  },
+  'planes': {
+    title: 'Hangar de Escuadrón',
+    load: () => loadPlanesView()
+  },
+  'historial': {
+    title: 'Historial Operativo',
+    load: () => loadHistorial()
+  },
+  'profile': {
+    title: 'Perfil de Piloto',
+    load: () => loadPersonalProfile()
+  },
+  'normativas': {
+    title: 'Reglamento & Normativas',
+    load: () => loadNormativas()
+  },
+  'admin': {
+    title: 'Panel de Mando',
+    load: () => loadAdminPanel()
+  },
+  'all-performances': {
+    title: 'Rendimiento Global',
+    load: () => loadAllPerformances()
+  },
+  'settings': {
+    title: 'Configuraciones',
+    load: () => typeof loadSettings === 'function' ? loadSettings() : null
+  },
+  'export': {
+    title: 'Exportar Reporte',
+    load: () => loadExportView()
+  },
+  'plane-catalog-admin': {
+    title: 'Catálogo de Aviones',
+    load: () => loadPlaneCatalogAdmin()
+  },
+  'plane-catalog': {
+    title: 'Catálogo de Aviones',
+    load: () => loadPlaneCatalogAdmin()
+  }
 };
 
 // Mostrar una vista específica
@@ -232,6 +290,14 @@ function loadViewData(viewId) {
     case 'help':
     case 'helpView':
       loadHelpView();
+      break;
+      
+    case VIEWS.PLANE_CATALOG:
+    case 'planeCatalogAdminView':
+    case 'plane-catalog-admin':
+    case 'planeCatalogAdmin':
+    case 'planeCatalog':
+      loadPlaneCatalogAdmin();
       break;
       
     default:
@@ -2202,13 +2268,14 @@ async function loadOwnerPanel() {
 // ============================================================
 let allAdminPlaneModelsCache = [];
 
-function switchAdminTab(tab) {
-  const btnMembers = document.getElementById('adminTabBtnMembers');
-  const btnPlanes = document.getElementById('adminTabBtnPlanes');
+function showAdminTab(tab) {
+  const isCatalog = tab === 'catalog' || tab === 'planes';
+  const btnMembers = document.getElementById('adminTabBtnMembers') || document.querySelector('.tab-btn[data-tab="members"]');
+  const btnPlanes = document.getElementById('adminTabBtnPlanes') || document.querySelector('.tab-btn[data-tab="catalog"]');
   const contentMembers = document.getElementById('adminMembersTabContent');
   const contentPlanes = document.getElementById('adminPlanesTabContent');
 
-  if (tab === 'planes') {
+  if (isCatalog) {
     if (btnMembers) {
       btnMembers.classList.remove('active');
       btnMembers.style.background = 'rgba(15,23,42,0.6)';
@@ -2244,6 +2311,8 @@ function switchAdminTab(tab) {
     loadAdminPanel();
   }
 }
+
+const switchAdminTab = showAdminTab;
 
 async function loadPlaneCatalogAdmin() {
   const tbody = document.getElementById('adminPlaneCatalogTableBody');
@@ -2672,8 +2741,10 @@ window.openMobileDrawer = openMobileDrawer;
 window.closeMobileDrawer = closeMobileDrawer;
 
 // Catálogo de Aviones (Admin)
+window.showAdminTab = showAdminTab;
 window.switchAdminTab = switchAdminTab;
 window.loadPlaneCatalogAdmin = loadPlaneCatalogAdmin;
+window.VIEWS_REGISTRY = VIEWS_REGISTRY;
 window.renderPlaneCatalogTable = renderPlaneCatalogTable;
 window.filterPlaneCatalog = filterPlaneCatalog;
 window.resetPlaneCatalogFilters = resetPlaneCatalogFilters;
