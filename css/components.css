@@ -948,3 +948,70 @@
   transform: translateY(-2px) scale(1.03);
 }
 
+/* ── TABLAS Y ACCIONES RESPONSIVAS (MÓVILES) ─────────────── */
+.mobile-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .data-table thead {
+    display: none;
+  }
+  .data-table, .data-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .data-table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.8);
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .data-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    font-size: 0.82rem;
+    text-align: right;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: auto;
+  }
+  .data-table tbody td:last-child {
+    border-bottom: none;
+  }
+  .data-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .data-table tbody td .mobile-actions {
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .data-table tbody td[data-label="Acciones"],
+  .data-table tbody td[data-label="Gestión & Acciones"] {
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+  }
+}
+
