@@ -73,6 +73,9 @@ async function initPerformanceForm() {
         // Configurar selector de días y límites
         await updateEventLimits();
 
+        // Configurar escuchadores para inputs de tokens con redondeo a múltiplos de 5
+        setupTokensInput();
+
         // Resetear formulario a estado inicial con "Voló en grupo" marcado por defecto
         resetPerformanceForm();
 
@@ -125,6 +128,7 @@ async function loadCurrentEvent() {
 
 /**
  * Carga la lista de pilotos desde Supabase para el selector de Admin/Owner
+ * Filtra SOLO activos y elimina emojis/estrellitas de rango
  */
 async function loadAdminPilotList() {
     const pilotSelect = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
@@ -169,34 +173,35 @@ async function loadAdminPilotList() {
             return;
         }
 
-        // Filtrar solo activos y ordenar alfabéticamente por nick
+        // ✅ SOLO activos
         const activeMembers = members
-            .filter(p => {
-                const sq = (p.squad_status || p.status || '').toUpperCase();
-                return !sq || sq === 'ACTIVE' || sq === 'ACTIVO';
+            .filter(m => {
+                const status = (m.status || '').toUpperCase();
+                const squadStatus = (m.squad_status || '').toUpperCase();
+                if (status === 'INACTIVE' || squadStatus === 'INACTIVE' || status === 'INACTIVO' || squadStatus === 'INACTIVO') {
+                    return false;
+                }
+                return status === 'ACTIVE' || squadStatus === 'ACTIVE' || status === 'ACTIVO' || squadStatus === 'ACTIVO' || (!status && !squadStatus);
             })
             .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
 
         // Limpiar opciones anteriores
         pilotSelect.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
 
-        // Agregar cada piloto al selector
+        // ✅ SIN emojis: todos los pilotos son iguales, solo indicando (Tú) si es el usuario actual
+        const currentUserId = window.currentUser?.user_id || window.currentUser?.id;
+
         activeMembers.forEach(pilot => {
             const uid = pilot.user_id || pilot.id;
-            const isCurrentUser = (uid === (window.currentUser?.user_id || window.currentUser?.id));
-            if (isCurrentUser) return; // Se maneja como "Mi propio rendimiento"
+            const isCurrentUser = (uid === currentUserId || (pilot.email && pilot.email?.toLowerCase() === window.currentUser?.email?.toLowerCase()));
 
             const option = document.createElement('option');
             option.value = uid;
-
-            const roleUpper = (pilot.role || 'MIEMBRO').toUpperCase();
-            const roleBadge = roleUpper === 'OWNER' ? '👑' : roleUpper === 'ADMIN' ? '⭐' : '';
-
-            option.textContent = `${roleBadge} ${pilot.nick || pilot.email || 'Sin Nick'} (${roleUpper})`.trim();
+            option.textContent = `${pilot.nick || pilot.email || 'Sin Nick'} ${isCurrentUser ? '(Tú)' : ''}`.trim();
             pilotSelect.appendChild(option);
         });
 
-        console.log(`✅ [Performance] ${activeMembers.length} pilotos cargados en el selector`);
+        console.log(`✅ [Performance] ${activeMembers.length} pilotos activos cargados en el selector (sin emojis)`);
 
     } catch (err) {
         console.error('Error cargando lista de pilotos:', err);
@@ -208,43 +213,104 @@ async function loadAdminPilotList() {
 // ============================================================
 
 /**
- * Calcula automáticamente los días según los tokens ingresados:
- * 0 - 50 tokens: 1 día
+ * Calcula automáticamente los días según tokens redondeados a múltiplos de 5:
+ * 0 - 50  tokens: 1 día
  * 55 - 100 tokens: 2 días
  * 105 - 150 tokens: 3 días
  * 155 - 200 tokens: 4 días
  */
 function autoCalculateDays(tokens) {
-    const val = parseInt(tokens, 10);
-    if (isNaN(val) || val <= 0) {
-        selectDays(0);
-        updateCalculatedStatus();
+    const raw = parseInt(tokens, 10);
+    if (isNaN(raw)) {
         return 0;
     }
+    const rounded = Math.round(raw / 5) * 5;
 
-    let days = 1;
-    if (val <= 50) {
-        days = 1;
-    } else if (val <= 100) {
-        days = 2;
-    } else if (val <= 150) {
-        days = 3;
-    } else {
-        days = 4;
+    // Actualizar input con valor redondeado
+    const input = document.getElementById('tokens') || document.getElementById('tokensInput');
+    if (input && input.value !== '' && parseInt(input.value, 10) !== rounded) {
+        input.value = rounded;
     }
 
-    selectDays(days);
-    updateCalculatedStatus();
-    return days;
+    // Calcular días según tokens redondeados
+    if (rounded >= 0 && rounded <= 50) return 1;
+    if (rounded >= 55 && rounded <= 100) return 2;
+    if (rounded >= 105 && rounded <= 150) return 3;
+    if (rounded >= 155 && rounded <= 200) return 4;
+    if (rounded > 200) return 4;
+    return 0;
 }
 
 /**
- * Selecciona la cantidad de días conectados
+ * Configura el input de tokens para auto-calcular y redondear a múltiplos de 5
+ */
+function setupTokensInput() {
+    const tokensInput = document.getElementById('tokens') || document.getElementById('tokensInput');
+    if (tokensInput) {
+        tokensInput.oninput = function() {
+            if (this.value === '') {
+                selectDays(0);
+                updateCalculatedStatus();
+                return;
+            }
+            const rawValue = parseInt(this.value, 10);
+            if (isNaN(rawValue)) {
+                selectDays(0);
+                updateCalculatedStatus();
+                return;
+            }
+
+            const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
+            const maxVal = isBM ? 250 : 200;
+            let bounded = Math.max(0, Math.min(rawValue, maxVal));
+            const rounded = Math.round(bounded / 5) * 5;
+
+            const days = autoCalculateDays(rounded);
+            selectDays(days);
+            updateCalculatedStatus();
+        };
+
+        tokensInput.onchange = function() {
+            if (this.value !== '') {
+                const rawValue = parseInt(this.value, 10);
+                if (!isNaN(rawValue)) {
+                    const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
+                    const maxVal = isBM ? 250 : 200;
+                    let bounded = Math.max(0, Math.min(rawValue, maxVal));
+                    const rounded = Math.round(bounded / 5) * 5;
+                    this.value = rounded;
+                    const days = autoCalculateDays(rounded);
+                    selectDays(days);
+                    updateCalculatedStatus();
+                }
+            }
+        };
+
+        tokensInput.onblur = function() {
+            if (this.value !== '') {
+                const rawValue = parseInt(this.value, 10);
+                if (!isNaN(rawValue)) {
+                    const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
+                    const maxVal = isBM ? 250 : 200;
+                    let bounded = Math.max(0, Math.min(rawValue, maxVal));
+                    const rounded = Math.round(bounded / 5) * 5;
+                    this.value = rounded;
+                    const days = autoCalculateDays(rounded);
+                    selectDays(days);
+                    updateCalculatedStatus();
+                }
+            }
+        };
+    }
+}
+
+/**
+ * Selecciona la cantidad de días conectados con resaltado visual (.active)
  */
 function selectDays(days) {
     selectedDays = days;
 
-    // Actualizar botones visualmente
+    // Actualizar botones visualmente agregando o quitando clase 'active'
     document.querySelectorAll('.day-btn').forEach(btn => {
         const btnDay = parseInt(btn.dataset.day || btn.dataset.days || btn.textContent.trim(), 10);
         btn.classList.toggle('active', btnDay === days);
@@ -259,20 +325,32 @@ function selectDays(days) {
 }
 
 /**
- * Limita el valor de tokens según el tipo de evento
+ * Limita y redondea el valor de tokens según el tipo de evento
  */
 function clampTokens(input) {
     if (!input) return;
     const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
     const maxVal = isBM ? 250 : 200;
 
+    if (input.value === '') {
+        selectDays(0);
+        updateCalculatedStatus();
+        return;
+    }
+
     let value = parseInt(input.value, 10);
-    if (isNaN(value)) return;
+    if (isNaN(value)) {
+        selectDays(0);
+        updateCalculatedStatus();
+        return;
+    }
     if (value < 0) value = 0;
     if (value > maxVal) value = maxVal;
-    input.value = value;
 
-    autoCalculateDays(value);
+    const rounded = Math.round(value / 5) * 5;
+    const days = autoCalculateDays(rounded);
+    selectDays(days);
+    updateCalculatedStatus();
 }
 
 /**
@@ -556,6 +634,7 @@ window.initPerformanceForm = initPerformanceForm;
 window.loadCurrentEvent = loadCurrentEvent;
 window.loadAdminPilotList = loadAdminPilotList;
 window.autoCalculateDays = autoCalculateDays;
+window.setupTokensInput = setupTokensInput;
 window.selectDays = selectDays;
 window.clampTokens = clampTokens;
 window.updateCalculatedStatus = updateCalculatedStatus;

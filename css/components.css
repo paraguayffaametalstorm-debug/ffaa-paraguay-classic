@@ -915,3 +915,36 @@
   font-weight: normal;
   margin-left: 6px;
 }
+
+/* ── SELECTOR DE DÍAS RENDIMIENTO ────────────────────────── */
+.day-btn {
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.85);
+  color: #F1F5F9;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Chakra Petch', 'Orbitron', sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.day-btn:hover {
+  border-color: #38BDF8;
+  color: #38BDF8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
+}
+
+.day-btn.active {
+  background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%) !important;
+  color: #0A0E1A !important;
+  border: 1px solid #FCD34D !important;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.8), 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  font-weight: 800 !important;
+  transform: translateY(-2px) scale(1.03);
+}
+
