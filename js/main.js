@@ -5,6 +5,13 @@
 
 // Inicializaci?3n (se llama despu??s de cargar componentes)
 function initApp() {
+    // ✅ Restaurar sesión al inicio
+    if (typeof restoreSession === 'function') {
+        restoreSession();
+    } else if (typeof window.restoreSession === 'function') {
+        window.restoreSession();
+    }
+
     if (typeof initSettingsOnLoad === 'function') initSettingsOnLoad();
     console.log('e??� PARAGUAY-FFAA | METALSTORM iniciando...');
     
@@ -83,7 +90,10 @@ function extendSession() {
 
 // Función para actualizar el estado del usuario en la UI
 function updateUserUI(user) {
+    if (!user) return;
     currentUser = user;
+    window.currentUser = user;
+    localStorage.setItem('user', JSON.stringify(user));
     
     // === OCULTAR LOGIN / MOSTRAR LOGOUT ===
     const loginBtn = document.getElementById('loginBtn');
