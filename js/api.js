@@ -850,3 +850,59 @@ function refreshAdminStats() {
 function showAllNormativas() {
   showView('normativasView');
 }
+
+// ========== ADMIN PLANE CATALOG API ==========
+async function fetchAdminPlaneCatalog() {
+  const res = await fetch(`${API_BASE}/api/admin/planes`, {
+    headers: getAuthHeaders()
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Error HTTP ${res.status}`);
+  }
+  return await res.json();
+}
+
+async function createAdminPlaneModel(planeData) {
+  const res = await fetch(`${API_BASE}/api/admin/planes`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(planeData)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || `Error HTTP ${res.status}`);
+  }
+  return data;
+}
+
+async function updateAdminPlaneModel(planeId, planeData) {
+  const res = await fetch(`${API_BASE}/api/admin/planes/${encodeURIComponent(planeId)}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(planeData)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || `Error HTTP ${res.status}`);
+  }
+  return data;
+}
+
+async function toggleAdminPlaneModelStatus(planeId, isActive) {
+  const res = await fetch(`${API_BASE}/api/admin/planes/${encodeURIComponent(planeId)}/status`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ is_active: isActive })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || `Error HTTP ${res.status}`);
+  }
+  return data;
+}
+
+window.fetchAdminPlaneCatalog = fetchAdminPlaneCatalog;
+window.createAdminPlaneModel = createAdminPlaneModel;
+window.updateAdminPlaneModel = updateAdminPlaneModel;
+window.toggleAdminPlaneModelStatus = toggleAdminPlaneModelStatus;
