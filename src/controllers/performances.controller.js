@@ -92,7 +92,7 @@ export async function savePerformance(req, res, next) {
       savedPerf = inserted;
     }
 
-    // Recalcular semanas evaluadas y estado del usuario
+    // Recalcular estado del usuario
     const { data: userPerfs } = await supabase
       .from('performances')
       .select('tokens')
@@ -102,7 +102,6 @@ export async function savePerformance(req, res, next) {
       await supabase
         .from('users')
         .update({
-          weeks_evaluated: userPerfs.length,
           perf_status: status
         })
         .or(`id.eq.${record.user_id},user_id.eq.${record.user_id}`);
@@ -160,7 +159,7 @@ export async function getStats(req, res, next) {
     }
 
     const userId = req.user.user_id || req.user.id;
-    const { data: users } = await supabase.from('users').select('id, user_id, email, nick, role, status, perf_status, weeks_evaluated, trend');
+    const { data: users } = await supabase.from('users').select('id, user_id, email, nick, role, status, perf_status');
     const { data: myPerfs } = await supabase
       .from('performances')
       .select('*')
@@ -188,8 +187,8 @@ export async function getStats(req, res, next) {
     res.json({
       userStats: {
         avg_tokens: myAvgTokens,
-        weeks_evaluated: myUser.weeks_evaluated || myPerfsList.length || 0,
-        trend: myUser.trend || 'stable',
+        weeks_evaluated: myPerfsList.length || 0,
+        trend: 'stable',
         perf_status: myUser.perf_status || 'VERDE'
       },
       squadStats: {
