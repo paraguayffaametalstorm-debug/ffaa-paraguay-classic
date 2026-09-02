@@ -1,6 +1,6 @@
 // Service Worker - PARAGUAY-FFAA | METALSTORM PWA
 // ⬇️ BUMP DE VERSIÓN EN CADA DEPLOY
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.3.1';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.3.2';
 
 // ✅ Assets versionados
 const STATIC_ASSETS = [
@@ -90,8 +90,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then(res => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          if (res && res.ok) {
+            try {
+              const clone = res.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(request, clone)).catch(() => {});
+            } catch (cloneErr) {
+              console.warn('[SW] No se pudo clonar respuesta de navegación:', cloneErr);
+            }
+          }
           return res;
         })
         .catch(() => caches.match(request))
@@ -104,8 +110,13 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then(cached => {
       if (cached) return cached;
       return fetch(request).then(res => {
-        if (res.ok) {
-          caches.open(CACHE_NAME).then(cache => cache.put(request, res.clone()));
+        if (res && res.ok) {
+          try {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone)).catch(() => {});
+          } catch (cloneErr) {
+            console.warn('[SW] No se pudo clonar el asset para cachear:', cloneErr);
+          }
         }
         return res;
       });
