@@ -2676,8 +2676,8 @@ async function togglePlaneStatus(planeId, currentStatus, planeName) {
 }
 
 // Aliases for compatibility
-const addPlane = showAddPlaneCatalogModal;
-const editPlane = editPlaneCatalog;
+window.addPlane = typeof showAddPlaneModal === 'function' ? showAddPlaneModal : showAddPlaneCatalogModal;
+window.editPlaneCatalog = editPlaneCatalog;
 
 // ============================================================
 // ✅ EXPOSICIÓN GLOBAL EN WINDOW PARA TODOS LOS HANDLERS HTML
