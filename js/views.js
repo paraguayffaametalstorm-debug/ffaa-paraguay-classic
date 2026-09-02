@@ -532,6 +532,25 @@ function onTargetPilotChange() {
     : '💾 Guardar Rendimiento';
 }
 
+function getWeekNumber(date) {
+  if (!date) return '01';
+  const d = new Date(date);
+  const startOfYear = new Date(d.getFullYear(), 0, 1);
+  const diff = (d - startOfYear + (startOfYear.getTimezoneOffset() - d.getTimezoneOffset()) * 60000) / 86400000;
+  return String(Math.ceil((diff + startOfYear.getDay() + 1) / 7)).padStart(2, '0');
+}
+
+function formatEventTitle(event) {
+  if (!event) return 'Sin evento activo';
+  const startDate = event.start_date ? new Date(event.start_date) : new Date();
+  const year = startDate.getFullYear();
+  const month = String(startDate.getMonth() + 1).padStart(2, '0');
+  const weekNum = getWeekNumber(startDate);
+  const isBM = event.type === 'BLACK_MARKET' || event.type === 'BM';
+  const typeCode = isBM ? 'BM' : 'SQ';
+  return `${year}-${month} · SEM ${weekNum} - ${typeCode}`;
+}
+
 function loadPerformanceForm() {
   if (!currentUser) return;
   const perfUserName = document.getElementById('perfUserName');
@@ -539,7 +558,7 @@ function loadPerformanceForm() {
   const tokens = document.getElementById('tokens');
   if (tokens) tokens.value = '';
   const flewInGroup = document.getElementById('flewInGroup');
-  if (flewInGroup) flewInGroup.checked = false;
+  if (flewInGroup) flewInGroup.checked = true;
   const notes = document.getElementById('notes');
   if (notes) notes.value = '';
   const statusEl = document.getElementById('calculatedStatus');
@@ -557,10 +576,10 @@ function loadPerformanceForm() {
 }
 
 function loadActiveMembers() {
-  fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() })
+  fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() })
   .then(async res => {
     if (!res.ok) {
-      const fallback = await fetch(`${API_BASE}/api/admin/members/active`, { headers: getAuthHeaders() });
+      const fallback = await fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() });
       if (!fallback.ok) throw new Error(`HTTP ${fallback.status}`);
       return fallback.json();
     }
@@ -571,16 +590,27 @@ function loadActiveMembers() {
     return res.json();
   })
   .then(data => {
-    const sel = document.getElementById('performanceTarget');
+    const sel = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
     if (!sel) return;
     sel.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
-    const members = data.activeMembers || data.members || [];
-    members.forEach(m => {
+    const members = data.members || data.activeMembers || data.users || (Array.isArray(data) ? data : []);
+    
+    // Filtrar solo activos y ordenar alfabéticamente
+    const activeMembers = members
+      .filter(p => {
+        const sq = (p.squad_status || p.status || '').toUpperCase();
+        return !sq || sq === 'ACTIVE' || sq === 'ACTIVO';
+      })
+      .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
+
+    activeMembers.forEach(m => {
       const uid = m.user_id || m.id;
       if (currentUser && (uid === currentUser.user_id || uid === currentUser.id)) return;
       const opt = document.createElement('option');
       opt.value = uid;
-      opt.textContent = `${m.nick || m.email} (${m.role || 'MIEMBRO'})`;
+      const roleUpper = (m.role || 'MIEMBRO').toUpperCase();
+      const roleBadge = roleUpper === 'OWNER' ? '👑' : roleUpper === 'ADMIN' ? '⭐' : '';
+      opt.textContent = `${roleBadge} ${m.nick || m.email || 'Sin Nick'} (${roleUpper})`.trim();
       sel.appendChild(opt);
     });
     sel.value = 'self';
@@ -771,6 +801,7 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
   const isBM        = event.type === 'BLACK_MARKET';
   const typeLabel   = isBM ? '⚡ BLACK MARKET' : '✈️ SQUADRON';
   const typeClass   = isBM ? 'event-bm' : 'event-sq';
+  const eventTitleFormatted = formatEventTitle(event);
   const startDate = new Date(event.start_date);
   const endDate   = new Date(event.end_date);
   const totalMs   = endDate - startDate;
@@ -788,7 +819,7 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
   document.getElementById('eventInfo').innerHTML = `
 <div class="card event-card ${typeClass}">
 <div class="event-header">
-<h4>${event.id}</h4>
+<h4>${eventTitleFormatted}</h4>
 <span style="font-size:0.82rem;color:var(--text-muted,#a0aec0);">${typeLabel}</span>
 </div>
 <div class="win-wrapper">

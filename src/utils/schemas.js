@@ -16,7 +16,7 @@ export const PerformanceSchema = z.object({
   days_connected: z.number().int().min(0).max(7),
   flew_in_group: z.boolean().optional().default(false),
   notes: z.string().max(500, 'Las notas no pueden superar 500 caracteres').optional().nullable(),
-  user_id: z.number().int().optional()
+  user_id: z.union([z.number().int(), z.string().transform(v => parseInt(v, 10))]).optional()
 });
 
 export const BulkUploadSchema = z.object({

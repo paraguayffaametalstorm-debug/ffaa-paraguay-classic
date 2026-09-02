@@ -8,7 +8,7 @@ import {
   activateBlackMarket
 } from '../controllers/admin.controller.js';
 import { getActiveMembers } from '../controllers/events.controller.js';
-import { getAllPerformances, exportPerformancesCSV } from '../controllers/performances.controller.js';
+import { getAllPerformances, exportPerformancesCSV, savePerformance } from '../controllers/performances.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { bulkLimiter } from '../middlewares/rateLimiter.js';
 import { memoryStore, getSupabase } from '../db/supabase.js';
@@ -29,6 +29,7 @@ router.patch('/members/:id/status', updateMemberStatus);
 router.patch('/members/:id/role', requireRole('OWNER'), updateMemberRole);
 router.post('/bulk-upload', bulkLimiter, bulkUploadEvent);
 router.get('/all-performances', getAllPerformances);
+router.post('/performances', savePerformance);
 router.get('/export-performances', exportPerformancesCSV);
 router.get('/events', (req, res) => res.json({ events: memoryStore.events }));
 router.post('/events/activate-bm', activateBlackMarket);
