@@ -2130,7 +2130,12 @@ window.loadHistorial = loadHistorial;
 window.displayHistorial = displayHistorial;
 window.loadPlanesView = loadPlanesView;
 window.loadUserPlanes = loadUserPlanes;
-window.loadPersonalProfile = loadPersonalProfile;
+if (typeof loadPersonalProfile === 'function') {
+  window.loadPersonalProfile = loadPersonalProfile;
+}
+if (typeof loadSettings === 'function') {
+  window.loadSettings = loadSettings;
+}
 window.loadPerformanceForm = loadPerformanceForm;
 window.loadActiveMembers = loadActiveMembers;
 window.loadOpenEvents = loadOpenEvents;
