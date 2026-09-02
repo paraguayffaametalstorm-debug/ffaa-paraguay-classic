@@ -6,7 +6,12 @@ import {
   updateUserStatus,
   updateUserRole,
   bulkUploadEvent,
-  activateBlackMarket
+  activateBlackMarket,
+  getAdminPlanes,
+  addAdminPlane,
+  updateAdminPlane,
+  toggleAdminPlaneStatus,
+  deleteAdminPlane
 } from '../controllers/admin.controller.js';
 import { getActiveMembers, getEvents } from '../controllers/events.controller.js';
 import { getAllPerformances, exportPerformancesCSV, savePerformance } from '../controllers/performances.controller.js';
@@ -145,4 +150,14 @@ router.post('/users/:userId/reset-password', async (req, res) => {
     }
 });
 
+// ========== 4. GESTIÓN DE CATÁLOGO DE AVIONES (BLACK MARKET / HANGAR) ==========
+router.get('/planes', getAdminPlanes);
+router.post('/planes', addAdminPlane);
+router.put('/planes/:id', updateAdminPlane);
+router.patch('/planes/:id', updateAdminPlane);
+router.delete('/planes/:id', toggleAdminPlaneStatus);
+router.patch('/planes/:id/status', toggleAdminPlaneStatus);
+router.put('/planes/:id/status', toggleAdminPlaneStatus);
+
 export default router;
+

@@ -1,0 +1,281 @@
+<!-- ============================================================
+     CATÁLOGO DE AVIONES - PANEL DE ADMINISTRACIÓN
+     Gestión de plane_models para Black Market y Hangar
+     ============================================================ -->
+<div id="planeCatalogAdminSection" class="plane-catalog-admin-section">
+  <div class="view-header-tactical" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <div class="badge-tag" style="background:rgba(212,175,55,0.15);color:var(--gold-rank);border:1px solid rgba(212,175,55,0.3);padding:2px 8px;border-radius:4px;font-size:0.75rem;font-family:var(--font-tactical);display:inline-block;margin-bottom:4px;">
+        MANDO CENTRAL · CATÁLOGO DE MODELOS
+      </div>
+      <h2 style="font-size:1.4rem;font-weight:700;color:#f8fafc;display:flex;align-items:center;gap:8px;margin:0;">
+        <i data-lucide="shield" style="width:20px;height:20px;color:var(--gold-rank);"></i>
+        Catálogo de Aviones (Black Market & Hangar)
+      </h2>
+      <p class="subtitle" style="font-size:0.85rem;color:var(--steel-gray);margin-top:4px;">
+        Administración centralizada de modelos militares, tipos de caza, habilidades y activación en el mercado negro
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="loadPlaneCatalogAdmin()" class="btn-secondary btn-sm" id="btnRefreshPlaneCatalog" title="Recargar catálogo desde la base de datos">
+        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Actualizar
+      </button>
+      <button onclick="showAddPlaneCatalogModal()" class="btn-primary btn-sm" id="btnAddPlaneCatalog">
+        <i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Agregar Avión
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card-tactical tactical-corners" style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.15);padding:1rem;text-align:center;">
+      <h4 style="font-size:0.75rem;color:var(--steel-gray);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-tactical);margin-bottom:4px;">Total en Catálogo</h4>
+      <div id="adminCatalogTotalPlanes" style="font-size:1.8rem;font-weight:700;color:var(--gold-rank);font-family:var(--font-tactical);">0</div>
+      <span style="font-size:0.72rem;color:var(--steel-dark);">Modelos Registrados</span>
+    </div>
+    <div class="card stat-card-tactical tactical-corners" style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.15);padding:1rem;text-align:center;">
+      <h4 style="font-size:0.75rem;color:var(--steel-gray);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-tactical);margin-bottom:4px;">Activos / En Servicio</h4>
+      <div id="adminCatalogActivePlanes" style="font-size:1.8rem;font-weight:700;color:#22c55e;font-family:var(--font-tactical);">0</div>
+      <span style="font-size:0.72rem;color:var(--steel-dark);">Disponibles para Flota</span>
+    </div>
+    <div class="card stat-card-tactical tactical-corners" style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.15);padding:1rem;text-align:center;">
+      <h4 style="font-size:0.75rem;color:var(--steel-gray);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-tactical);margin-bottom:4px;">Inactivos / Desactivados</h4>
+      <div id="adminCatalogInactivePlanes" style="font-size:1.8rem;font-weight:700;color:#ef4444;font-family:var(--font-tactical);">0</div>
+      <span style="font-size:0.72rem;color:var(--steel-dark);">Fuera de Catálogo</span>
+    </div>
+    <div class="card stat-card-tactical tactical-corners" style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.15);padding:1rem;text-align:center;">
+      <h4 style="font-size:0.75rem;color:var(--steel-gray);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-tactical);margin-bottom:4px;">Con Hab. Especial</h4>
+      <div id="adminCatalogSpecialPlanes" style="font-size:1.8rem;font-weight:700;color:#38bdf8;font-family:var(--font-tactical);">0</div>
+      <span style="font-size:0.72rem;color:var(--steel-dark);">Habilidades Asignadas</span>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card tactical-card tactical-corners" style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.15);padding:1.2rem;margin-bottom:1.5rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
+      <div>
+        <label for="adminPlaneSearch" style="font-size:0.75rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;display:block;margin-bottom:4px;">
+          Buscar Modelo o ID
+        </label>
+        <input type="text" id="adminPlaneSearch" placeholder="Ej: 501, Raptor, Growler..." oninput="filterPlaneCatalog()" 
+               style="background:#0b1329;border:1px solid rgba(148,163,184,0.2);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;" />
+      </div>
+      <div>
+        <label for="adminPlaneTypeFilter" style="font-size:0.75rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;display:block;margin-bottom:4px;">
+          Tipo de Aeronave
+        </label>
+        <select id="adminPlaneTypeFilter" onchange="filterPlaneCatalog()" 
+                style="background:#0b1329;border:1px solid rgba(148,163,184,0.2);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+          <option value="">Todos los Tipos</option>
+          <option value="Light Fighter">Light Fighter</option>
+          <option value="Medium Fighter">Medium Fighter</option>
+          <option value="Heavy Fighter">Heavy Fighter</option>
+          <option value="Attack">Attack</option>
+          <option value="Interceptor">Interceptor</option>
+        </select>
+      </div>
+      <div>
+        <label for="adminPlaneStatusFilter" style="font-size:0.75rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;display:block;margin-bottom:4px;">
+          Estado
+        </label>
+        <select id="adminPlaneStatusFilter" onchange="filterPlaneCatalog()" 
+                style="background:#0b1329;border:1px solid rgba(148,163,184,0.2);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+          <option value="">Todos los Estados</option>
+          <option value="active">🟢 Solo Activos</option>
+          <option value="inactive">🔴 Solo Inactivos</option>
+        </select>
+      </div>
+      <div>
+        <label for="adminPlaneSkillFilter" style="font-size:0.75rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;display:block;margin-bottom:4px;">
+          Habilidades
+        </label>
+        <select id="adminPlaneSkillFilter" onchange="filterPlaneCatalog()" 
+                style="background:#0b1329;border:1px solid rgba(148,163,184,0.2);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+          <option value="">Todas</option>
+          <option value="with_special">Con Hab. Especial</option>
+          <option value="with_passive">Con Hab. Pasiva</option>
+        </select>
+      </div>
+      <div>
+        <button onclick="resetPlaneCatalogFilters()" class="btn-secondary" style="width:100%;padding:8px;font-size:0.85rem;">
+          <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Catalog Table -->
+  <div class="card tactical-card tactical-corners" style="background:rgba(15,23,42,0.7);border:1px solid rgba(148,163,184,0.15);padding:1rem;overflow-x:auto;">
+    <table class="data-table" id="adminPlaneCatalogTable" style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;font-size:0.75rem;">
+          <th style="padding:10px 8px;">ID</th>
+          <th style="padding:10px 8px;">Aeronave / Modelo</th>
+          <th style="padding:10px 8px;">Tipo / Rol</th>
+          <th style="padding:10px 8px;">Hab. Especial</th>
+          <th style="padding:10px 8px;">Hab. Pasiva</th>
+          <th style="padding:10px 8px;text-align:center;">Estado</th>
+          <th style="padding:10px 8px;text-align:center;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="adminPlaneCatalogTableBody">
+        <tr>
+          <td colspan="7" style="text-align:center;padding:2.5rem;color:var(--steel-gray);">
+            <div class="loading-spinner" style="margin-bottom:8px;">⏳</div>
+            Cargando catálogo de aeronaves...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL DE REGISTRO / EDICIÓN DE AVIONES EN EL CATÁLOGO
+     ============================================================ -->
+<div id="planeCatalogModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;overflow-y:auto;padding:20px;align-items:center;justify-content:center;">
+  <div class="modal-content card tactical-card tactical-corners" style="background:#0b1329;border:1px solid rgba(212,175,55,0.4);max-width:700px;width:100%;margin:auto;padding:1.5rem;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+    
+    <!-- Modal Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(148,163,184,0.2);padding-bottom:12px;margin-bottom:16px;">
+      <div>
+        <div class="badge-tag" style="background:rgba(212,175,55,0.15);color:var(--gold-rank);padding:2px 8px;border-radius:4px;font-size:0.72rem;font-family:var(--font-tactical);">
+          CATÁLOGO OFICIAL · PARAGUAY-FFAA
+        </div>
+        <h3 id="planeCatalogModalTitle" style="font-size:1.25rem;font-weight:700;color:#f8fafc;margin:4px 0 0 0;">
+          ✈️ Registrar Nuevo Avión
+        </h3>
+      </div>
+      <button onclick="closePlaneCatalogModal()" style="background:transparent;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;padding:4px 8px;">
+        ✕
+      </button>
+    </div>
+
+    <!-- Modal Form -->
+    <form id="planeCatalogForm" onsubmit="handleSavePlaneCatalog(event)">
+      <input type="hidden" id="planeCatalogMode" value="create" />
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:14px;">
+        <!-- ID del Modelo -->
+        <div>
+          <label for="planeCatalogId" style="display:block;font-size:0.78rem;font-weight:600;color:var(--steel-gray);margin-bottom:4px;font-family:var(--font-tactical);text-transform:uppercase;">
+            ID del Modelo <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="text" id="planeCatalogId" required placeholder="Ej: 501, 207, 101" 
+                 style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.9rem;font-family:'JetBrains Mono',monospace;" />
+          <span style="font-size:0.7rem;color:#64748b;">Identificador único del modelo (texto o número)</span>
+        </div>
+
+        <!-- Nombre del Avión -->
+        <div>
+          <label for="planeCatalogName" style="display:block;font-size:0.78rem;font-weight:600;color:var(--steel-gray);margin-bottom:4px;font-family:var(--font-tactical);text-transform:uppercase;">
+            Nombre del Avión <span style="color:#ef4444;">*</span>
+          </label>
+          <input type="text" id="planeCatalogName" required placeholder="Ej: EA-18G Growler, F-22A Raptor" 
+                 style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.9rem;" />
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:14px;">
+        <!-- Tipo / Rol -->
+        <div>
+          <label for="planeCatalogType" style="display:block;font-size:0.78rem;font-weight:600;color:var(--steel-gray);margin-bottom:4px;font-family:var(--font-tactical);text-transform:uppercase;">
+            Tipo / Rol de Combate <span style="color:#ef4444;">*</span>
+          </label>
+          <select id="planeCatalogType" required 
+                  style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.9rem;">
+            <option value="Light Fighter">Light Fighter (Caza Ligero)</option>
+            <option value="Medium Fighter">Medium Fighter (Caza Medio)</option>
+            <option value="Heavy Fighter">Heavy Fighter (Caza Pesado)</option>
+            <option value="Attack">Attack (Ataque a Tierra)</option>
+            <option value="Interceptor">Interceptor (Defensa Aérea)</option>
+          </select>
+        </div>
+
+        <!-- Estado de Disponibilidad -->
+        <div>
+          <label for="planeCatalogIsActive" style="display:block;font-size:0.78rem;font-weight:600;color:var(--steel-gray);margin-bottom:4px;font-family:var(--font-tactical);text-transform:uppercase;">
+            Disponibilidad en Catálogo
+          </label>
+          <select id="planeCatalogIsActive" 
+                  style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.9rem;">
+            <option value="true">🟢 ACTIVO (Disponible para Hangar & Black Market)</option>
+            <option value="false">🔴 INACTIVO (Oculto / Desactivado)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Habilidades -->
+      <div style="border-top:1px solid rgba(148,163,184,0.15);padding-top:12px;margin-top:12px;">
+        <h4 style="font-size:0.85rem;color:var(--gold-rank);margin-bottom:10px;font-family:var(--font-tactical);text-transform:uppercase;">
+          ⚡ Habilidades de Combate
+        </h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:14px;">
+          <!-- Habilidad Especial -->
+          <div>
+            <label for="planeCatalogSpecialName" style="display:block;font-size:0.78rem;color:var(--steel-gray);margin-bottom:4px;font-family:var(--font-tactical);text-transform:uppercase;">
+              Habilidad Especial
+            </label>
+            <input type="text" id="planeCatalogSpecialName" placeholder="Ej: Zona de Interferencias, Postquemador" 
+                   style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;" />
+          </div>
+
+          <!-- Habilidad Pasiva -->
+          <div>
+            <label for="planeCatalogPassiveName" style="display:block;font-size:0.78rem;color:var(--steel-gray);margin-bottom:4px;font-family:var(--font-tactical);text-transform:uppercase;">
+              Habilidad Pasiva
+            </label>
+            <input type="text" id="planeCatalogPassiveName" placeholder="Ej: Resonancia ECM, Armadura Reforzada" 
+                   style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Niveles y Estadísticas (Avanzado Opcional) -->
+      <div style="border-top:1px solid rgba(148,163,184,0.15);padding-top:12px;margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h4 style="font-size:0.85rem;color:#38bdf8;margin:0;font-family:var(--font-tactical);text-transform:uppercase;">
+            🛠️ Especificaciones Técnicas (JSON / Parámetros Opcionales)
+          </h4>
+          <button type="button" onclick="toggleAdvancedCatalogFields()" style="background:transparent;border:none;color:#38bdf8;font-size:0.75rem;cursor:pointer;text-decoration:underline;">
+            Mostrar / Ocultar campos JSON
+          </button>
+        </div>
+
+        <div id="advancedCatalogFields" style="display:none;grid-template-columns:1fr;gap:10px;margin-top:8px;">
+          <div>
+            <label for="planeCatalogSpecialLevels" style="display:block;font-size:0.72rem;color:var(--steel-gray);margin-bottom:2px;">
+              Niveles Habilidad Especial (JSON):
+            </label>
+            <textarea id="planeCatalogSpecialLevels" rows="2" placeholder='{"1": "Efecto nivel 1", "2": "Efecto nivel 2"}' 
+                      style="background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:4px;padding:6px 8px;width:100%;font-size:0.78rem;font-family:monospace;"></textarea>
+          </div>
+          <div>
+            <label for="planeCatalogPassiveLevels" style="display:block;font-size:0.72rem;color:var(--steel-gray);margin-bottom:2px;">
+              Niveles Habilidad Pasiva (JSON):
+            </label>
+            <textarea id="planeCatalogPassiveLevels" rows="2" placeholder='{"1": "Pasiva nivel 1", "2": "Pasiva nivel 2"}' 
+                      style="background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:4px;padding:6px 8px;width:100%;font-size:0.78rem;font-family:monospace;"></textarea>
+          </div>
+          <div>
+            <label for="planeCatalogStatsReal" style="display:block;font-size:0.72rem;color:var(--steel-gray);margin-bottom:2px;">
+              Estadísticas Reales Base (JSON stats_real):
+            </label>
+            <textarea id="planeCatalogStatsReal" rows="2" placeholder='{"speed": 1850, "agility": 88, "armor": 4200, "firepower": 92}' 
+                      style="background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:4px;padding:6px 8px;width:100%;font-size:0.78rem;font-family:monospace;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;border-top:1px solid rgba(148,163,184,0.2);padding-top:14px;">
+        <button type="button" onclick="closePlaneCatalogModal()" class="btn-secondary">
+          Cancelar
+        </button>
+        <button type="submit" class="btn-primary" id="btnSubmitPlaneCatalog">
+          <i data-lucide="save" style="width:14px;height:14px;"></i> Guardar Aeronave
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

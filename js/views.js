@@ -2198,6 +2198,419 @@ async function loadOwnerPanel() {
 }
 
 // ============================================================
+// ========== 6. ADMINISTRACIÓN DE CATÁLOGO DE AVIONES ========
+// ============================================================
+let allAdminPlaneModelsCache = [];
+
+function switchAdminTab(tab) {
+  const btnMembers = document.getElementById('adminTabBtnMembers');
+  const btnPlanes = document.getElementById('adminTabBtnPlanes');
+  const contentMembers = document.getElementById('adminMembersTabContent');
+  const contentPlanes = document.getElementById('adminPlanesTabContent');
+
+  if (tab === 'planes') {
+    if (btnMembers) {
+      btnMembers.classList.remove('active');
+      btnMembers.style.background = 'rgba(15,23,42,0.6)';
+      btnMembers.style.color = 'var(--steel-gray)';
+      btnMembers.style.borderColor = 'rgba(148,163,184,0.2)';
+    }
+    if (btnPlanes) {
+      btnPlanes.classList.add('active');
+      btnPlanes.style.background = 'rgba(212,175,55,0.15)';
+      btnPlanes.style.color = 'var(--gold-rank)';
+      btnPlanes.style.borderColor = 'rgba(212,175,55,0.4)';
+    }
+    if (contentMembers) contentMembers.style.display = 'none';
+    if (contentPlanes) contentPlanes.style.display = 'block';
+
+    loadPlaneCatalogAdmin();
+  } else {
+    if (btnPlanes) {
+      btnPlanes.classList.remove('active');
+      btnPlanes.style.background = 'rgba(15,23,42,0.6)';
+      btnPlanes.style.color = 'var(--steel-gray)';
+      btnPlanes.style.borderColor = 'rgba(148,163,184,0.2)';
+    }
+    if (btnMembers) {
+      btnMembers.classList.add('active');
+      btnMembers.style.background = 'rgba(212,175,55,0.15)';
+      btnMembers.style.color = 'var(--gold-rank)';
+      btnMembers.style.borderColor = 'rgba(212,175,55,0.4)';
+    }
+    if (contentPlanes) contentPlanes.style.display = 'none';
+    if (contentMembers) contentMembers.style.display = 'block';
+
+    loadAdminPanel();
+  }
+}
+
+async function loadPlaneCatalogAdmin() {
+  const tbody = document.getElementById('adminPlaneCatalogTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;padding:2.5rem;color:var(--steel-gray);">
+          <div class="loading-spinner" style="margin-bottom:8px;">⏳</div>
+          Cargando catálogo oficial de aeronaves...
+        </td>
+      </tr>
+    `;
+  }
+
+  try {
+    const data = await fetchAdminPlaneCatalog();
+    const planes = data.planes || (Array.isArray(data) ? data : []);
+    allAdminPlaneModelsCache = planes;
+
+    updatePlaneCatalogStats(planes);
+    renderPlaneCatalogTable(planes);
+
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+      lucide.createIcons();
+    }
+  } catch (err) {
+    console.error('Error cargando catálogo de aviones:', err);
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center;padding:2rem;color:#f87171;">
+            ⚠️ Error al consultar el catálogo de aviones: ${escapeHTML(err.message || 'Error del servidor')}
+            <div style="margin-top:10px;">
+              <button onclick="loadPlaneCatalogAdmin()" class="btn-secondary btn-sm">🔄 Reintentar</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    showToast('❌ Error al cargar catálogo de aviones', 'error');
+  }
+}
+
+function updatePlaneCatalogStats(planes) {
+  const totalEl = document.getElementById('adminCatalogTotalPlanes');
+  const activeEl = document.getElementById('adminCatalogActivePlanes');
+  const inactiveEl = document.getElementById('adminCatalogInactivePlanes');
+  const specialEl = document.getElementById('adminCatalogSpecialPlanes');
+
+  const total = planes.length;
+  const activeCount = planes.filter(p => p.is_active !== false).length;
+  const inactiveCount = total - activeCount;
+  const specialCount = planes.filter(p => p.special_name && p.special_name.trim() !== '').length;
+
+  if (totalEl) totalEl.textContent = total;
+  if (activeEl) activeEl.textContent = activeCount;
+  if (inactiveEl) inactiveEl.textContent = inactiveCount;
+  if (specialEl) specialEl.textContent = specialCount;
+}
+
+function renderPlaneCatalogTable(planes) {
+  const tbody = document.getElementById('adminPlaneCatalogTableBody');
+  if (!tbody) return;
+
+  if (planes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;padding:2.5rem;color:var(--steel-gray);">
+          No se encontraron modelos de aeronaves en el catálogo con los filtros actuales.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = planes.map(plane => {
+    const isActive = plane.is_active !== false;
+    const planeId = String(plane.id);
+    const planeName = plane.name || 'Sin Nombre';
+    const planeType = plane.type || 'Caza de Combate';
+    const specialName = plane.special_name || null;
+    const passiveName = plane.passive_name || null;
+
+    return `
+      <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(239,68,68,0.04)' : 'transparent'};">
+        <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold-rank);">
+          #${escapeHTML(planeId)}
+        </td>
+        <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span>✈️ ${escapeHTML(planeName)}</span>
+          </div>
+        </td>
+        <td style="padding:10px 8px;">
+          <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">
+            ${escapeHTML(planeType)}
+          </span>
+        </td>
+        <td style="padding:10px 8px;font-size:0.82rem;color:${specialName ? '#fbbf24' : '#64748b'};">
+          ${specialName ? `⚡ ${escapeHTML(specialName)}` : '—'}
+        </td>
+        <td style="padding:10px 8px;font-size:0.82rem;color:${passiveName ? '#c084fc' : '#64748b'};">
+          ${passiveName ? `🛡️ ${escapeHTML(passiveName)}` : '—'}
+        </td>
+        <td style="padding:10px 8px;text-align:center;">
+          ${isActive 
+            ? '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e;font-weight:600;">🟢 ACTIVO</span>'
+            : '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;font-weight:600;">🔴 INACTIVO</span>'
+          }
+        </td>
+        <td style="padding:10px 8px;text-align:center;">
+          <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
+            <button onclick="editPlaneCatalog('${escapeHTML(planeId)}')" class="btn-secondary btn-sm" style="padding:3px 8px;font-size:0.75rem;" title="Modificar especificaciones del avión">
+              ✏️ Editar
+            </button>
+            ${isActive 
+              ? `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', true, '${escapeHTML(planeName)}')" class="btn-danger btn-sm" style="padding:3px 8px;font-size:0.75rem;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar avión del catálogo">
+                   🔴 Desactivar
+                 </button>`
+              : `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', false, '${escapeHTML(planeName)}')" class="btn-success btn-sm" style="padding:3px 8px;font-size:0.75rem;background:#22c55e;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar avión en el catálogo">
+                   🟢 Activar
+                 </button>`
+            }
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterPlaneCatalog() {
+  const search = (document.getElementById('adminPlaneSearch')?.value || '').toLowerCase().trim();
+  const type = document.getElementById('adminPlaneTypeFilter')?.value || '';
+  const status = document.getElementById('adminPlaneStatusFilter')?.value || '';
+  const skill = document.getElementById('adminPlaneSkillFilter')?.value || '';
+
+  const filtered = allAdminPlaneModelsCache.filter(plane => {
+    const id = String(plane.id || '').toLowerCase();
+    const name = (plane.name || '').toLowerCase();
+    const pType = (plane.type || '').toLowerCase();
+    const isActive = plane.is_active !== false;
+
+    if (search && !id.includes(search) && !name.includes(search) && !pType.includes(search)) {
+      return false;
+    }
+    if (type && plane.type !== type) {
+      return false;
+    }
+    if (status === 'active' && !isActive) return false;
+    if (status === 'inactive' && isActive) return false;
+
+    if (skill === 'with_special' && (!plane.special_name || plane.special_name.trim() === '')) return false;
+    if (skill === 'with_passive' && (!plane.passive_name || plane.passive_name.trim() === '')) return false;
+
+    return true;
+  });
+
+  renderPlaneCatalogTable(filtered);
+}
+
+function resetPlaneCatalogFilters() {
+  ['adminPlaneSearch', 'adminPlaneTypeFilter', 'adminPlaneStatusFilter', 'adminPlaneSkillFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderPlaneCatalogTable(allAdminPlaneModelsCache);
+}
+
+function showAddPlaneCatalogModal() {
+  const form = document.getElementById('planeCatalogForm');
+  if (form) form.reset();
+
+  const modeEl = document.getElementById('planeCatalogMode');
+  if (modeEl) modeEl.value = 'create';
+
+  const idEl = document.getElementById('planeCatalogId');
+  if (idEl) {
+    idEl.value = '';
+    idEl.disabled = false;
+  }
+
+  const titleEl = document.getElementById('planeCatalogModalTitle');
+  if (titleEl) titleEl.innerHTML = '✈️ Registrar Nuevo Avión';
+
+  const modal = document.getElementById('planeCatalogModal');
+  if (modal) modal.style.display = 'flex';
+
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+}
+
+function editPlaneCatalog(planeId) {
+  const plane = allAdminPlaneModelsCache.find(p => String(p.id) === String(planeId));
+  if (!plane) {
+    showToast('⚠️ No se encontró la aeronave seleccionada', 'warning');
+    return;
+  }
+
+  const form = document.getElementById('planeCatalogForm');
+  if (form) form.reset();
+
+  const modeEl = document.getElementById('planeCatalogMode');
+  if (modeEl) modeEl.value = 'edit';
+
+  const idEl = document.getElementById('planeCatalogId');
+  if (idEl) {
+    idEl.value = plane.id;
+    idEl.disabled = true;
+  }
+
+  const nameEl = document.getElementById('planeCatalogName');
+  if (nameEl) nameEl.value = plane.name || '';
+
+  const typeEl = document.getElementById('planeCatalogType');
+  if (typeEl) typeEl.value = plane.type || 'Light Fighter';
+
+  const activeEl = document.getElementById('planeCatalogIsActive');
+  if (activeEl) activeEl.value = String(plane.is_active !== false);
+
+  const specialEl = document.getElementById('planeCatalogSpecialName');
+  if (specialEl) specialEl.value = plane.special_name || '';
+
+  const specialLvlEl = document.getElementById('planeCatalogSpecialLevels');
+  if (specialLvlEl) specialLvlEl.value = plane.special_levels ? JSON.stringify(plane.special_levels, null, 2) : '';
+
+  const passiveEl = document.getElementById('planeCatalogPassiveName');
+  if (passiveEl) passiveEl.value = plane.passive_name || '';
+
+  const passiveLvlEl = document.getElementById('planeCatalogPassiveLevels');
+  if (passiveLvlEl) passiveLvlEl.value = plane.passive_levels ? JSON.stringify(plane.passive_levels, null, 2) : '';
+
+  const statsEl = document.getElementById('planeCatalogStatsReal');
+  if (statsEl) statsEl.value = plane.stats_real ? JSON.stringify(plane.stats_real, null, 2) : '';
+
+  const titleEl = document.getElementById('planeCatalogModalTitle');
+  if (titleEl) titleEl.innerHTML = `✏️ Modificar Avión: ${escapeHTML(plane.name || '')} (#${escapeHTML(plane.id)})`;
+
+  const modal = document.getElementById('planeCatalogModal');
+  if (modal) modal.style.display = 'flex';
+
+  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+}
+
+function closePlaneCatalogModal() {
+  const modal = document.getElementById('planeCatalogModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function toggleAdvancedCatalogFields() {
+  const container = document.getElementById('advancedCatalogFields');
+  if (container) {
+    const isHidden = container.style.display === 'none';
+    container.style.display = isHidden ? 'grid' : 'none';
+  }
+}
+
+async function handleSavePlaneCatalog(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  const mode = document.getElementById('planeCatalogMode')?.value || 'create';
+  const id = document.getElementById('planeCatalogId')?.value?.trim();
+  const name = document.getElementById('planeCatalogName')?.value?.trim();
+  const type = document.getElementById('planeCatalogType')?.value?.trim();
+  const isActive = document.getElementById('planeCatalogIsActive')?.value === 'true';
+  const specialName = document.getElementById('planeCatalogSpecialName')?.value?.trim() || null;
+  const specialLevelsRaw = document.getElementById('planeCatalogSpecialLevels')?.value?.trim() || '';
+  const passiveName = document.getElementById('planeCatalogPassiveName')?.value?.trim() || null;
+  const passiveLevelsRaw = document.getElementById('planeCatalogPassiveLevels')?.value?.trim() || '';
+  const statsRealRaw = document.getElementById('planeCatalogStatsReal')?.value?.trim() || '';
+
+  if (!id || !name || !type) {
+    showToast('⚠️ Por favor completa los campos obligatorios (ID, Nombre, Tipo)', 'warning');
+    return;
+  }
+
+  let specialLevels = null;
+  if (specialLevelsRaw) {
+    try {
+      specialLevels = JSON.parse(specialLevelsRaw);
+    } catch (e) {
+      showToast('⚠️ Formato JSON inválido en Niveles Habilidad Especial', 'error');
+      return;
+    }
+  }
+
+  let passiveLevels = null;
+  if (passiveLevelsRaw) {
+    try {
+      passiveLevels = JSON.parse(passiveLevelsRaw);
+    } catch (e) {
+      showToast('⚠️ Formato JSON inválido en Niveles Habilidad Pasiva', 'error');
+      return;
+    }
+  }
+
+  let statsReal = null;
+  if (statsRealRaw) {
+    try {
+      statsReal = JSON.parse(statsRealRaw);
+    } catch (e) {
+      showToast('⚠️ Formato JSON inválido en Estadísticas Reales', 'error');
+      return;
+    }
+  }
+
+  const payload = {
+    id,
+    name,
+    type,
+    is_active: isActive,
+    special_name: specialName,
+    special_levels: specialLevels,
+    passive_name: passiveName,
+    passive_levels: passiveLevels,
+    stats_real: statsReal
+  };
+
+  const submitBtn = document.getElementById('btnSubmitPlaneCatalog');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Guardando...';
+  }
+
+  try {
+    if (mode === 'create') {
+      await createAdminPlaneModel(payload);
+      showToast(`✅ Aeronave "${name}" registrada en el catálogo`, 'success');
+    } else {
+      await updateAdminPlaneModel(id, payload);
+      showToast(`✅ Aeronave "${name}" actualizada correctamente`, 'success');
+    }
+
+    closePlaneCatalogModal();
+    await loadPlaneCatalogAdmin();
+  } catch (err) {
+    console.error('Error guardando avión en catálogo:', err);
+    showToast(`❌ Error: ${err.message || 'No se pudo guardar la aeronave'}`, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px;"></i> Guardar Aeronave';
+      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+    }
+  }
+}
+
+async function togglePlaneStatus(planeId, currentStatus, planeName) {
+  const nextStatus = !currentStatus;
+  const actionText = nextStatus ? 'ACTIVAR' : 'DESACTIVAR';
+  if (!confirm(`¿Confirmas ${actionText} el avión "${planeName || planeId}" en el catálogo oficial?`)) {
+    return;
+  }
+
+  try {
+    await toggleAdminPlaneModelStatus(planeId, nextStatus);
+    showToast(`✅ Aeronave "${planeName || planeId}" ${nextStatus ? 'activada' : 'desactivada'} correctamente`, 'success');
+    await loadPlaneCatalogAdmin();
+  } catch (err) {
+    console.error('Error alternando estado del avión:', err);
+    showToast(`❌ ${err.message || 'Error al modificar estado'}`, 'error');
+  }
+}
+
+// Aliases for compatibility
+const addPlane = showAddPlaneCatalogModal;
+const editPlane = editPlaneCatalog;
+
+// ============================================================
 // ✅ EXPOSICIÓN GLOBAL EN WINDOW PARA TODOS LOS HANDLERS HTML
 // ============================================================
 window.showView = showView;
@@ -2257,5 +2670,20 @@ window.exportPlanesXLSX = exportPlanesXLSX;
 window.toggleMobileDrawer = toggleMobileDrawer;
 window.openMobileDrawer = openMobileDrawer;
 window.closeMobileDrawer = closeMobileDrawer;
+
+// Catálogo de Aviones (Admin)
+window.switchAdminTab = switchAdminTab;
+window.loadPlaneCatalogAdmin = loadPlaneCatalogAdmin;
+window.renderPlaneCatalogTable = renderPlaneCatalogTable;
+window.filterPlaneCatalog = filterPlaneCatalog;
+window.resetPlaneCatalogFilters = resetPlaneCatalogFilters;
+window.showAddPlaneCatalogModal = showAddPlaneCatalogModal;
+window.editPlaneCatalog = editPlaneCatalog;
+window.addPlane = addPlane;
+window.editPlane = editPlane;
+window.closePlaneCatalogModal = closePlaneCatalogModal;
+window.toggleAdvancedCatalogFields = toggleAdvancedCatalogFields;
+window.handleSavePlaneCatalog = handleSavePlaneCatalog;
+window.togglePlaneStatus = togglePlaneStatus;
 
 console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
