@@ -48,14 +48,14 @@ export async function savePerformance(req, res, next) {
     const record = {
       user_id: targetUser.user_id || targetUser.id,
       nick: targetUser.nick || req.user.nick || 'Piloto',
-      role: targetUser.role || req.user.role || 'MIEMBRO',
+      user_email: targetUser.email || req.user.email || null,
       event_id: data.event_id,
       tokens: Number(data.tokens),
       days_connected: Number(data.days_connected),
       flew_in_group: Boolean(data.flew_in_group),
       notes: data.notes || null,
       status,
-      created_at: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
 
     // Verificar si ya existe registro para este usuario y evento
@@ -82,9 +82,13 @@ export async function savePerformance(req, res, next) {
       if (updateErr) throw updateErr;
       savedPerf = updated;
     } else {
+      const insertRecord = {
+        ...record,
+        created_at: new Date().toISOString()
+      };
       const { data: inserted, error: insertErr } = await supabase
         .from('performances')
-        .insert(record)
+        .insert(insertRecord)
         .select()
         .single();
 
@@ -225,11 +229,11 @@ export async function exportPerformancesCSV(req, res, next) {
       if (data) list = data;
     }
 
-    const headers = ['ID', 'Piloto', 'Rol', 'Evento', 'Tokens', 'Dias_Conectados', 'Vuelo_Grupo', 'Estado', 'Notas', 'Fecha_Registro'];
+    const headers = ['ID', 'Piloto', 'Email', 'Evento', 'Tokens', 'Dias_Conectados', 'Vuelo_Grupo', 'Estado', 'Notas', 'Fecha_Registro'];
     const rows = list.map(p => [
       p.id,
       p.nick,
-      p.role,
+      p.user_email || '',
       p.event_id,
       p.tokens,
       p.days_connected,

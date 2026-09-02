@@ -326,13 +326,7 @@ export async function addMember(req, res, next) {
       role: assignedRole,
       must_change_password: true,
       token_version: 1,
-      phone: '',
-      callsign: '',
-      discord: '',
-      bio: '',
-      joined_date: new Date().toISOString().split('T')[0],
       status: 'ACTIVE',
-      trend: 'stable',
       last_activity: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -383,7 +377,7 @@ export async function bulkUploadEvent(req, res, next) {
     for (const item of bulkList) {
       const { data: foundUsers } = await supabase
         .from('users')
-        .select('id, user_id, nick, role')
+        .select('id, user_id, nick, email, role')
         .ilike('nick', item.nick.trim())
         .limit(1);
 
@@ -399,9 +393,8 @@ export async function bulkUploadEvent(req, res, next) {
             nick: item.nick,
             role: item.role || 'MIEMBRO',
             must_change_password: true,
-            joined_date: new Date().toISOString().split('T')[0],
+            token_version: 1,
             status: 'ACTIVE',
-            trend: 'stable',
             last_activity: new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -419,7 +412,7 @@ export async function bulkUploadEvent(req, res, next) {
       const perfRecord = {
         user_id: targetUser?.user_id || targetUser?.id,
         nick: targetUser?.nick || item.nick,
-        role: targetUser?.role || item.role || 'MIEMBRO',
+        user_email: targetUser?.email || `${item.nick.toLowerCase().replace(/[^a-z0-9]/g, '')}@ffaa.py`,
         event_id,
         tokens: item.tokens,
         days_connected: 4,
@@ -456,11 +449,10 @@ export async function activateBlackMarket(req, res, next) {
       type: 'BLACK_MARKET',
       start_date: new Date().toISOString().split('T')[0],
       end_date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
-      is_open: true,
       status: 'OPEN'
     };
 
-    await supabase.from('events').update({ is_open: false, status: 'CLOSED' }).neq('id', 'NONE');
+    await supabase.from('events').update({ status: 'CLOSED' }).neq('id', 'NONE');
     await supabase.from('events').insert(bmEvent);
 
     res.json({ message: 'Operación Black Market activada exitosamente', event_id: bmEvent.id });

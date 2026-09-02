@@ -37,11 +37,10 @@ export async function updateProfile(req, res, next) {
       return res.status(500).json({ error: 'Base de datos no disponible' });
     }
 
-    const updateFields = {};
+    const updateFields = {
+      updated_at: new Date().toISOString()
+    };
     if (data.phone !== undefined) updateFields.phone = data.phone;
-    if (data.callsign !== undefined) updateFields.callsign = data.callsign;
-    if (data.discord !== undefined) updateFields.discord = data.discord;
-    if (data.bio !== undefined) updateFields.bio = data.bio;
     if (data.nick !== undefined && data.nick.trim()) updateFields.nick = data.nick.trim();
     if (data.full_name !== undefined) updateFields.full_name = data.full_name;
     if (data.email_personal !== undefined) updateFields.email_personal = data.email_personal;
