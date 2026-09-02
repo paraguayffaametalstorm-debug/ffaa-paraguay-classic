@@ -212,25 +212,27 @@ async function loadAdminPilotList() {
 // ============================================================
 
 /**
- * Calcula automáticamente los días según tokens redondeados a múltiplos de 5:
- * 0 - 50  tokens: 1 día
+ * Calcula automáticamente los días según tokens:
+ * 0 tokens: 0 días (o 1 día si > 0)
+ * 1 - 50 tokens: 1 día
  * 55 - 100 tokens: 2 días
  * 105 - 150 tokens: 3 días
  * 155 - 200 tokens: 4 días
+ * > 200 tokens (BM): 5 días
  */
 function autoCalculateDays(tokens) {
     const raw = parseInt(tokens, 10);
-    if (isNaN(raw) || raw < 0) {
+    if (isNaN(raw) || raw <= 0) {
         return 0;
     }
     const rounded = Math.round(raw / 5) * 5;
 
-    // Calcular días según tokens redondeados
-    if (rounded >= 0 && rounded <= 50) return 1;
-    if (rounded >= 55 && rounded <= 100) return 2;
-    if (rounded >= 105 && rounded <= 150) return 3;
-    if (rounded >= 155) return 4;
-    return 0;
+    // Calcular días según tokens
+    if (rounded <= 50) return 1;
+    if (rounded <= 100) return 2;
+    if (rounded <= 150) return 3;
+    if (rounded <= 200) return 4;
+    return 5;
 }
 
 /**
@@ -240,9 +242,9 @@ function setupTokensInput() {
     const tokensInput = document.getElementById('tokens') || document.getElementById('tokensInput');
     if (!tokensInput) return;
 
-    // ✅ En input: solo calcular días y estado con el valor actual (SIN redondear el input)
-    tokensInput.oninput = function() {
-        if (this.value === '') {
+    // ✅ En input: calcular días inmediatamente y aplicar clase .active en botones
+    const handleInput = function() {
+        if (this.value === '' || isNaN(parseInt(this.value, 10))) {
             selectDays(0);
             updateCalculatedStatus();
             return;
@@ -253,9 +255,16 @@ function setupTokensInput() {
         updateCalculatedStatus();
     };
 
+    tokensInput.oninput = handleInput;
+    tokensInput.addEventListener('input', handleInput);
+
     // ✅ En change: redondear al múltiplo de 5 (para stepper y Enter)
-    tokensInput.onchange = function() {
-        if (this.value === '') return;
+    const handleChange = function() {
+        if (this.value === '') {
+            selectDays(0);
+            updateCalculatedStatus();
+            return;
+        }
         const raw = parseInt(this.value, 10) || 0;
         const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
         const maxVal = isBM ? 250 : 200;
@@ -267,36 +276,34 @@ function setupTokensInput() {
         updateCalculatedStatus();
     };
 
+    tokensInput.onchange = handleChange;
+    tokensInput.addEventListener('change', handleChange);
+
     // ✅ En blur: redondear al múltiplo de 5 cuando el usuario termina de escribir
-    tokensInput.onblur = function() {
-        if (this.value === '') return;
-        const raw = parseInt(this.value, 10) || 0;
-        const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
-        const maxVal = isBM ? 250 : 200;
-        const rounded = Math.round(raw / 5) * 5;
-        const clamped = Math.min(Math.max(rounded, 0), maxVal);
-        this.value = clamped;
-        const days = autoCalculateDays(clamped);
-        selectDays(days);
-        updateCalculatedStatus();
-    };
+    tokensInput.onblur = handleChange;
+    tokensInput.addEventListener('blur', handleChange);
 }
 
 /**
  * Selecciona la cantidad de días conectados con resaltado visual (.active)
  */
 function selectDays(days) {
-    selectedDays = days;
+    selectedDays = Number(days) || 0;
 
     // Actualizar botones visualmente agregando o quitando clase 'active'
-    document.querySelectorAll('.day-btn').forEach(btn => {
+    const dayButtons = document.querySelectorAll('#daysSelectorGroup .day-btn, .day-btn');
+    dayButtons.forEach(btn => {
         const btnDay = parseInt(btn.dataset.day || btn.dataset.days || btn.textContent.trim(), 10);
-        btn.classList.toggle('active', btnDay === days);
+        if (btnDay === selectedDays) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     });
 
     // Actualizar campo oculto
     const daysInput = document.getElementById('daysConnected') || document.getElementById('daysConnectedInput');
-    if (daysInput) daysInput.value = days;
+    if (daysInput) daysInput.value = selectedDays;
 
     // Recalcular estado proyectado
     updateCalculatedStatus();

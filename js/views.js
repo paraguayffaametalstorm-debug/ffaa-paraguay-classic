@@ -624,12 +624,10 @@ function loadActiveMembers() {
 
     activeMembers.forEach(m => {
       const uid = m.user_id || m.id;
-      if (currentUser && (uid === currentUser.user_id || uid === currentUser.id)) return;
+      const isCurrentUser = currentUser && (uid === currentUser.user_id || uid === currentUser.id);
       const opt = document.createElement('option');
       opt.value = uid;
-      const roleUpper = (m.role || 'MIEMBRO').toUpperCase();
-      const roleBadge = roleUpper === 'OWNER' ? '👑' : roleUpper === 'ADMIN' ? '⭐' : '';
-      opt.textContent = `${roleBadge} ${m.nick || m.email || 'Sin Nick'} (${roleUpper})`.trim();
+      opt.textContent = `${m.nick || m.email || 'Sin Nick'} ${isCurrentUser ? '(Tú)' : ''}`.trim();
       sel.appendChild(opt);
     });
     sel.value = 'self';
