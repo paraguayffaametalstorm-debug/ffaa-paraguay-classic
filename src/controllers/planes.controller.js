@@ -2,32 +2,77 @@ import { getSupabase } from '../db/supabase.js';
 import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 
-// Default static models catalog
+// Default static models catalog (matching real MetalStorm IDs and catalog)
 const DEFAULT_PLANE_MODELS = [
-  { id: 1, name: 'F-22 Raptor', type: 'Caza de Superioridad Aérea', tier: 5 },
-  { id: 2, name: 'Su-57 Felon', type: 'Caza Polivalente Sigiloso', tier: 5 },
-  { id: 3, name: 'F-35 Lightning II', type: 'Caza Polivalente de Ataque', tier: 5 },
-  { id: 4, name: 'Eurofighter Typhoon', type: 'Caza Polivalente', tier: 4 },
-  { id: 5, name: 'Dassault Rafale', type: 'Caza Omnirrol', tier: 4 },
-  { id: 6, name: 'J-20 Mighty Dragon', type: 'Caza de Superioridad Aérea', tier: 5 },
-  { id: 7, name: 'Su-35 Flanker-E', type: 'Caza de Superioridad Aérea', tier: 4 },
-  { id: 8, name: 'F-15EX Eagle II', type: 'Caza Pesado de Ataque', tier: 4 },
-  { id: 9, name: 'F/A-18E Super Hornet', type: 'Caza Embarcado Multirrol', tier: 3 },
-  { id: 10, name: 'MiG-35 Fulcrum-F', type: 'Caza Polivalente Ligero', tier: 3 },
-  { id: 11, name: 'JAS 39 Gripen', type: 'Caza Ligero Polivalente', tier: 3 },
-  { id: 12, name: 'A-10C Thunderbolt II', type: 'Avión de Ataque a Tierra (CAS)', tier: 3 }
+  { id: '207', name: 'F-22A Raptor', type: 'Caza de Superioridad Aérea', tier: 5, special_name: null, passive_name: null },
+  { id: '205', name: 'Su-35S Flanker-E', type: 'Caza de Superioridad Aérea', tier: 4, special_name: null, passive_name: null },
+  { id: '501', name: 'EA-18G Growler', type: 'Guerra Electrónica', tier: 5, special_name: 'Zona de Interferencias', passive_name: 'Resonancia ECM' },
+  { id: '201', name: 'F-16C Fighting Falcon', type: 'Caza Polivalente', tier: 3, special_name: 'Refrigeración de Armas', passive_name: 'Postcombustión Ágil' },
+  { id: '101', name: 'A-10C Thunderbolt II', type: 'Avión de Ataque a Tierra (CAS)', tier: 3, special_name: 'Cortina de Fuego', passive_name: 'Blindaje de Titanio' },
+  { id: '1', name: 'F-22 Raptor', type: 'Caza de Superioridad Aérea', tier: 5 },
+  { id: '2', name: 'Su-57 Felon', type: 'Caza Polivalente Sigiloso', tier: 5 },
+  { id: '3', name: 'F-35 Lightning II', type: 'Caza Polivalente de Ataque', tier: 5 },
+  { id: '4', name: 'Eurofighter Typhoon', type: 'Caza Polivalente', tier: 4 },
+  { id: '5', name: 'Dassault Rafale', type: 'Caza Omnirrol', tier: 4 },
+  { id: '6', name: 'J-20 Mighty Dragon', type: 'Caza de Superioridad Aérea', tier: 5 },
+  { id: '7', name: 'Su-35 Flanker-E', type: 'Caza de Superioridad Aérea', tier: 4 },
+  { id: '8', name: 'F-15EX Eagle II', type: 'Caza Pesado de Ataque', tier: 4 },
+  { id: '9', name: 'F/A-18E Super Hornet', type: 'Caza Embarcado Multirrol', tier: 3 },
+  { id: '10', name: 'MiG-35 Fulcrum-F', type: 'Caza Polivalente Ligero', tier: 3 },
+  { id: '11', name: 'JAS 39 Gripen', type: 'Caza Ligero Polivalente', tier: 3 },
+  { id: '12', name: 'A-10C Thunderbolt II', type: 'Avión de Ataque a Tierra (CAS)', tier: 3 }
 ];
 
 const DEFAULT_PLANE_MODS = [
-  { id: 1, name: 'Radar AESA Longbow', type: 'Aviónica' },
-  { id: 2, name: 'Pod de Guerra Electrónica ECM', type: 'Defensa' },
-  { id: 3, name: 'Postquemador Vectorial 3D', type: 'Propulsión' },
-  { id: 4, name: 'Blindaje de Titanio Reforzado', type: 'Estructura' },
-  { id: 5, name: 'Cañón Rotativo Vulcan 20mm', type: 'Armamento' },
-  { id: 6, name: 'Bahía Interna de Misiles BVR', type: 'Armamento' },
-  { id: 7, name: 'Sistema Óptico IRST Cuántico', type: 'Sensores' },
-  { id: 8, name: 'Recubrimiento RAM Anti-Radar', type: 'Sigilo' }
+  { id: '1', name: 'Radar AESA Longbow', type: 'Aviónica' },
+  { id: '2', name: 'Pod de Guerra Electrónica ECM', type: 'Defensa' },
+  { id: '3', name: 'Postquemador Vectorial 3D', type: 'Propulsión' },
+  { id: '4', name: 'Blindaje de Titanio Reforzado', type: 'Estructura' },
+  { id: '5', name: 'Cañón Rotativo Vulcan 20mm', type: 'Armamento' },
+  { id: '6', name: 'Bahía Interna de Misiles BVR', type: 'Armamento' },
+  { id: '7', name: 'Sistema Óptico IRST Cuántico', type: 'Sensores' },
+  { id: '8', name: 'Recubrimiento RAM Anti-Radar', type: 'Sigilo' }
 ];
+
+// Helper to fetch merged models catalog from DB and defaults
+async function getFullModelsCatalog(supabase) {
+  if (!supabase) return DEFAULT_PLANE_MODELS;
+  try {
+    const { data, error } = await supabase.from('plane_models').select('*').order('name');
+    if (!error && data && data.length > 0) {
+      const combined = [...data];
+      DEFAULT_PLANE_MODELS.forEach(def => {
+        if (!combined.some(c => String(c.id) === String(def.id))) {
+          combined.push(def);
+        }
+      });
+      return combined;
+    }
+  } catch (e) {
+    console.warn('⚠️ Error consultando plane_models:', e.message);
+  }
+  return DEFAULT_PLANE_MODELS;
+}
+
+// Helper to fetch merged mods catalog from DB and defaults
+async function getFullModsCatalog(supabase) {
+  if (!supabase) return DEFAULT_PLANE_MODS;
+  try {
+    const { data, error } = await supabase.from('plane_mods').select('*').order('name');
+    if (!error && data && data.length > 0) {
+      const combined = [...data];
+      DEFAULT_PLANE_MODS.forEach(def => {
+        if (!combined.some(c => String(c.id) === String(def.id))) {
+          combined.push(def);
+        }
+      });
+      return combined;
+    }
+  } catch (e) {
+    console.warn('⚠️ Error consultando plane_mods:', e.message);
+  }
+  return DEFAULT_PLANE_MODS;
+}
 
 // Costos oficiales de recursos para Upgrades 2.0 (Niveles 1 a 8)
 export const UPGRADE_COSTS = {
@@ -44,17 +89,8 @@ export const UPGRADE_COSTS = {
 export async function getCatalogModels(req, res) {
   try {
     const supabase = getSupabase();
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('plane_models')
-        .select('*')
-        .order('name');
-      
-      if (!error && data && data.length > 0) {
-        return res.json({ success: true, models: data });
-      }
-    }
-    return res.json({ success: true, models: DEFAULT_PLANE_MODELS });
+    const models = await getFullModelsCatalog(supabase);
+    return res.json({ success: true, models });
   } catch (error) {
     console.error('❌ Error en getCatalogModels:', error);
     return res.json({ success: true, models: DEFAULT_PLANE_MODELS });
@@ -64,17 +100,8 @@ export async function getCatalogModels(req, res) {
 export async function getCatalogMods(req, res) {
   try {
     const supabase = getSupabase();
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('plane_mods')
-        .select('*')
-        .order('name');
-      
-      if (!error && data && data.length > 0) {
-        return res.json({ success: true, mods: data });
-      }
-    }
-    return res.json({ success: true, mods: DEFAULT_PLANE_MODS });
+    const mods = await getFullModsCatalog(supabase);
+    return res.json({ success: true, mods });
   } catch (error) {
     console.error('❌ Error en getCatalogMods:', error);
     return res.json({ success: true, mods: DEFAULT_PLANE_MODS });
@@ -84,58 +111,63 @@ export async function getCatalogMods(req, res) {
 export async function getMyPlanes(req, res, next) {
   try {
     const supabase = getSupabase();
-    const userId = req.user.user_id || req.user.id;
+    const userId = req.user.user_id !== undefined ? req.user.user_id : req.user.id;
+    const userEmail = req.user.email;
 
     if (supabase) {
-      const { data, error } = await supabase
+      let query = supabase
         .from('planes')
-        .select(`
-          id,
-          user_id,
-          avion_id,
-          nivel,
-          especial_nombre,
-          especial_nivel,
-          pasiva_nombre,
-          pasiva_nivel,
-          mod1_id,
-          mod1_lvl,
-          mod2_id,
-          mod2_lvl,
-          nivel_fuselaje,
-          nivel_motor,
-          nivel_avionica,
-          nivel_armas,
-          recursos_piezas,
-          recursos_avanzadas
-        `)
-        .or(`user_id.eq.${userId}`)
+        .select('*')
         .order('id', { ascending: true });
 
+      if (userId && userEmail) {
+        query = query.or(`user_id.eq.${userId},user_email.eq.${userEmail}`);
+      } else if (userId) {
+        query = query.eq('user_id', userId);
+      } else if (userEmail) {
+        query = query.eq('user_email', userEmail);
+      }
+
+      const { data, error } = await query;
+
       if (!error && data) {
+        const [allModels, allMods] = await Promise.all([
+          getFullModelsCatalog(supabase),
+          getFullModsCatalog(supabase)
+        ]);
+
         const planes = data.map(p => {
           const nf = p.nivel_fuselaje || 0;
           const nm = p.nivel_motor || 0;
           const na = p.nivel_avionica || 0;
           const nw = p.nivel_armas || 0;
           const nivelSistemas = Math.floor((nf + nm + na + nw) / 4);
-          const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(p.avion_id));
+
+          const model = allModels.find(m => String(m.id) === String(p.avion_id)) || {};
+          const mod1 = allMods.find(m => String(m.id) === String(p.mod1_id)) || {};
+          const mod2 = allMods.find(m => String(m.id) === String(p.mod2_id)) || {};
+
+          const planeName = model.name || `Modelo ${p.avion_id}`;
+          const planeType = model.type || 'Caza de Combate';
 
           return {
             id: p.id,
             user_id: p.user_id,
+            user_email: p.user_email,
             avion_id: p.avion_id,
-            model_name: model?.name || p.avion_id,
-            name: model?.name || p.avion_id,
-            type: model?.type || 'Caza de Combate',
-            nivel: p.nivel,
-            especial_nombre: p.especial_nombre || null,
-            especial_nivel: p.especial_nivel || null,
-            pasiva_nombre: p.pasiva_nombre || null,
-            pasiva_nivel: p.pasiva_nivel || null,
+            model_name: planeName,
+            name: planeName,
+            type: planeType,
+            nivel: Number(p.nivel) || 1,
+            especial_nombre: p.especial_nombre || model.special_name || null,
+            especial_nivel: p.especial_nivel || (p.especial_nombre ? 'Nv.1' : null),
+            pasiva_nombre: p.pasiva_nombre || model.passive_name || null,
+            pasiva_nivel: p.pasiva_nivel || (p.pasiva_nombre ? 'Nv.1' : null),
             mod1_id: p.mod1_id || null,
+            mod1_name: mod1.name || p.mod1_id || null,
             mod1_lvl: p.mod1_lvl || null,
             mod2_id: p.mod2_id || null,
+            mod2_name: mod2.name || p.mod2_id || null,
             mod2_lvl: p.mod2_lvl || null,
             nivel_fuselaje: nf,
             nivel_motor: nm,
@@ -144,10 +176,12 @@ export async function getMyPlanes(req, res, next) {
             nivel_sistemas: nivelSistemas,
             recursos_piezas: p.recursos_piezas || 0,
             recursos_avanzadas: p.recursos_avanzadas || 0,
-            sistemas_desbloqueados: (p.nivel || 1) >= 6
+            sistemas_desbloqueados: (Number(p.nivel) || 1) >= 6
           };
         });
         return res.json({ success: true, planes, total: planes.length });
+      } else if (error) {
+        console.error('❌ Error consultando planes en Supabase:', error);
       }
     }
 
@@ -160,8 +194,12 @@ export async function getMyPlanes(req, res, next) {
 export async function addPlane(req, res, next) {
   try {
     const data = PlaneSchema.parse(req.body);
-    const userId = req.user.user_id || req.user.id;
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(data.avion_id));
+    const userId = req.user.user_id !== undefined ? req.user.user_id : req.user.id;
+    const userEmail = req.user.email;
+    const supabase = getSupabase();
+
+    const allModels = await getFullModelsCatalog(supabase);
+    const model = allModels.find(m => String(m.id) === String(data.avion_id));
 
     const nf = data.nivel_fuselaje || 0;
     const nm = data.nivel_motor || 0;
@@ -170,15 +208,16 @@ export async function addPlane(req, res, next) {
 
     const planePayload = {
       user_id: userId,
-      avion_id: data.avion_id,
+      user_email: userEmail || null,
+      avion_id: String(data.avion_id),
       nivel: data.nivel,
       especial_nombre: data.especial_nombre || null,
       especial_nivel: data.especial_nivel || null,
       pasiva_nombre: data.pasiva_nombre || null,
       pasiva_nivel: data.pasiva_nivel || null,
-      mod1_id: data.mod1_id || null,
+      mod1_id: data.mod1_id ? String(data.mod1_id) : null,
       mod1_lvl: data.mod1_lvl || null,
-      mod2_id: data.mod2_id || null,
+      mod2_id: data.mod2_id ? String(data.mod2_id) : null,
       mod2_lvl: data.mod2_lvl || null,
       nivel_fuselaje: nf,
       nivel_motor: nm,
@@ -189,7 +228,6 @@ export async function addPlane(req, res, next) {
       created_at: new Date().toISOString()
     };
 
-    const supabase = getSupabase();
     if (!supabase) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
@@ -222,7 +260,7 @@ export async function updatePlane(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
     const data = PlaneSchema.parse(req.body);
-    const userId = req.user.user_id || req.user.id;
+    const userId = req.user.user_id !== undefined ? req.user.user_id : req.user.id;
     const supabase = getSupabase();
 
     if (!supabase) {
@@ -244,13 +282,15 @@ export async function updatePlane(req, res, next) {
     }
 
     const updatePayload = {
-      avion_id: data.avion_id,
+      avion_id: String(data.avion_id),
       nivel: data.nivel,
       especial_nombre: data.especial_nombre || null,
+      especial_nivel: data.especial_nivel || null,
       pasiva_nombre: data.pasiva_nombre || null,
-      mod1_id: data.mod1_id || null,
+      pasiva_nivel: data.pasiva_nivel || null,
+      mod1_id: data.mod1_id ? String(data.mod1_id) : null,
       mod1_lvl: data.mod1_lvl || null,
-      mod2_id: data.mod2_id || null,
+      mod2_id: data.mod2_id ? String(data.mod2_id) : null,
       mod2_lvl: data.mod2_lvl || null,
       nivel_fuselaje: data.nivel_fuselaje !== undefined ? data.nivel_fuselaje : existing.nivel_fuselaje,
       nivel_motor: data.nivel_motor !== undefined ? data.nivel_motor : existing.nivel_motor,
@@ -269,7 +309,8 @@ export async function updatePlane(req, res, next) {
 
     if (updateErr) throw updateErr;
 
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(data.avion_id));
+    const allModels = await getFullModelsCatalog(supabase);
+    const model = allModels.find(m => String(m.id) === String(data.avion_id));
 
     res.json({
       success: true,
@@ -291,7 +332,7 @@ export async function updatePlaneSystem(req, res, next) {
     const id = parseInt(req.params.id, 10);
     const parsed = UpdatePlaneSystemSchema.parse(req.body);
     const { sistema, nivel, piezas, avanzadas } = parsed;
-    const userId = req.user.user_id || req.user.id;
+    const userId = req.user.user_id !== undefined ? req.user.user_id : req.user.id;
     const supabase = getSupabase();
 
     if (!supabase) {
@@ -384,8 +425,9 @@ export async function getPlaneDetails(req, res, next) {
       return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
     }
 
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(plane.avion_id));
-    const modelName = model?.name || plane.avion_id;
+    const allModels = await getFullModelsCatalog(supabase);
+    const model = allModels.find(m => String(m.id) === String(plane.avion_id));
+    const modelName = model?.name || `Modelo ${plane.avion_id}`;
     const modelType = model?.type || 'Caza de Combate';
 
     const isUnlocked = (plane.nivel || 1) >= 6;
@@ -457,7 +499,7 @@ export async function getPlaneDetails(req, res, next) {
 export async function deletePlane(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
-    const userId = req.user.user_id || req.user.id;
+    const userId = req.user.user_id !== undefined ? req.user.user_id : req.user.id;
     const supabase = getSupabase();
 
     if (!supabase) {
@@ -489,16 +531,25 @@ export async function deletePlane(req, res, next) {
 export async function exportPlanesCSV(req, res, next) {
   try {
     const supabase = getSupabase();
-    const userId = req.user.user_id || req.user.id;
+    const userId = req.user.user_id !== undefined ? req.user.user_id : req.user.id;
+    const userEmail = req.user.email;
     let userPlanes = [];
 
     if (supabase) {
-      const { data } = await supabase
-        .from('planes')
-        .select('*')
-        .eq('user_id', userId);
+      let query = supabase.from('planes').select('*');
+      if (userId && userEmail) {
+        query = query.or(`user_id.eq.${userId},user_email.eq.${userEmail}`);
+      } else if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      const { data } = await query;
       if (data) userPlanes = data;
     }
+
+    const [allModels, allMods] = await Promise.all([
+      getFullModelsCatalog(supabase),
+      getFullModsCatalog(supabase)
+    ]);
 
     const headers = [
       'ID', 'Modelo', 'Tipo', 'Nivel', 
@@ -511,7 +562,9 @@ export async function exportPlanesCSV(req, res, next) {
       const na = p.nivel_avionica || 0;
       const nw = p.nivel_armas || 0;
       const avg = ((nf + nm + na + nw) / 4).toFixed(1);
-      const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(p.avion_id));
+      const model = allModels.find(m => String(m.id) === String(p.avion_id));
+      const mod1 = allMods.find(m => String(m.id) === String(p.mod1_id));
+      const mod2 = allMods.find(m => String(m.id) === String(p.mod2_id));
 
       return [
         p.id,
@@ -525,9 +578,9 @@ export async function exportPlanesCSV(req, res, next) {
         avg,
         p.especial_nombre || '',
         p.pasiva_nombre || '',
-        p.mod1_id || '',
+        mod1?.name || p.mod1_id || '',
         p.mod1_lvl || '',
-        p.mod2_id || '',
+        mod2?.name || p.mod2_id || '',
         p.mod2_lvl || ''
       ];
     });
@@ -560,8 +613,13 @@ export async function getPlaneStats(req, res, next) {
       return res.status(404).json({ error: 'Aeronave no encontrada' });
     }
 
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(plane.avion_id));
-    const modelName = model?.name || plane.avion_id;
+    const [allModels, allMods] = await Promise.all([
+      getFullModelsCatalog(supabase),
+      getFullModsCatalog(supabase)
+    ]);
+
+    const model = allModels.find(m => String(m.id) === String(plane.avion_id));
+    const modelName = model?.name || `Modelo ${plane.avion_id}`;
     const modelType = model?.type || 'Caza de Combate';
 
     const labels = ['Velocidad', 'Maniobrabilidad', 'Blindaje', 'Potencia de Fuego', 'Rango de Radar', 'Defensa ECM'];
@@ -602,8 +660,8 @@ export async function getPlaneStats(req, res, next) {
       base[k] = 100;
     });
 
-    const mod1Obj = DEFAULT_PLANE_MODS.find(m => String(m.id) === String(plane.mod1_id));
-    const mod2Obj = DEFAULT_PLANE_MODS.find(m => String(m.id) === String(plane.mod2_id));
+    const mod1Obj = allMods.find(m => String(m.id) === String(plane.mod1_id));
+    const mod2Obj = allMods.find(m => String(m.id) === String(plane.mod2_id));
 
     res.json({
       success: true,
