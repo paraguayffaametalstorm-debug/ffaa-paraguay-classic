@@ -1,4 +1,4 @@
-import { getSupabase, memoryStore } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 
 export const getSummary = async (req, res, next) => {
   try {
@@ -23,62 +23,50 @@ export const getSummary = async (req, res, next) => {
           activeEvent = eventData.find(e => e.is_open || e.status === 'OPEN') || eventData[0];
         }
 
-        // Obtener usuarios activos con user_id (integer)
-        let { data: users } = await supabase
+        // Obtener usuarios activos
+        const { data: users } = await supabase
           .from('users')
-          .select('id, user_id, email, nick, role, status')
-          .eq('status', 'ACTIVE')
-          .like('email', '%@ffaa.py');
+          .select('id, user_id, email, nick, role, status, squad_status, perf_status, avg_tokens, weeks_evaluated')
+          .order('nick', { ascending: true });
 
-        // Fallback si no hay con dominio @ffaa.py
-        if (!users || users.length === 0) {
-          const { data: generalUsers } = await supabase
-            .from('users')
-            .select('id, user_id, email, nick, role, status')
-            .eq('status', 'ACTIVE');
-          users = generalUsers || [];
-        }
+        const activeUsersList = (users || []).filter(u => 
+          (u.squad_status && u.squad_status.toUpperCase() === 'ACTIVE') || 
+          (u.status && u.status.toUpperCase() === 'ACTIVE') ||
+          (!u.squad_status && !u.status)
+        );
 
-        if (users && users.length > 0) {
-          // Obtener user_id (integer) de los usuarios
-          const userIds = users.map(u => u.user_id).filter(id => id !== null && id !== undefined);
+        if (activeUsersList.length > 0) {
+          // Obtener performances para calcular promedios actualizados
+          const { data: perfData } = await supabase
+            .from('performances')
+            .select('user_id, tokens, nick');
 
-          // Obtener performances por user_id (integer)
-          let performances = [];
-          if (userIds.length > 0) {
-            const { data: perfData } = await supabase
-              .from('performances')
-              .select('user_id, tokens')
-              .in('user_id', userIds);
-            if (perfData) {
-              performances = perfData;
-            }
-          }
-
-          // Calcular promedio por user_id
           const avgMap = {};
-          (performances || []).forEach(p => {
-            if (p.user_id !== null && p.user_id !== undefined) {
-              if (!avgMap[p.user_id]) avgMap[p.user_id] = { sum: 0, count: 0 };
-              avgMap[p.user_id].sum += Number(p.tokens) || 0;
-              avgMap[p.user_id].count += 1;
-            }
+          (perfData || []).forEach(p => {
+            const key = p.user_id !== null && p.user_id !== undefined ? String(p.user_id) : (p.nick || '').toLowerCase();
+            if (!avgMap[key]) avgMap[key] = { sum: 0, count: 0 };
+            avgMap[key].sum += Number(p.tokens) || 0;
+            avgMap[key].count += 1;
           });
 
           // Construir lista con avg_tokens calculado
-          usersWithAvg = users.map(u => {
-            const stats = u.user_id ? avgMap[u.user_id] : null;
-            const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0;
+          usersWithAvg = activeUsersList.map(u => {
+            const keyId = u.user_id ? String(u.user_id) : (u.id ? String(u.id) : '');
+            const keyNick = (u.nick || '').toLowerCase();
+            const stats = avgMap[keyId] || avgMap[keyNick] || null;
+            const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : (Number(u.avg_tokens) || 0);
+            const count = stats && stats.count > 0 ? stats.count : (Number(u.weeks_evaluated) || 0);
+
             return {
-              id: u.id,
-              user_id: u.user_id,
+              id: u.id || u.user_id,
+              user_id: u.user_id || u.id,
               email: u.email,
               nick: u.nick || u.email?.split('@')[0],
               role: (u.role || 'MIEMBRO').toUpperCase(),
               avg_tokens: avg,
-              perf_status: u.status || 'ACTIVE',
-              status: u.status || 'ACTIVE',
-              weeks_evaluated: stats ? stats.count : 0
+              perf_status: u.perf_status || 'VERDE',
+              status: u.status || u.squad_status || 'ACTIVE',
+              weeks_evaluated: count
             };
           });
 
@@ -89,9 +77,9 @@ export const getSummary = async (req, res, next) => {
 
           // Estadísticas del usuario actual
           const currentProfile = usersWithAvg.find(u => 
-            (user.user_id && u.user_id === user.user_id) || 
-            (user.id && u.id === user.id) || 
-            (user.email && u.email === user.email)
+            (user.user_id && String(u.user_id) === String(user.user_id)) || 
+            (user.id && String(u.id) === String(user.id)) || 
+            (user.email && u.email?.toLowerCase() === user.email?.toLowerCase())
           );
           if (currentProfile) {
             userTokensAvg = currentProfile.avg_tokens;
@@ -101,11 +89,6 @@ export const getSummary = async (req, res, next) => {
       } catch (err) {
         console.warn('⚠️ [Dashboard] Error leyendo datos de Supabase:', err.message);
       }
-    }
-
-    // Fallbacks if tables were empty or offline
-    if (!activeEvent) {
-      activeEvent = (memoryStore.events || []).find(e => e.is_open || e.status === 'OPEN') || (memoryStore.events || [])[0] || null;
     }
 
     const totalMembersCount = usersWithAvg.length;
@@ -144,53 +127,29 @@ export const getActiveMembers = async (req, res, next) => {
     let activeMembers = [];
 
     if (supabase) {
-      let { data: users } = await supabase
+      const { data: users, error } = await supabase
         .from('users')
-        .select('id, user_id, email, nick, role, status')
-        .eq('status', 'ACTIVE')
-        .like('email', '%@ffaa.py');
+        .select('id, user_id, email, nick, role, status, squad_status, perf_status, avg_tokens')
+        .order('nick', { ascending: true });
 
-      if (!users || users.length === 0) {
-        const { data: generalUsers } = await supabase
-          .from('users')
-          .select('id, user_id, email, nick, role, status')
-          .eq('status', 'ACTIVE');
-        users = generalUsers || [];
-      }
-
-      if (users && users.length > 0) {
-        const userIds = users.map(u => u.user_id).filter(id => id !== null && id !== undefined);
-        let performances = [];
-        if (userIds.length > 0) {
-          const { data: perfData } = await supabase
-            .from('performances')
-            .select('user_id, tokens')
-            .in('user_id', userIds);
-          if (perfData) performances = perfData;
-        }
-
-        const avgMap = {};
-        (performances || []).forEach(p => {
-          if (p.user_id !== null && p.user_id !== undefined) {
-            if (!avgMap[p.user_id]) avgMap[p.user_id] = { sum: 0, count: 0 };
-            avgMap[p.user_id].sum += Number(p.tokens) || 0;
-            avgMap[p.user_id].count += 1;
-          }
-        });
-
-        activeMembers = users.map(u => {
-          const stats = u.user_id ? avgMap[u.user_id] : null;
-          return {
-            id: u.id,
-            user_id: u.user_id,
+      if (!error && users) {
+        activeMembers = users
+          .filter(u => 
+            (u.squad_status && u.squad_status.toUpperCase() === 'ACTIVE') || 
+            (u.status && u.status.toUpperCase() === 'ACTIVE') ||
+            (!u.squad_status && !u.status)
+          )
+          .map(u => ({
+            id: u.id || u.user_id,
+            user_id: u.user_id || u.id,
             email: u.email,
             nick: u.nick || u.email?.split('@')[0],
             role: (u.role || 'MIEMBRO').toUpperCase(),
-            perf_status: u.status || 'ACTIVE',
-            status: u.status || 'ACTIVE',
-            avg_tokens: stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0
-          };
-        }).sort((a, b) => b.avg_tokens - a.avg_tokens);
+            perf_status: u.perf_status || 'VERDE',
+            status: u.status || u.squad_status || 'ACTIVE',
+            avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
+          }))
+          .sort((a, b) => b.avg_tokens - a.avg_tokens);
       }
     }
 

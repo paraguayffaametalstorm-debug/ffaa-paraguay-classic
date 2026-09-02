@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
-import { getSupabase, memoryStore } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 import { logSecurityEvent } from '../utils/audit.js';
 import { generateTemporaryPassword } from '../utils/security.js';
 
@@ -14,32 +14,18 @@ export const login = async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({ error: 'Email y contraseña son requeridos' });
         }
-
-        let user = null;
+        if (!supabase) {
+            return res.status(500).json({ error: 'Servicio de base de datos no disponible' });
+        }
 
         // 1. Buscar en Supabase
-        if (supabase) {
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('email', email)
-                    .limit(1);
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('email', email.trim())
+            .limit(1);
 
-                if (!error && data && data.length > 0) {
-                    user = data[0];
-                }
-            } catch (err) {
-                console.warn('⚠️ [Auth] Error consultando Supabase:', err.message);
-            }
-        }
-
-        // 2. Fallback a memoryStore
-        if (!user) {
-            user = memoryStore.users.find(u => u.email === email);
-        }
-
-        if (!user) {
+        if (error || !data || data.length === 0) {
             await logSecurityEvent({
                 supabase,
                 userId: null,
@@ -52,12 +38,14 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // 3. Verificar contraseña
-        const validPassword = await bcrypt.compare(password, user.password_hash);
+        const user = data[0];
+
+        // 2. Verificar contraseña
+        const validPassword = await bcrypt.compare(password, user.password_hash || '');
         if (!validPassword) {
             await logSecurityEvent({
                 supabase,
-                userId: user.id,
+                userId: user.id || user.user_id,
                 nick: user.nick,
                 event: 'LOGIN_FAILED',
                 ip: req.ip,
@@ -67,15 +55,17 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // 4. Verificar estado del usuario
+        // 3. Verificar estado del usuario
         if (user.squad_status === 'INACTIVE' || user.status === 'INACTIVE') {
             return res.status(403).json({ error: 'Cuenta inactiva. Contacta a un administrador.' });
         }
 
-        // 5. Generar JWT con token_version
+        // 4. Generar JWT con token_version
         const token = jwt.sign(
             { 
                 user_id: user.user_id || user.id,
+                email: user.email,
+                role: user.role,
                 token_version: user.token_version || 0 
             },
             ENV.JWT_SECRET,
@@ -84,7 +74,7 @@ export const login = async (req, res) => {
 
         await logSecurityEvent({
             supabase,
-            userId: user.id,
+            userId: user.id || user.user_id,
             nick: user.nick,
             event: 'LOGIN_SUCCESS',
             ip: req.ip,
@@ -92,25 +82,23 @@ export const login = async (req, res) => {
             metadata: { role: user.role }
         });
 
-        // 6. Actualizar last_activity
-        if (supabase) {
-            try {
-                await supabase
-                    .from('users')
-                    .update({ last_activity: new Date().toISOString() })
-                    .eq('id', user.id);
-            } catch (err) {
-                console.warn('⚠️ [Auth] Error actualizando last_activity:', err.message);
-            }
+        // 5. Actualizar last_activity
+        try {
+            await supabase
+                .from('users')
+                .update({ last_activity: new Date().toISOString() })
+                .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
+        } catch (err) {
+            console.warn('⚠️ [Auth] Error actualizando last_activity:', err.message);
         }
 
-        // 7. Preparar respuesta
-        const { password_hash, ...safeUser } = user;
+        // 6. Preparar respuesta
+        const { password_hash, password: _p, encrypted_password: _ep, ...safeUser } = user;
         
         const userResponse = {
             ...safeUser,
             user_id: user.user_id || user.id,
-            must_change_password: user.must_change_password || false
+            must_change_password: Boolean(user.must_change_password)
         };
 
         res.json({
@@ -132,7 +120,7 @@ export const verifyMe = async (req, res) => {
             return res.status(401).json({ error: 'No autenticado' });
         }
 
-        const { password_hash, ...safeUser } = user;
+        const { password_hash, password, encrypted_password, ...safeUser } = user;
         res.json({ user: safeUser });
     } catch (error) {
         console.error('❌ Error en verifyMe:', error);
@@ -149,50 +137,29 @@ export const register = async (req, res) => {
         if (!email || !nick) {
             return res.status(400).json({ error: 'Email y nick son requeridos' });
         }
-
-        let existing = null;
-        if (supabase) {
-            try {
-                const { data, error: checkError } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('email', email)
-                    .limit(1);
-
-                if (checkError) {
-                    console.error('Error verificando usuario en Supabase:', checkError);
-                } else if (data && data.length > 0) {
-                    existing = data;
-                }
-            } catch (err) {
-                console.warn('⚠️ Error al conectar con Supabase en registro:', err.message);
-            }
+        if (!supabase) {
+            return res.status(500).json({ error: 'Base de datos no disponible' });
         }
 
-        if (!existing) {
-            const memoryUser = memoryStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-            if (memoryUser) {
-                existing = [memoryUser];
-            }
-        }
+        const { data: existing, error: checkError } = await supabase
+            .from('users')
+            .select('id, email')
+            .ilike('email', email.trim())
+            .limit(1);
 
-        if (existing && existing.length > 0) {
+        if (checkError) {
+            console.error('Error verificando usuario en Supabase:', checkError);
+        } else if (existing && existing.length > 0) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
-        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA (no 123456)
+        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA
         const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        const newUserId = memoryStore.users.length > 0 
-            ? Math.max(...memoryStore.users.map(u => u.user_id || u.id || 0)) + 1 
-            : 1;
-
         const newUser = {
-            id: newUserId,
-            user_id: newUserId,
-            email,
-            nick,
+            email: email.trim().toLowerCase(),
+            nick: nick.trim(),
             role: role || 'MIEMBRO',
             password_hash: hashedPassword,
             must_change_password: true,
@@ -206,45 +173,31 @@ export const register = async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
-        if (supabase) {
-            try {
-                const { data, error } = await supabase
-                    .from('users')
-                    .insert(newUser)
-                    .select()
-                    .single();
+        const { data: createdData, error: insertError } = await supabase
+            .from('users')
+            .insert(newUser)
+            .select()
+            .single();
 
-                if (!error && data) {
-                    memoryStore.users.push(data);
-                    const { password_hash, ...safeUser } = data;
-                    return res.status(201).json({
-                        success: true,
-                        message: 'Usuario creado correctamente. Contraseña temporal generada.',
-                        temporaryPassword: tempPassword,
-                        user: safeUser
-                    });
-                }
-            } catch (err) {
-                console.warn('⚠️ Supabase insert falló, guardando en memoria:', err.message);
-            }
+        if (insertError) {
+            throw insertError;
         }
 
-        memoryStore.users.push(newUser);
-        const { password_hash, ...safeUser } = newUser;
+        const { password_hash, ...safeUser } = createdData || newUser;
         res.status(201).json({
             success: true,
-            message: 'Usuario creado correctamente en el registro del escuadrón.',
+            message: 'Usuario creado correctamente. Contraseña temporal generada.',
             temporaryPassword: tempPassword,
             user: safeUser
         });
 
     } catch (error) {
         console.error('❌ Error en register:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ error: error.message || 'Error interno del servidor' });
     }
 };
 
-// ========== CAMBIO DE CONTRASEÑA (CORREGIDO) ==========
+// ========== CAMBIO DE CONTRASEÑA ==========
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword, isForced } = req.body;
@@ -257,32 +210,22 @@ export const changePassword = async (req, res) => {
                 error: 'La nueva contraseña debe tener al menos 8 caracteres'
             });
         }
+        if (!supabase) {
+            return res.status(500).json({ error: 'Base de datos no disponible' });
+        }
 
         // 1. Obtener usuario completo
-        let user = null;
-        if (supabase) {
-            try {
-                const { data, error: userError } = await supabase
-                    .from('users')
-                    .select('password_hash, must_change_password, token_version, nick, id, user_id')
-                    .or(`id.eq.${userId},user_id.eq.${userId}`)
-                    .limit(1);
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('password_hash, must_change_password, token_version, nick, id, user_id, role, email')
+            .or(`id.eq.${userId},user_id.eq.${userId}`)
+            .limit(1);
 
-                if (!userError && data && data.length > 0) {
-                    user = data[0];
-                }
-            } catch (err) {
-                console.warn('⚠️ Error al consultar usuario en Supabase:', err.message);
-            }
-        }
-
-        if (!user) {
-            user = memoryStore.users.find(u => u.user_id === userId || u.id === userId);
-        }
-
-        if (!user) {
+        if (userError || !userData || userData.length === 0) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
+
+        const user = userData[0];
 
         // 2. Verificar contraseña actual SOLO si NO es cambio forzado
         const isForcedChange = Boolean(user.must_change_password) || Boolean(isForced) || Boolean(req.body.force);
@@ -293,7 +236,7 @@ export const changePassword = async (req, res) => {
                     code: 'CURRENT_PASSWORD_REQUIRED'
                 });
             }
-            const valid = await bcrypt.compare(currentPassword, user.password_hash);
+            const valid = await bcrypt.compare(currentPassword, user.password_hash || '');
             if (!valid) {
                 await logSecurityEvent({
                     supabase,
@@ -312,31 +255,20 @@ export const changePassword = async (req, res) => {
         const newHash = await bcrypt.hash(newPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        // 4. Actualizar en Supabase si está disponible
-        if (supabase) {
-            try {
-                await supabase
-                    .from('users')
-                    .update({
-                        password_hash: newHash,
-                        must_change_password: false,
-                        password_changed_at: new Date().toISOString(),
-                        token_version: newTokenVersion,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', user.id);
-            } catch (err) {
-                console.warn('⚠️ Error actualizando password en Supabase:', err.message);
-            }
-        }
+        // 4. Actualizar en Supabase
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({
+                password_hash: newHash,
+                must_change_password: false,
+                password_changed_at: new Date().toISOString(),
+                token_version: newTokenVersion,
+                updated_at: new Date().toISOString()
+            })
+            .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
 
-        // Actualizar en memoria
-        const memUser = memoryStore.users.find(u => u.user_id === userId || u.id === userId);
-        if (memUser) {
-            memUser.password_hash = newHash;
-            memUser.must_change_password = false;
-            memUser.token_version = newTokenVersion;
-            memUser.updated_at = new Date().toISOString();
+        if (updateError) {
+            throw updateError;
         }
 
         await logSecurityEvent({
@@ -353,6 +285,8 @@ export const changePassword = async (req, res) => {
         const newToken = jwt.sign(
             { 
                 user_id: user.user_id || user.id,
+                email: user.email,
+                role: user.role,
                 token_version: newTokenVersion 
             },
             ENV.JWT_SECRET,
@@ -367,11 +301,11 @@ export const changePassword = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error en changePassword:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ error: error.message || 'Error interno del servidor' });
     }
 };
 
-// ========== OLVIDO DE CONTRASEÑA (DEPRECADO - USAR RECOVERY) ==========
+// ========== OLVIDO DE CONTRASEÑA ==========
 export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -380,29 +314,18 @@ export const forgotPassword = async (req, res) => {
         if (!email) {
             return res.status(400).json({ error: 'El correo es requerido' });
         }
-
-        let user = null;
-        if (supabase) {
-            try {
-                const { data, error: userError } = await supabase
-                    .from('users')
-                    .select('id, nick, email, token_version')
-                    .eq('email', email)
-                    .single();
-
-                if (!userError && data) {
-                    user = data;
-                }
-            } catch (err) {
-                console.warn('⚠️ Supabase lookup falló en forgotPassword:', err.message);
-            }
+        if (!supabase) {
+            return res.status(500).json({ error: 'Base de datos no disponible' });
         }
 
-        if (!user) {
-            user = memoryStore.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        }
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('id, nick, email, token_version')
+            .ilike('email', email.trim())
+            .limit(1)
+            .single();
 
-        if (!user) {
+        if (userError || !user) {
             return res.json({
                 success: true,
                 message: 'Si el correo existe, se enviarán instrucciones'
@@ -414,28 +337,15 @@ export const forgotPassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        if (supabase) {
-            try {
-                await supabase
-                    .from('users')
-                    .update({
-                        password_hash: hashedPassword,
-                        must_change_password: true,
-                        password_changed_at: new Date().toISOString(),
-                        token_version: newTokenVersion
-                    })
-                    .eq('id', user.id);
-            } catch (err) {
-                console.warn('⚠️ Error al actualizar usuario en Supabase:', err.message);
-            }
-        }
-
-        const memUser = memoryStore.users.find(u => u.id === user.id || u.email === user.email);
-        if (memUser) {
-            memUser.password_hash = hashedPassword;
-            memUser.must_change_password = true;
-            memUser.token_version = newTokenVersion;
-        }
+        await supabase
+            .from('users')
+            .update({
+                password_hash: hashedPassword,
+                must_change_password: true,
+                password_changed_at: new Date().toISOString(),
+                token_version: newTokenVersion
+            })
+            .eq('id', user.id);
 
         res.json({
             success: true,

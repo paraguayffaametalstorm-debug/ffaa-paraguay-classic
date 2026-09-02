@@ -1,14 +1,27 @@
-import { memoryStore, getSupabase } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 import { SettingsUpdateSchema } from '../utils/schemas.js';
+
+const DEFAULT_SETTINGS = {
+  theme: 'militar',
+  language: 'es',
+  notif_email: false,
+  notif_whatsapp: false,
+  notif_status: true,
+  notif_reminder: true,
+  notif_announcements: true
+};
 
 export async function getSettings(req, res, next) {
   try {
     const supabase = getSupabase();
+    const userId = req.user.user_id || req.user.id;
+
     if (supabase) {
       const { data, error } = await supabase
         .from('user_settings')
         .select('*')
-        .eq('user_id', req.user.user_id)
+        .or(`user_id.eq.${userId}`)
+        .limit(1)
         .single();
 
       if (!error && data) {
@@ -16,16 +29,7 @@ export async function getSettings(req, res, next) {
       }
     }
 
-    const settings = memoryStore.userSettings[req.user.user_id] || {
-      theme: 'militar',
-      language: 'es',
-      notif_email: false,
-      notif_whatsapp: false,
-      notif_status: true,
-      notif_reminder: true,
-      notif_announcements: true
-    };
-    res.json({ settings });
+    res.json({ settings: { ...DEFAULT_SETTINGS, user_id: userId } });
   } catch (err) {
     next(err);
   }
@@ -34,22 +38,17 @@ export async function getSettings(req, res, next) {
 export async function updateSettings(req, res, next) {
   try {
     const data = SettingsUpdateSchema.parse(req.body);
-    memoryStore.userSettings[req.user.user_id] = {
-      ...(memoryStore.userSettings[req.user.user_id] || {}),
-      ...data
-    };
-
-    const updated = memoryStore.userSettings[req.user.user_id];
-
+    const userId = req.user.user_id || req.user.id;
     const supabase = getSupabase();
+
     if (supabase) {
       await supabase.from('user_settings').upsert({
-        user_id: req.user.user_id,
-        ...updated
+        user_id: userId,
+        ...data
       });
     }
 
-    res.json({ message: 'Configuración guardada correctamente', settings: updated });
+    res.json({ message: 'Configuración guardada correctamente', settings: { ...DEFAULT_SETTINGS, ...data, user_id: userId } });
   } catch (err) {
     next(err);
   }

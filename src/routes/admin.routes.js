@@ -7,11 +7,11 @@ import {
   bulkUploadEvent,
   activateBlackMarket
 } from '../controllers/admin.controller.js';
-import { getActiveMembers } from '../controllers/events.controller.js';
+import { getActiveMembers, getEvents } from '../controllers/events.controller.js';
 import { getAllPerformances, exportPerformancesCSV, savePerformance } from '../controllers/performances.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { bulkLimiter } from '../middlewares/rateLimiter.js';
-import { memoryStore, getSupabase } from '../db/supabase.js';
+import { getSupabase } from '../db/supabase.js';
 import bcrypt from 'bcryptjs';
 import { generateTemporaryPassword } from '../utils/security.js';
 import { logSecurityEvent } from '../utils/audit.js';
@@ -31,10 +31,26 @@ router.post('/bulk-upload', bulkLimiter, bulkUploadEvent);
 router.get('/all-performances', getAllPerformances);
 router.post('/performances', savePerformance);
 router.get('/export-performances', exportPerformancesCSV);
-router.get('/events', (req, res) => res.json({ events: memoryStore.events }));
+router.get('/events', async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { data: events, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('start_date', { ascending: false });
+      if (!error && events) {
+        return res.json({ events });
+      }
+    }
+    return res.json({ events: [] });
+  } catch (e) {
+    res.json({ events: [] });
+  }
+});
 router.post('/events/activate-bm', activateBlackMarket);
 
-// ========== RESETEAR CONTRASEÑA DE USUARIO (CORREGIDO) ==========
+// ========== RESETEAR CONTRASEÑA DE USUARIO ==========
 router.post('/users/:userId/reset-password', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -59,14 +75,10 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         }
 
         if (!user) {
-            user = memoryStore.users.find(u => u.user_id === targetId || u.id === targetId);
-        }
-
-        if (!user) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
-        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA (no 123456)
+        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA
         const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
@@ -86,14 +98,6 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             } catch (err) {
                 console.warn('⚠️ Error reseteando en Supabase:', err.message);
             }
-        }
-
-        const memUser = memoryStore.users.find(u => u.user_id === targetId || u.id === targetId);
-        if (memUser) {
-            memUser.password_hash = hashedPassword;
-            memUser.must_change_password = true;
-            memUser.token_version = newTokenVersion;
-            memUser.updated_at = new Date().toISOString();
         }
 
         // Registrar evento de auditoría
