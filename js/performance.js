@@ -220,23 +220,16 @@ async function loadAdminPilotList() {
  */
 function autoCalculateDays(tokens) {
     const raw = parseInt(tokens, 10);
-    if (isNaN(raw)) {
+    if (isNaN(raw) || raw < 0) {
         return 0;
     }
     const rounded = Math.round(raw / 5) * 5;
-
-    // Actualizar input con valor redondeado
-    const input = document.getElementById('tokens') || document.getElementById('tokensInput');
-    if (input && input.value !== '' && parseInt(input.value, 10) !== rounded) {
-        input.value = rounded;
-    }
 
     // Calcular días según tokens redondeados
     if (rounded >= 0 && rounded <= 50) return 1;
     if (rounded >= 55 && rounded <= 100) return 2;
     if (rounded >= 105 && rounded <= 150) return 3;
-    if (rounded >= 155 && rounded <= 200) return 4;
-    if (rounded > 200) return 4;
+    if (rounded >= 155) return 4;
     return 0;
 }
 
@@ -245,62 +238,48 @@ function autoCalculateDays(tokens) {
  */
 function setupTokensInput() {
     const tokensInput = document.getElementById('tokens') || document.getElementById('tokensInput');
-    if (tokensInput) {
-        tokensInput.oninput = function() {
-            if (this.value === '') {
-                selectDays(0);
-                updateCalculatedStatus();
-                return;
-            }
-            const rawValue = parseInt(this.value, 10);
-            if (isNaN(rawValue)) {
-                selectDays(0);
-                updateCalculatedStatus();
-                return;
-            }
+    if (!tokensInput) return;
 
-            const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
-            const maxVal = isBM ? 250 : 200;
-            let bounded = Math.max(0, Math.min(rawValue, maxVal));
-            const rounded = Math.round(bounded / 5) * 5;
-
-            const days = autoCalculateDays(rounded);
-            selectDays(days);
+    // ✅ En input: solo calcular días y estado con el valor actual (SIN redondear el input)
+    tokensInput.oninput = function() {
+        if (this.value === '') {
+            selectDays(0);
             updateCalculatedStatus();
-        };
+            return;
+        }
+        const raw = parseInt(this.value, 10) || 0;
+        const days = autoCalculateDays(raw);
+        selectDays(days);
+        updateCalculatedStatus();
+    };
 
-        tokensInput.onchange = function() {
-            if (this.value !== '') {
-                const rawValue = parseInt(this.value, 10);
-                if (!isNaN(rawValue)) {
-                    const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
-                    const maxVal = isBM ? 250 : 200;
-                    let bounded = Math.max(0, Math.min(rawValue, maxVal));
-                    const rounded = Math.round(bounded / 5) * 5;
-                    this.value = rounded;
-                    const days = autoCalculateDays(rounded);
-                    selectDays(days);
-                    updateCalculatedStatus();
-                }
-            }
-        };
+    // ✅ En change: redondear al múltiplo de 5 (para stepper y Enter)
+    tokensInput.onchange = function() {
+        if (this.value === '') return;
+        const raw = parseInt(this.value, 10) || 0;
+        const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
+        const maxVal = isBM ? 250 : 200;
+        const rounded = Math.round(raw / 5) * 5;
+        const clamped = Math.min(Math.max(rounded, 0), maxVal);
+        this.value = clamped;
+        const days = autoCalculateDays(clamped);
+        selectDays(days);
+        updateCalculatedStatus();
+    };
 
-        tokensInput.onblur = function() {
-            if (this.value !== '') {
-                const rawValue = parseInt(this.value, 10);
-                if (!isNaN(rawValue)) {
-                    const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
-                    const maxVal = isBM ? 250 : 200;
-                    let bounded = Math.max(0, Math.min(rawValue, maxVal));
-                    const rounded = Math.round(bounded / 5) * 5;
-                    this.value = rounded;
-                    const days = autoCalculateDays(rounded);
-                    selectDays(days);
-                    updateCalculatedStatus();
-                }
-            }
-        };
-    }
+    // ✅ En blur: redondear al múltiplo de 5 cuando el usuario termina de escribir
+    tokensInput.onblur = function() {
+        if (this.value === '') return;
+        const raw = parseInt(this.value, 10) || 0;
+        const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
+        const maxVal = isBM ? 250 : 200;
+        const rounded = Math.round(raw / 5) * 5;
+        const clamped = Math.min(Math.max(rounded, 0), maxVal);
+        this.value = clamped;
+        const days = autoCalculateDays(clamped);
+        selectDays(days);
+        updateCalculatedStatus();
+    };
 }
 
 /**
@@ -343,11 +322,11 @@ function clampTokens(input) {
         updateCalculatedStatus();
         return;
     }
-    if (value < 0) value = 0;
-    if (value > maxVal) value = maxVal;
-
     const rounded = Math.round(value / 5) * 5;
-    const days = autoCalculateDays(rounded);
+    const clamped = Math.min(Math.max(rounded, 0), maxVal);
+    input.value = clamped;
+
+    const days = autoCalculateDays(clamped);
     selectDays(days);
     updateCalculatedStatus();
 }
