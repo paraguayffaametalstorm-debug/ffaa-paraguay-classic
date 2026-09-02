@@ -25,12 +25,12 @@
       <label for="tokens">
         Tokens Obtenidos (<span id="tokensHint">0 – 200</span>) <span style="color:#e74c3c;">*</span>
       </label>
-      <input type="number" id="tokens" min="0" max="200" placeholder="Ej: 185" oninput="clampTokens(this)" required />
+      <input type="number" id="tokens" min="0" max="200" placeholder="Ej: 185" oninput="clampTokens(this); if (typeof autoCalculateDays === 'function') autoCalculateDays(this.value);" required />
     </div>
 
     <div class="form-group">
       <label>
-        Días Conectado y Activo (<span id="daysHint">0 – 4</span>) <span style="color:#e74c3c;">*</span>
+        Días Conectado y Activo (<span id="daysHint">0 – 4</span> · <small style="color:#68d391;">Auto-calculado</small>) <span style="color:#e74c3c;">*</span>
       </label>
       <div id="daysSelectorGroup" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
         <button type="button" class="btn-secondary day-btn" data-day="0" onclick="selectDays(0)">0 días</button>
@@ -45,7 +45,7 @@
 
     <div class="form-group" style="margin-top:1rem;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-        <input type="checkbox" id="flewInGroup" style="width:18px;height:18px;" />
+        <input type="checkbox" id="flewInGroup" style="width:18px;height:18px;" checked onchange="if(typeof updateCalculatedStatus === 'function') updateCalculatedStatus();" />
         <span>¿Voló en grupo con miembros del escuadrón? (Obligatorio) <span style="color:#e74c3c;">*</span></span>
       </label>
     </div>

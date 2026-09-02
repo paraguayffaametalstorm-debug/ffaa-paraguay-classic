@@ -13,6 +13,35 @@ let isAdminMode = false;
 let targetUserId = null;
 
 // ============================================================
+// HELPERS DE FECHA Y EVENTO
+// ============================================================
+
+/**
+ * Calcula el número de semana ISO del año
+ */
+function getWeekNumber(date) {
+    if (!date) return '01';
+    const d = new Date(date);
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    const diff = (d - startOfYear + (startOfYear.getTimezoneOffset() - d.getTimezoneOffset()) * 60000) / 86400000;
+    return String(Math.ceil((diff + startOfYear.getDay() + 1) / 7)).padStart(2, '0');
+}
+
+/**
+ * Formatea el título del evento como: 2026-05 · SEM 19 - SQ
+ */
+function formatEventTitle(event) {
+    if (!event) return 'Sin evento activo';
+    const startDate = event.start_date ? new Date(event.start_date) : new Date();
+    const year = startDate.getFullYear();
+    const month = String(startDate.getMonth() + 1).padStart(2, '0');
+    const weekNum = getWeekNumber(startDate);
+    const isBM = event.type === 'BLACK_MARKET' || event.type === 'BM';
+    const typeCode = isBM ? 'BM' : 'SQ';
+    return `${year}-${month} · SEM ${weekNum} - ${typeCode}`;
+}
+
+// ============================================================
 // INICIALIZACIÓN
 // ============================================================
 
@@ -23,11 +52,16 @@ let targetUserId = null;
 async function initPerformanceForm() {
     try {
         // Obtener usuario actual
-        currentUser = await getCurrentUser();
-        if (!currentUser) {
+        window.currentUser = await getCurrentUser();
+        if (!window.currentUser) {
             console.warn('⚠️ No hay usuario logueado');
             showToast('⚠️ Debes iniciar sesión para registrar rendimiento', 'warning');
             return;
+        }
+
+        const perfUserName = document.getElementById('perfUserName');
+        if (perfUserName) {
+            perfUserName.textContent = window.currentUser.nick || window.currentUser.email || 'Piloto';
         }
 
         // Cargar evento actual
@@ -36,20 +70,17 @@ async function initPerformanceForm() {
         // Cargar lista de pilotos (si es Admin/Owner)
         await loadAdminPilotList();
 
-        // Configurar límites según tipo de evento
+        // Configurar selector de días y límites
         await updateEventLimits();
 
-        // Calcular estado inicial
-        updateCalculatedStatus();
-
-        // Limpiar campos
+        // Resetear formulario a estado inicial con "Voló en grupo" marcado por defecto
         resetPerformanceForm();
 
         console.log('✅ [Performance] Módulo inicializado correctamente');
 
-    } catch (error) {
-        console.error('❌ Error inicializando performance:', error);
-        showToast('Error al cargar el formulario de rendimiento', 'error');
+    } catch (err) {
+        console.error('❌ Error inicializando formulario de rendimiento:', err);
+        showToast('Error cargando formulario', 'error');
     }
 }
 
@@ -58,215 +89,285 @@ async function initPerformanceForm() {
 // ============================================================
 
 /**
- * Carga el evento actual
+ * Carga el evento activo actual y actualiza el título formateado
  */
 async function loadCurrentEvent() {
     try {
-        const res = await api.get('/api/events/current');
-        
-        if (res.success && res.event) {
-            currentEvent = res.event;
-            
-            // Mostrar información del evento
-            const eventInfo = document.getElementById('eventInfo');
-            if (eventInfo) {
-                const isBM = currentEvent.type === 'BLACK_MARKET';
-                const typeLabel = isBM ? '⚫ Black Market' : '🟦 Squadrón';
-                const week = getWeekNumber(currentEvent.start_date);
-                const year = currentEvent.start_date ? new Date(currentEvent.start_date).getFullYear() : '2026';
-                const month = currentEvent.start_date ? String(new Date(currentEvent.start_date).getMonth() + 1).padStart(2, '0') : '00';
-                
-                eventInfo.innerHTML = `
-                    <div class="card" style="background: rgba(255,255,255,0.03); border-left: 4px solid ${isBM ? '#e74c3c' : '#d4af37'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                            <div>
-                                <span style="font-size: 0.8rem; color: var(--steel-gray);">EVENTO ACTIVO</span>
-                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.1rem; color: var(--white-tactical);">
-                                    ${year}-${month} · SEM ${week} - ${isBM ? 'BM' : 'SQ'}
-                                </div>
-                            </div>
-                            <span style="padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: ${isBM ? 'rgba(231,76,60,0.2)' : 'rgba(212,175,55,0.2)'}; color: ${isBM ? '#e74c3c' : '#d4af37'};">
-                                ${typeLabel}
-                            </span>
-                        </div>
-                        <div style="font-size: 0.75rem; color: var(--steel-gray); margin-top: 4px;">
-                            ${currentEvent.start_date ? `Inicio: ${new Date(currentEvent.start_date).toLocaleDateString()}` : ''}
-                            ${currentEvent.end_date ? ` · Fin: ${new Date(currentEvent.end_date).toLocaleDateString()}` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-        } else {
-            const eventInfo = document.getElementById('eventInfo');
-            if (eventInfo) {
-                eventInfo.innerHTML = `
-                    <div class="card" style="background: rgba(255,255,255,0.03); border-left: 4px solid var(--amber-alert);">
-                        <span style="color: var(--amber-alert);">⚠️ No hay evento activo en este momento</span>
-                    </div>
-                `;
-            }
-        }
-    } catch (error) {
-        console.error('Error cargando evento:', error);
-        showToast('❌ Error al cargar el evento actual', 'error');
-    }
-}
-
-/**
- * Carga la lista de pilotos para Admin/Owner
- */
-async function loadAdminPilotList() {
-    try {
-        // Verificar si es Admin/Owner
-        if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'OWNER')) {
-            return;
-        }
-
-        const targetGroup = document.getElementById('performanceTargetGroup');
-        if (targetGroup) targetGroup.style.display = 'block';
-
-        const select = document.getElementById('performanceTarget');
-        if (!select) return;
-
-        // Cargar miembros
-        const res = await api.get('/api/admin/members');
-        if (!res.success || !res.members) return;
-
-        select.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
-        
-        res.members.forEach(pilot => {
-            const opt = document.createElement('option');
-            opt.value = pilot.user_id || pilot.id;
-            opt.textContent = `${pilot.nick} (${pilot.role})`;
-            select.appendChild(opt);
+        const res = await fetch('/api/events/open', {
+            headers: getAuthHeaders()
         });
 
-    } catch (error) {
-        console.error('Error cargando pilotos:', error);
-        showToast('❌ Error al cargar lista de pilotos', 'error');
+        let data = null;
+        if (res.ok) {
+            data = await res.json();
+        } else {
+            const fallbackRes = await fetch('/api/events', { headers: getAuthHeaders() });
+            if (fallbackRes.ok) data = await fallbackRes.json();
+        }
+
+        if (data && (data.event || (data.events && data.events[0]))) {
+            window.currentEvent = data.event || data.events[0];
+            const inWindow = typeof data.inWindow === 'boolean' ? data.inWindow : true;
+            const windowCloseMs = typeof data.windowCloseMs === 'number' ? data.windowCloseMs : 86400000;
+
+            if (typeof window.displayEventInfo === 'function') {
+                window.displayEventInfo(window.currentEvent, inWindow, windowCloseMs);
+            }
+        }
+
+        // Adaptar formulario según tipo de evento
+        adaptFormToEventType(window.currentEvent?.type);
+
+    } catch (err) {
+        console.error('Error cargando evento:', err);
     }
 }
 
 /**
- * Actualiza límites según tipo de evento
+ * Carga la lista de pilotos desde Supabase para el selector de Admin/Owner
  */
-async function updateEventLimits() {
-    const isBM = currentEvent?.type === 'BLACK_MARKET';
-    const maxTokens = isBM ? 250 : 200;
-    const maxDays = isBM ? 5 : 4;
+async function loadAdminPilotList() {
+    const pilotSelect = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
+    const adminSelectorContainer = document.getElementById('performanceTargetGroup') || document.getElementById('adminPilotSelectorContainer');
 
-    const tokensInput = document.getElementById('tokens');
-    const tokensHint = document.getElementById('tokensHint');
-    const daysHint = document.getElementById('daysHint');
-    const bmBtn = document.querySelector('.day-btn-bm');
+    if (!pilotSelect) return;
 
-    if (tokensInput) {
-        tokensInput.max = maxTokens;
-        tokensInput.placeholder = `Ej: ${isBM ? 230 : 185}`;
-    }
-    if (tokensHint) tokensHint.textContent = `0 – ${maxTokens}`;
-    if (daysHint) daysHint.textContent = `0 – ${maxDays}`;
-    if (bmBtn) {
-        bmBtn.style.display = isBM ? 'inline-block' : 'none';
-        if (isBM) bmBtn.textContent = '5 días (BM)';
-    }
-}
+    // Verificar si el usuario tiene permisos
+    const userRole = (window.currentUser?.role || '').toUpperCase();
+    const hasAdminAccess = ['OWNER', 'ADMIN'].includes(userRole);
 
-// ============================================================
-// SELECCIÓN DE DÍAS
-// ============================================================
-
-/**
- * Selecciona los días conectados
- */
-window.selectDays = function(days) {
-    const maxDays = currentEvent?.type === 'BLACK_MARKET' ? 5 : 4;
-    if (days > maxDays) {
-        showToast(`⚠️ Máximo ${maxDays} días para este evento`, 'warning');
+    if (!hasAdminAccess) {
+        if (adminSelectorContainer) adminSelectorContainer.style.display = 'none';
         return;
     }
 
-    selectedDays = days;
-    document.getElementById('daysConnected').value = days;
+    if (adminSelectorContainer) adminSelectorContainer.style.display = 'block';
 
-    // Actualizar botones
+    try {
+        // Obtener miembros desde backend (conectado a Supabase)
+        let members = [];
+        const res = await fetch('/api/admin/members', {
+            headers: getAuthHeaders()
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            members = data.members || data.users || [];
+        } else {
+            // Fallback a /api/events/active-members
+            const resFallback = await fetch('/api/events/active-members', {
+                headers: getAuthHeaders()
+            });
+            if (resFallback.ok) {
+                const dataFallback = await resFallback.json();
+                members = dataFallback.members || dataFallback.activeMembers || [];
+            }
+        }
+
+        if (!members || members.length === 0) {
+            console.warn('⚠️ No se encontraron miembros en la base de datos');
+            return;
+        }
+
+        // Filtrar solo activos y ordenar alfabéticamente por nick
+        const activeMembers = members
+            .filter(p => {
+                const sq = (p.squad_status || p.status || '').toUpperCase();
+                return !sq || sq === 'ACTIVE' || sq === 'ACTIVO';
+            })
+            .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
+
+        // Limpiar opciones anteriores
+        pilotSelect.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
+
+        // Agregar cada piloto al selector
+        activeMembers.forEach(pilot => {
+            const uid = pilot.user_id || pilot.id;
+            const isCurrentUser = (uid === (window.currentUser?.user_id || window.currentUser?.id));
+            if (isCurrentUser) return; // Se maneja como "Mi propio rendimiento"
+
+            const option = document.createElement('option');
+            option.value = uid;
+
+            const roleUpper = (pilot.role || 'MIEMBRO').toUpperCase();
+            const roleBadge = roleUpper === 'OWNER' ? '👑' : roleUpper === 'ADMIN' ? '⭐' : '';
+
+            option.textContent = `${roleBadge} ${pilot.nick || pilot.email || 'Sin Nick'} (${roleUpper})`.trim();
+            pilotSelect.appendChild(option);
+        });
+
+        console.log(`✅ [Performance] ${activeMembers.length} pilotos cargados en el selector`);
+
+    } catch (err) {
+        console.error('Error cargando lista de pilotos:', err);
+    }
+}
+
+// ============================================================
+// CÁLCULO AUTOMÁTICO DE DÍAS Y ESTADO
+// ============================================================
+
+/**
+ * Calcula automáticamente los días según los tokens ingresados:
+ * 0 - 50 tokens: 1 día
+ * 55 - 100 tokens: 2 días
+ * 105 - 150 tokens: 3 días
+ * 155 - 200 tokens: 4 días
+ */
+function autoCalculateDays(tokens) {
+    const val = parseInt(tokens, 10);
+    if (isNaN(val) || val <= 0) {
+        selectDays(0);
+        updateCalculatedStatus();
+        return 0;
+    }
+
+    let days = 1;
+    if (val <= 50) {
+        days = 1;
+    } else if (val <= 100) {
+        days = 2;
+    } else if (val <= 150) {
+        days = 3;
+    } else {
+        days = 4;
+    }
+
+    selectDays(days);
+    updateCalculatedStatus();
+    return days;
+}
+
+/**
+ * Selecciona la cantidad de días conectados
+ */
+function selectDays(days) {
+    selectedDays = days;
+
+    // Actualizar botones visualmente
     document.querySelectorAll('.day-btn').forEach(btn => {
-        btn.classList.toggle('active', parseInt(btn.dataset.day) === days);
+        const btnDay = parseInt(btn.dataset.day || btn.dataset.days || btn.textContent.trim(), 10);
+        btn.classList.toggle('active', btnDay === days);
     });
 
-    // Actualizar estado
+    // Actualizar campo oculto
+    const daysInput = document.getElementById('daysConnected') || document.getElementById('daysConnectedInput');
+    if (daysInput) daysInput.value = days;
+
+    // Recalcular estado proyectado
     updateCalculatedStatus();
 }
 
 /**
- * Clamp de tokens
+ * Limita el valor de tokens según el tipo de evento
  */
-window.clampTokens = function(input) {
-    const max = parseInt(input.max) || 200;
-    if (parseInt(input.value) > max) {
-        input.value = max;
-        showToast(`⚠️ Máximo ${max} tokens para este evento`, 'warning');
+function clampTokens(input) {
+    if (!input) return;
+    const isBM = window.currentEvent?.type === 'BLACK_MARKET' || window.currentEvent?.type === 'BM';
+    const maxVal = isBM ? 250 : 200;
+
+    let value = parseInt(input.value, 10);
+    if (isNaN(value)) return;
+    if (value < 0) value = 0;
+    if (value > maxVal) value = maxVal;
+    input.value = value;
+
+    autoCalculateDays(value);
+}
+
+/**
+ * Adapta el formulario según el tipo de evento
+ */
+function adaptFormToEventType(eventType) {
+    const isBM = eventType === 'BLACK_MARKET' || eventType === 'BM';
+    const maxTok = isBM ? 250 : 200;
+
+    const tokHint = document.getElementById('tokensHint');
+    if (tokHint) tokHint.textContent = `0 – ${maxTok}`;
+
+    const tokInput = document.getElementById('tokens') || document.getElementById('tokensInput');
+    if (tokInput) {
+        tokInput.max = maxTok;
+        tokInput.placeholder = isBM ? 'Ej: 220' : 'Ej: 185';
     }
-    updateCalculatedStatus();
+
+    const daysHint = document.getElementById('daysHint');
+    if (daysHint) {
+        daysHint.textContent = isBM ? '0 – 5 (BM)' : '0 – 4';
+    }
+
+    const btn5 = document.querySelector('.day-btn-bm');
+    if (btn5) btn5.style.display = isBM ? '' : 'none';
 }
 
 /**
- * Cambio de piloto seleccionado (Admin/Owner)
+ * Actualiza límites de eventos
  */
-window.onTargetPilotChange = function() {
-    const select = document.getElementById('performanceTarget');
+async function updateEventLimits() {
+    adaptFormToEventType(window.currentEvent?.type);
+}
+
+/**
+ * Maneja el cambio de piloto seleccionado (Admin/Owner)
+ */
+function onTargetPilotChange() {
+    const select = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
     if (!select) return;
 
-    const value = select.value;
-    isAdminMode = value !== 'self';
-    targetUserId = isAdminMode ? parseInt(value) : null;
+    const val = select.value;
+    isAdminMode = val && val !== 'self' && val !== '';
+    targetUserId = isAdminMode ? parseInt(val, 10) : null;
 
-    // Mostrar banner
-    const banner = document.getElementById('targetOverrideBanner');
-    const userName = document.getElementById('perfUserName');
-    const notesHintAdmin = document.getElementById('notesHintAdmin');
-    const notesHintNormal = document.getElementById('notesHintNormal');
-    const policyNoteAdmin = document.getElementById('policyNoteAdmin');
-    const policyNoteNormal = document.getElementById('policyNoteNormal');
+    const banner = document.getElementById('targetOverrideBanner') || document.getElementById('adminPilotWarning');
+    const userNameEl = document.getElementById('perfUserName');
+    const noteAdm = document.getElementById('policyNoteAdmin');
+    const noteNrm = document.getElementById('policyNoteNormal');
+    const notesHintAdm = document.getElementById('notesHintAdmin');
+    const notesHintNrm = document.getElementById('notesHintNormal');
+    const saveBtn = document.getElementById('btnSavePerf') || document.getElementById('savePerformanceBtn');
+
+    const selectedText = select.options[select.selectedIndex]?.text || '';
 
     if (isAdminMode) {
-        const selectedOption = select.options[select.selectedIndex];
-        const pilotName = selectedOption ? selectedOption.text : 'Piloto';
-        if (banner) banner.style.display = 'flex';
-        if (userName) userName.textContent = pilotName;
-        if (notesHintAdmin) notesHintAdmin.style.display = 'inline';
-        if (notesHintNormal) notesHintNormal.style.display = 'none';
-        if (policyNoteAdmin) policyNoteAdmin.style.display = 'block';
-        if (policyNoteNormal) policyNoteNormal.style.display = 'none';
+        if (banner) {
+            banner.style.display = 'flex';
+            if (banner.querySelector('#perfUserName')) {
+                banner.querySelector('#perfUserName').textContent = selectedText;
+            }
+        }
+        if (userNameEl) userNameEl.textContent = selectedText;
+        if (noteAdm) noteAdm.style.display = 'block';
+        if (noteNrm) noteNrm.style.display = 'none';
+        if (notesHintAdm) notesHintAdm.style.display = 'inline';
+        if (notesHintNrm) notesHintNrm.style.display = 'none';
+        if (saveBtn) saveBtn.textContent = `💾 Registrar para ${selectedText.split(' ')[0]}`;
     } else {
         if (banner) banner.style.display = 'none';
-        if (notesHintAdmin) notesHintAdmin.style.display = 'none';
-        if (notesHintNormal) notesHintNormal.style.display = 'inline';
-        if (policyNoteAdmin) policyNoteAdmin.style.display = 'none';
-        if (policyNoteNormal) policyNoteNormal.style.display = 'block';
+        if (userNameEl) userNameEl.textContent = window.currentUser?.nick || window.currentUser?.email || '—';
+        if (noteAdm) noteAdm.style.display = 'none';
+        if (noteNrm) noteNrm.style.display = 'block';
+        if (notesHintAdm) notesHintAdm.style.display = 'none';
+        if (notesHintNrm) notesHintNrm.style.display = 'inline';
+        if (saveBtn) saveBtn.textContent = '💾 Guardar Rendimiento';
     }
 }
 
-// ============================================================
-// CÁLCULO DE ESTADO
-// ============================================================
-
 /**
- * Actualiza el estado calculado en tiempo real
+ * Calcula y actualiza el estado proyectado:
+ * VERDE: ≥ 175 tokens && ≥ 4 días
+ * NARANJA: 130 - 174 tokens && ≥ 3 días
+ * ROJO: 100 - 129 tokens && ≥ 2 días
+ * NEGRO: < 100 tokens || < 2 días
  */
 function updateCalculatedStatus() {
-    const tokensInput = document.getElementById('tokens');
-    const daysConnected = document.getElementById('daysConnected');
-    const statusEl = document.getElementById('calculatedStatus');
+    const tokensInput = document.getElementById('tokens') || document.getElementById('tokensInput');
+    const daysInput = document.getElementById('daysConnected') || document.getElementById('daysConnectedInput');
     
-    if (!tokensInput || !statusEl) return;
+    const tokens = parseInt(tokensInput?.value, 10) || 0;
+    const days = parseInt(daysInput?.value, 10) || selectedDays || 0;
 
-    const tokens = parseInt(tokensInput.value) || 0;
-    const days = parseInt(daysConnected?.value) || 0;
-
-    // Determinar estado
-    let status = '';
-    let statusClass = '';
+    let status = '-';
+    let statusClass = 'status-pendiente';
 
     if (tokens === 0 && days === 0) {
         status = '-';
@@ -285,19 +386,10 @@ function updateCalculatedStatus() {
         statusClass = 'status-negro';
     }
 
-    // Actualizar HTML
-    statusEl.innerHTML = `<span class="status-badge ${statusClass}">${status}</span>`;
-}
-
-/**
- * Calcula el número de semana
- */
-function getWeekNumber(date) {
-    if (!date) return 'XX';
-    const d = new Date(date);
-    const startOfYear = new Date(d.getFullYear(), 0, 1);
-    const diff = (d - startOfYear + (startOfYear.getTimezoneOffset() - d.getTimezoneOffset()) * 60000) / 86400000;
-    return String(Math.ceil((diff + startOfYear.getDay() + 1) / 7)).padStart(2, '0');
+    const badgeContainer = document.getElementById('calculatedStatus') || document.getElementById('estimatedStatusBadge');
+    if (badgeContainer) {
+        badgeContainer.innerHTML = `<span class="status-badge ${statusClass}">${status}</span>`;
+    }
 }
 
 // ============================================================
@@ -305,178 +397,149 @@ function getWeekNumber(date) {
 // ============================================================
 
 /**
- * Guarda el rendimiento (normal o admin)
+ * Guarda el rendimiento en la API
  */
-window.savePerformance = async function() {
-    const saveBtn = document.getElementById('btnSavePerf');
-    
+async function savePerformance() {
+    const submitBtn = document.getElementById('btnSavePerf') || document.getElementById('savePerformanceBtn');
+
     try {
-        // Validar evento
-        if (!currentEvent) {
-            throw new Error('No hay evento activo');
-        }
+        const tokensInput = document.getElementById('tokens') || document.getElementById('tokensInput');
+        const notesInput = document.getElementById('notes') || document.getElementById('performanceNotes');
+        const groupCheckbox = document.getElementById('flewInGroup') || document.getElementById('flewInGroupCheckbox');
+        const daysInput = document.getElementById('daysConnected') || document.getElementById('daysConnectedInput');
 
-        // Obtener valores
-        const tokensInput = document.getElementById('tokens');
-        const notesInput = document.getElementById('notes');
-        const flewInGroupInput = document.getElementById('flewInGroup');
-        const daysConnected = document.getElementById('daysConnected');
-
-        const tokens = parseInt(tokensInput?.value) || 0;
+        const tokens = parseInt(tokensInput?.value, 10);
+        const days = parseInt(daysInput?.value, 10) || selectedDays || 0;
+        const flewInGroup = groupCheckbox?.checked ?? true;
         const notes = notesInput?.value?.trim() || '';
-        const flewInGroup = flewInGroupInput?.checked || false;
-        const days = parseInt(daysConnected?.value) || 0;
 
-        // Validaciones
-        const maxTokens = currentEvent.type === 'BLACK_MARKET' ? 250 : 200;
-        const maxDays = currentEvent.type === 'BLACK_MARKET' ? 5 : 4;
-
-        if (tokens < 0 || tokens > maxTokens) {
-            throw new Error(`Tokens deben estar entre 0 y ${maxTokens}`);
+        // Validaciones normativas
+        if (isNaN(tokens) || tokens < 0) {
+            showToast('⚠️ Ingresa una cantidad válida de tokens', 'warning');
+            return;
         }
 
-        if (days < 0 || days > maxDays) {
-            throw new Error(`Días conectados deben estar entre 0 y ${maxDays}`);
+        if (days === 0 && tokens > 0) {
+            showToast('⚠️ Selecciona cuántos días te conectaste', 'warning');
+            return;
         }
 
         if (!flewInGroup) {
-            throw new Error('❌ Es obligatorio volar en grupo con miembros del escuadrón');
+            showToast('❌ Es obligatorio volar en grupo con miembros del escuadrón', 'warning');
+            return;
         }
 
-        // Preparar datos
-        const data = {
-            event_id: currentEvent.id,
-            tokens,
+        const payload = {
+            event_id: window.currentEvent?.id || '2026-05-SQ',
+            tokens: tokens,
             days_connected: days,
             flew_in_group: flewInGroup,
             notes: notes || null
         };
 
-        // Si es Admin y seleccionó otro piloto
         if (isAdminMode && targetUserId) {
-            data.user_id = targetUserId;
+            payload.user_id = targetUserId;
         }
 
-        // Determinar endpoint
-        const endpoint = isAdminMode && targetUserId
-            ? '/api/admin/performances'
-            : '/api/performances';
-
-        // Deshabilitar botón
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.textContent = '⏳ Guardando...';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Guardando...';
         }
 
-        // Enviar
-        const res = await api.post(endpoint, data);
+        const res = await fetch('/api/performances', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
 
-        if (!res.success) {
-            throw new Error(res.error || 'Error al guardar rendimiento');
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || data.message || 'Error al guardar rendimiento');
         }
 
-        const action = res.action === 'sobrescrito' ? 'Sobrescrito' : 'Registrado';
-        const targetMsg = isAdminMode ? ` para ${targetUserId}` : '';
-        showToast(`✅ ${action} correctamente${targetMsg}`, 'success');
+        showToast('✅ Rendimiento registrado correctamente', 'success');
 
-        // Resetear formulario
+        // Limpiar formulario y restablecer "Voló en grupo" por defecto
         resetPerformanceForm();
 
         // Redirigir al dashboard
         setTimeout(() => {
-            if (typeof showView === 'function') {
-                showView('dashboard');
+            if (typeof window.showView === 'function') {
+                window.showView('appView');
             }
-        }, 1500);
+        }, 1200);
 
-    } catch (error) {
-        console.error('Error guardando rendimiento:', error);
-        showToast('❌ ' + error.message, 'error');
+    } catch (err) {
+        console.error('Error guardando rendimiento:', err);
+        showToast(`❌ ${err.message}`, 'error');
     } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = '💾 Guardar Rendimiento';
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '💾 Guardar Rendimiento';
         }
     }
 }
 
-// ============================================================
-// UTILIDADES
-// ============================================================
-
 /**
- * Resetea el formulario
+ * Limpia el formulario y asegura valores por defecto normativos
  */
 function resetPerformanceForm() {
-    const tokensInput = document.getElementById('tokens');
-    const notesInput = document.getElementById('notes');
-    const flewInGroupInput = document.getElementById('flewInGroup');
-    const daysConnected = document.getElementById('daysConnected');
+    const tokensInput = document.getElementById('tokens') || document.getElementById('tokensInput');
+    const notesInput = document.getElementById('notes') || document.getElementById('performanceNotes');
+    const groupCheckbox = document.getElementById('flewInGroup') || document.getElementById('flewInGroupCheckbox');
+    const pilotSelect = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
+    const daysInput = document.getElementById('daysConnected') || document.getElementById('daysConnectedInput');
 
     if (tokensInput) tokensInput.value = '';
     if (notesInput) notesInput.value = '';
-    if (flewInGroupInput) flewInGroupInput.checked = true; // ✅ Marcado por defecto
-    if (daysConnected) daysConnected.value = '0';
+    if (groupCheckbox) groupCheckbox.checked = true; // ✅ Marcado por defecto
+    if (daysInput) daysInput.value = '0';
 
-    // Resetear botones de días
-    document.querySelectorAll('.day-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    if (pilotSelect) pilotSelect.value = 'self';
 
-    // Resetear selector de piloto
-    const select = document.getElementById('performanceTarget');
-    if (select) {
-        select.value = 'self';
-        window.onTargetPilotChange();
-    }
-
-    // Resetear estado
-    selectedDays = 0;
+    selectDays(0);
+    onTargetPilotChange();
     updateCalculatedStatus();
 }
 
-/**
- * Obtener usuario actual (desde auth.js)
- * Versión asíncrona con fallback seguro
- */
+// ============================================================
+// HELPERS GENERALES
+// ============================================================
+
+function getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+}
+
 async function getCurrentUser() {
-    // Verificar inmediatamente
-    if (window.currentUser) {
-        return window.currentUser;
+    if (window.currentUser) return window.currentUser;
+
+    const stored = localStorage.getItem('user') || localStorage.getItem('currentUser');
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch (e) {}
     }
-    
-    // Esperar hasta 2 segundos
+
     return new Promise((resolve) => {
-        const startTime = Date.now();
-        const checkInterval = setInterval(() => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
             if (window.currentUser) {
-                clearInterval(checkInterval);
+                clearInterval(interval);
                 resolve(window.currentUser);
-                return;
-            }
-            if (Date.now() - startTime > 2000) {
-                clearInterval(checkInterval);
-                // Intentar recuperar del localStorage como fallback
-                try {
-                    const userData = localStorage.getItem('user');
-                    if (userData) {
-                        const user = JSON.parse(userData);
-                        window.currentUser = user;
-                        resolve(user);
-                        return;
-                    }
-                } catch (e) {
-                    console.warn('⚠️ Error parseando user de localStorage:', e);
-                }
+            } else if (attempts > 20) {
+                clearInterval(interval);
                 resolve(null);
             }
         }, 50);
     });
 }
 
-/**
- * Mostrar toast (usando el sistema existente)
- */
 function showToast(message, type = 'info') {
     if (typeof window.showToast === 'function') {
         window.showToast(message, type);
@@ -490,10 +553,16 @@ function showToast(message, type = 'info') {
 // ============================================================
 
 window.initPerformanceForm = initPerformanceForm;
+window.loadCurrentEvent = loadCurrentEvent;
 window.loadAdminPilotList = loadAdminPilotList;
-window.savePerformance = savePerformance;
+window.autoCalculateDays = autoCalculateDays;
 window.selectDays = selectDays;
 window.clampTokens = clampTokens;
+window.updateCalculatedStatus = updateCalculatedStatus;
 window.onTargetPilotChange = onTargetPilotChange;
+window.savePerformance = savePerformance;
+window.resetPerformanceForm = resetPerformanceForm;
+window.formatEventTitle = formatEventTitle;
+window.getWeekNumber = getWeekNumber;
 
-console.log('✅ [Performance] Funciones exportadas globalmente en window');
+console.log('✅ [Performance] Funciones de rendimiento exportadas globalmente en window');

@@ -3,28 +3,57 @@ import { PerformanceSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 
 export function calculateStatus(tokens, daysConnected) {
-  if (tokens < 100 || daysConnected === 0) return 'NEGRO';
-  if (tokens < 130) return 'ROJO';
-  if (tokens < 175) return 'NARANJA';
-  return 'VERDE';
+  const t = Number(tokens) || 0;
+  const d = Number(daysConnected) || 0;
+  if (t >= 175 && d >= 4) return 'VERDE';
+  if (t >= 130 && d >= 3) return 'NARANJA';
+  if (t >= 100 && d >= 2) return 'ROJO';
+  return 'NEGRO';
 }
 
 export async function savePerformance(req, res, next) {
   try {
     const data = PerformanceSchema.parse(req.body);
-    const targetUserId = (req.user.role === 'ADMIN' || req.user.role === 'OWNER') && data.user_id
-      ? data.user_id
-      : req.user.user_id;
+    const callerRole = (req.user.role || '').toUpperCase();
+    const isAdminOrOwner = callerRole === 'ADMIN' || callerRole === 'OWNER';
+    const callerId = req.user.user_id || req.user.id;
+
+    // Solo ADMIN u OWNER pueden registrar para terceros
+    const targetUserId = (isAdminOrOwner && data.user_id && data.user_id !== 'self')
+      ? (Number(data.user_id) || data.user_id)
+      : callerId;
 
     const supabase = getSupabase();
-    let targetUser = memoryStore.users.find(u => u.user_id === targetUserId) || req.user;
+    let targetUser = req.user;
+
+    // Buscar datos del usuario objetivo en Supabase o en memoria
+    if (supabase) {
+      try {
+        const { data: dbUser } = await supabase
+          .from('users')
+          .select('id, user_id, nick, email, role')
+          .or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`)
+          .limit(1);
+
+        if (dbUser && dbUser.length > 0) {
+          targetUser = dbUser[0];
+        }
+      } catch (err) {
+        console.warn('⚠️ [Performances] Error buscando usuario en Supabase:', err.message);
+      }
+    }
+
+    if (!targetUser || targetUser === req.user) {
+      const memUser = memoryStore.users.find(u => (u.user_id || u.id) === targetUserId);
+      if (memUser) targetUser = memUser;
+    }
 
     const status = calculateStatus(data.tokens, data.days_connected);
 
     const record = {
       user_id: targetUserId,
-      nick: targetUser.nick || req.user.nick,
-      role: targetUser.role || req.user.role,
+      nick: targetUser.nick || req.user.nick || 'Piloto',
+      role: targetUser.role || req.user.role || 'MIEMBRO',
       event_id: data.event_id,
       tokens: data.tokens,
       days_connected: data.days_connected,
