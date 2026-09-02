@@ -1067,11 +1067,13 @@ Nv. ${plane.nivel}
 <td data-label="Pasiva">${plane.pasiva_nombre || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 1">${plane.mod1_nombre || plane.mod1_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 2">${plane.mod2_nombre || plane.mod2_id || '<span style="color:#666">—</span>'}</td>
-<td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
-<button onclick="openPlaneUpgrades(${plane.id})" class="btn-primary" style="padding:4px 8px; font-size:0.75rem; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#38bdf8;" title="Gestionar Upgrades 2.0"><i data-lucide="wrench" style="width:13px;height:13px;"></i> Upgrades</button>
-<button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-color:var(--blue-telemetry); color:var(--blue-telemetry);" title="Ver Telemetría"><i data-lucide="gauge" style="width:13px;height:13px;"></i> Radar</button>
-<button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem;" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
-<button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" title="Eliminar"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>
+<td data-label="Acciones">
+  <div class="mobile-actions" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+    <button onclick="openPlaneUpgrades(${plane.id})" class="btn-primary" style="padding:4px 8px;font-size:0.7rem;" title="Gestionar Upgrades 2.0">Upgr</button>
+    <button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px;font-size:0.7rem;" title="Ver Telemetría Radar">Radar</button>
+    <button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px;font-size:0.7rem;" title="Editar Aeronave">Edit</button>
+    <button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px;font-size:0.7rem;" title="Eliminar Aeronave">Elim</button>
+  </div>
 </td>
 </tr>
 `;
@@ -2039,14 +2041,14 @@ function renderAdminMembersTable(members) {
 
             return `
             <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(231,76,60,0.05)' : 'transparent'};">
-              <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
+              <td data-label="Piloto" style="padding:10px 8px;font-weight:600;color:#f8fafc;">
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span>${escapeHTML(m.nick || '-')}</span>
                   ${m.email === (window.currentUser?.email) ? '<span style="font-size:0.7rem;color:#d4af37;background:rgba(212,175,55,0.15);padding:1px 5px;border-radius:4px;">(Tú)</span>' : ''}
                 </div>
               </td>
-              <td style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
-              <td style="padding:10px 8px;">
+              <td data-label="Email" style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
+              <td data-label="Rol" style="padding:10px 8px;">
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span class="role-badge role-${currentRole}">${escapeHTML(currentRole)}</span>
                   <select onchange="changeUserRole('${userId}', this.value, '${escapeHTML(m.nick || '')}')" 
@@ -2058,21 +2060,21 @@ function renderAdminMembersTable(members) {
                   </select>
                 </div>
               </td>
-              <td style="padding:10px 8px;">
+              <td data-label="Estado" style="padding:10px 8px;">
                 ${isActive 
                   ? '<span class="status-badge" style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid #2ecc71;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">ACTIVE</span>' 
                   : '<span class="status-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid #e74c3c;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">INACTIVE</span>'
                 }
               </td>
-              <td style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
-              <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</td>
-              <td style="padding:10px 8px;text-align:center;">
-                <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
+              <td data-label="Últ. Actividad" style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
+              <td data-label="Prom. Tokens" style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</td>
+              <td data-label="Acciones" style="padding:10px 8px;text-align:center;">
+                <div class="mobile-actions" style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;">
                   ${isActive 
-                    ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
-                    : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
+                    ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.7rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">Inact</button>`
+                    : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.7rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">Activ</button>`
                   }
-                  <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
+                  <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.7rem;cursor:pointer;" title="Resetear contraseña institucional">Clave</button>
                 </div>
               </td>
             </tr>
@@ -2273,13 +2275,13 @@ function renderAllPerformances(list) {
         <tbody>
           ${list.map(p => `
             <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
-              <td style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(p.nick || 'Piloto')}</td>
-              <td style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(p.event_id || '-')}</td>
-              <td style="padding:8px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">${p.tokens ?? 0}</td>
-              <td style="padding:8px;">${p.days_connected ?? 0}</td>
-              <td style="padding:8px;">${p.flew_in_group ? '✅ Sí' : '❌ No'}</td>
-              <td style="padding:8px;"><span class="status-badge status-${(p.status || 'VERDE').toLowerCase()}">${p.status || 'VERDE'}</span></td>
-              <td style="padding:8px;font-size:0.75rem;color:#94a3b8;">${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</td>
+              <td data-label="Piloto" style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(p.nick || 'Piloto')}</td>
+              <td data-label="Evento" style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(p.event_id || '-')}</td>
+              <td data-label="Tokens" style="padding:8px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">${p.tokens ?? 0}</td>
+              <td data-label="Días" style="padding:8px;">${p.days_connected ?? 0}</td>
+              <td data-label="Grupo" style="padding:8px;">${p.flew_in_group ? 'Sí' : 'No'}</td>
+              <td data-label="Estado" style="padding:8px;"><span class="status-badge status-${(p.status || 'VERDE').toLowerCase()}">${p.status || 'VERDE'}</span></td>
+              <td data-label="Fecha" style="padding:8px;font-size:0.75rem;color:#94a3b8;">${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -2504,42 +2506,42 @@ function renderPlaneCatalogTable(planes) {
 
     return `
       <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(239,68,68,0.04)' : 'transparent'};">
-        <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold-rank);">
+        <td data-label="ID" style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold-rank);">
           #${escapeHTML(planeId)}
         </td>
-        <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
+        <td data-label="Modelo" style="padding:10px 8px;font-weight:600;color:#f8fafc;">
           <div style="display:flex;align-items:center;gap:6px;">
-            <span>✈️ ${escapeHTML(planeName)}</span>
+            <span>${escapeHTML(planeName)}</span>
           </div>
         </td>
-        <td style="padding:10px 8px;">
+        <td data-label="Tipo" style="padding:10px 8px;">
           <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">
             ${escapeHTML(planeType)}
           </span>
         </td>
-        <td style="padding:10px 8px;font-size:0.82rem;color:${specialName ? '#fbbf24' : '#64748b'};">
-          ${specialName ? `⚡ ${escapeHTML(specialName)}` : '—'}
+        <td data-label="Especial" style="padding:10px 8px;font-size:0.82rem;color:${specialName ? '#fbbf24' : '#64748b'};">
+          ${specialName ? `${escapeHTML(specialName)}` : '—'}
         </td>
-        <td style="padding:10px 8px;font-size:0.82rem;color:${passiveName ? '#c084fc' : '#64748b'};">
-          ${passiveName ? `🛡️ ${escapeHTML(passiveName)}` : '—'}
+        <td data-label="Pasiva" style="padding:10px 8px;font-size:0.82rem;color:${passiveName ? '#c084fc' : '#64748b'};">
+          ${passiveName ? `${escapeHTML(passiveName)}` : '—'}
         </td>
-        <td style="padding:10px 8px;text-align:center;">
+        <td data-label="Estado" style="padding:10px 8px;text-align:center;">
           ${isActive 
-            ? '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e;font-weight:600;">🟢 ACTIVO</span>'
-            : '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;font-weight:600;">🔴 INACTIVO</span>'
+            ? '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e;font-weight:600;">ACTIVE</span>'
+            : '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;font-weight:600;">INACTIVE</span>'
           }
         </td>
-        <td style="padding:10px 8px;text-align:center;">
-          <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
-            <button onclick="editPlaneCatalog('${escapeHTML(planeId)}')" class="btn-secondary btn-sm" style="padding:3px 8px;font-size:0.75rem;" title="Modificar especificaciones del avión">
-              ✏️ Editar
+        <td data-label="Acciones" style="padding:10px 8px;text-align:center;">
+          <div class="mobile-actions" style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;">
+            <button onclick="editPlaneCatalog('${escapeHTML(planeId)}')" class="btn-secondary btn-sm" style="padding:3px 8px;font-size:0.7rem;" title="Modificar especificaciones del avión">
+              Edit
             </button>
             ${isActive 
-              ? `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', true, '${escapeHTML(planeName)}')" class="btn-danger btn-sm" style="padding:3px 8px;font-size:0.75rem;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar avión del catálogo">
-                   🔴 Desactivar
+              ? `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', true, '${escapeHTML(planeName)}')" class="btn-danger btn-sm" style="padding:3px 8px;font-size:0.7rem;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar avión del catálogo">
+                   Inact
                  </button>`
-              : `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', false, '${escapeHTML(planeName)}')" class="btn-success btn-sm" style="padding:3px 8px;font-size:0.75rem;background:#22c55e;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar avión en el catálogo">
-                   🟢 Activar
+              : `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', false, '${escapeHTML(planeName)}')" class="btn-success btn-sm" style="padding:3px 8px;font-size:0.7rem;background:#22c55e;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar avión en el catálogo">
+                   Activ
                  </button>`
             }
           </div>
