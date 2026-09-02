@@ -5,25 +5,25 @@
 
 // Cargar y renderizar perfil del piloto
 async function loadPersonalProfile() {
-  if (!currentUser) return;
+  if (!window.currentUser) return;
 
   try {
     const [profileRes, planesRes, statsRes] = await Promise.all([
-      fetch(`${API_BASE}/api/profile/me`, { headers: getAuthHeaders() }),
-      fetch(`${API_BASE}/api/planes/my-planes`, { headers: getAuthHeaders() }).catch(() => ({ ok: false })),
-      fetch(`${API_BASE}/api/performances/stats`, { headers: getAuthHeaders() }).catch(() => ({ ok: false }))
+      fetch(`${API_BASE || ''}/api/profile/me`, { headers: getAuthHeaders() }),
+      fetch(`${API_BASE || ''}/api/planes/my-planes`, { headers: getAuthHeaders() }).catch(() => ({ ok: false })),
+      fetch(`${API_BASE || ''}/api/performances/stats`, { headers: getAuthHeaders() }).catch(() => ({ ok: false }))
     ]);
 
     if (!profileRes.ok) throw new Error('Error al cargar perfil');
 
     const data = await profileRes.json();
-    const profile = data.profile || data.user || currentUser;
+    const profile = data.profile || data.user || window.currentUser;
 
     // 1. Llenar Badge Táctico de Identificación
-    const nick = profile.nick || currentUser.nick || 'PILOTO';
-    const role = (profile.role || currentUser.role || 'MIEMBRO').toUpperCase();
-    const userStatus = (profile.status || 'ACTIVE').toUpperCase();
-    const perfStatus = profile.perf_status || currentUser.perf_status || 'VERDE';
+    const nick = profile.nick || window.currentUser.nick || 'PILOTO';
+    const role = (profile.role || window.currentUser.role || 'MIEMBRO').toUpperCase();
+    const userStatus = (profile.status || window.currentUser.status || 'ACTIVE').toUpperCase();
+    const perfStatus = profile.perf_status || window.currentUser.perf_status || 'VERDE';
 
     const nickEl = document.getElementById('profileNick');
     if (nickEl) nickEl.textContent = nick;
@@ -46,10 +46,11 @@ async function loadPersonalProfile() {
       rankIconEl.textContent = role === 'OWNER' ? '👑' : role === 'ADMIN' ? '⭐' : role === 'VETERANO' ? '🎖️' : '✈️';
     }
 
+    // ✅ CORREGIDO: Usar userStatus en lugar de squadStatus
     const squadStatusBadgeEl = document.getElementById('profileSquadStatusBadge');
     if (squadStatusBadgeEl) {
-      squadStatusBadgeEl.textContent = squadStatus === 'ACTIVE' ? 'ACTIVO' : squadStatus;
-      squadStatusBadgeEl.className = `squad-status-badge squad-${squadStatus}`;
+      squadStatusBadgeEl.textContent = userStatus === 'ACTIVE' ? 'ACTIVO' : userStatus;
+      squadStatusBadgeEl.className = `squad-status-badge squad-${userStatus}`;
     }
 
     const statusBadgeEl = document.getElementById('profileStatusBadge');
@@ -77,10 +78,10 @@ async function loadPersonalProfile() {
     if (weeksEl) weeksEl.textContent = weeksEvaluated;
 
     const userIdEl = document.getElementById('profileUserId');
-    if (userIdEl) userIdEl.textContent = `PRY-${String(profile.user_id || currentUser.user_id || '001').padStart(3, '0')}`;
+    if (userIdEl) userIdEl.textContent = `PRY-${String(profile.user_id || window.currentUser.user_id || '001').padStart(3, '0')}`;
 
     const emailEl = document.getElementById('profileOfficialEmail');
-    if (emailEl) emailEl.textContent = profile.email || currentUser.email || '—';
+    if (emailEl) emailEl.textContent = profile.email || window.currentUser.email || '—';
 
     const lastEventEl = document.getElementById('profileLastEvent');
     if (lastEventEl) lastEventEl.textContent = profile.last_event || 'SQUADRON-ACTIVO';
@@ -159,7 +160,7 @@ async function savePersonalProfile() {
       notifications_enabled: notificationsEnabled
     };
 
-    const res = await fetch(`${API_BASE}/api/profile/me`, {
+    const res = await fetch(`${API_BASE || ''}/api/profile/me`, {
       method: 'PUT',
       headers: {
         ...getAuthHeaders(),
@@ -196,4 +197,3 @@ document.addEventListener('DOMContentLoaded', () => {
 // Exponer globalmente en window
 window.loadPersonalProfile = loadPersonalProfile;
 window.savePersonalProfile = savePersonalProfile;
-
