@@ -45,21 +45,23 @@ export const UpdateMemberRoleSchema = z.object({
 });
 
 export const PlaneSchema = z.object({
-  avion_id: z.string().min(1, 'Modelo de avión requerido'),
-  nivel: z.number().int().min(1).max(20),
+  avion_id: z.union([z.string().min(1), z.number().transform(v => String(v))]),
+  nivel: z.union([z.number().int().min(1).max(20), z.string().transform(v => parseInt(v, 10))]),
   especial_nombre: z.string().optional().nullable(),
+  especial_nivel: z.union([z.string(), z.number().transform(v => String(v))]).optional().nullable(),
   pasiva_nombre: z.string().optional().nullable(),
-  mod1_id: z.string().optional().nullable(),
-  mod1_lvl: z.number().int().min(1).max(5).optional().nullable(),
-  mod2_id: z.string().optional().nullable(),
-  mod2_lvl: z.number().int().min(1).max(5).optional().nullable(),
+  pasiva_nivel: z.union([z.string(), z.number().transform(v => String(v))]).optional().nullable(),
+  mod1_id: z.union([z.string(), z.number().transform(v => String(v))]).optional().nullable(),
+  mod1_lvl: z.union([z.number().int().min(1).max(5), z.string().transform(v => parseInt(v, 10))]).optional().nullable(),
+  mod2_id: z.union([z.string(), z.number().transform(v => String(v))]).optional().nullable(),
+  mod2_lvl: z.union([z.number().int().min(1).max(5), z.string().transform(v => parseInt(v, 10))]).optional().nullable(),
   // Upgrades 2.0 (Sistemas mejorables niveles 0-8 y recursos)
-  nivel_fuselaje: z.number().int().min(0).max(8).optional().default(0),
-  nivel_motor: z.number().int().min(0).max(8).optional().default(0),
-  nivel_avionica: z.number().int().min(0).max(8).optional().default(0),
-  nivel_armas: z.number().int().min(0).max(8).optional().default(0),
-  recursos_piezas: z.number().int().min(0).optional().default(0),
-  recursos_avanzadas: z.number().int().min(0).optional().default(0)
+  nivel_fuselaje: z.union([z.number().int().min(0).max(8), z.string().transform(v => parseInt(v, 10))]).optional().default(0),
+  nivel_motor: z.union([z.number().int().min(0).max(8), z.string().transform(v => parseInt(v, 10))]).optional().default(0),
+  nivel_avionica: z.union([z.number().int().min(0).max(8), z.string().transform(v => parseInt(v, 10))]).optional().default(0),
+  nivel_armas: z.union([z.number().int().min(0).max(8), z.string().transform(v => parseInt(v, 10))]).optional().default(0),
+  recursos_piezas: z.union([z.number().int().min(0), z.string().transform(v => parseInt(v, 10))]).optional().default(0),
+  recursos_avanzadas: z.union([z.number().int().min(0), z.string().transform(v => parseInt(v, 10))]).optional().default(0)
 });
 
 export const UpdatePlaneSystemSchema = z.object({
