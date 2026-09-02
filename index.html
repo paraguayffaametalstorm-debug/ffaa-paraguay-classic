@@ -98,7 +98,9 @@
     </div>
     
     <!-- VIEWS CONTAINER - Todas las vistas se inyectan aquí dinámicamente -->
-    <div id="viewsContainer"></div>
+    <div id="viewsContainer">
+      <component src="components/plane-catalog-admin.html"></component>
+    </div>
   </div>
   
   <!-- Footer Component -->
@@ -130,7 +132,8 @@
       'settings-view',
       'help-view',
       'owner-panel',
-      'performance-export'
+      'performance-export',
+      'plane-catalog-admin'
     ];
 
     Promise.all([

@@ -1,13 +1,13 @@
 <div id="adminPanel" class="view" style="display:none;">
   <!-- Tactical Navigation Tabs within Admin Panel -->
   <div class="admin-tabs-nav" style="display:flex;gap:10px;margin-bottom:1.5rem;border-bottom:2px solid rgba(148,163,184,0.15);padding-bottom:8px;overflow-x:auto;">
-    <button id="adminTabBtnMembers" class="btn-tab active" onclick="switchAdminTab('members')" 
+    <button id="adminTabBtnMembers" class="btn-tab tab-btn active" data-tab="members" onclick="showAdminTab('members')" 
             style="display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:0.9rem;font-weight:600;font-family:var(--font-tactical);background:rgba(212,175,55,0.15);color:var(--gold-rank);border:1px solid rgba(212,175,55,0.4);border-radius:6px;cursor:pointer;transition:all 0.2s ease;">
       👥 Miembros & Operaciones
     </button>
-    <button id="adminTabBtnPlanes" class="btn-tab" onclick="switchAdminTab('planes')" 
+    <button id="adminTabBtnPlanes" class="btn-tab tab-btn" data-tab="catalog" onclick="showAdminTab('catalog')" 
             style="display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:0.9rem;font-weight:600;font-family:var(--font-tactical);background:rgba(15,23,42,0.6);color:var(--steel-gray);border:1px solid rgba(148,163,184,0.2);border-radius:6px;cursor:pointer;transition:all 0.2s ease;">
-      ✈️ Catálogo de Aviones (Black Market)
+      🛩️ Catálogo de Aviones
     </button>
   </div>
 
