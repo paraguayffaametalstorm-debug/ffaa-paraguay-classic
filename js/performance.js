@@ -5,11 +5,9 @@
  */
 
 // ============================================================
-// VARIABLES GLOBALES
+// VARIABLES GLOBALES (reutiliza window.currentEvent y window.currentUser)
 // ============================================================
 
-let currentEvent = null;
-let currentUser = null;
 let selectedDays = 0;
 let isAdminMode = false;
 let targetUserId = null;

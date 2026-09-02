@@ -368,3 +368,11 @@ function initSettingsOnLoad() {
   applyTheme(savedTheme || userSettings.theme);
   applyLanguage(savedLang || userSettings.language);
 }
+
+// Exponer globalmente en window
+window.loadSettings = loadSettings;
+window.saveUserSettings = saveUserSettings;
+window.resetSettings = resetSettings;
+window.initSettingsOnLoad = initSettingsOnLoad;
+window.applyTheme = applyTheme;
+window.applyLanguage = applyLanguage;

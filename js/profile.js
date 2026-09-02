@@ -192,3 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 });
+
+// Exponer globalmente en window
+window.loadPersonalProfile = loadPersonalProfile;
+window.savePersonalProfile = savePersonalProfile;
+
