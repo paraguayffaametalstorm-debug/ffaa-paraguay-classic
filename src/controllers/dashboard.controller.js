@@ -26,14 +26,13 @@ export const getSummary = async (req, res, next) => {
         // Obtener usuarios activos
         const { data: users } = await supabase
           .from('users')
-          .select('id, user_id, email, nick, role, status, squad_status, perf_status, avg_tokens, weeks_evaluated')
+          .select('id, user_id, email, nick, role, status, perf_status, avg_tokens, weeks_evaluated')
           .order('nick', { ascending: true });
 
-        const activeUsersList = (users || []).filter(u => 
-          (u.squad_status && u.squad_status.toUpperCase() === 'ACTIVE') || 
-          (u.status && u.status.toUpperCase() === 'ACTIVE') ||
-          (!u.squad_status && !u.status)
-        );
+        const activeUsersList = (users || []).filter(u => {
+          const st = (u.status || '').toUpperCase();
+          return st === 'ACTIVE' || st === 'ACTIVO' || !st;
+        });
 
         if (activeUsersList.length > 0) {
           // Obtener performances para calcular promedios actualizados
@@ -65,7 +64,7 @@ export const getSummary = async (req, res, next) => {
               role: (u.role || 'MIEMBRO').toUpperCase(),
               avg_tokens: avg,
               perf_status: u.perf_status || 'VERDE',
-              status: u.status || u.squad_status || 'ACTIVE',
+              status: (u.status || 'ACTIVE').toUpperCase(),
               weeks_evaluated: count
             };
           });
@@ -129,16 +128,15 @@ export const getActiveMembers = async (req, res, next) => {
     if (supabase) {
       const { data: users, error } = await supabase
         .from('users')
-        .select('id, user_id, email, nick, role, status, squad_status, perf_status, avg_tokens')
+        .select('id, user_id, email, nick, role, status, perf_status, avg_tokens')
         .order('nick', { ascending: true });
 
       if (!error && users) {
         activeMembers = users
-          .filter(u => 
-            (u.squad_status && u.squad_status.toUpperCase() === 'ACTIVE') || 
-            (u.status && u.status.toUpperCase() === 'ACTIVE') ||
-            (!u.squad_status && !u.status)
-          )
+          .filter(u => {
+            const st = (u.status || '').toUpperCase();
+            return st === 'ACTIVE' || st === 'ACTIVO' || !st;
+          })
           .map(u => ({
             id: u.id || u.user_id,
             user_id: u.user_id || u.id,
@@ -146,7 +144,7 @@ export const getActiveMembers = async (req, res, next) => {
             nick: u.nick || u.email?.split('@')[0],
             role: (u.role || 'MIEMBRO').toUpperCase(),
             perf_status: u.perf_status || 'VERDE',
-            status: u.status || u.squad_status || 'ACTIVE',
+            status: (u.status || 'ACTIVE').toUpperCase(),
             avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
           }))
           .sort((a, b) => b.avg_tokens - a.avg_tokens);

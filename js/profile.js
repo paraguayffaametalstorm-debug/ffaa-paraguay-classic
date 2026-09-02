@@ -22,7 +22,7 @@ async function loadPersonalProfile() {
     // 1. Llenar Badge Táctico de Identificación
     const nick = profile.nick || currentUser.nick || 'PILOTO';
     const role = (profile.role || currentUser.role || 'MIEMBRO').toUpperCase();
-    const squadStatus = profile.squad_status || 'ACTIVE';
+    const userStatus = (profile.status || 'ACTIVE').toUpperCase();
     const perfStatus = profile.perf_status || currentUser.perf_status || 'VERDE';
 
     const nickEl = document.getElementById('profileNick');

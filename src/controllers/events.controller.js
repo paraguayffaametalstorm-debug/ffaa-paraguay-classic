@@ -93,24 +93,23 @@ export const getActiveMembers = async (req, res) => {
         if (supabase) {
             const { data, error } = await supabase
                 .from('users')
-                .select('id, user_id, email, nick, role, perf_status, status, squad_status, last_activity, avg_tokens')
+                .select('id, user_id, email, nick, role, perf_status, status, last_activity, avg_tokens')
                 .order('nick', { ascending: true });
             
             if (!error && data && data.length > 0) {
                 activeMembers = data
-                    .filter(u => 
-                        (u.squad_status && u.squad_status.toUpperCase() === 'ACTIVE') || 
-                        (u.status && u.status.toUpperCase() === 'ACTIVE') ||
-                        (!u.squad_status && !u.status)
-                    )
+                    .filter(u => {
+                        const st = (u.status || '').toUpperCase();
+                        return st === 'ACTIVE' || st === 'ACTIVO' || !st;
+                    })
                     .map(u => ({
                         id: u.id || u.user_id,
                         user_id: u.user_id || u.id,
                         email: u.email,
                         nick: u.nick || u.email?.split('@')[0],
                         role: (u.role || 'MIEMBRO').toUpperCase(),
-                        perf_status: u.perf_status || u.status || 'VERDE',
-                        status: u.status || u.squad_status || 'ACTIVE',
+                        perf_status: u.perf_status || 'VERDE',
+                        status: (u.status || 'ACTIVE').toUpperCase(),
                         avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
                     }));
             }

@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import {
+  getUsers,
   getMembers,
   addMember,
-  updateMemberStatus,
-  updateMemberRole,
+  updateUserStatus,
+  updateUserRole,
   bulkUploadEvent,
   activateBlackMarket
 } from '../controllers/admin.controller.js';
@@ -18,15 +19,33 @@ import { logSecurityEvent } from '../utils/audit.js';
 
 const router = Router();
 
-// All admin routes require authentication and at least ADMIN or OWNER role
+// Todas las rutas de administración requieren autenticación y al menos rol ADMIN u OWNER
 router.use(requireAuth);
 router.use(requireRole('ADMIN', 'OWNER'));
 
+// ========== 1. GESTIÓN DE USUARIOS / MIEMBROS ==========
+// Listar usuarios
+router.get('/users', getUsers);
 router.get('/members', getMembers);
 router.get('/members/active', getActiveMembers);
+
+// Registrar nuevo piloto
 router.post('/members', addMember);
-router.patch('/members/:id/status', updateMemberStatus);
-router.patch('/members/:id/role', requireRole('OWNER'), updateMemberRole);
+router.post('/users', addMember);
+
+// Cambiar estado (ACTIVE / INACTIVE)
+router.put('/users/:id/status', updateUserStatus);
+router.patch('/users/:id/status', updateUserStatus);
+router.put('/members/:id/status', updateUserStatus);
+router.patch('/members/:id/status', updateUserStatus);
+
+// Cambiar rol (MIEMBRO / VETERANO / ADMIN / OWNER con validación de límites)
+router.put('/users/:id/role', updateUserRole);
+router.patch('/users/:id/role', updateUserRole);
+router.put('/members/:id/role', updateUserRole);
+router.patch('/members/:id/role', updateUserRole);
+
+// ========== 2. EVENTOS & RENDIMIENTOS ==========
 router.post('/bulk-upload', bulkLimiter, bulkUploadEvent);
 router.get('/all-performances', getAllPerformances);
 router.post('/performances', savePerformance);
@@ -50,7 +69,7 @@ router.get('/events', async (req, res) => {
 });
 router.post('/events/activate-bm', activateBlackMarket);
 
-// ========== RESETEAR CONTRASEÑA DE USUARIO ==========
+// ========== 3. RESETEAR CONTRASEÑA DE USUARIO ==========
 router.post('/users/:userId/reset-password', async (req, res) => {
     try {
         const { userId } = req.params;

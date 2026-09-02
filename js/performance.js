@@ -177,11 +177,10 @@ async function loadAdminPilotList() {
         const activeMembers = members
             .filter(m => {
                 const status = (m.status || '').toUpperCase();
-                const squadStatus = (m.squad_status || '').toUpperCase();
-                if (status === 'INACTIVE' || squadStatus === 'INACTIVE' || status === 'INACTIVO' || squadStatus === 'INACTIVO') {
+                if (status === 'INACTIVE' || status === 'INACTIVO') {
                     return false;
                 }
-                return status === 'ACTIVE' || squadStatus === 'ACTIVE' || status === 'ACTIVO' || squadStatus === 'ACTIVO' || (!status && !squadStatus);
+                return status === 'ACTIVE' || status === 'ACTIVO' || !status;
             })
             .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
 
