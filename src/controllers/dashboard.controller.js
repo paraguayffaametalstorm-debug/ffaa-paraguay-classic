@@ -103,14 +103,21 @@ export const getSummary = async (req, res, next) => {
       ? Math.round(usersWithAvg.reduce((acc, u) => acc + (u.avg_tokens || 0), 0) / usersWithAvg.length)
       : 0;
 
+    let userPerfStatus = 'VERDE';
+    if (userTokensAvg > 0) {
+      if (userTokensAvg < 100) userPerfStatus = 'NEGRO';
+      else if (userTokensAvg < 130) userPerfStatus = 'ROJO';
+      else if (userTokensAvg < 175) userPerfStatus = 'NARANJA';
+    }
+
     res.json({
       success: true,
       currentEvent: activeEvent,
       userStats: {
         avg_tokens: userTokensAvg,
-        weeks_evaluated: userWeeks || 1,
-        trend: user.trend || 'stable',
-        perf_status: user.perf_status || 'VERDE'
+        weeks_evaluated: userWeeks || 0,
+        trend: 'stable',
+        perf_status: userPerfStatus
       },
       squadStats: {
         total_members: totalMembersCount,
