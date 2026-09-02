@@ -93,7 +93,7 @@ export const getActiveMembers = async (req, res) => {
         if (supabase) {
             const { data, error } = await supabase
                 .from('users')
-                .select('id, user_id, email, nick, role, perf_status, status, last_activity, avg_tokens')
+                .select('id, user_id, email, nick, role, perf_status, status, last_activity')
                 .order('nick', { ascending: true });
             
             if (!error && data && data.length > 0) {
@@ -110,7 +110,7 @@ export const getActiveMembers = async (req, res) => {
                         role: (u.role || 'MIEMBRO').toUpperCase(),
                         perf_status: u.perf_status || 'VERDE',
                         status: (u.status || 'ACTIVE').toUpperCase(),
-                        avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
+                        avg_tokens: 0
                     }));
             }
         }

@@ -92,18 +92,16 @@ export async function savePerformance(req, res, next) {
       savedPerf = inserted;
     }
 
-    // Recalcular avg_tokens del usuario
+    // Recalcular semanas evaluadas y estado del usuario
     const { data: userPerfs } = await supabase
       .from('performances')
       .select('tokens')
       .eq('user_id', record.user_id);
 
     if (userPerfs && userPerfs.length > 0) {
-      const newAvg = Math.round(userPerfs.reduce((s, p) => s + (Number(p.tokens) || 0), 0) / userPerfs.length);
       await supabase
         .from('users')
         .update({
-          avg_tokens: newAvg,
           weeks_evaluated: userPerfs.length,
           perf_status: status
         })
@@ -162,7 +160,7 @@ export async function getStats(req, res, next) {
     }
 
     const userId = req.user.user_id || req.user.id;
-    const { data: users } = await supabase.from('users').select('*');
+    const { data: users } = await supabase.from('users').select('id, user_id, email, nick, role, status, perf_status, weeks_evaluated, trend');
     const { data: myPerfs } = await supabase
       .from('performances')
       .select('*')
@@ -174,16 +172,23 @@ export async function getStats(req, res, next) {
       return st === 'ACTIVE' || st === 'ACTIVO' || !st;
     });
 
-    const avgSquad = userList.length > 0
-      ? Math.round(userList.reduce((acc, u) => acc + (Number(u.avg_tokens) || 0), 0) / userList.length)
+    const myPerfsList = myPerfs || [];
+    const myAvgTokens = myPerfsList.length > 0
+      ? Math.round(myPerfsList.reduce((acc, p) => acc + (Number(p.tokens) || 0), 0) / myPerfsList.length)
+      : 0;
+
+    const { data: allPerfs } = await supabase.from('performances').select('tokens');
+    const allPerfsList = allPerfs || [];
+    const avgSquad = allPerfsList.length > 0
+      ? Math.round(allPerfsList.reduce((acc, p) => acc + (Number(p.tokens) || 0), 0) / allPerfsList.length)
       : 0;
 
     const myUser = userList.find(u => (u.user_id && String(u.user_id) === String(userId)) || (u.id && String(u.id) === String(userId))) || req.user;
 
     res.json({
       userStats: {
-        avg_tokens: myUser.avg_tokens || 0,
-        weeks_evaluated: myUser.weeks_evaluated || myPerfs?.length || 0,
+        avg_tokens: myAvgTokens,
+        weeks_evaluated: myUser.weeks_evaluated || myPerfsList.length || 0,
         trend: myUser.trend || 'stable',
         perf_status: myUser.perf_status || 'VERDE'
       },
