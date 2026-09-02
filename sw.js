@@ -1,8 +1,8 @@
 // Service Worker - PARAGUAY-FFAA | METALSTORM PWA
 // ⬇️ BUMP DE VERSIÓN EN CADA DEPLOY
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.3.0';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.3.1';
 
-// ✅ SOLO assets versionados (NO index.html ni /)
+// ✅ Assets versionados
 const STATIC_ASSETS = [
   '/css/global.css',
   '/css/components.css',
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   '/js/auth.js',
   '/js/api.js',
   '/js/views.js',
+  '/js/performance.js',
   '/js/profile.js',
   '/js/settings.js',
   '/js/main.js',

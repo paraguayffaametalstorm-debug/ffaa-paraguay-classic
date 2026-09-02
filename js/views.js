@@ -226,7 +226,12 @@ function loadViewData(viewId) {
       break;
       
     case 'ownerPanelView':
-      if (typeof loadOwnerPanel === 'function') loadOwnerPanel();
+      loadOwnerPanel();
+      break;
+      
+    case 'help':
+    case 'helpView':
+      loadHelpView();
       break;
       
     default:
@@ -1594,5 +1599,524 @@ function updateViewStats() {
       break;
     case 'ownerPanelView':      loadOwnerPanel();        break;
     case 'exportView':          loadExportView();        break;
+    case 'helpView':            loadHelpView();          break;
   }
 }
+
+// ============================================================
+// ========== 1. BIBLIOTECA DE NORMATIVAS & DIRECTIVAS ==========
+// ============================================================
+let allNormativasCache = [];
+
+async function loadNormativas() {
+  const container = document.getElementById('normativasList');
+  if (container) container.innerHTML = '<div class="loading-text">Cargando normativas oficiales...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/normativas`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Error al consultar biblioteca de normativas');
+    const data = await res.json();
+    allNormativasCache = data.normativas || (Array.isArray(data) ? data : []);
+    renderNormativas(allNormativasCache);
+  } catch (err) {
+    console.error('Error en loadNormativas:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="card" style="text-align:center;padding:2rem;color:#f87171;">
+          <p>⚠️ No se pudieron cargar las normativas del servidor.</p>
+          <button onclick="loadNormativas()" class="btn-secondary" style="margin-top:10px;">🔄 Reintentar</button>
+        </div>
+      `;
+    }
+  }
+}
+
+function renderNormativas(list) {
+  const container = document.getElementById('normativasList');
+  const countEl = document.getElementById('normativasCount');
+  if (!container) return;
+
+  if (countEl) countEl.textContent = `Mostrando ${list.length} directiva(s) oficial(es)`;
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="text-align:center;padding:2.5rem;color:#94a3b8;">
+        <p style="font-size:1.1rem;margin-bottom:0.5rem;">📚 No se encontraron normativas con los filtros actuales</p>
+        <p style="font-size:0.85rem;">Intenta limpiar los filtros de búsqueda.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(n => {
+    const catIcons = {
+      'FUNDAMENTAL': '🏛️', 'OPERACIONAL': '⚙️', 'DISCIPLINARIA': '⚖️',
+      'ADMINISTRATIVA': '📋', 'TECNICA': '🔧', 'OPERACIONES': '✈️', 'PERSONAL': '👥'
+    };
+    const icon = catIcons[n.categoria] || '📄';
+    return `
+      <div class="card" style="background:rgba(15,23,42,0.65);border:1px solid rgba(148,163,184,0.15);padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+          <div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;padding:2px 8px;border-radius:4px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">
+              ${escapeHTML(n.codigo || 'NOR-000')}
+            </span>
+            <h3 style="margin-top:6px;font-size:1.1rem;color:#f8fafc;">${icon} ${escapeHTML(n.titulo || 'Sin título')}</h3>
+          </div>
+          <span style="font-size:0.75rem;padding:3px 10px;border-radius:12px;background:rgba(212,175,55,0.15);color:#d4af37;border:1px solid rgba(212,175,55,0.3);">
+            ${escapeHTML(n.tipo_documento || 'DIRECTIVA')}
+          </span>
+        </div>
+        <p style="font-size:0.9rem;color:#cbd5e1;line-height:1.5;margin-bottom:12px;">
+          ${escapeHTML(n.resumen || n.descripcion || 'Sin descripción disponible')}
+        </p>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:0.8rem;color:#94a3b8;border-top:1px solid rgba(148,163,184,0.1);padding-top:10px;">
+          <div>
+            <span>📅 Vigor: ${n.fecha_entrada_vigor ? new Date(n.fecha_entrada_vigor).toLocaleDateString() : 'Inmediato'}</span>
+            <span style="margin-left:12px;">🔒 Confidencialidad: <strong>${escapeHTML(n.nivel_confidencialidad || 'PUBLICO')}</strong></span>
+          </div>
+          ${n.file_name ? `
+            <button onclick="downloadNormativa(${n.id})" class="btn-secondary" style="padding:4px 10px;font-size:0.75rem;">
+              📥 Descargar (${escapeHTML(n.file_name)})
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function applyNormativasFilters() {
+  const search = (document.getElementById('normativasSearch')?.value || '').toLowerCase();
+  const cat = document.getElementById('categoriaFilter')?.value || '';
+  const tipo = document.getElementById('tipoDocFilter')?.value || '';
+  const orden = document.getElementById('ordenFilter')?.value || 'recientes';
+
+  let filtered = allNormativasCache.filter(n => {
+    const text = `${n.titulo || ''} ${n.codigo || ''} ${n.resumen || ''}`.toLowerCase();
+    if (search && !text.includes(search)) return false;
+    if (cat && n.categoria !== cat) return false;
+    if (tipo && n.tipo_documento !== tipo) return false;
+    return true;
+  });
+
+  if (orden === 'alfabetico') {
+    filtered.sort((a, b) => (a.titulo || '').localeCompare(b.titulo || ''));
+  } else if (orden === 'antiguos') {
+    filtered.sort((a, b) => new Date(a.fecha_entrada_vigor || 0) - new Date(b.fecha_entrada_vigor || 0));
+  } else {
+    filtered.sort((a, b) => new Date(b.fecha_entrada_vigor || 0) - new Date(a.fecha_entrada_vigor || 0));
+  }
+
+  renderNormativas(filtered);
+}
+
+function resetNormativasFilters() {
+  ['normativasSearch', 'categoriaFilter', 'tipoDocFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const orden = document.getElementById('ordenFilter');
+  if (orden) orden.value = 'recientes';
+  renderNormativas(allNormativasCache);
+}
+
+// ============================================================
+// ========== 2. PANEL DE COMANDANCIA & ADMINISTRACIÓN ==========
+// ============================================================
+let adminMembersCache = [];
+
+async function loadAdminPanel() {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
+    let members = [];
+    if (res.ok) {
+      const mData = await res.json();
+      members = mData.members || mData.activeMembers || (Array.isArray(mData) ? mData : []);
+    } else {
+      const fallback = await fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() });
+      if (fallback.ok) {
+        const fbData = await fallback.json();
+        members = fbData.members || (Array.isArray(fbData) ? fbData : []);
+      }
+    }
+
+    adminMembersCache = members;
+    renderAdminStats(members);
+    renderPilotsByStatus(members);
+    renderAdminMembersTable(members);
+
+    const updateEl = document.getElementById('lastUpdate');
+    if (updateEl) updateEl.textContent = new Date().toLocaleTimeString();
+
+  } catch (err) {
+    console.error('Error cargando admin panel:', err);
+    showToast('❌ Error al cargar panel de administración', 'error');
+  }
+}
+
+function renderAdminStats(members) {
+  const totalEl = document.getElementById('totalMembers');
+  const avgEl = document.getElementById('adminAvgTokens');
+  const riskEl = document.getElementById('atRiskMembers');
+
+  if (totalEl) totalEl.textContent = members.length;
+  if (members.length > 0) {
+    const sum = members.reduce((s, m) => s + (Number(m.avg_tokens) || 0), 0);
+    const avg = (sum / members.length).toFixed(1);
+    const atRisk = members.filter(m => (m.perf_status === 'ROJO' || m.perf_status === 'NEGRO')).length;
+
+    if (avgEl) avgEl.textContent = `${avg} tokens`;
+    if (riskEl) riskEl.textContent = atRisk;
+  }
+}
+
+function renderPilotsByStatus(members) {
+  const container = document.getElementById('pilotsByStatus');
+  if (!container) return;
+
+  const counts = { VERDE: 0, NARANJA: 0, ROJO: 0, NEGRO: 0 };
+  members.forEach(m => {
+    const st = (m.perf_status || 'NEGRO').toUpperCase();
+    if (counts[st] !== undefined) counts[st]++;
+    else counts.NEGRO++;
+  });
+
+  const total = Math.max(1, members.length);
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">
+      <div style="background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;padding:12px;text-align:center;">
+        <span style="color:#2ecc71;font-weight:700;font-size:1.3rem;">${counts.VERDE}</span>
+        <div style="font-size:0.75rem;color:#a0aec0;">VERDE (${Math.round((counts.VERDE/total)*100)}%)</div>
+      </div>
+      <div style="background:rgba(243,156,18,0.1);border:1px solid #f39c12;border-radius:8px;padding:12px;text-align:center;">
+        <span style="color:#f39c12;font-weight:700;font-size:1.3rem;">${counts.NARANJA}</span>
+        <div style="font-size:0.75rem;color:#a0aec0;">NARANJA (${Math.round((counts.NARANJA/total)*100)}%)</div>
+      </div>
+      <div style="background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;padding:12px;text-align:center;">
+        <span style="color:#e74c3c;font-weight:700;font-size:1.3rem;">${counts.ROJO}</span>
+        <div style="font-size:0.75rem;color:#a0aec0;">ROJO (${Math.round((counts.ROJO/total)*100)}%)</div>
+      </div>
+      <div style="background:rgba(148,163,184,0.1);border:1px solid #64748b;border-radius:8px;padding:12px;text-align:center;">
+        <span style="color:#94a3b8;font-weight:700;font-size:1.3rem;">${counts.NEGRO}</span>
+        <div style="font-size:0.75rem;color:#a0aec0;">NEGRO (${Math.round((counts.NEGRO/total)*100)}%)</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminMembersTable(members) {
+  const container = document.getElementById('membersSectionBody');
+  if (!container) return;
+
+  const existingTable = document.getElementById('adminMembersTable');
+  if (existingTable) existingTable.remove();
+
+  const tableDiv = document.createElement('div');
+  tableDiv.id = 'adminMembersTable';
+  tableDiv.style.marginTop = '15px';
+  tableDiv.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table class="data-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
+            <th style="padding:8px;">Piloto / Nick</th>
+            <th style="padding:8px;">Email</th>
+            <th style="padding:8px;">Rol</th>
+            <th style="padding:8px;">Estado</th>
+            <th style="padding:8px;">Promedio</th>
+            <th style="padding:8px;text-align:center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(m => `
+            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
+              <td style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(m.nick || '-')}</td>
+              <td style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
+              <td style="padding:8px;"><span class="role-badge role-${m.role || 'MIEMBRO'}">${escapeHTML(m.role || 'MIEMBRO')}</span></td>
+              <td style="padding:8px;"><span class="status-badge status-${(m.perf_status || 'VERDE').toLowerCase()}">${escapeHTML(m.perf_status || 'VERDE')}</span></td>
+              <td style="padding:8px;font-family:'JetBrains Mono',monospace;">${m.avg_tokens || 0}</td>
+              <td style="padding:8px;text-align:center;">
+                <button onclick="resetPilotPassword(${m.user_id || m.id}, '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.75rem;" title="Resetear contraseña">🔑 Clave</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  container.appendChild(tableDiv);
+}
+
+async function resetPilotPassword(userId, nick) {
+  if (!confirm(`¿Deseas resetear la contraseña de ${nick}?`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/reset-password`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Error al resetear');
+    alert(`✅ Contraseña de ${nick} reseteada.\n\nClave temporal: ${data.temporaryPassword}\n\nIndícasela al piloto para que inicie sesión.`);
+  } catch (err) {
+    console.error('Error reseteando password:', err);
+    showToast('❌ ' + err.message, 'error');
+  }
+}
+
+function filterMembers() {
+  const search = (document.getElementById('memberSearch')?.value || '').toLowerCase();
+  const role = document.getElementById('roleFilter')?.value || '';
+  const perfStatus = document.getElementById('perfStatusFilter')?.value || '';
+  const squadStatus = document.getElementById('squadStatusFilter')?.value || '';
+
+  const filtered = adminMembersCache.filter(m => {
+    const nick = (m.nick || '').toLowerCase();
+    const email = (m.email || '').toLowerCase();
+    if (search && !nick.includes(search) && !email.includes(search)) return false;
+    if (role && m.role !== role) return false;
+    if (perfStatus && m.perf_status !== perfStatus) return false;
+    if (squadStatus && (m.squad_status || m.status) !== squadStatus) return false;
+    return true;
+  });
+
+  renderAdminMembersTable(filtered);
+}
+
+function resetMemberFilters() {
+  ['memberSearch', 'roleFilter', 'weeksFilter', 'perfStatusFilter', 'squadStatusFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderAdminMembersTable(adminMembersCache);
+}
+
+function toggleMembersSection() {
+  const body = document.getElementById('membersSectionBody');
+  const icon = document.getElementById('membersSectionToggleIcon');
+  if (body) {
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    if (icon) icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
+  }
+}
+
+function refreshAdminStats() {
+  loadAdminPanel();
+}
+
+// ============================================================
+// ========== 3. RENDIMIENTOS GLOBALES DEL ESCUADRÓN ==========
+// ============================================================
+let allPerformancesCache = [];
+
+async function loadAllPerformances() {
+  const tableEl = document.getElementById('allPerformancesTable');
+  if (tableEl) tableEl.innerHTML = '<div class="loading-text">Cargando rendimientos globales...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/all-performances`, { headers: getAuthHeaders() });
+    let performances = [];
+    if (res.ok) {
+      const data = await res.json();
+      performances = data.performances || (Array.isArray(data) ? data : []);
+    } else {
+      const fallback = await fetch(`${API_BASE}/api/performances/my-history`, { headers: getAuthHeaders() });
+      if (fallback.ok) {
+        const fbData = await fallback.json();
+        performances = fbData.history || fbData.performances || (Array.isArray(fbData) ? fbData : []);
+      }
+    }
+
+    allPerformancesCache = performances;
+    renderAllPerformances(allPerformancesCache);
+    updateAllPerformancesStats(allPerformancesCache);
+
+  } catch (err) {
+    console.error('Error en loadAllPerformances:', err);
+    if (tableEl) tableEl.innerHTML = '<p style="color:#f87171;text-align:center;padding:2rem;">⚠️ Error cargando rendimientos globales</p>';
+  }
+}
+
+function updateAllPerformancesStats(list) {
+  const totalEl = document.getElementById('totalPerformances');
+  const avgEl = document.getElementById('avgPerfTokens');
+  const maxEl = document.getElementById('maxPerfTokens');
+  const verdeEl = document.getElementById('verdeCount');
+
+  if (totalEl) totalEl.textContent = list.length;
+  if (list.length > 0) {
+    const sum = list.reduce((s, p) => s + (Number(p.tokens) || 0), 0);
+    const avg = (sum / list.length).toFixed(1);
+    const max = Math.max(...list.map(p => Number(p.tokens) || 0));
+    const verde = list.filter(p => p.status === 'VERDE').length;
+
+    if (avgEl) avgEl.textContent = avg;
+    if (maxEl) maxEl.textContent = max;
+    if (verdeEl) verdeEl.textContent = verde;
+  }
+}
+
+function renderAllPerformances(list) {
+  const tableEl = document.getElementById('allPerformancesTable');
+  if (!tableEl) return;
+
+  if (list.length === 0) {
+    tableEl.innerHTML = '<div style="text-align:center;padding:2rem;color:#94a3b8;">No se encontraron registros de rendimiento</div>';
+    return;
+  }
+
+  tableEl.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table class="data-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
+            <th style="padding:8px;">Piloto</th>
+            <th style="padding:8px;">Evento</th>
+            <th style="padding:8px;">Tokens</th>
+            <th style="padding:8px;">Días</th>
+            <th style="padding:8px;">Grupo</th>
+            <th style="padding:8px;">Estado</th>
+            <th style="padding:8px;">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(p => `
+            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
+              <td style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(p.nick || 'Piloto')}</td>
+              <td style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(p.event_id || '-')}</td>
+              <td style="padding:8px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">${p.tokens ?? 0}</td>
+              <td style="padding:8px;">${p.days_connected ?? 0}</td>
+              <td style="padding:8px;">${p.flew_in_group ? '✅ Sí' : '❌ No'}</td>
+              <td style="padding:8px;"><span class="status-badge status-${(p.status || 'VERDE').toLowerCase()}">${p.status || 'VERDE'}</span></td>
+              <td style="padding:8px;font-size:0.75rem;color:#94a3b8;">${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function filterAllPerformances() {
+  const search = (document.getElementById('allPerfSearch')?.value || '').toLowerCase();
+  const role = document.getElementById('allPerfRoleFilter')?.value || '';
+  const minTok = parseInt(document.getElementById('minTokensFilter')?.value) || 0;
+  const maxTok = parseInt(document.getElementById('maxTokensFilter')?.value) || 999;
+  const status = document.getElementById('statusFilter')?.value || '';
+  const eventId = (document.getElementById('eventIdFilter')?.value || '').toLowerCase();
+
+  const filtered = allPerformancesCache.filter(p => {
+    const nick = (p.nick || '').toLowerCase();
+    const ev = (p.event_id || '').toLowerCase();
+    if (search && !nick.includes(search)) return false;
+    if (role && p.role !== role) return false;
+    if (p.tokens < minTok || p.tokens > maxTok) return false;
+    if (status && p.status !== status) return false;
+    if (eventId && !ev.includes(eventId)) return false;
+    return true;
+  });
+
+  renderAllPerformances(filtered);
+  updateAllPerformancesStats(filtered);
+}
+
+function resetAllPerfFilters() {
+  ['allPerfSearch', 'allPerfRoleFilter', 'minTokensFilter', 'maxTokensFilter', 'statusFilter', 'eventIdFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderAllPerformances(allPerformancesCache);
+  updateAllPerformancesStats(allPerformancesCache);
+}
+
+function exportAllPerformances() {
+  window.open(`${API_BASE}/api/admin/export-performances`, '_blank');
+}
+
+// ============================================================
+// ========== 4. AYUDA, DOCTRINA Y MODAL DE SOPORTE ==========
+// ============================================================
+function loadHelpView() {
+  const modal = document.getElementById('helpModal');
+  if (modal) {
+    showModal('helpModal');
+  } else {
+    showToast('📖 Consulta el manual operativo y biblioteca de normativas', 'info');
+  }
+}
+
+function showHelpModal() {
+  showModal('helpModal');
+}
+
+function closeHelpModal() {
+  closeModal('helpModal');
+}
+
+// ============================================================
+// ========== 5. EXPORTACIÓN & OWNER PANEL ==========
+// ============================================================
+function loadExportView() {
+  console.log('[METALSTORM] Vista de exportación cargada');
+}
+
+async function loadOwnerPanel() {
+  console.log('[METALSTORM] Panel de Owner cargado');
+}
+
+// ============================================================
+// ✅ EXPOSICIÓN GLOBAL EN WINDOW PARA TODOS LOS HANDLERS HTML
+// ============================================================
+window.showView = showView;
+window.loadViewData = loadViewData;
+window.loadDashboardData = loadDashboardData;
+window.loadNormativas = loadNormativas;
+window.renderNormativas = renderNormativas;
+window.applyNormativasFilters = applyNormativasFilters;
+window.resetNormativasFilters = resetNormativasFilters;
+window.loadAdminPanel = loadAdminPanel;
+window.renderAdminStats = renderAdminStats;
+window.renderPilotsByStatus = renderPilotsByStatus;
+window.renderAdminMembersTable = renderAdminMembersTable;
+window.resetPilotPassword = resetPilotPassword;
+window.filterMembers = filterMembers;
+window.resetMemberFilters = resetMemberFilters;
+window.toggleMembersSection = toggleMembersSection;
+window.refreshAdminStats = refreshAdminStats;
+window.loadAllPerformances = loadAllPerformances;
+window.renderAllPerformances = renderAllPerformances;
+window.updateAllPerformancesStats = updateAllPerformancesStats;
+window.filterAllPerformances = filterAllPerformances;
+window.resetAllPerfFilters = resetAllPerfFilters;
+window.exportAllPerformances = exportAllPerformances;
+window.loadHelpView = loadHelpView;
+window.showHelpModal = showHelpModal;
+window.closeHelpModal = closeHelpModal;
+window.loadExportView = loadExportView;
+window.loadOwnerPanel = loadOwnerPanel;
+window.loadHistorial = loadHistorial;
+window.displayHistorial = displayHistorial;
+window.loadPlanesView = loadPlanesView;
+window.loadUserPlanes = loadUserPlanes;
+window.loadPersonalProfile = loadPersonalProfile;
+window.loadPerformanceForm = loadPerformanceForm;
+window.loadActiveMembers = loadActiveMembers;
+window.loadOpenEvents = loadOpenEvents;
+window.showModal = showModal;
+window.closeModal = closeModal;
+window.showToast = showToast;
+window.getAuthHeaders = getAuthHeaders;
+window.refreshDashboard = refreshDashboard;
+window.refreshCurrentView = refreshCurrentView;
+window.updateViewStats = updateViewStats;
+window.selectDays = selectDays;
+window.clampTokens = clampTokens;
+window.onTargetPilotChange = onTargetPilotChange;
+window.adaptFormToEventType = adaptFormToEventType;
+window.exportPlanesXLSX = exportPlanesXLSX;
+window.toggleMobileDrawer = toggleMobileDrawer;
+window.openMobileDrawer = openMobileDrawer;
+window.closeMobileDrawer = closeMobileDrawer;
+
+console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
