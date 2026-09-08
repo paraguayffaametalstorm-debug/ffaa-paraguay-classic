@@ -1,96 +1,172 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.3.2).**
+
+---
+
 ## 1. Visión General de la Arquitectura
 
-El sistema está estructurado bajo un modelo de arquitectura **Cliente-Servidor Full-Stack desacoplado y orientado a servicios RESTful**. La capa de presentación opera como una Single Page Application (SPA) modular y ligera sin frameworks pesados, optimizada para dispositivos móviles y escritorio.
+El sistema táctico **PARAGUAY-FFAA | METALSTORM** implementa un modelo de arquitectura **Cliente-Servidor Full-Stack desacoplado y orientado a servicios RESTful**, optimizado para el entorno militar del escuadrón `[PRY]`. 
+
+La capa de presentación opera como una Single Page Application (SPA) táctica modular y ligera sin frameworks pesados, con soporte PWA offline-first. El backend está construido sobre **Express.js v5.2.1** ejecutándose en un contenedor optimizado **Node.js 22 Alpine**, respaldado por **Supabase (PostgreSQL Cloud)** y un motor de resiliencia con degradación elegante (*in-memory fallback*).
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                       CLIENTE (SPA)                         │
-│  index.html · CSS Design Tokens · JS Modular (views/auth)   │
-│  Service Worker PWA (Cache-First / Offline Fallback)        │
-└──────────────────────────────┬──────────────────────────────┘
-                               │ HTTPS / JSON (Bearer JWT)
-┌──────────────────────────────▼──────────────────────────────┐
-│                    API GATEWAY / EXPRESS                    │
-│  - Rate Limiting (express-rate-limit)                       │
-│  - Security Headers (Helmet)                                │
-│  - CORS Policy (Whitelist dinamica)                         │
-│  - Auth Middleware (JWT Verify & RBAC Gatekeepers)          │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-       ┌───────────────────────┴───────────────────────┐
-       ▼                                               ▼
-┌──────────────────────────────┐        ┌──────────────────────────────┐
-│    CONTROLADORES Y RUTAS     │        │     VALIDACIÓN Y SEGURIDAD   │
-│  /api/auth     /api/admin    │        │  - Zod Input Schemas         │
-│  /api/events   /api/planes   │        │  - Bcrypt (10 rounds)        │
-│  /api/performances           │        │  - CSV Injection Sanitizer   │
-└──────────────┬───────────────┘        └──────────────────────────────┘
-               │
-┌──────────────▼──────────────────────────────────────────────┐
-│                   PERSISTENCIA DE DATOS                     │
-│  - Supabase (PostgreSQL Cloud)                              │
-│  - Motor de Memoria Resiliente (Fallback in-memory)         │
-└─────────────────────────────────────────────────────────────┘
+                  ┌────────────────────────────────────────┐
+                  │    NAVEGADOR / PWA CLIENT (v3.3.2)     │
+                  │  - Vanilla ES6+ SPA                    │
+                  │  - Dynamic Component Loader            │
+                  │  - Service Worker (Cache-First)        │
+                  │  - Design Tokens / Tactical CSS        │
+                  └──────────────────┬─────────────────────┘
+                                     │ HTTPS / WSS / JWT
+                                     ▼
+                  ┌────────────────────────────────────────┐
+                  │       PROXY / REVERSE PROXY            │
+                  │  - Fly.io Edge / São Paulo (gru)       │
+                  │  - SSL Termination / Port 3000         │
+                  └──────────────────┬─────────────────────┘
+                                     │ HTTP Request
+                                     ▼
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │                 NÚCLEO BACKEND (Node.js 22 / Express 5)                │
+  │                                                                        │
+  │  [Rate Limiters] ──► [Helmet / Security] ──► [Compression / JSON Parser]│
+  │                                                                        │
+  │  [Rutas Modulares]                                                     │
+  │  ├── /health & /api/health (Probes & Telemetry)                        │
+  │  ├── /api/auth (Login, Verify, Reset, token_version)                   │
+  │  ├── /api/dashboard & /api/events (C4ISR Telemetry)                    │
+  │  ├── /api/performances (Tokens, Semáforo Militar, CSV Sanitizado)      │
+  │  ├── /api/planes (Hangar, Starform Upgrades 2.0)                       │
+  │  ├── /api/admin (Cuotas RBAC, Carga Masiva, Auditoría)                 │
+  │  ├── /api/owner (Auditoría C4ISR, Backups, Purga)                      │
+  │  └── /api/presence, /api/profile, /api/settings, /api/normativas       │
+  │                                                                        │
+  │  [Middlewares Centrales]                                               │
+  │  ├── requireAuth (Bearer JWT + token_version validation)               │
+  │  ├── requireRole (OWNER / ADMIN / VETERANO / MIEMBRO)                  │
+  │  └── errorHandler (JSON Responses estructuradas)                       │
+  └──────────────────┬─────────────────────────────────┬───────────────────┘
+                     │                                 │
+     Primary Storage │                                 │ Fallback Storage
+                     ▼                                 ▼
+       ┌────────────────────────────┐    ┌───────────────────────────┐
+       │   SUPABASE POSTGRESQL      │    │    IN-MEMORY FALLBACK     │
+       │ - Users & Roles (RBAC)     │    │ - Volatile State Store    │
+       │ - Performances & Events    │    │ - Default Datasets        │
+       │ - Starform Upgrades 2.0    │    │ - Graceful Degradation    │
+       │ - Audit Logs & Security    │    └───────────────────────────┘
+       └────────────────────────────┘
 ```
 
 ---
 
 ## 2. Capas del Sistema
 
-### 2.1 Capa de Presentación (Frontend)
-- **`index.html`:** Contenedor maestro con meta-tags PWA, enlaces a Google Fonts, contenedor de notificaciones toast y barra de navegación inferior para móviles.
-- **`/components/*.html`:** Vistas modulares inyectadas dinámicamente (`dashboard.html`, `admin-panel.html`, `profile-view.html`, `all-performances.html`, `planes-view.html`, `normativas-view.html`, etc.).
-- **`/css/global.css` & `/css/components.css`:** Sistema de diseño táctico militar basado en tokens CSS (`--pry-red`, `--pry-blue`, `--pry-gold`, `--bg-dark`).
-- **`/js/`:** Lógica modular en JavaScript vanilla:
-  - `auth.js`: Manejo de autenticación, JWT en localStorage, refresh y temporizador de sesión.
-  - `views.js`: Orquestador de vistas, carga dinámica de componentes, gráficos SVG y tablas.
-  - `api.js`: Wrapper de peticiones HTTP con inyección automática de cabeceras de autorización.
-  - `profile.js`, `planes.js`, `normativas.js`: Módulos de dominio específico.
+### 2.1 Capa de Presentación (Frontend SPA)
+- **`index.html`:** Contenedor maestro con meta-tags PWA, enlaces a tipografía militar (`Rajdhani`, `Inter`, `JetBrains Mono`), contenedor de notificaciones toast, barra de navegación táctica y modales globales.
+- **`/components/*.html`:** 17 vistas y modales inyectados dinámicamente según el estado del usuario (`dashboard.html`, `admin-panel.html`, `owner-panel.html`, `planes-view.html`, `performance-form.html`, `all-performances.html`, `performance-export.html`, etc.).
+- **`/css/`:** Sistema de diseño militar modular:
+  - `global.css`: Variables CSS de identidad nacional y militar (`--pry-red: #D52B1E`, `--pry-blue: #0038A8`, `--bg-dark`, `--text-main`).
+  - `tactical-design.css`: Bordes biselados, tipografía Rajdhani, tarjetas de radar y acentos de combate.
+  - `components.css`: Estilos para botones de acción rápida, badges de rango y tablas.
+  - `views.css`: Moduladores de diseño específicos de cada vista.
+- **`/js/`:** Lógica modular en JavaScript Vanilla (ES6+):
+  - `auth.js`: Gestión de tokens JWT en `localStorage`, control de expiración y advertencias de sesión (`session-warning.html`).
+  - `views.js`: Orquestador de vistas y enrutador dinámico en el cliente.
+  - `api.js`: Cliente HTTP centralizado que inyecta automáticamente `Authorization: Bearer <token>`.
+  - `performance.js`: Lógica de validación previa y cálculos interactivos del semáforo.
+  - `profile.js`: Expediente militar y cambio de clave forzado/voluntario.
+  - `tour.js`: Guía táctica interactiva para el primer ingreso de reclutas.
 
 ### 2.2 Capa de Servidor (Backend Express)
-- **`server.js`:** Punto de entrada del servidor Express. Configura middlewares globales, política CORS restringida, rate limiting y monta las rutas.
-- **`/src/routes/`:** Enrutadores REST segregados por recurso (`auth.routes.js`, `performances.routes.js`, `admin.routes.js`, `owner.routes.js`, `planes.routes.js`, etc.).
+- **`server.js`:** Entrada principal. Configura:
+  - **Rate Limiters:** `authLimiter` (30 req / 15m), `apiLimiter` (600 req / 15m), `bulkLimiter` (20 req / 15m).
+  - **Seguridad:** `helmet()` adaptado para permitir renderizado en iframe y PWA.
+  - **Compresión:** Gzip / Deflate vía `compression()`.
+  - **CORS:** Orígenes controlados por lista blanca (`ALLOWED_ORIGINS` o `localhost, fly.dev`).
+  - **Probe:** Endpoint `GET /health` de respuesta instantánea en texto plano para los probes de orquestación de contenedores.
+- **`/src/routes/`:** Enrutadores modulares segregados por responsabilidad funcional.
 - **`/src/middlewares/`:**
-  - `auth.js`: Middleware `requireAuth` para verificar tokens JWT firmados y `requireRole(...roles)` para control de acceso basado en roles (RBAC).
-  - `rateLimiter.js`: Limitadores de tráfico para proteger contra ataques de fuerza bruta y denegación de servicio.
-  - `errorHandler.js`: Manejador centralizado de excepciones con respuestas JSON normalizadas.
-- **`/src/controllers/`:** Controladores que ejecutan la lógica de negocio y cálculo de estados de combate (`VERDE`, `NARANJA`, `ROJO`, `NEGRO`).
-
-### 2.3 Capa de Datos y Persistencia
-- **`src/db/supabase.js`:** Cliente de conexión a Supabase PostgreSQL.
-- **Estrategia Híbrida de Fallback:** Si las credenciales de Supabase no están configuradas en el entorno local, el sistema activa automáticamente un almacén en memoria precargado con datos del escuadrón, garantizando alta disponibilidad continua.
+  - `auth.js`: Validación estricta de firma JWT y comparación de `token_version` con la base de datos para prevenir sesiones fantasma.
+  - `requireRole`: Validador de rangos (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`).
+  - `errorHandler.js`: Captura centralizada de excepciones que asegura respuestas estructuradas en JSON.
 
 ---
 
-## 3. Modelo de Dominio y Flujo de Datos
+## 3. Modelo de Dominio y Flujo Operacional de Rendimiento
 
 ```
-[Usuario Piloto] ──▶ Realiza Vuelo Semanal ──▶ Registra Tokens en Formulario
-                                                        │
-                                                        ▼
-                                                [Validador Zod]
-                                             (tokens <= 200/250, dias <= 7)
-                                                        │
-                                                        ▼
-                                            [Cálculo de Estado Militar]
-                                          (>=175: VERDE, >=130: NARANJA, ...)
-                                                        │
-                                                        ▼
-                                            [Persistencia en DB]
-                                                        │
-                                                        ▼
-                                       [Actualización de Métricas & Top 5]
+[Piloto en Combate] ──▶ Finaliza Evento Semanal ──▶ Registra Tokens y Días
+                                                            │
+                                                            ▼
+                                                    [Validación Zod]
+                                             (tokens: 0..300, dias: 0..7)
+                                                            │
+                                                            ▼
+                                                [Cálculo Semáforo Militar]
+                                                ├── VERDE:   tokens >= 175 && dias >= 4
+                                                ├── NARANJA: tokens >= 130 && dias >= 3
+                                                ├── ROJO:    tokens >= 100 && dias >= 2
+                                                └── NEGRO:   tokens < 100 || dias < 2
+                                                            │
+                                                            ▼
+                                                [Persistencia Transaccional]
+                                                (Supabase + Registro Audit)
+                                                            │
+                                                            ▼
+                                                [Actualización de Promedios]
+                                                (Top 5, Semáforo, Dashboard)
 ```
 
 ---
 
-## 4. Estrategia de Seguridad
+## 4. Starform Upgrades 2.0 (Hangar Militar)
 
-1. **Autenticación Fuerte:** Passwords hasheadas con `bcryptjs` (cost factor 10).
-2. **Tokens JWT:** Firmados con clave secreta (`JWT_SECRET`) y expiración configurable.
-3. **Control de Acceso (RBAC):** Restricción de rutas críticas en backend mediante validación de roles (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`).
-4. **Prevención XSS:** Función `escapeHTML()` en frontend para toda interpolación de datos dinámicos en el DOM.
-5. **Prevención de Inyección CSV:** Las fórmulas que comiencen con `=`, `+`, `-`, `@` son prefijadas con comilla simple (`'`).
-6. **Políticas CORS:** Solo se permiten orígenes autorizados especificados en `CORS_ORIGIN`.
+El sistema soporta la actualización de subsistemas mecánicos y armamentísticos de combate aéreo introducidos en la versión 3.2.0:
+
+### Subsistemas Mejorables (Niveles 0 a 8)
+1. **Fuselaje (`nivel_fuselaje`):** Resistencia al daño, reducción de firma de radar e integridad física.
+2. **Motor (`nivel_motor`):** Velocidad máxima, aceleración con posquemador y maniobrabilidad a baja cota.
+3. **Aviónica (`nivel_avionica`):** Alcance del radar de barrido electrónico (AESA), adquisición de blancos y contramedidas (ECM).
+4. **Armas (`nivel_armas`):** Cadencia y letalidad de cañones rotativos y misiles guiados.
+
+### Economía y Costos de Mejoras
+El endpoint `PUT /api/planes/:id/system` valida el consumo de piezas y componentes avanzados según la matriz de costos `UPGRADE_COSTS`:
+
+| Nivel Objetivo | Piezas Requeridas | Componentes Avanzados |
+|:---:|:---:|:---:|
+| **Nivel 1** | 100 | 0 |
+| **Nivel 2** | 250 | 5 |
+| **Nivel 3** | 500 | 10 |
+| **Nivel 4** | 1,000 | 25 |
+| **Nivel 5** | 2,000 | 50 |
+| **Nivel 6** | 4,000 | 100 |
+| **Nivel 7** | 8,000 | 200 |
+| **Nivel 8** | 15,000 | 500 |
+
+Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel anterior, nivel nuevo y recursos empleados.
+
+---
+
+## 5. Estrategia de Seguridad C4ISR
+
+1. **Anti-Sesión Fantasma (`token_version`):**
+   - Cada usuario posee una versión de token en base de datos (`token_version`).
+   - Al cambiar contraseña o ejecutar un reseteo administrativo, `token_version` se incrementa.
+   - Cualquier token emitido previamente es rechazado instantáneamente con código `TOKEN_VERSION_MISMATCH`.
+2. **Generación Criptosegura de Claves Temporales:**
+   - Implementada con `crypto.randomInt` nativo.
+   - Estructura `MS-XXXX-XXXX` utilizando caracteres de alta visibilidad (excluyendo `0`, `O`, `1`, `I`).
+   - Las contraseñas temporales débiles predecibles (`123456`) están formalmente prohibidas.
+   - Requiere cambio obligatorio de contraseña en el primer inicio (`must_change_password: true`).
+3. **Cuotas Jerárquicas Militares (RBAC Enforcement):**
+   - **`OWNER`:** Máximo **1**. Al promoverse un nuevo Comandante, el anterior desciende automáticamente a `ADMIN`.
+   - **`ADMIN`:** Máximo **3**. Se bloquean ascensos adicionales con error `ROLE_LIMIT_REACHED`.
+   - **`VETERANO`:** Máximo **8**. Se bloquean ascensos adicionales con error `ROLE_LIMIT_REACHED`.
+4. **Auditoría Dual:**
+   - `security_events`: Registra autenticaciones, intentos fallidos, reseteos de credenciales con IP y User-Agent.
+   - `audit_logs`: Registra modificaciones administrativas y cambios de rol.
+5. **Mitigación de CSV Formula Injection:**
+   - Función `sanitizeCSVField()` que neutraliza fórmulas maliciosas (`=`, `+`, `-`, `@`, `\t`, `%`) anteponiendo apóstrofes (`'`).
+
