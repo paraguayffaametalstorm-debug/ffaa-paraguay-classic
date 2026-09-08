@@ -1,0 +1,127 @@
+<div id="settingsView" class="view" style="display:none;">
+  <div class="view-header" style="margin-bottom:1.5rem;">
+    <h2 data-i18n="settings.title">⚙️ Configuración del Sistema</h2>
+    <p class="subtitle">Personalización de interfaz, idioma y canales de alerta</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;">
+    <!-- Visual Themes -->
+    <div class="card">
+      <h3 data-i18n="settings.theme.title">🎨 Tema Visual</h3>
+      <p style="font-size:0.85rem;color:#a0aec0;margin-bottom:1rem;" data-i18n="settings.theme.desc">
+        Seleccioná el esquema de colores de la interfaz militar.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div id="theme-card-militar" class="theme-card" onclick="selectTheme('militar')" style="cursor:pointer;padding:12px;border:2px solid var(--color-secondary,#d4af37);border-radius:8px;display:flex;justify-content:space-between;align-items:center;background:rgba(26,58,108,0.4);">
+          <div>
+            <strong>🎖️ Militar (Azul Marino & Dorado)</strong>
+            <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.theme.default">Predeterminado</div>
+          </div>
+          <span id="check-militar" class="theme-check" style="color:var(--color-secondary,#d4af37);font-weight:700;">✓</span>
+        </div>
+
+        <div id="theme-card-ops" class="theme-card" onclick="selectTheme('ops')" style="cursor:pointer;padding:12px;border:1px solid #0d3d20;border-radius:8px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,255,136,0.05);">
+          <div>
+            <strong>🟢 Operaciones Tácticas (Verde Visión Nocturna)</strong>
+            <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.theme.new">Nuevo</div>
+          </div>
+          <span id="check-ops" class="theme-check" style="color:#00ff88;font-weight:700;"></span>
+        </div>
+
+        <div id="theme-card-clasico" class="theme-card" onclick="selectTheme('clasico')" style="cursor:pointer;padding:12px;border:1px solid #d0d8e8;border-radius:8px;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.05);">
+          <div>
+            <strong>⚪ Clásico / Monitor (Azul Oficial & Rojo)</strong>
+            <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.theme.classic">Clásico</div>
+          </div>
+          <span id="check-clasico" class="theme-check" style="color:#0038A8;font-weight:700;"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Languages -->
+    <div class="card">
+      <h3 data-i18n="settings.lang.title">🌐 Idioma de la Interfaz</h3>
+      <p style="font-size:0.85rem;color:#a0aec0;margin-bottom:1rem;" data-i18n="settings.lang.desc">
+        Seleccioná el idioma de la interfaz.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div id="lang-card-es" class="lang-card" onclick="selectLang('es')" style="cursor:pointer;padding:12px;border:1px solid var(--card-border,#3a4b6c);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div><strong>🇵🇾 Español (Paraguay)</strong></div>
+          <span id="check-lang-es" class="lang-check" style="color:var(--color-secondary,#d4af37);font-weight:700;">✓</span>
+        </div>
+
+        <div id="lang-card-en" class="lang-card" onclick="selectLang('en')" style="cursor:pointer;padding:12px;border:1px solid var(--card-border,#3a4b6c);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div><strong>🇺🇸 English (US)</strong></div>
+          <span id="check-lang-en" class="lang-check" style="color:var(--color-secondary,#d4af37);font-weight:700;"></span>
+        </div>
+
+        <div id="lang-card-pt" class="lang-card" onclick="selectLang('pt')" style="cursor:pointer;padding:12px;border:1px solid var(--card-border,#3a4b6c);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div><strong>🇧🇷 Português (Brasil)</strong></div>
+          <span id="check-lang-pt" class="lang-check" style="color:var(--color-secondary,#d4af37);font-weight:700;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Settings -->
+  <div class="card" style="margin-top:1.5rem;">
+    <h3 data-i18n="settings.notif.title">🔔 Notificaciones & Alertas Operativas</h3>
+    <p style="font-size:0.85rem;color:#a0aec0;margin-bottom:1rem;" data-i18n="settings.notif.desc">
+      Configurá cómo y cuándo recibís avisos del escuadrón.
+    </p>
+
+    <div id="notifWarning" style="display:none;background:rgba(243,156,18,0.15);border:1px solid #f39c12;padding:10px 14px;border-radius:8px;margin-bottom:1rem;font-size:0.85rem;color:#f39c12;">
+      ⚠️ <span data-i18n="settings.notif.no_contact">Para recibir notificaciones, completá tu email y/o teléfono en</span>
+      <a href="#" onclick="showView('profileView');return false;" style="color:#ffffff;text-decoration:underline;font-weight:700;" data-i18n="settings.notif.profile_link">Mi Perfil</a>.
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;">
+        <input type="checkbox" id="notif_email" onchange="updateNotifState()" style="width:18px;height:18px;" />
+        <div>
+          <strong data-i18n="settings.notif.email">Email</strong>
+          <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.notif.email_desc">Alertas de estado, recordatorios y anuncios</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;">
+        <input type="checkbox" id="notif_whatsapp" onchange="updateNotifState()" style="width:18px;height:18px;" />
+        <div>
+          <strong data-i18n="settings.notif.whatsapp">WhatsApp</strong>
+          <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.notif.whatsapp_desc">Mensajes para cambios críticos de estado</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;">
+        <input type="checkbox" id="notif_status" onchange="updateNotifState()" checked style="width:18px;height:18px;" />
+        <div>
+          <strong data-i18n="settings.notif.status_alert">Alerta de cambio de estado</strong>
+          <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.notif.status_alert_desc">Aviso inmediato si tu estado cambia a ROJO o NEGRO</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;">
+        <input type="checkbox" id="notif_reminder" onchange="updateNotifState()" checked style="width:18px;height:18px;" />
+        <div>
+          <strong data-i18n="settings.notif.reminder">Recordatorio semanal</strong>
+          <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.notif.reminder_desc">Aviso los miércoles para ingresar rendimiento</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:rgba(0,0,0,0.2);padding:10px;border-radius:6px;">
+        <input type="checkbox" id="notif_announcements" onchange="updateNotifState()" checked style="width:18px;height:18px;" />
+        <div>
+          <strong data-i18n="settings.notif.announcements">Anuncios del escuadrón</strong>
+          <div style="font-size:0.75rem;color:#a0aec0;" data-i18n="settings.notif.announcements_desc">Novedades, eventos y comunicados oficiales</div>
+        </div>
+      </label>
+    </div>
+
+    <div style="margin-top:1.5rem;display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="saveSettings()" class="btn-primary" data-i18n="settings.save">💾 Guardar Configuración</button>
+      <button onclick="resetSettings()" class="btn-secondary" data-i18n="settings.reset">🔄 Restaurar predeterminados</button>
+    </div>
+  </div>
+</div>
