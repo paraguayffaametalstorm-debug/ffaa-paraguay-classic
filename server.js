@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { ENV } from './src/config/env.js';
 import { apiLimiter } from './src/middlewares/rateLimiter.js';
 import { errorHandler } from './src/middlewares/errorHandler.js';
+import passport, { configurePassport } from './src/config/passport.js';
 
 // Route imports
 import authRoutes from './src/routes/auth.routes.js';
@@ -35,6 +36,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Initialize Passport Google OAuth
+configurePassport();
+app.use(passport.initialize());
 
 // Trust proxy for reverse proxies (Fly.io, Cloud Run, Nginx)
 app.set('trust proxy', 1);
@@ -160,6 +165,19 @@ app.use(
     }
   })
 );
+
+// Explicit routes for Tactical Static Pages
+app.get('/reset-password', (req, res) => {
+  res.sendFile(path.join(__dirname, 'reset-password.html'));
+});
+
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(__dirname, 'privacy.html'));
+});
+
+app.get('/terms', (req, res) => {
+  res.sendFile(path.join(__dirname, 'terms.html'));
+});
 
 // SPA fallback for all remaining client routes
 app.get('*all', (req, res) => {

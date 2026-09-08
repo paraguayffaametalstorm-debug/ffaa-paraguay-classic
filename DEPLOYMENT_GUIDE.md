@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
 
-> **Manual de Operaciones y Despliegue en Fly.io, Docker Container y Servidores Linux para el Escuadrón PARAGUAY FFAA `[PRY]` (Versión v3.3.2).**
+> **Manual de Operaciones y Despliegue en Fly.io, Docker Container y Servidores Linux para el Escuadrón PARAGUAY FFAA `[PRY]` (Versión v3.4.0).**
 
 ---
 
@@ -28,6 +28,16 @@ Copia `.env.example` o configura las variables secretas en tu orquestador:
 | `SUPABASE_SERVICE_ROLE_KEY` | **Sí** | `eyJhbGciOi...` | Clave de servicio de backend (bypassa RLS) |
 | `SUPABASE_ANON_KEY` | Opcional | `eyJhbGciOi...` | Clave pública anónima para diagnóstico |
 | `ALLOWED_ORIGINS` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | Dominios habilitados en CORS separados por coma |
+| `APP_URL` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | URL pública de la aplicación para enlaces de recuperación |
+| `GOOGLE_CLIENT_ID` | Recomendada | `123456789-xxx.apps.googleusercontent.com` | Client ID de Google Console para OAuth 2.0 |
+| `GOOGLE_CLIENT_SECRET` | Recomendada | `GOCSPX-xxxxxxxxxxxx` | Client Secret de Google Console para OAuth 2.0 |
+| `GOOGLE_CALLBACK_URL` | Opcional | `/api/auth/google/callback` | Ruta de retorno del flujo OAuth |
+| `EMAIL_HOST` | Recomendada | `smtp.gmail.com` | Servidor SMTP para envío de correos de recuperación |
+| `EMAIL_PORT` | Opcional | `587` | Puerto SMTP (587 TLS o 465 SSL) |
+| `EMAIL_SECURE` | Opcional | `false` | Activar cifrado SSL estricto (`true` para puerto 465) |
+| `EMAIL_USER` | Recomendada | `escuadron.ffaa@gmail.com` | Usuario o cuenta de correo emisor |
+| `EMAIL_PASS` | Recomendada | `xxxx xxxx xxxx xxxx` | Contraseña de aplicación generada en Google |
+| `EMAIL_FROM` | Opcional | `PARAGUAY-FFAA Escuadrón <escuadron@ffaa.py>` | Nombre y dirección de cabecera en correos |
 
 ---
 
@@ -77,12 +87,22 @@ fly secrets set \
   JWT_SECRET="super_secreto_militar_pry_ffaa_2026_seguro_minimo_32_caracteres" \
   SUPABASE_URL="https://tu-proyecto.supabase.co" \
   SUPABASE_SERVICE_ROLE_KEY="tu_service_role_key_de_supabase" \
+  GOOGLE_CLIENT_ID="tu-google-client-id.apps.googleusercontent.com" \
+  GOOGLE_CLIENT_SECRET="tu-google-client-secret" \
+  EMAIL_HOST="smtp.gmail.com" \
+  EMAIL_PORT="587" \
+  EMAIL_USER="tu-correo@gmail.com" \
+  EMAIL_PASS="tu-app-password-de-google" \
   NODE_ENV="production"
 
-# 4. Desplegar la aplicación
+# 4. Aplicar migraciones SQL en Supabase
+# Ejecutar en el SQL Editor de Supabase:
+# - sql/updates_v3.4.0.sql (Crea tabla password_resets e índices)
+
+# 5. Desplegar la aplicación
 fly deploy
 
-# 5. Monitorear logs en tiempo real
+# 6. Monitorear logs en tiempo real
 fly logs
 ```
 

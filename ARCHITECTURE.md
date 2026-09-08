@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.3.2).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.4.0).**
 
 ---
 
@@ -12,10 +12,12 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
 
 ```
                   ┌────────────────────────────────────────┐
-                  │    NAVEGADOR / PWA CLIENT (v3.3.2)     │
+                  │    NAVEGADOR / PWA CLIENT (v3.4.0)     │
                   │  - Vanilla ES6+ SPA                    │
                   │  - Dynamic Component Loader            │
                   │  - Service Worker (Cache-First)        │
+                  │  - Google OAuth Popup & Callback       │
+                  │  - Reset Password Tactical View        │
                   │  - Design Tokens / Tactical CSS        │
                   └──────────────────┬─────────────────────┘
                                      │ HTTPS / WSS / JWT
@@ -32,9 +34,11 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
   │                                                                        │
   │  [Rate Limiters] ──► [Helmet / Security] ──► [Compression / JSON Parser]│
   │                                                                        │
+  │  [Passport OAuth] ──► Google Strategy (Stateless, Whitelist Check)     │
+  │                                                                        │
   │  [Rutas Modulares]                                                     │
   │  ├── /health & /api/health (Probes & Telemetry)                        │
-  │  ├── /api/auth (Login, Verify, Reset, token_version)                   │
+  │  ├── /api/auth (Login, Google OAuth, Password Reset, token_version)    │
   │  ├── /api/dashboard & /api/events (C4ISR Telemetry)                    │
   │  ├── /api/performances (Tokens, Semáforo Militar, CSV Sanitizado)      │
   │  ├── /api/planes (Hangar, Starform Upgrades 2.0)                       │
@@ -53,6 +57,7 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
        ┌────────────────────────────┐    ┌───────────────────────────┐
        │   SUPABASE POSTGRESQL      │    │    IN-MEMORY FALLBACK     │
        │ - Users & Roles (RBAC)     │    │ - Volatile State Store    │
+       │ - Password Resets (15 min) │    │ - Resets Fallback Map     │
        │ - Performances & Events    │    │ - Default Datasets        │
        │ - Starform Upgrades 2.0    │    │ - Graceful Degradation    │
        │ - Audit Logs & Security    │    └───────────────────────────┘
@@ -169,4 +174,70 @@ Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel a
    - `audit_logs`: Registra modificaciones administrativas y cambios de rol.
 5. **Mitigación de CSV Formula Injection:**
    - Función `sanitizeCSVField()` que neutraliza fórmulas maliciosas (`=`, `+`, `-`, `@`, `\t`, `%`) anteponiendo apóstrofes (`'`).
+
+---
+
+## 6. Flujo de Autenticación con Google OAuth 2.0 (Restricción por Lista Blanca)
+
+```
+[Piloto / Navegador]              [Backend Express]               [Google OAuth]            [Supabase DB]
+        │                                 │                              │                        │
+        │─── 1. Click "Login Google" ────▶│                              │                        │
+        │    (Abre popup /api/auth/google)│                              │                        │
+        │                                 │─── 2. Redirección OAuth ────▶│                        │
+        │                                 │    (scope: profile, email)   │                        │
+        │                                 │                              │                        │
+        │◀────── 3. Autenticación y Consentimiento en Google ───────────▶│                        │
+        │                                 │                              │                        │
+        │                                 │◀── 4. Callback con Code ─────│                        │
+        │                                 │                              │                        │
+        │                                 │─── 5. Consulta email en `users` ─────────────────────▶│
+        │                                 │                                                       │
+        │                                 │◀── 6. Retorna registro de usuario o vacío ────────────│
+        │                                 │                                                       │
+        │                                 │─── 7. Evalúa Estado:                                  │
+        │                                 │    a) ¿No existe? ──▶ Log `LOGIN_GOOGLE_DENIED_NOT_FOUND`
+        │                                 │                       Retorna HTML Error 403          │
+        │                                 │    b) ¿Inactivo? ───▶ Log `LOGIN_GOOGLE_DENIED_INACTIVE`
+        │                                 │                       Retorna HTML Error 403          │
+        │                                 │    c) ¿Activo? ─────▶ Emite JWT con `token_version`   │
+        │                                 │                       Log `LOGIN_GOOGLE_SUCCESS`      │
+        │                                 │                       Envía `postMessage` al opener   │
+        │◀── 8. Recibe Token o Error ─────│                                                       │
+        │    (Cierra popup y actualiza UI)│                                                       │
+```
+
+---
+
+## 7. Flujo C4ISR de Restablecimiento de Contraseñas por Correo
+
+```
+[Piloto / Terminal]               [Backend Express]              [Nodemailer SMTP]          [Supabase DB]
+        │                                 │                              │                        │
+        │─── 1. POST /forgot-password ───▶│                              │                        │
+        │       { email }                 │─── 2. Verifica cuenta activa en `users` ─────────────▶│
+        │                                 │◀── 3. Confirma usuario ───────────────────────────────│
+        │                                 │                                                       │
+        │                                 │─── 4. Genera Token Criptográfico (32 bytes)          │
+        │                                 │    (Expira en 15 minutos)                             │
+        │                                 │                                                       │
+        │                                 │─── 5. Inserta en `password_resets` ──────────────────▶│
+        │                                 │                                                       │
+        │                                 │─── 6. Despacha correo táctico HTML ──────────────────▶│
+        │                                 │                                                       │
+        │◀── 7. Respuesta genérica 200 ───│ (Para evitar enumeración de cuentas)                  │
+        │                                 │                                                       │
+        │─── 8. Abre enlace en correo ───▶│ GET /reset-password?token=XXX                         │
+        │    (Página reset-password.html) │                                                       │
+        │                                 │                                                       │
+        │─── 9. POST /reset-password ────▶│                                                       │
+        │       { token, newPassword }    │─── 10. Valida token (no usado, no expirado) ─────────▶│
+        │                                 │◀── 11. Token válido ──────────────────────────────────│
+        │                                 │                                                       │
+        │                                 │─── 12. Cifra clave (`bcrypt`) e incrementa `token_version`
+        │                                 │    Marca token como `used = TRUE` ───────────────────▶│
+        │                                 │    Log `PASSWORD_RESET_SUCCESS`                       │
+        │                                 │                                                       │
+        │◀── 13. Éxito: Clave actualizada │ (Sesiones previas invalidadas inmediatamente)          │
+```
 

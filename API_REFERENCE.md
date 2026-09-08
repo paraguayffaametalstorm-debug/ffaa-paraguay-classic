@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.3.2 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.4.0 del núcleo táctico.**
 
 ---
 
@@ -34,10 +34,13 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Health** | `/health` | `GET` | Público | Probe ligera de texto plano para Fly.io |
 | **Health** | `/api/health` | `GET` | Público | Telemetría C4ISR de uptime y fecha |
 | **Auth** | `/api/auth/login` | `POST` | Público (30/15m) | Iniciar sesión y obtener JWT |
+| **Auth** | `/api/auth/google` | `GET` | Público | Iniciar OAuth 2.0 con Google (stateless) |
+| **Auth** | `/api/auth/google/callback` | `GET` | Público | Callback de Google con validación restrictiva |
 | **Auth** | `/api/auth/verify` o `/me` | `GET` | Autenticado | Verificar validez del JWT actual |
 | **Auth** | `/api/auth/register` | `POST` | Público | Registrar nuevo usuario con clave temporal |
 | **Auth** | `/api/auth/change-password`| `POST` | Autenticado | Cambiar clave y renovar `token_version` |
-| **Auth** | `/api/auth/forgot-password`| `POST` | Público | Solicitar clave temporal `MS-XXXX-XXXX` |
+| **Auth** | `/api/auth/forgot-password`| `POST` | Público (10/15m) | Generar enlace de reseteo y enviar correo (15 min) |
+| **Auth** | `/api/auth/reset-password` | `POST` | Público (10/15m) | Consumir token y actualizar contraseña |
 | **Dashboard** | `/api/dashboard/summary` | `GET` | Autenticado | Resumen de evento, metas y Top 5 |
 | **Dashboard** | `/api/dashboard/active-members` | `GET` | Autenticado | Lista ordenada de miembros activos |
 | **Events** | `/api/events` | `GET` | Autenticado | Historial de eventos y ventana de tiempo |
@@ -105,6 +108,56 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
   }
   ```
 
+### `GET /api/auth/google`
+- **Descripción:** Inicia el flujo de autenticación con Google OAuth 2.0 en modo stateless (`session: false`).
+- **Parámetros:** Redirige al consentimiento de Google solicitando alcances `profile` y `email`.
+
+### `GET /api/auth/google/callback`
+- **Descripción:** Endpoint de callback que procesa la respuesta de Google.
+- **Validación Restringida a Usuarios Registrados:**
+  - Verifica si el correo de Google existe en la tabla `users`.
+  - Si no existe: Retorna HTTP 403 con mensaje de denegación: *"❌ Acceso denegado. Tu correo no está registrado en el escuadrón. Contacta a un administrador."* y registra el evento `LOGIN_GOOGLE_DENIED_NOT_FOUND`.
+  - Si está inactivo: Retorna HTTP 403 con: *"⚠️ Cuenta desactivada. Contacta a tu oficial de operaciones."* y registra `LOGIN_GOOGLE_DENIED_INACTIVE`.
+  - Si es válido: Emite un JWT con el `token_version` actual, despacha un mensaje `postMessage` con `{ type: 'GOOGLE_AUTH_SUCCESS', token, user }` a la ventana emisora y registra `LOGIN_GOOGLE_SUCCESS`.
+
+### `POST /api/auth/forgot-password`
+- **Rate Limit:** 10 intentos cada 15 minutos por IP.
+- **Descripción:** Genera un token criptográfico seguro de 32 bytes (`crypto.randomBytes(32)`), lo registra en la tabla `password_resets` con expiración de **15 minutos** y envía un correo electrónico táctico vía Nodemailer con el enlace al combatiente.
+- **Request Body:**
+  ```json
+  {
+    "email": "piloto@ffaa.mil.py"
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Si el correo está registrado en el escuadrón, recibirás un enlace para restablecer tu contraseña (válido por 15 minutos)."
+  }
+  ```
+
+### `POST /api/auth/reset-password`
+- **Rate Limit:** 10 intentos cada 15 minutos por IP.
+- **Descripción:** Valida y consume el token de recuperación, actualiza la contraseña en `users` cifrada con `bcrypt` (factor 10), marca el token como usado e **incrementa el `token_version`** para invalidar de inmediato todas las sesiones activas del usuario.
+- **Request Body:**
+  ```json
+  {
+    "token": "a8f34bc1e2894567...",
+    "newPassword": "MiNuevoPassword2026!"
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Contraseña actualizada exitosamente. Todas las sesiones activas han sido invalidadas."
+  }
+  ```
+- **Errores Posibles:**
+  - `400 Bad Request`: `TOKEN_INVALID_OR_EXPIRED` ("Enlace de restablecimiento inválido o expirado (límite de 15 minutos superado)").
+  - `400 Bad Request`: `PASSWORD_TOO_SHORT` ("La contraseña debe tener al menos 8 caracteres").
+
 ### `POST /api/auth/change-password`
 - **Headers:** `Authorization: Bearer <TOKEN>`
 - **Request Body:**
@@ -116,22 +169,6 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
   }
   ```
 - **Comportamiento Crítico:** Si `isForced` es true o el usuario tiene `must_change_password: true`, no se requiere la contraseña actual. El servidor incrementa `token_version` e invalida todos los tokens previos.
-
-### `POST /api/auth/forgot-password`
-- **Request Body:**
-  ```json
-  {
-    "email": "piloto@ffaa.mil.py"
-  }
-  ```
-- **Response Exitosa (200 OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Contraseña de Viper_PY reseteada. Deberá cambiarla al iniciar sesión.",
-    "temporaryPassword": "MS-4K7P-X9Q2"
-  }
-  ```
 
 ---
 
