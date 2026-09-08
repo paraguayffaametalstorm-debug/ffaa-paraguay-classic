@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="description" content="Política de Privacidad oficial del Escuadrón PARAGUAY FFAA [PRY] en MetalStorm.">
+  <title>Política de Privacidad · PARAGUAY-FFAA | METALSTORM</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/tactical-design.css">
+  <link rel="icon" href="/logo-escuadron.png">
+
+  <style>
+    :root {
+      --pry-blue: #0038A8;
+      --pry-red: #D52B1E;
+      --pry-dark: #0B132B;
+      --pry-gold: #D4AF37;
+    }
+
+    body {
+      background-color: var(--bg-dark, #0A0E1A);
+      color: var(--white-tactical, #F1F5F9);
+      font-family: var(--font-body, 'Inter', sans-serif);
+      margin: 0;
+      padding: 0;
+      line-height: 1.65;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tactical-site-header {
+      background: rgba(11, 19, 43, 0.95);
+      border-bottom: 2px solid var(--border-tactical, #2A3A5C);
+      backdrop-filter: blur(10px);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-link img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+    }
+
+    .brand-titles h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-family: var(--font-tactical, 'Rajdhani', sans-serif);
+      color: #fff;
+      letter-spacing: 1px;
+      line-height: 1.2;
+    }
+
+    .brand-titles span {
+      font-size: 0.75rem;
+      color: var(--pry-gold);
+      font-family: var(--font-mono, monospace);
+      letter-spacing: 0.5px;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-tactical-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.5rem 1rem;
+      background: rgba(0, 56, 168, 0.2);
+      border: 1px solid var(--pry-blue);
+      color: #fff;
+      font-family: var(--font-tactical, 'Rajdhani', sans-serif);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-decoration: none;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-tactical-back:hover {
+      background: var(--pry-blue);
+      box-shadow: 0 0 12px rgba(0, 56, 168, 0.4);
+    }
+
+    .legal-container {
+      max-width: 900px;
+      margin: 2.5rem auto;
+      padding: 0 1.5rem;
+      flex: 1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .doc-badge-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .badge-classified {
+      background: rgba(213, 43, 30, 0.15);
+      border: 1px solid var(--pry-red);
+      color: #FFAAA6;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge-version {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--pry-gold);
+      color: var(--pry-gold);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-timestamp {
+      color: var(--steel-gray, #94A3B8);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    .doc-main-card {
+      background: var(--bg-card, #1A2235);
+      border: 1px solid var(--border-tactical, #2A3A5C);
+      border-top: 4px solid var(--pry-blue);
+      border-radius: 6px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .doc-header {
+      border-bottom: 1px solid var(--border-tactical);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .doc-title {
+      font-family: var(--font-tactical);
+      font-size: 2rem;
+      color: #fff;
+      margin: 0 0 0.5rem 0;
+      letter-spacing: 1px;
+      line-height: 1.2;
+    }
+
+    .doc-subtitle {
+      color: var(--steel-gray, #94A3B8);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .tactical-section {
+      margin-bottom: 2.5rem;
+    }
+
+    .tactical-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-heading {
+      font-family: var(--font-tactical);
+      color: var(--pry-gold);
+      font-size: 1.35rem;
+      letter-spacing: 0.8px;
+      margin: 0 0 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      padding-bottom: 0.4rem;
+    }
+
+    .section-heading .sec-num {
+      color: var(--steel-dark, #64748B);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+    }
+
+    .section-text {
+      color: #E2E8F0;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .tactical-callout {
+      background: rgba(0, 56, 168, 0.12);
+      border-left: 4px solid var(--pry-blue);
+      border-radius: 0 4px 4px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+      color: #BFDBFE;
+      font-size: 0.9rem;
+    }
+
+    .tactical-callout-alert {
+      background: rgba(213, 43, 30, 0.12);
+      border-left: 4px solid var(--pry-red);
+      color: #FECACA;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .data-card {
+      background: rgba(11, 19, 43, 0.7);
+      border: 1px solid var(--border-tactical);
+      border-radius: 4px;
+      padding: 1.25rem;
+    }
+
+    .data-card-title {
+      font-family: var(--font-tactical);
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .data-card-desc {
+      font-size: 0.85rem;
+      color: var(--steel-gray);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .data-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.75rem 0 0 0;
+    }
+
+    .data-list li {
+      font-size: 0.85rem;
+      color: #CBD5E1;
+      padding: 4px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .data-list li::before {
+      content: "▹";
+      color: var(--pry-gold);
+      font-weight: bold;
+    }
+
+    .tactical-site-footer {
+      background: rgba(11, 19, 43, 0.95);
+      border-top: 2px solid var(--pry-gold);
+      padding: 1.5rem 1rem;
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--steel-gray);
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.2rem;
+      align-items: center;
+    }
+
+    .footer-links a {
+      color: #CBD5E0;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--pry-gold);
+    }
+
+    @media (max-width: 640px) {
+      .doc-main-card {
+        padding: 1.5rem 1rem;
+      }
+      .doc-title {
+        font-size: 1.6rem;
+      }
+      .footer-inner {
+        flex-direction: column;
+        text-align: center;
+      }
+      .footer-links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Táctico -->
+  <header class="tactical-site-header">
+    <div class="header-inner">
+      <a href="/" class="brand-link" title="Ir a la Base de Operaciones">
+        <img src="/logo-escuadron.png" alt="Insignia Escuadrón PARAGUAY-FFAA" onerror="this.style.display='none'">
+        <div class="brand-titles">
+          <h1>PARAGUAY-FFAA</h1>
+          <span>[PRY] · METALSTORM C4ISR</span>
+        </div>
+      </a>
+      <div class="header-nav">
+        <a href="/" class="btn-tactical-back">
+          <span>← Acceso Principal</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal de la Política -->
+  <main class="legal-container">
+    
+    <div class="doc-badge-strip">
+      <span class="badge-classified">CLASIFICADO · USO INTERNO</span>
+      <span class="badge-version">VERSIÓN v3.4.0</span>
+      <span class="badge-timestamp">ÚLTIMA ACTUALIZACIÓN: SEPTIEMBRE 2026</span>
+    </div>
+
+    <article class="doc-main-card">
+      <header class="doc-header">
+        <h1 class="doc-title">POLÍTICA DE PRIVACIDAD</h1>
+        <p class="doc-subtitle">
+          Regulaciones de recolección, resguardo criptográfico y tratamiento de datos operativos en la plataforma del Escuadrón PARAGUAY FFAA [PRY] en MetalStorm.
+        </p>
+      </header>
+
+      <!-- SECCIÓN 1: INTRODUCCIÓN -->
+      <section class="tactical-section">
+        <h2 class="section-heading">
+          <span class="sec-num">01.</span> ÁMBITO Y COMPROMISO DEL ESCUADRÓN
+        </h2>
+        <p class="section-text">
+          La plataforma <strong>PARAGUAY-FFAA | METALSTORM</strong> opera como el Centro de Mando, Control, Comunicaciones, Computación e Inteligencia (C4ISR) del escuadrón militar oficial <code>[PRY]</code>. La privacidad y seguridad de la información de cada piloto, oficial y recluta es un pilar crítico en la doctrina de combate de nuestra unidad.
+        </p>
+        <div class="tactical-callout">
+          <strong>Directiva Estricta de No Comercialización:</strong> Toda la información registrada en esta plataforma es de <strong>uso exclusivo e interno</strong> para la gestión del escuadrón. Ningún dato personal, de rendimiento o telemétrico será jamás vendido, comercializado, arrendado o cedido a corporaciones, terceros ni anunciantes.
+        </div>
+      </section>
+
+      <!-- SECCIÓN 2: DATOS RECOPILADOS -->
+      <section class="tactical-section">
+        <h2 class="section-heading">
+          <span class="sec-num">02.</span> DATOS RECOPILADOS
+        </h2>
+        <p class="section-text">
+          Nuestra infraestructura recopila estrictamente los datos indispensables para autenticar al combatiente, calcular el cumplimiento de las misiones semanales y auditar la integridad operativa:
+        </p>
+
+        <div class="data-grid">
+          <div class="data-card">
+            <div class="data-card-title">
+              <span>👤</span> Identificación de Combate
+            </div>
+            <p class="data-card-desc">Información básica para identificar la cuenta dentro del escuadrón.</p>
+            <ul class="data-list">
+              <li><strong>Correo Electrónico:</strong> Cuenta institucional o autorizada (vía contraseña o Google OAuth).</li>
+              <li><strong>Indicativo (Callsign / Nick):</strong> Nombre de combate utilizado en MetalStorm.</li>
+              <li><strong>Rango Jerárquico:</strong> Rol militar asignado (OWNER, ADMIN, VETERANO, PILOTO, RECLUTA).</li>
+              <li><strong>Estado Operativo:</strong> Condición activa o inactiva en el escuadrón.</li>
+            </ul>
+          </div>
+
+          <div class="data-card">
+            <div class="data-card-title">
+              <span>🎯</span> Telemetría de Rendimiento
+            </div>
+            <p class="data-card-desc">Métricas cargadas por el combatiente o sus oficiales de mando.</p>
+            <ul class="data-list">
+              <li><strong>Tokens de Misión:</strong> Puntos sumados en eventos semanales (máximo 300 por registro).</li>
+              <li><strong>Días de Vuelo:</strong> Concurrencia semanal de combate en el juego (0 a 7 días).</li>
+              <li><strong>Combate en Escuadrilla:</strong> Participación activa junto a otros miembros de [PRY].</li>
+              <li><strong>Aeronaves y Mejoras:</strong> Registros del Hangar Starform Upgrades 2.0.</li>
+            </ul>
+          </div>
+
+          <div class="data-card">
+            <div class="data-card-title">
+              <span>🛡️</span> Registros de Seguridad (Logs)
+            </div>
+            <p class="data-card-desc">Trazabilidad técnica para prevención de intrusiones y fraudes.</p>
+            <ul class="data-list">
+              <li><strong>Dirección IP:</strong> Registrada en inicios de sesión y peticiones críticas.</li>
+              <li><strong>Agente de Usuario (User-Agent):</strong> Identificación del navegador/dispositivo.</li>
+              <li><strong>Control de Sesión:</strong> Número criptográfico de versión (<code>token_version</code>).</li>
+              <li><strong>Historial de Auditoría:</strong> Modificaciones de perfiles y restablecimientos de claves.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN 3: USO DE LOS DATOS -->
+      <section class="tactical-section">
+        <h2 class="section-heading">
+          <span class="sec-num">03.</span> FINALIDAD Y USO DE LA INFORMACIÓN
+        </h2>
+        <p class="section-text">
+          Los datos almacenados tienen como único propósito el soporte operativo de las actividades militares del escuadrón:
+        </p>
+        <ul class="data-list" style="margin-left:0.5rem;margin-bottom:1rem;">
+          <li><strong>Cumplimiento de Meta de Escuadrón:</strong> Monitorear el progreso hacia la meta semanal de 175 tokens promedio por piloto en MetalStorm.</li>
+          <li><strong>Semáforo Militar de Rendimiento:</strong> Clasificar a los pilotos en zonas Verde (cumplido), Ámbar (en riesgo) y Rojo (crítico) para coordinar apoyos tácticos.</li>
+          <li><strong>Autenticación y Control de Acceso:</strong> Validar credenciales y sincronizar inicios de sesión seguros con Google OAuth restringido a miembros registrados.</li>
+          <li><strong>Comunicaciones Operacionales:</strong> Envío de enlaces transitorios y cifrados para el restablecimiento de contraseñas olvidadas (vigencia de 15 minutos).</li>
+          <li><strong>Reconocimiento y Promoción:</strong> Publicar clasificaciones internas (Top 5 Semanal) y proponer ascensos de rango basados en mérito de combate.</li>
+        </ul>
+      </section>
+
+      <!-- SECCIÓN 4: SEGURIDAD Y PROTECCIÓN -->
+      <section class="tactical-section">
+        <h2 class="section-heading">
+          <span class="sec-num">04.</span> SEGURIDAD Y RESGUARDO CRIPTOGRÁFICO
+        </h2>
+        <p class="section-text">
+          Aplicamos estándares defensivos para garantizar la confidencialidad de las credenciales y registros de combate:
+        </p>
+        <ul class="data-list" style="margin-left:0.5rem;margin-bottom:1rem;">
+          <li><strong>Cifrado Robusto de Contraseñas:</strong> Las claves personales nunca se almacenan en texto plano; son procesadas con el algoritmo <code>bcrypt</code> con factor de costo 10.</li>
+          <li><strong>Tokens de Sesión JWT Firmados:</strong> Cada sesión emite un JSON Web Token criptográfico firmado con clave secreta militar de 256 bits y expiración temporal.</li>
+          <li><strong>Protocolo Anti-Sesión Fantasma:</strong> El sistema mantiene un contador <code>token_version</code> en la base de datos; cualquier cambio de contraseña revoca de inmediato todas las sesiones activas en otros navegadores o dispositivos.</li>
+          <li><strong>Cifrado en Tránsito (TLS/HTTPS):</strong> Toda la comunicación entre tu navegador y el servidor en Fly.io viaja bajo túneles cifrados SSL/TLS con cabeceras estrictas HSTS.</li>
+          <li><strong>Protección de Base de Datos:</strong> Alojada en clústeres Supabase PostgreSQL con políticas de seguridad a nivel de fila (RLS) e índices protegidos.</li>
+        </ul>
+        <div class="tactical-callout tactical-callout-alert">
+          <strong>Responsabilidad del Piloto:</strong> Cada miembro es responsable de custodiar sus credenciales de acceso. Nunca compartas tu contraseña temporal o definitiva con otros miembros o terceros.
+        </div>
+      </section>
+
+      <!-- SECCIÓN 5: RETENCIÓN Y DERECHOS -->
+      <section class="tactical-section">
+        <h2 class="section-heading">
+          <span class="sec-num">05.</span> RETENCIÓN, DERECHOS Y BAJA DEL ESCUADRÓN
+        </h2>
+        <p class="section-text">
+          Los miembros del escuadrón conservan el derecho de consultar, rectificar o solicitar la depuración de sus datos:
+        </p>
+        <ul class="data-list" style="margin-left:0.5rem;">
+          <li><strong>Acceso y Rectificación:</strong> Puedes visualizar tu perfil militar en todo momento desde la pestaña <em>"Mi Perfil"</em> o solicitar correcciones a un Oficial ADMIN.</li>
+          <li><strong>Baja de Membresía:</strong> Si un piloto abandona formalmente el escuadrón o es dado de baja, su cuenta pasará al estado inactivo (<code>INACTIVE</code>), inhabilitando su acceso y reviniendo el acceso vía Google OAuth.</li>
+          <li><strong>Depuración de Historial:</strong> A solicitud expresa del interesado dirigida al Comandante en Jefe (OWNER), sus datos personales directos podrán ser anonimizados o eliminados, preservando únicamente las sumatorias históricas del escuadrón.</li>
+        </ul>
+      </section>
+
+      <!-- SECCIÓN 6: CONTACTO -->
+      <section class="tactical-section">
+        <h2 class="section-heading">
+          <span class="sec-num">06.</span> CONTACTO Y CANAL DE MANDO
+        </h2>
+        <p class="section-text">
+          Para cualquier consulta, inquietud sobre el manejo de tus datos o reporte de anomalías en tu cuenta, comunícate a través de los canales oficiales de comando:
+        </p>
+        <div style="background:rgba(10,14,26,0.85);border:1px solid var(--border-tactical);border-radius:4px;padding:1rem;font-family:var(--font-mono);font-size:0.85rem;">
+          <div><strong>Oficina de Mando C4ISR:</strong> Escuadrón PARAGUAY FFAA [PRY]</div>
+          <div><strong>Correo Oficial:</strong> <a href="mailto:paraguayffaa.metalstorm@gmail.com" style="color:var(--blue-telemetry);text-decoration:none;">paraguayffaa.metalstorm@gmail.com</a></div>
+          <div><strong>Plataforma Web:</strong> <a href="https://paraguay-ffaa-metalstorm.fly.dev" style="color:var(--pry-gold);text-decoration:none;">paraguay-ffaa-metalstorm.fly.dev</a></div>
+          <div><strong>Canal de Radio Táctico:</strong> Grupo Oficial de Comunicaciones [PRY] (WhatsApp / Discord)</div>
+        </div>
+      </section>
+
+    </article>
+  </main>
+
+  <!-- Footer Táctico -->
+  <footer class="tactical-site-footer">
+    <div class="footer-inner">
+      <div>
+        <strong style="color:var(--pry-gold);">PARAGUAY FFAA [PRY]</strong> — Escuadrón Oficial MetalStorm
+      </div>
+      <div>
+        <span>Versión: <strong style="color:#fff;">v3.4.0</strong> · Estado: <span style="color:#4ADE80;">● C4ISR Activo</span></span>
+      </div>
+      <div class="footer-links">
+        <a href="/">Inicio</a>
+        <a href="/terms">Términos de Servicio</a>
+        <a href="/privacy" style="color:var(--pry-gold);">Privacidad</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
