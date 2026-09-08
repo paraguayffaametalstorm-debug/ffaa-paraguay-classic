@@ -48,14 +48,14 @@ export async function savePerformance(req, res, next) {
     const record = {
       user_id: targetUser.user_id || targetUser.id,
       nick: targetUser.nick || req.user.nick || 'Piloto',
-      user_email: targetUser.email || req.user.email || null,
+      role: targetUser.role || req.user.role || 'MIEMBRO',
       event_id: data.event_id,
       tokens: Number(data.tokens),
       days_connected: Number(data.days_connected),
       flew_in_group: Boolean(data.flew_in_group),
       notes: data.notes || null,
       status,
-      updated_at: new Date().toISOString()
+      created_at: new Date().toISOString()
     };
 
     // Verificar si ya existe registro para este usuario y evento
@@ -82,18 +82,32 @@ export async function savePerformance(req, res, next) {
       if (updateErr) throw updateErr;
       savedPerf = updated;
     } else {
-      const insertRecord = {
-        ...record,
-        created_at: new Date().toISOString()
-      };
       const { data: inserted, error: insertErr } = await supabase
         .from('performances')
-        .insert(insertRecord)
+        .insert(record)
         .select()
         .single();
 
       if (insertErr) throw insertErr;
       savedPerf = inserted;
+    }
+
+    // Recalcular avg_tokens del usuario
+    const { data: userPerfs } = await supabase
+      .from('performances')
+      .select('tokens')
+      .eq('user_id', record.user_id);
+
+    if (userPerfs && userPerfs.length > 0) {
+      const newAvg = Math.round(userPerfs.reduce((s, p) => s + (Number(p.tokens) || 0), 0) / userPerfs.length);
+      await supabase
+        .from('users')
+        .update({
+          avg_tokens: newAvg,
+          weeks_evaluated: userPerfs.length,
+          perf_status: status
+        })
+        .or(`id.eq.${record.user_id},user_id.eq.${record.user_id}`);
     }
 
     res.status(isUpdate ? 200 : 201).json({
@@ -148,7 +162,7 @@ export async function getStats(req, res, next) {
     }
 
     const userId = req.user.user_id || req.user.id;
-    const { data: users } = await supabase.from('users').select('id, user_id, email, nick, role, status');
+    const { data: users } = await supabase.from('users').select('*');
     const { data: myPerfs } = await supabase
       .from('performances')
       .select('*')
@@ -160,34 +174,24 @@ export async function getStats(req, res, next) {
       return st === 'ACTIVE' || st === 'ACTIVO' || !st;
     });
 
-    const myPerfsList = myPerfs || [];
-    const myAvgTokens = myPerfsList.length > 0
-      ? Math.round(myPerfsList.reduce((acc, p) => acc + (Number(p.tokens) || 0), 0) / myPerfsList.length)
+    const avgSquad = userList.length > 0
+      ? Math.round(userList.reduce((acc, u) => acc + (Number(u.avg_tokens) || 0), 0) / userList.length)
       : 0;
 
-    let myPerfStatus = 'VERDE';
-    if (myAvgTokens < 100) myPerfStatus = 'NEGRO';
-    else if (myAvgTokens < 130) myPerfStatus = 'ROJO';
-    else if (myAvgTokens < 175) myPerfStatus = 'NARANJA';
-
-    const { data: allPerfs } = await supabase.from('performances').select('tokens');
-    const allPerfsList = allPerfs || [];
-    const avgSquad = allPerfsList.length > 0
-      ? Math.round(allPerfsList.reduce((acc, p) => acc + (Number(p.tokens) || 0), 0) / allPerfsList.length)
-      : 0;
+    const myUser = userList.find(u => (u.user_id && String(u.user_id) === String(userId)) || (u.id && String(u.id) === String(userId))) || req.user;
 
     res.json({
       userStats: {
-        avg_tokens: myAvgTokens,
-        weeks_evaluated: myPerfsList.length || 0,
-        trend: 'stable',
-        perf_status: myPerfStatus
+        avg_tokens: myUser.avg_tokens || 0,
+        weeks_evaluated: myUser.weeks_evaluated || myPerfs?.length || 0,
+        trend: myUser.trend || 'stable',
+        perf_status: myUser.perf_status || 'VERDE'
       },
       squadStats: {
         total_members: userList.length,
         active_members: actives.length,
         avg_tokens: avgSquad,
-        at_risk_count: 0
+        at_risk_count: userList.filter(u => u.perf_status === 'ROJO' || u.perf_status === 'NEGRO').length
       }
     });
   } catch (err) {
@@ -229,11 +233,11 @@ export async function exportPerformancesCSV(req, res, next) {
       if (data) list = data;
     }
 
-    const headers = ['ID', 'Piloto', 'Email', 'Evento', 'Tokens', 'Dias_Conectados', 'Vuelo_Grupo', 'Estado', 'Notas', 'Fecha_Registro'];
+    const headers = ['ID', 'Piloto', 'Rol', 'Evento', 'Tokens', 'Dias_Conectados', 'Vuelo_Grupo', 'Estado', 'Notas', 'Fecha_Registro'];
     const rows = list.map(p => [
       p.id,
       p.nick,
-      p.user_email || '',
+      p.role,
       p.event_id,
       p.tokens,
       p.days_connected,

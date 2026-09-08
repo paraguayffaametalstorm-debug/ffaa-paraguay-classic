@@ -26,98 +26,40 @@ const VIEWS = {
   ADMIN:            'adminPanel',
   ALL_PERFORMANCES: 'allPerformancesView',
   SETTINGS:         'settingsView',
-  EXPORT:           'exportView',
-  PLANE_CATALOG:    'planeCatalogAdminView'
+  EXPORT:           'exportView'
 };
 
 const VIEW_ALIASES = {
-  'dashboard':            VIEWS.DASHBOARD,
-  'dashboardView':        VIEWS.DASHBOARD,
-  'app':                  VIEWS.DASHBOARD,
-  'appView':              VIEWS.DASHBOARD,
-  'performance':          VIEWS.PERFORMANCE,
-  'performanceForm':      VIEWS.PERFORMANCE,
-  'planes':               VIEWS.PLANES,
-  'planesView':           VIEWS.PLANES,
-  'hangar':               VIEWS.PLANES,
-  'historial':            VIEWS.HISTORIAL,
-  'historialView':        VIEWS.HISTORIAL,
-  'profile':              VIEWS.PROFILE,
-  'profileView':          VIEWS.PROFILE,
-  'normativas':           VIEWS.NORMATIVAS,
-  'normativasView':       VIEWS.NORMATIVAS,
-  'admin':                VIEWS.ADMIN,
-  'adminPanel':           VIEWS.ADMIN,
-  'adminView':            VIEWS.ADMIN,
-  'all-performances':     VIEWS.ALL_PERFORMANCES,
-  'allPerformances':      VIEWS.ALL_PERFORMANCES,
-  'allPerformancesView':  VIEWS.ALL_PERFORMANCES,
-  'settings':             VIEWS.SETTINGS,
-  'settingsView':         VIEWS.SETTINGS,
-  'help':                 'helpView',
-  'helpView':             'helpView',
-  'owner':                'ownerPanelView',
-  'ownerPanel':           'ownerPanelView',
-  'ownerPanelView':       'ownerPanelView',
-  'export':               'exportView',
-  'exportView':           'exportView',
-  'plane-catalog-admin':  VIEWS.PLANE_CATALOG,
-  'planeCatalogAdmin':    VIEWS.PLANE_CATALOG,
-  'planeCatalogAdminView':VIEWS.PLANE_CATALOG,
-  'plane-catalog':        VIEWS.PLANE_CATALOG,
-  'planeCatalog':         VIEWS.PLANE_CATALOG
-};
-
-// Lista y registro de vistas para enrutamiento modular
-const VIEWS_REGISTRY = {
-  'dashboard': {
-    title: 'Panel Táctico',
-    load: () => loadDashboardData()
-  },
-  'performance': {
-    title: 'Registro de Rendimiento',
-    load: () => typeof initPerformanceForm === 'function' ? initPerformanceForm() : loadPerformanceForm()
-  },
-  'planes': {
-    title: 'Hangar de Escuadrón',
-    load: () => loadPlanesView()
-  },
-  'historial': {
-    title: 'Historial Operativo',
-    load: () => loadHistorial()
-  },
-  'profile': {
-    title: 'Perfil de Piloto',
-    load: () => loadPersonalProfile()
-  },
-  'normativas': {
-    title: 'Reglamento & Normativas',
-    load: () => loadNormativas()
-  },
-  'admin': {
-    title: 'Panel de Mando',
-    load: () => loadAdminPanel()
-  },
-  'all-performances': {
-    title: 'Rendimiento Global',
-    load: () => loadAllPerformances()
-  },
-  'settings': {
-    title: 'Configuraciones',
-    load: () => typeof loadSettings === 'function' ? loadSettings() : null
-  },
-  'export': {
-    title: 'Exportar Reporte',
-    load: () => loadExportView()
-  },
-  'plane-catalog-admin': {
-    title: 'Catálogo de Aviones',
-    load: () => loadPlaneCatalogAdmin()
-  },
-  'plane-catalog': {
-    title: 'Catálogo de Aviones',
-    load: () => loadPlaneCatalogAdmin()
-  }
+  'dashboard':        VIEWS.DASHBOARD,
+  'dashboardView':    VIEWS.DASHBOARD,
+  'app':              VIEWS.DASHBOARD,
+  'appView':          VIEWS.DASHBOARD,
+  'performance':      VIEWS.PERFORMANCE,
+  'performanceForm':  VIEWS.PERFORMANCE,
+  'planes':           VIEWS.PLANES,
+  'planesView':       VIEWS.PLANES,
+  'hangar':           VIEWS.PLANES,
+  'historial':        VIEWS.HISTORIAL,
+  'historialView':    VIEWS.HISTORIAL,
+  'profile':          VIEWS.PROFILE,
+  'profileView':      VIEWS.PROFILE,
+  'normativas':       VIEWS.NORMATIVAS,
+  'normativasView':   VIEWS.NORMATIVAS,
+  'admin':            VIEWS.ADMIN,
+  'adminPanel':       VIEWS.ADMIN,
+  'adminView':        VIEWS.ADMIN,
+  'all-performances': VIEWS.ALL_PERFORMANCES,
+  'allPerformances':  VIEWS.ALL_PERFORMANCES,
+  'allPerformancesView': VIEWS.ALL_PERFORMANCES,
+  'settings':         VIEWS.SETTINGS,
+  'settingsView':     VIEWS.SETTINGS,
+  'help':             'helpView',
+  'helpView':         'helpView',
+  'owner':            'ownerPanelView',
+  'ownerPanel':       'ownerPanelView',
+  'ownerPanelView':   'ownerPanelView',
+  'export':           'exportView',
+  'exportView':       'exportView'
 };
 
 // Mostrar una vista específica
@@ -292,14 +234,6 @@ function loadViewData(viewId) {
       loadHelpView();
       break;
       
-    case VIEWS.PLANE_CATALOG:
-    case 'planeCatalogAdminView':
-    case 'plane-catalog-admin':
-    case 'planeCatalogAdmin':
-    case 'planeCatalog':
-      loadPlaneCatalogAdmin();
-      break;
-      
     default:
       console.warn(`[METALSTORM] Vista no manejada explícitamente: ${viewId}`);
       break;
@@ -308,7 +242,7 @@ function loadViewData(viewId) {
 
 // ========== DASHBOARD COMPLETO TÁCTICO ==========
 async function loadDashboardData() {
-  if (!window.currentUser) return;
+  if (!currentUser) return;
 
   try {
     const [summaryRes, historyRes] = await Promise.all([
@@ -336,7 +270,7 @@ async function loadDashboardData() {
 }
 
 function updateDashboardTacticalUI(summary, history) {
-  const user = window.currentUser;
+  const user = currentUser;
 
   const userNameEl = document.getElementById('userName');
   if (userNameEl) userNameEl.textContent = user.nick || user.email;
@@ -498,7 +432,7 @@ function renderTrendChart(history, squadAvg) {
 
 // ========== HISTORIAL (CORREGIDO) ==========
 function loadHistorial() {
-  if (!window.currentUser) return;
+  if (!currentUser) return;
   fetch(`${API_BASE}/api/performances/my-history`, {
     headers: getAuthHeaders()
   })
@@ -637,9 +571,9 @@ function formatEventTitle(event) {
 }
 
 function loadPerformanceForm() {
-  if (!window.currentUser) return;
+  if (!currentUser) return;
   const perfUserName = document.getElementById('perfUserName');
-  if (perfUserName) perfUserName.textContent = window.currentUser.nick || window.currentUser.email;
+  if (perfUserName) perfUserName.textContent = currentUser.nick || currentUser.email;
   const tokens = document.getElementById('tokens');
   if (tokens) tokens.value = '';
   const flewInGroup = document.getElementById('flewInGroup');
@@ -651,7 +585,7 @@ function loadPerformanceForm() {
   if (typeof selectDays === 'function') selectDays(0);
   const saveBtn = document.getElementById('btnSavePerf');
   if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Guardar Rendimiento'; }
-  const isAdmin = window.currentUser.role === 'OWNER' || window.currentUser.role === 'ADMIN';
+  const isAdmin = currentUser.role === 'OWNER' || currentUser.role === 'ADMIN';
   const targetGroup = document.getElementById('performanceTargetGroup');
   if (targetGroup) targetGroup.style.display = isAdmin ? 'block' : 'none';
   if (isAdmin) {
@@ -690,10 +624,12 @@ function loadActiveMembers() {
 
     activeMembers.forEach(m => {
       const uid = m.user_id || m.id;
-      const isCurrentUser = window.currentUser && (uid === window.currentUser.user_id || uid === window.currentUser.id);
+      if (currentUser && (uid === currentUser.user_id || uid === currentUser.id)) return;
       const opt = document.createElement('option');
       opt.value = uid;
-      opt.textContent = `${m.nick || m.email || 'Sin Nick'} ${isCurrentUser ? '(Tú)' : ''}`.trim();
+      const roleUpper = (m.role || 'MIEMBRO').toUpperCase();
+      const roleBadge = roleUpper === 'OWNER' ? '👑' : roleUpper === 'ADMIN' ? '⭐' : '';
+      opt.textContent = `${roleBadge} ${m.nick || m.email || 'Sin Nick'} (${roleUpper})`.trim();
       sel.appendChild(opt);
     });
     sel.value = 'self';
@@ -877,7 +813,7 @@ function formatMs(ms) {
 }
 
 function displayEventInfo(event, inWindow, windowCloseMs) {
-  window.currentEvent = event;
+  currentEvent = event;
   if (typeof adaptFormToEventType === 'function') {
     adaptFormToEventType(event.type);
   }
@@ -957,7 +893,7 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
 let allUserPlanes = [];
 
 function loadPlanesView() {
-  if (!window.currentUser) return;
+  if (!currentUser) return;
   loadUserPlanes();
   initPlaneLevelSelect();
 }
@@ -1067,13 +1003,11 @@ Nv. ${plane.nivel}
 <td data-label="Pasiva">${plane.pasiva_nombre || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 1">${plane.mod1_nombre || plane.mod1_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 2">${plane.mod2_nombre || plane.mod2_id || '<span style="color:#666">—</span>'}</td>
-<td data-label="Acciones">
-  <div class="mobile-actions" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
-    <button onclick="openPlaneUpgrades(${plane.id})" class="btn-primary" style="padding:4px 8px;font-size:0.7rem;" title="Gestionar Upgrades 2.0">Upgr</button>
-    <button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px;font-size:0.7rem;" title="Ver Telemetría Radar">Radar</button>
-    <button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px;font-size:0.7rem;" title="Editar Aeronave">Edit</button>
-    <button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px;font-size:0.7rem;" title="Eliminar Aeronave">Elim</button>
-  </div>
+<td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
+<button onclick="openPlaneUpgrades(${plane.id})" class="btn-primary" style="padding:4px 8px; font-size:0.75rem; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#38bdf8;" title="Gestionar Upgrades 2.0"><i data-lucide="wrench" style="width:13px;height:13px;"></i> Upgrades</button>
+<button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-color:var(--blue-telemetry); color:var(--blue-telemetry);" title="Ver Telemetría"><i data-lucide="gauge" style="width:13px;height:13px;"></i> Radar</button>
+<button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem;" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
+<button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" title="Eliminar"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>
 </td>
 </tr>
 `;
@@ -1663,10 +1597,30 @@ function getAuthHeaders() {
 }
 window.getAuthHeaders = getAuthHeaders;
 
-// ========== INICIALIZACIÓN DE VISTAS ==========
+// ========== INICIALIZACIÓN ==========
 document.addEventListener('DOMContentLoaded', function() {
-  if (typeof restoreSession === 'function') {
-    restoreSession();
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    fetch(`${API_BASE}/api/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.user) {
+        window.currentUser = data.user;
+        updateViewStats();
+        showView(VIEWS.DASHBOARD);
+      }
+    })
+    .catch(err => {
+      console.error('Error validando token:', err);
+      localStorage.removeItem('authToken');
+      showLoginModal();
+    });
+  } else {
+    showLoginModal();
   }
 
   document.querySelectorAll('.nav-menu button').forEach(button => {
@@ -1824,14 +1778,10 @@ let adminMembersCache = [];
 
 async function loadAdminPanel() {
   try {
-    const [usersRes, eventsRes] = await Promise.all([
-      fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() }).catch(() => null),
-      fetch(`${API_BASE}/api/events/open`, { headers: getAuthHeaders() }).catch(() => null)
-    ]);
-
+    const res = await fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() });
     let members = [];
-    if (usersRes && usersRes.ok) {
-      const mData = await usersRes.json();
+    if (res.ok) {
+      const mData = await res.json();
       members = mData.users || mData.members || (Array.isArray(mData) ? mData : []);
     } else {
       const fallback = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
@@ -1841,16 +1791,9 @@ async function loadAdminPanel() {
       }
     }
 
-    let activeEvent = null;
-    if (eventsRes && eventsRes.ok) {
-      const eData = await eventsRes.json();
-      activeEvent = eData.event || (eData.events && eData.events[0]) || null;
-    }
-
     adminMembersCache = members;
     renderAdminStats(members);
     renderPilotsByStatus(members);
-    renderAdminBlackMarketInfo(activeEvent);
     renderAdminMembersTable(members);
 
     const updateEl = document.getElementById('lastUpdate');
@@ -1859,87 +1802,6 @@ async function loadAdminPanel() {
   } catch (err) {
     console.error('Error cargando admin panel:', err);
     showToast('❌ Error al cargar panel de administración', 'error');
-  }
-}
-
-function renderAdminBlackMarketInfo(activeEvent) {
-  const bmInfo = document.getElementById('blackMarketInfo');
-  if (bmInfo) {
-    if (activeEvent?.type === 'BLACK_MARKET' || activeEvent?.type === 'BM') {
-      const startDate = activeEvent.start_date ? new Date(activeEvent.start_date).toLocaleDateString('es-PY') : '-';
-      const endDate = activeEvent.end_date ? new Date(activeEvent.end_date).toLocaleDateString('es-PY') : '-';
-      bmInfo.innerHTML = `
-        <div style="background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;padding:12px;">
-          <strong style="color:#e74c3c;">⚡ BLACK MARKET ACTIVO</strong>
-          <div style="font-size:0.85rem;color:#a0aec0;margin-top:4px;">
-            ${escapeHTML(activeEvent.id || 'BM-ACTIVO')} · ${startDate} → ${endDate}
-          </div>
-        </div>
-      `;
-    } else {
-      const evDesc = activeEvent?.id ? ` (${escapeHTML(activeEvent.id)})` : '';
-      bmInfo.innerHTML = `
-        <div style="background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;padding:12px;">
-          <strong style="color:#2ecc71;">✈️ SQUADRON ACTIVO${evDesc}</strong>
-          <div style="font-size:0.85rem;color:#a0aec0;margin-top:4px;">
-            El Black Market está disponible para activación
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  // Visibilidad de controles de activación según rol
-  const bmControls = document.getElementById('bmAdminControls');
-  if (bmControls) {
-    const role = (window.currentUser?.role || '').toUpperCase();
-    bmControls.style.display = ['ADMIN', 'OWNER'].includes(role) ? 'flex' : 'none';
-  }
-}
-
-async function activateBlackMarket() {
-  // Solo ADMIN/OWNER pueden activar
-  const userRole = (window.currentUser?.role || '').toUpperCase();
-  if (!['ADMIN', 'OWNER'].includes(userRole)) {
-    showToast('⛔ No tienes permisos para activar Black Market', 'error');
-    return;
-  }
-
-  // Confirmación
-  if (!confirm('⚠️ ¿Estás seguro de activar el Black Market?\n\nEsto cerrará el evento Squadron actual y abrirá un evento Black Market de 5 días.')) {
-    return;
-  }
-
-  try {
-    let res = await fetch(`${API_BASE}/api/events/activate-bm`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    });
-
-    if (!res.ok) {
-      // Fallback a ruta de admin si fuera necesario
-      const fallback = await fetch(`${API_BASE}/api/admin/events/activate-bm`, {
-        method: 'POST',
-        headers: getAuthHeaders()
-      });
-      if (fallback.ok) res = fallback;
-    }
-
-    const data = await res.json();
-
-    if (res.ok) {
-      showToast(`✅ Black Market activado correctamente: ${data.event_id || data.event?.id || 'BM-ACTIVO'}`, 'success');
-      // Recargar el panel de administración
-      loadAdminPanel();
-      // Actualizar la vista de eventos y dashboard
-      if (typeof loadOpenEvents === 'function') loadOpenEvents();
-      if (typeof loadDashboardData === 'function') loadDashboardData();
-    } else {
-      showToast(`❌ Error: ${data.error || 'No se pudo activar Black Market'}`, 'error');
-    }
-  } catch (err) {
-    console.error('Error activando Black Market:', err);
-    showToast('❌ Error al conectar con el servidor', 'error');
   }
 }
 
@@ -2013,7 +1875,7 @@ function renderAdminMembersTable(members) {
   const existingTable = document.getElementById('adminMembersTable');
   if (existingTable) existingTable.remove();
 
-  const isOwner = window.currentUser && window.currentUser.role === 'OWNER';
+  const isOwner = currentUser && currentUser.role === 'OWNER';
 
   const tableDiv = document.createElement('div');
   tableDiv.id = 'adminMembersTable';
@@ -2041,14 +1903,14 @@ function renderAdminMembersTable(members) {
 
             return `
             <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(231,76,60,0.05)' : 'transparent'};">
-              <td data-label="Piloto" style="padding:10px 8px;font-weight:600;color:#f8fafc;">
+              <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span>${escapeHTML(m.nick || '-')}</span>
-                  ${m.email === (window.currentUser?.email) ? '<span style="font-size:0.7rem;color:#d4af37;background:rgba(212,175,55,0.15);padding:1px 5px;border-radius:4px;">(Tú)</span>' : ''}
+                  ${m.email === (currentUser?.email) ? '<span style="font-size:0.7rem;color:#d4af37;background:rgba(212,175,55,0.15);padding:1px 5px;border-radius:4px;">(Tú)</span>' : ''}
                 </div>
               </td>
-              <td data-label="Email" style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
-              <td data-label="Rol" style="padding:10px 8px;">
+              <td style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
+              <td style="padding:10px 8px;">
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span class="role-badge role-${currentRole}">${escapeHTML(currentRole)}</span>
                   <select onchange="changeUserRole('${userId}', this.value, '${escapeHTML(m.nick || '')}')" 
@@ -2060,21 +1922,21 @@ function renderAdminMembersTable(members) {
                   </select>
                 </div>
               </td>
-              <td data-label="Estado" style="padding:10px 8px;">
+              <td style="padding:10px 8px;">
                 ${isActive 
                   ? '<span class="status-badge" style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid #2ecc71;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">ACTIVE</span>' 
                   : '<span class="status-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid #e74c3c;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">INACTIVE</span>'
                 }
               </td>
-              <td data-label="Últ. Actividad" style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
-              <td data-label="Prom. Tokens" style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</td>
-              <td data-label="Acciones" style="padding:10px 8px;text-align:center;">
-                <div class="mobile-actions" style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;">
+              <td style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
+              <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</td>
+              <td style="padding:10px 8px;text-align:center;">
+                <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
                   ${isActive 
-                    ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.7rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">Inact</button>`
-                    : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.7rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">Activ</button>`
+                    ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
+                    : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
                   }
-                  <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.7rem;cursor:pointer;" title="Resetear contraseña institucional">Clave</button>
+                  <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
                 </div>
               </td>
             </tr>
@@ -2275,13 +2137,13 @@ function renderAllPerformances(list) {
         <tbody>
           ${list.map(p => `
             <tr style="border-bottom:1px solid rgba(148,163,184,0.1);">
-              <td data-label="Piloto" style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(p.nick || 'Piloto')}</td>
-              <td data-label="Evento" style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(p.event_id || '-')}</td>
-              <td data-label="Tokens" style="padding:8px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">${p.tokens ?? 0}</td>
-              <td data-label="Días" style="padding:8px;">${p.days_connected ?? 0}</td>
-              <td data-label="Grupo" style="padding:8px;">${p.flew_in_group ? 'Sí' : 'No'}</td>
-              <td data-label="Estado" style="padding:8px;"><span class="status-badge status-${(p.status || 'VERDE').toLowerCase()}">${p.status || 'VERDE'}</span></td>
-              <td data-label="Fecha" style="padding:8px;font-size:0.75rem;color:#94a3b8;">${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</td>
+              <td style="padding:8px;font-weight:600;color:#f8fafc;">${escapeHTML(p.nick || 'Piloto')}</td>
+              <td style="padding:8px;font-size:0.8rem;color:#94a3b8;">${escapeHTML(p.event_id || '-')}</td>
+              <td style="padding:8px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#38bdf8;">${p.tokens ?? 0}</td>
+              <td style="padding:8px;">${p.days_connected ?? 0}</td>
+              <td style="padding:8px;">${p.flew_in_group ? '✅ Sí' : '❌ No'}</td>
+              <td style="padding:8px;"><span class="status-badge status-${(p.status || 'VERDE').toLowerCase()}">${p.status || 'VERDE'}</span></td>
+              <td style="padding:8px;font-size:0.75rem;color:#94a3b8;">${p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -2358,436 +2220,6 @@ async function loadOwnerPanel() {
 }
 
 // ============================================================
-// ========== 6. ADMINISTRACIÓN DE CATÁLOGO DE AVIONES ========
-// ============================================================
-let allAdminPlaneModelsCache = [];
-
-function showAdminTab(tab) {
-  console.log('🔍 showAdminTab llamado con:', tab);
-  
-  // Obtener elementos
-  const contentMembers = document.getElementById('adminMembersTabContent');
-  const contentPlanes = document.getElementById('adminPlanesTabContent');
-  const btnMembers = document.getElementById('adminTabBtnMembers');
-  const btnPlanes = document.getElementById('adminTabBtnPlanes');
-  
-  const isCatalog = (tab === 'catalog' || tab === 'planes');
-  console.log('📋 isCatalog:', isCatalog);
-  
-  // Resetear TODOS los botones
-  document.querySelectorAll('.admin-tabs-nav .tab-btn, #adminPanel .tab-btn, .btn-tab').forEach(btn => {
-    btn.classList.remove('active');
-    btn.style.background = 'rgba(15,23,42,0.6)';
-    btn.style.color = 'var(--steel-gray)';
-    btn.style.borderColor = 'rgba(148,163,184,0.2)';
-  });
-  
-  // FORZAR ocultar todos los contenidos
-  if (contentMembers) contentMembers.style.display = 'none';
-  if (contentPlanes) contentPlanes.style.display = 'none';
-  
-  // FORZAR mostrar el seleccionado
-  if (isCatalog) {
-    console.log('✅ Mostrando Catálogo');
-    if (contentPlanes) {
-      contentPlanes.style.display = 'block';
-      console.log('📄 contentPlanes display:', contentPlanes.style.display);
-    }
-    if (btnPlanes) {
-      btnPlanes.classList.add('active');
-      btnPlanes.style.background = 'rgba(212,175,55,0.15)';
-      btnPlanes.style.color = 'var(--gold-rank)';
-      btnPlanes.style.borderColor = 'rgba(212,175,55,0.4)';
-    }
-    // Forzar carga del catálogo
-    if (typeof loadPlaneCatalogAdmin === 'function') {
-      setTimeout(loadPlaneCatalogAdmin, 200);
-    }
-  } else {
-    console.log('✅ Mostrando Miembros');
-    if (contentMembers) {
-      contentMembers.style.display = 'block';
-    }
-    if (btnMembers) {
-      btnMembers.classList.add('active');
-      btnMembers.style.background = 'rgba(212,175,55,0.15)';
-      btnMembers.style.color = 'var(--gold-rank)';
-      btnMembers.style.borderColor = 'rgba(212,175,55,0.4)';
-    }
-    if (typeof loadAdminPanel === 'function') {
-      loadAdminPanel();
-    }
-  }
-}
-
-const switchAdminTab = showAdminTab;
-
-async function loadPlaneCatalogAdmin() {
-  const tbody = document.getElementById('adminPlaneCatalogTableBody');
-  if (tbody) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align:center;padding:2.5rem;color:var(--steel-gray);">
-          <div class="loading-spinner" style="margin-bottom:8px;">⏳</div>
-          Cargando catálogo oficial de aeronaves...
-        </td>
-      </tr>
-    `;
-  }
-
-  try {
-    const data = await fetchAdminPlaneCatalog();
-    const planes = data.planes || (Array.isArray(data) ? data : []);
-    allAdminPlaneModelsCache = planes;
-
-    updatePlaneCatalogStats(planes);
-    renderPlaneCatalogTable(planes);
-
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-      lucide.createIcons();
-    }
-  } catch (err) {
-    console.error('Error cargando catálogo de aviones:', err);
-    if (tbody) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align:center;padding:2rem;color:#f87171;">
-            ⚠️ Error al consultar el catálogo de aviones: ${escapeHTML(err.message || 'Error del servidor')}
-            <div style="margin-top:10px;">
-              <button onclick="loadPlaneCatalogAdmin()" class="btn-secondary btn-sm">🔄 Reintentar</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }
-    showToast('❌ Error al cargar catálogo de aviones', 'error');
-  }
-}
-
-function updatePlaneCatalogStats(planes) {
-  const totalEl = document.getElementById('adminCatalogTotalPlanes');
-  const activeEl = document.getElementById('adminCatalogActivePlanes');
-  const inactiveEl = document.getElementById('adminCatalogInactivePlanes');
-  const specialEl = document.getElementById('adminCatalogSpecialPlanes');
-
-  const total = planes.length;
-  const activeCount = planes.filter(p => p.is_active !== false).length;
-  const inactiveCount = total - activeCount;
-  const specialCount = planes.filter(p => p.special_name && p.special_name.trim() !== '').length;
-
-  if (totalEl) totalEl.textContent = total;
-  if (activeEl) activeEl.textContent = activeCount;
-  if (inactiveEl) inactiveEl.textContent = inactiveCount;
-  if (specialEl) specialEl.textContent = specialCount;
-}
-
-function renderPlaneCatalogTable(planes) {
-  const tbody = document.getElementById('adminPlaneCatalogTableBody');
-  if (!tbody) return;
-
-  if (planes.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align:center;padding:2.5rem;color:var(--steel-gray);">
-          No se encontraron modelos de aeronaves en el catálogo con los filtros actuales.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = planes.map(plane => {
-    const isActive = plane.is_active !== false;
-    const planeId = String(plane.id);
-    const planeName = plane.name || 'Sin Nombre';
-    const planeType = plane.type || 'Caza de Combate';
-    const specialName = plane.special_name || null;
-    const passiveName = plane.passive_name || null;
-
-    return `
-      <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(239,68,68,0.04)' : 'transparent'};">
-        <td data-label="ID" style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold-rank);">
-          #${escapeHTML(planeId)}
-        </td>
-        <td data-label="Modelo" style="padding:10px 8px;font-weight:600;color:#f8fafc;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span>${escapeHTML(planeName)}</span>
-          </div>
-        </td>
-        <td data-label="Tipo" style="padding:10px 8px;">
-          <span style="font-size:0.75rem;padding:2px 8px;border-radius:4px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">
-            ${escapeHTML(planeType)}
-          </span>
-        </td>
-        <td data-label="Especial" style="padding:10px 8px;font-size:0.82rem;color:${specialName ? '#fbbf24' : '#64748b'};">
-          ${specialName ? `${escapeHTML(specialName)}` : '—'}
-        </td>
-        <td data-label="Pasiva" style="padding:10px 8px;font-size:0.82rem;color:${passiveName ? '#c084fc' : '#64748b'};">
-          ${passiveName ? `${escapeHTML(passiveName)}` : '—'}
-        </td>
-        <td data-label="Estado" style="padding:10px 8px;text-align:center;">
-          ${isActive 
-            ? '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid #22c55e;font-weight:600;">ACTIVE</span>'
-            : '<span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid #ef4444;font-weight:600;">INACTIVE</span>'
-          }
-        </td>
-        <td data-label="Acciones" style="padding:10px 8px;text-align:center;">
-          <div class="mobile-actions" style="display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;">
-            <button onclick="editPlaneCatalog('${escapeHTML(planeId)}')" class="btn-secondary btn-sm" style="padding:3px 8px;font-size:0.7rem;" title="Modificar especificaciones del avión">
-              Edit
-            </button>
-            ${isActive 
-              ? `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', true, '${escapeHTML(planeName)}')" class="btn-danger btn-sm" style="padding:3px 8px;font-size:0.7rem;background:#ef4444;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar avión del catálogo">
-                   Inact
-                 </button>`
-              : `<button onclick="togglePlaneStatus('${escapeHTML(planeId)}', false, '${escapeHTML(planeName)}')" class="btn-success btn-sm" style="padding:3px 8px;font-size:0.7rem;background:#22c55e;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar avión en el catálogo">
-                   Activ
-                 </button>`
-            }
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function filterPlaneCatalog() {
-  const search = (document.getElementById('adminPlaneSearch')?.value || '').toLowerCase().trim();
-  const type = document.getElementById('adminPlaneTypeFilter')?.value || '';
-  const status = document.getElementById('adminPlaneStatusFilter')?.value || '';
-  const skill = document.getElementById('adminPlaneSkillFilter')?.value || '';
-
-  const filtered = allAdminPlaneModelsCache.filter(plane => {
-    const id = String(plane.id || '').toLowerCase();
-    const name = (plane.name || '').toLowerCase();
-    const pType = (plane.type || '').toLowerCase();
-    const isActive = plane.is_active !== false;
-
-    if (search && !id.includes(search) && !name.includes(search) && !pType.includes(search)) {
-      return false;
-    }
-    if (type && plane.type !== type) {
-      return false;
-    }
-    if (status === 'active' && !isActive) return false;
-    if (status === 'inactive' && isActive) return false;
-
-    if (skill === 'with_special' && (!plane.special_name || plane.special_name.trim() === '')) return false;
-    if (skill === 'with_passive' && (!plane.passive_name || plane.passive_name.trim() === '')) return false;
-
-    return true;
-  });
-
-  renderPlaneCatalogTable(filtered);
-}
-
-function resetPlaneCatalogFilters() {
-  ['adminPlaneSearch', 'adminPlaneTypeFilter', 'adminPlaneStatusFilter', 'adminPlaneSkillFilter'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  renderPlaneCatalogTable(allAdminPlaneModelsCache);
-}
-
-function showAddPlaneCatalogModal() {
-  const form = document.getElementById('planeCatalogForm');
-  if (form) form.reset();
-
-  const modeEl = document.getElementById('planeCatalogMode');
-  if (modeEl) modeEl.value = 'create';
-
-  const idEl = document.getElementById('planeCatalogId');
-  if (idEl) {
-    idEl.value = '';
-    idEl.disabled = false;
-  }
-
-  const titleEl = document.getElementById('planeCatalogModalTitle');
-  if (titleEl) titleEl.innerHTML = '✈️ Registrar Nuevo Avión';
-
-  const modal = document.getElementById('planeCatalogModal');
-  if (modal) modal.style.display = 'flex';
-
-  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-}
-
-function editPlaneCatalog(planeId) {
-  const plane = allAdminPlaneModelsCache.find(p => String(p.id) === String(planeId));
-  if (!plane) {
-    showToast('⚠️ No se encontró la aeronave seleccionada', 'warning');
-    return;
-  }
-
-  const form = document.getElementById('planeCatalogForm');
-  if (form) form.reset();
-
-  const modeEl = document.getElementById('planeCatalogMode');
-  if (modeEl) modeEl.value = 'edit';
-
-  const idEl = document.getElementById('planeCatalogId');
-  if (idEl) {
-    idEl.value = plane.id;
-    idEl.disabled = true;
-  }
-
-  const nameEl = document.getElementById('planeCatalogName');
-  if (nameEl) nameEl.value = plane.name || '';
-
-  const typeEl = document.getElementById('planeCatalogType');
-  if (typeEl) typeEl.value = plane.type || 'Light Fighter';
-
-  const activeEl = document.getElementById('planeCatalogIsActive');
-  if (activeEl) activeEl.value = String(plane.is_active !== false);
-
-  const specialEl = document.getElementById('planeCatalogSpecialName');
-  if (specialEl) specialEl.value = plane.special_name || '';
-
-  const specialLvlEl = document.getElementById('planeCatalogSpecialLevels');
-  if (specialLvlEl) specialLvlEl.value = plane.special_levels ? JSON.stringify(plane.special_levels, null, 2) : '';
-
-  const passiveEl = document.getElementById('planeCatalogPassiveName');
-  if (passiveEl) passiveEl.value = plane.passive_name || '';
-
-  const passiveLvlEl = document.getElementById('planeCatalogPassiveLevels');
-  if (passiveLvlEl) passiveLvlEl.value = plane.passive_levels ? JSON.stringify(plane.passive_levels, null, 2) : '';
-
-  const statsEl = document.getElementById('planeCatalogStatsReal');
-  if (statsEl) statsEl.value = plane.stats_real ? JSON.stringify(plane.stats_real, null, 2) : '';
-
-  const titleEl = document.getElementById('planeCatalogModalTitle');
-  if (titleEl) titleEl.innerHTML = `✏️ Modificar Avión: ${escapeHTML(plane.name || '')} (#${escapeHTML(plane.id)})`;
-
-  const modal = document.getElementById('planeCatalogModal');
-  if (modal) modal.style.display = 'flex';
-
-  if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-}
-
-function closePlaneCatalogModal() {
-  const modal = document.getElementById('planeCatalogModal');
-  if (modal) modal.style.display = 'none';
-}
-
-function toggleAdvancedCatalogFields() {
-  const container = document.getElementById('advancedCatalogFields');
-  if (container) {
-    const isHidden = container.style.display === 'none';
-    container.style.display = isHidden ? 'grid' : 'none';
-  }
-}
-
-async function handleSavePlaneCatalog(event) {
-  if (event && event.preventDefault) event.preventDefault();
-
-  const mode = document.getElementById('planeCatalogMode')?.value || 'create';
-  const id = document.getElementById('planeCatalogId')?.value?.trim();
-  const name = document.getElementById('planeCatalogName')?.value?.trim();
-  const type = document.getElementById('planeCatalogType')?.value?.trim();
-  const isActive = document.getElementById('planeCatalogIsActive')?.value === 'true';
-  const specialName = document.getElementById('planeCatalogSpecialName')?.value?.trim() || null;
-  const specialLevelsRaw = document.getElementById('planeCatalogSpecialLevels')?.value?.trim() || '';
-  const passiveName = document.getElementById('planeCatalogPassiveName')?.value?.trim() || null;
-  const passiveLevelsRaw = document.getElementById('planeCatalogPassiveLevels')?.value?.trim() || '';
-  const statsRealRaw = document.getElementById('planeCatalogStatsReal')?.value?.trim() || '';
-
-  if (!id || !name || !type) {
-    showToast('⚠️ Por favor completa los campos obligatorios (ID, Nombre, Tipo)', 'warning');
-    return;
-  }
-
-  let specialLevels = null;
-  if (specialLevelsRaw) {
-    try {
-      specialLevels = JSON.parse(specialLevelsRaw);
-    } catch (e) {
-      showToast('⚠️ Formato JSON inválido en Niveles Habilidad Especial', 'error');
-      return;
-    }
-  }
-
-  let passiveLevels = null;
-  if (passiveLevelsRaw) {
-    try {
-      passiveLevels = JSON.parse(passiveLevelsRaw);
-    } catch (e) {
-      showToast('⚠️ Formato JSON inválido en Niveles Habilidad Pasiva', 'error');
-      return;
-    }
-  }
-
-  let statsReal = null;
-  if (statsRealRaw) {
-    try {
-      statsReal = JSON.parse(statsRealRaw);
-    } catch (e) {
-      showToast('⚠️ Formato JSON inválido en Estadísticas Reales', 'error');
-      return;
-    }
-  }
-
-  const payload = {
-    id,
-    name,
-    type,
-    is_active: isActive,
-    special_name: specialName,
-    special_levels: specialLevels,
-    passive_name: passiveName,
-    passive_levels: passiveLevels,
-    stats_real: statsReal
-  };
-
-  const submitBtn = document.getElementById('btnSubmitPlaneCatalog');
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '⏳ Guardando...';
-  }
-
-  try {
-    if (mode === 'create') {
-      await createAdminPlaneModel(payload);
-      showToast(`✅ Aeronave "${name}" registrada en el catálogo`, 'success');
-    } else {
-      await updateAdminPlaneModel(id, payload);
-      showToast(`✅ Aeronave "${name}" actualizada correctamente`, 'success');
-    }
-
-    closePlaneCatalogModal();
-    await loadPlaneCatalogAdmin();
-  } catch (err) {
-    console.error('Error guardando avión en catálogo:', err);
-    showToast(`❌ Error: ${err.message || 'No se pudo guardar la aeronave'}`, 'error');
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px;"></i> Guardar Aeronave';
-      if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-    }
-  }
-}
-
-async function togglePlaneStatus(planeId, currentStatus, planeName) {
-  const nextStatus = !currentStatus;
-  const actionText = nextStatus ? 'ACTIVAR' : 'DESACTIVAR';
-  if (!confirm(`¿Confirmas ${actionText} el avión "${planeName || planeId}" en el catálogo oficial?`)) {
-    return;
-  }
-
-  try {
-    await toggleAdminPlaneModelStatus(planeId, nextStatus);
-    showToast(`✅ Aeronave "${planeName || planeId}" ${nextStatus ? 'activada' : 'desactivada'} correctamente`, 'success');
-    await loadPlaneCatalogAdmin();
-  } catch (err) {
-    console.error('Error alternando estado del avión:', err);
-    showToast(`❌ ${err.message || 'Error al modificar estado'}`, 'error');
-  }
-}
-
-// Aliases for compatibility
-window.addPlane = typeof showAddPlaneModal === 'function' ? showAddPlaneModal : showAddPlaneCatalogModal;
-window.editPlaneCatalog = editPlaneCatalog;
-
-// ============================================================
 // ✅ EXPOSICIÓN GLOBAL EN WINDOW PARA TODOS LOS HANDLERS HTML
 // ============================================================
 window.showView = showView;
@@ -2847,24 +2279,5 @@ window.exportPlanesXLSX = exportPlanesXLSX;
 window.toggleMobileDrawer = toggleMobileDrawer;
 window.openMobileDrawer = openMobileDrawer;
 window.closeMobileDrawer = closeMobileDrawer;
-
-// Catálogo de Aviones (Admin)
-window.showAdminTab = showAdminTab;
-window.switchAdminTab = switchAdminTab;
-window.loadPlaneCatalogAdmin = loadPlaneCatalogAdmin;
-window.VIEWS_REGISTRY = VIEWS_REGISTRY;
-window.renderPlaneCatalogTable = renderPlaneCatalogTable;
-window.filterPlaneCatalog = filterPlaneCatalog;
-window.resetPlaneCatalogFilters = resetPlaneCatalogFilters;
-window.showAddPlaneCatalogModal = showAddPlaneCatalogModal;
-window.editPlaneCatalog = editPlaneCatalog;
-window.addPlane = addPlane;
-window.editPlane = editPlane;
-window.closePlaneCatalogModal = closePlaneCatalogModal;
-window.toggleAdvancedCatalogFields = toggleAdvancedCatalogFields;
-window.handleSavePlaneCatalog = handleSavePlaneCatalog;
-window.togglePlaneStatus = togglePlaneStatus;
-window.activateBlackMarket = activateBlackMarket;
-window.renderAdminBlackMarketInfo = renderAdminBlackMarketInfo;
 
 console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');

@@ -26,7 +26,7 @@ export const getSummary = async (req, res, next) => {
         // Obtener usuarios activos
         const { data: users } = await supabase
           .from('users')
-          .select('id, user_id, email, nick, role, status')
+          .select('id, user_id, email, nick, role, status, perf_status, avg_tokens, weeks_evaluated')
           .order('nick', { ascending: true });
 
         const activeUsersList = (users || []).filter(u => {
@@ -53,13 +53,8 @@ export const getSummary = async (req, res, next) => {
             const keyId = u.user_id ? String(u.user_id) : (u.id ? String(u.id) : '');
             const keyNick = (u.nick || '').toLowerCase();
             const stats = avgMap[keyId] || avgMap[keyNick] || null;
-            const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : 0;
-            const count = stats && stats.count > 0 ? stats.count : 0;
-
-            let stColor = 'VERDE';
-            if (avg > 0 && avg < 100) stColor = 'NEGRO';
-            else if (avg > 0 && avg < 130) stColor = 'ROJO';
-            else if (avg > 0 && avg < 175) stColor = 'NARANJA';
+            const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : (Number(u.avg_tokens) || 0);
+            const count = stats && stats.count > 0 ? stats.count : (Number(u.weeks_evaluated) || 0);
 
             return {
               id: u.id || u.user_id,
@@ -68,7 +63,7 @@ export const getSummary = async (req, res, next) => {
               nick: u.nick || u.email?.split('@')[0],
               role: (u.role || 'MIEMBRO').toUpperCase(),
               avg_tokens: avg,
-              perf_status: stColor,
+              perf_status: u.perf_status || 'VERDE',
               status: (u.status || 'ACTIVE').toUpperCase(),
               weeks_evaluated: count
             };
@@ -103,21 +98,14 @@ export const getSummary = async (req, res, next) => {
       ? Math.round(usersWithAvg.reduce((acc, u) => acc + (u.avg_tokens || 0), 0) / usersWithAvg.length)
       : 0;
 
-    let userPerfStatus = 'VERDE';
-    if (userTokensAvg > 0) {
-      if (userTokensAvg < 100) userPerfStatus = 'NEGRO';
-      else if (userTokensAvg < 130) userPerfStatus = 'ROJO';
-      else if (userTokensAvg < 175) userPerfStatus = 'NARANJA';
-    }
-
     res.json({
       success: true,
       currentEvent: activeEvent,
       userStats: {
         avg_tokens: userTokensAvg,
-        weeks_evaluated: userWeeks || 0,
-        trend: 'stable',
-        perf_status: userPerfStatus
+        weeks_evaluated: userWeeks || 1,
+        trend: user.trend || 'stable',
+        perf_status: user.perf_status || 'VERDE'
       },
       squadStats: {
         total_members: totalMembersCount,
@@ -140,7 +128,7 @@ export const getActiveMembers = async (req, res, next) => {
     if (supabase) {
       const { data: users, error } = await supabase
         .from('users')
-        .select('id, user_id, email, nick, role, status')
+        .select('id, user_id, email, nick, role, status, perf_status, avg_tokens')
         .order('nick', { ascending: true });
 
       if (!error && users) {
@@ -155,10 +143,11 @@ export const getActiveMembers = async (req, res, next) => {
             email: u.email,
             nick: u.nick || u.email?.split('@')[0],
             role: (u.role || 'MIEMBRO').toUpperCase(),
-            perf_status: 'VERDE',
+            perf_status: u.perf_status || 'VERDE',
             status: (u.status || 'ACTIVE').toUpperCase(),
-            avg_tokens: 0
-          }));
+            avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
+          }))
+          .sort((a, b) => b.avg_tokens - a.avg_tokens);
       }
     }
 
