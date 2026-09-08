@@ -1,144 +1,117 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-Bienvenido al manual operativo oficial del escuadrón **PARAGUAY FFAA `[PRY]`** en *MetalStorm*.
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.3.2).**
 
 ---
 
-## 1. Acceso a la Plataforma
+## 1. Acceso a la Plataforma y Credenciales
 
-### 1.1 Primer Acceso
-1. Abre el enlace oficial del escuadrón en tu navegador móvil o de escritorio.
-2. Ingresa tus credenciales oficiales de piloto:
-   - **Correo Electrónico:** Tu correo registrado en el escuadrón.
-   - **Contraseña:** `123456` (temporal, proporcionada por Admin/Owner)
-3. El sistema te **obligará a cambiar tu contraseña** por razones de seguridad.
-4. Al ingresar, accederás directamente al **Cuadro de Mando Operacional**.
+### 1.1 Primer Acceso y Reclutas
+1. Abre el enlace oficial de combate: [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/).
+2. Ingresa tus credenciales oficiales proporcionadas por tu Oficial de Mando:
+   - **Correo Institucional:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).
+   - **Contraseña Temporal:** Formato militar criptoseguro de alta entropía `MS-XXXX-XXXX` (ejemplo: `MS-8K3P-Q7W2`).
+3. **Cambio Obligatorio:** Al autenticarte por primera vez con una clave temporal, el sistema desplegará de inmediato el modal de cambio forzado:
+   - Tu nueva contraseña personal debe tener **al menos 8 caracteres**.
+   - No utilices secuencias débiles o predecibles.
+4. Al guardar tu nueva clave, el sistema registrará tu sesión segura e ingresarás directamente al **Cuadro de Mando Operacional (Dashboard)**.
 
-### 1.2 ¿Olvidaste tu Contraseña?
-1. Contacta a un **Admin** u **Owner** del escuadrón.
-2. Solicita un **reset de contraseña**.
-3. Recibirás una contraseña temporal: `123456`.
-4. **Cambia tu contraseña obligatoriamente** en el primer inicio de sesión.
-
----
-
-## 2. Guía de Vistas y Módulos
-
-### 2.1 📊 Cuadro de Mando (Dashboard)
-- **Estado de Combate:** Muestra tu estado actual (`VERDE`, `NARANJA`, `ROJO`, `NEGRO`).
-- **Mi Promedio:** Promedio calculado en base a los eventos en los que has participado.
-- **Objetivo Semanal del Escuadrón:** Barra de progreso hacia la meta institucional de 175 tokens promedio por piloto.
-- **Gráfico de Tendencia:** Evolución de tus tokens frente al promedio del escuadrón en los últimos 4 eventos.
-- **Top 5 Pilotos:** Clasificación en tiempo real de los pilotos más destacados de la semana.
-
-### 2.2 📝 Registro de Rendimiento Semanal
-1. Selecciona **"Registrar Tokens"** desde el menú o el botón de acción rápida.
-2. Selecciona el **Evento Activo** en el desplegable.
-3. Ingresa la cantidad de **Tokens Obtenidos** (máximo 200 para eventos estándar o 250 para *Black Market*).
-4. Marca los **Días Conectado** durante la semana (1 a 7).
-5. Indica si realizaste vuelos en escuadrilla (*Vuelo en Grupo*).
-6. Presiona **"Registrar Rendimiento"**. El sistema actualizará inmediatamente tu estado militar.
-
-### 2.3 ✈️ Hangar de Aeronaves
-- Registra y administra tus cazas de combate (F-14 Tomcat, F-16 Falcon, Su-27 Flanker, JAS 39 Gripen, etc.).
-- Actualiza el nivel de tus aviones (1 al 20) y configura habilidades especiales y módulos pasivos.
-- **Nuevo:** Gestiona los sistemas mejorables (Upgrades 2.0):
-  - Fuselaje (Defensa/HP)
-  - Motor (Velocidad/Aceleración)
-  - Aviónica (Alcance/Radar)
-  - Armas (Daño/Misiles)
-
-### 2.4 👤 Perfil del Piloto (Expediente Militar)
-- **Visualiza** tu placa de identificación táctica con tu Callsign y rango.
-- **Actualiza** tus datos personales (Nombre real, correo de respaldo, número de WhatsApp para emergencias).
-- **Configura** tus preferencias de alertas de ventanas operativas.
-- **🔐 Cambiar Contraseña:** Desde el perfil, puedes actualizar tu contraseña:
-  1. Ve a la sección **"Cambiar Contraseña"**.
-  2. Ingresa tu **contraseña actual**.
-  3. Ingresa tu **nueva contraseña** (mínimo 6 caracteres).
-  4. Confirma la nueva contraseña.
-  5. Presiona **"Actualizar Contraseña"**.
-
-### 2.5 📚 Normativas del Escuadrón
-- Consulta las directivas y reglamentos vigentes aprobados por el Alto Mando de las FFAA.
-- Descarga y visualiza circulares operacionales y protocolos de combate.
-
-### 2.6 🛡️ Panel de Administración (Admin/Owner)
-- **Gestión de Pilotos:** Registra nuevos pilotos, modifica roles y estados.
-- **🔐 Resetear Contraseña:** Desde el panel de administración, puedes resetear la contraseña de cualquier piloto a `123456`.
-- **Carga Masiva de Eventos:** Carga tokens para todo el escuadrón de una vez.
+### 1.2 ¿Olvidaste tu Contraseña o Sesión Bloqueada?
+1. Contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o canal seguro de Discord.
+2. El oficial ingresará al panel administrativo y ejecutará el comando seguro de reseteo (`Reset Pass`).
+3. El sistema generará una contraseña temporal única de formato `MS-XXXX-XXXX` que el oficial te entregará por vía privada.
+4. Al iniciar sesión, deberás definir obligatoriamente tu nueva contraseña de 8 o más caracteres.
+5. **Seguridad Anti-Sesión Fantasma:** Al resetear o cambiar la clave, cualquier sesión que haya quedado abierta en otros dispositivos será **invalidada de forma instantánea** mediante el control criptográfico `token_version`.
 
 ---
 
-## 3. Escala de Cumplimiento de Tokens
+## 2. Guía Operativa de Módulos y Vistas
 
-- 🟢 **VERDE (Excelente - ≥ 175 tokens):** Has alcanzado o superado la meta del escuadrón. Eres elegible para ascensos y roles de mando.
-- 🟡 **NARANJA (Advertencia - 130 a 174 tokens):** Tu rendimiento está por debajo del estándar. Requiere mayor actividad en los siguientes eventos.
-- 🔴 **ROJO (Crítico - 100 a 129 tokens):** Estado en riesgo. Se evaluará tu permanencia en el escuadrón en la siguiente junta de oficiales.
-- ⚫ **NEGRO (Inactivo / Sanción - < 100 tokens o 0 días):** Sujeto a baja inmediata del escuadrón salvo justificación previa ante un Oficial `ADMIN` o `OWNER`.
+### 2.1 📊 Cuadro de Mando Táctico (Dashboard C4ISR)
+- **Semáforo Operacional:** Tu distintivo militar actual (`VERDE`, `NARANJA`, `ROJO`, `NEGRO`).
+- **Promedio Personal:** Promedio acumulado de tokens en las últimas semanas evaluadas.
+- **Meta del Escuadrón:** Barra de progreso hacia la cuota institucional de **175 tokens promedio** por piloto.
+- **Alerta de Pilotos en Riesgo:** Conteo de camaradas en estado rojo o negro que requieren apoyo inmediato.
+- **Gráfico de Tendencia Histórica:** Curva de rendimiento personal en contraste con el promedio general.
+- **Clasificación Top 5:** Los cinco pilotos más destacados de la semana con mayor contribución al escuadrón.
+
+### 2.2 📝 Registro Semanal de Rendimiento y Tokens
+1. Accede a **"Registrar Tokens"** desde el menú táctico o el botón de acción rápida del dashboard.
+2. Selecciona el **Evento Activo** (ej: `SQUADRON-2026-36` o evento `BLACK_MARKET`).
+3. Ingresa la cantidad de **Tokens Obtenidos** (validado estrictamente hasta 300 tokens).
+4. Indica la cantidad de **Días Conectado** durante la semana operativa (de 0 a 7 días).
+5. Marca la casilla si volaste en patrulla o formación coordinada (*Vuelo en Grupo*).
+6. Opcionalmente añade notas de misión (aeronave utilizada, sector de patrulla o incidencias).
+7. Presiona **"Registrar Rendimiento"**. El servidor calculará al instante tu nuevo estado y actualizará tu expediente.
+
+> ⚠️ **Corrección de Datos:** Si te equivocas en el registro, simplemente vuelve a enviar el formulario para el mismo evento. El sistema actualizará tu registro anterior sin duplicados.
+
+### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0
+El módulo de Hangar te permite registrar tus cazas de combate (F-22 Raptor, Su-57 Felon, F-35 Lightning, Eurofighter Typhoon, Rafale, Gripen, etc.) y gestionar sus especificaciones:
+- **Nivel de Aeronave:** Rango de 1 a 20.
+- **Módulos Pasivos y Habilidades Especiales:** Selección de configuraciones según el catálogo oficial.
+- **Sistemas Mecánicos Upgrades 2.0 (Niveles 0 a 8):**
+  - 🛡️ **Fuselaje:** Blindaje, reducción de firma de radar y resistencia estructural.
+  - 🚀 **Motor:** Empuje vectorial, aceleración con posquemador y velocidad máxima.
+  - 📡 **Aviónica:** Radar AESA, bloqueo de misiles y contramedidas electrónicas (ECM).
+  - 💥 **Armas:** Cadencia de cañón rotativo y letalidad de misiles aire-aire.
+- **Gestión de Recursos de Taller:** Control de piezas estándar (`recursos_piezas`) y componentes avanzados (`recursos_avanzadas`) requeridos para cada mejora.
+- **Ficha Técnica (Modal):** Presiona sobre cualquier caza para abrir la ventana de telemetría completa y especificaciones de combate.
+
+### 2.4 👤 Expediente Militar y Perfil del Piloto
+- Visualiza tu Callsign oficial, correo y rango asignado.
+- Actualiza tus datos de contacto (teléfono para alertas tácticas, bio de combate y discord).
+- **Cambio Voluntario de Contraseña:**
+  1. Ve a la sección **"Seguridad de la Cuenta"**.
+  2. Introduce tu **contraseña actual**.
+  3. Escribe tu **nueva contraseña** (mínimo 8 caracteres).
+  4. Confirma la nueva contraseña y presiona **"Actualizar Contraseña"**.
+
+### 2.5 📚 Centro de Normativas y Protocolos
+- Consulta reglamentos disciplinarios, códigos de conducta y protocolos de combate aprobados por la Comandancia.
+- Descarga en tu dispositivo las directivas operativas oficiales emitidas en formato textual/PDF.
+
+### 2.6 📥 Centro de Exportación de Datos (Admin & Owner)
+- Disponible para oficiales en el menú superior. Permite descargar reportes completos de actividad en formato CSV sanitizado contra inyecciones de fórmulas, listo para análisis en Excel o Google Sheets.
 
 ---
 
-## 4. Sistema de Contraseñas
+## 3. Escala Oficial del Semáforo Militar
 
-### 4.1 Cambiar Contraseña (Desde Perfil)
-1. Ir a **Perfil** (menú inferior).
-2. Desplazarse a la sección **"Cambiar Contraseña"**.
-3. Completar los campos:
-   - **Contraseña Actual**
-   - **Nueva Contraseña** (mínimo 6 caracteres)
-   - **Confirmar Nueva Contraseña**
-4. Presionar **"Actualizar Contraseña"**.
-5. Recibirás confirmación de cambio exitoso.
+La evaluación del combatiente se determina en el servidor considerando **tanto los tokens como los días de conexión**:
 
-### 4.2 Resetear Contraseña (Solo Admin/Owner)
-1. Ir a **Panel de Administración**.
-2. Buscar el piloto en la tabla de miembros.
-3. Presionar el botón **"Reset Pass"**.
-4. Confirmar la acción.
-5. La contraseña del piloto será reseteada a `123456`.
-6. El piloto deberá cambiarla obligatoriamente en su próximo inicio de sesión.
+| Distintivo | Requisito de Tokens | Días Conectado | Dictamen Militar |
+|:---:|:---:|:---:|:---|
+| 🟢 **VERDE** | $\ge 175$ tokens | $\ge 4$ días | **Sobresaliente:** Cumplimiento impecable de la meta. Prioridad para ascensos. |
+| 🟡 **NARANJA** | $130 - 174$ tokens | $\ge 3$ días | **Advertencia:** Por debajo del estándar del escuadrón. Intensificar patrullas. |
+| 🔴 **ROJO** | $100 - 129$ tokens | $\ge 2$ días | **Crítico:** Estado en riesgo. Sujeto a revisión por la Junta de Oficiales. |
+| ⚫ **NEGRO** | $< 100$ tokens | $< 2$ días | **Inactivo / Sanción:** Falta grave. Sujeto a pase a retiro o baja inmediata. |
 
-### 4.3 Recuperación de Contraseña (Usuarios)
-1. **No hay recuperación automática por email** (los correos son internos del juego).
-2. **Contacta a un Admin/Owner** para solicitar un reset de contraseña.
-3. Recibirás una contraseña temporal: `123456`.
+---
+
+## 4. Estructura Jerárquica y Cuotas Militares (RBAC)
+
+Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máximas de oficiales:
+
+- **👑 OWNER (Comandante en Jefe):** Máximo **1**. Comandancia absoluta, auditoría C4ISR, gestión de respaldos y nombramiento de oficiales.
+- **⭐ ADMIN (Oficial de Operaciones):** Máximo **3**. Altas y bajas de combatientes, activación de eventos Black Market, carga masiva de tokens y reseteo de claves.
+- **🎖️ VETERANO (Piloto Distinguido):** Máximo **8**. Pilotos de élite con preferencia en escuadrilla y acceso completo a estadísticas.
+- **✈️ MIEMBRO (Piloto de Escuadrón):** Base de combate regular. Registro semanal y gestión de hangar.
 
 ---
 
 ## 5. Preguntas Frecuentes (FAQ)
 
-**¿Puedo corregir mis tokens si me equivoqué?**
-Sí, puedes volver a enviar el formulario para el mismo evento. El sistema sobreescribirá tu registro previo manteniendo tu historial actualizado.
+**¿Qué debo hacer si no puedo ingresar con mi clave temporal?**  
+Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`). Si persiste, solicita a un Oficial que genere una nueva clave temporal.
 
-**¿Cómo instalo la aplicación en mi teléfono?**
-Toca el menú del navegador (los tres puntos en Chrome o el botón de compartir en Safari) y selecciona **"Agregar a la pantalla principal"** o **"Instalar aplicación"**.
+**¿Por qué mi sesión se cerró sola al cambiar de clave?**  
+Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
-**¿Olvidé mi contraseña, qué hago?**
-Contacta a un **Admin** u **Owner** para que te reseteen la contraseña a `123456`. Luego deberás cambiarla obligatoriamente.
-
-**¿Puedo cambiar mi contraseña yo mismo?**
-Sí, desde tu **Perfil** en la sección **"Cambiar Contraseña"**.
-
-**¿Qué pasa si no cambio mi contraseña en el primer login?**
-El sistema te lo recordará cada vez que inicies sesión hasta que la cambies.
-
-**¿Los Admin pueden resetear contraseñas?**
-Sí, los Admin y Owner pueden resetear la contraseña de cualquier piloto desde el Panel de Administración.
+**¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.3.2.
 
 ---
 
-## 6. Contacto y Soporte
-
-| Cargo | Responsabilidad |
-|-------|-----------------|
-| **👑 OWNER** | Comandante en Jefe - Control total del escuadrón |
-| **⭐ ADMIN** | Oficial de Operaciones - Gestión de pilotos y eventos |
-| **🎖️ VETERANO** | Piloto Experimentado - Consulta de estadísticas globales |
-| **✈️ MIEMBRO** | Piloto Regular - Registro de rendimiento y gestión de hangar |
-
----
-
-**PARAGUAY FFAA [PRY] — Escuadrón Oficial MetalStorm**
-
-*Versión: v3.1.0 · Última actualización: 01/09/2026*
+**PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
+*Versión: v3.3.2 · Actualizado: Septiembre 2026*
