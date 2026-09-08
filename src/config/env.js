@@ -12,6 +12,12 @@ export const ENV = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
   GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || '',
   FRONTEND_URL: process.env.FRONTEND_URL || 'https://paraguay-ffaa-metalstorm.fly.dev',
+  EMAIL_HOST: process.env.EMAIL_HOST || '',
+  EMAIL_PORT: process.env.EMAIL_PORT || '587',
+  EMAIL_USER: process.env.EMAIL_USER || '',
+  EMAIL_PASS: process.env.EMAIL_PASS || '',
+  EMAIL_FROM: process.env.EMAIL_FROM || '"PARAGUAY-FFAA | METALSTORM" <soporte@paraguay-ffaa.com>',
+  EMAIL_SECURE: process.env.EMAIL_SECURE || 'false',
   ALLOWED_ORIGINS: (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN)
     ? (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGIN).split(',').map(s => s.trim()).filter(Boolean)
     : [

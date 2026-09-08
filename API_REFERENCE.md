@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.3.2 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.5.0 del núcleo táctico.**
 
 ---
 
@@ -33,11 +33,16 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 |---|---|:---:|:---:|---|
 | **Health** | `/health` | `GET` | Público | Probe ligera de texto plano para Fly.io |
 | **Health** | `/api/health` | `GET` | Público | Telemetría C4ISR de uptime y fecha |
-| **Auth** | `/api/auth/login` | `POST` | Público (30/15m) | Iniciar sesión y obtener JWT |
+| **Auth** | `/api/auth/login` | `POST` | Público (30/15m) | Iniciar sesión dual (`email` o `email_institucional`) |
+| **Auth** | `/api/auth/google` | `GET` | Público | Iniciar flujo OAuth 2.0 con Google |
+| **Auth** | `/api/auth/google/callback` | `GET` | Público | Retorno y canje OAuth 2.0 |
+| **Auth** | `/api/auth/google/status` | `GET` | Público | Verificar disponibilidad y estado de vinculación |
+| **Auth** | `/api/auth/link-account` | `POST` | Público | Vincular Gmail con indicativo de combatiente |
 | **Auth** | `/api/auth/verify` o `/me` | `GET` | Autenticado | Verificar validez del JWT actual |
 | **Auth** | `/api/auth/register` | `POST` | Público | Registrar nuevo usuario con clave temporal |
 | **Auth** | `/api/auth/change-password`| `POST` | Autenticado | Cambiar clave y renovar `token_version` |
-| **Auth** | `/api/auth/forgot-password`| `POST` | Público | Solicitar clave temporal `MS-XXXX-XXXX` |
+| **Auth** | `/api/auth/forgot-password`| `POST` | Público | Generar token y enviar correo de 15 min |
+| **Auth** | `/api/auth/reset-password` | `POST` | Público | Restablecer contraseña con token táctico |
 | **Dashboard** | `/api/dashboard/summary` | `GET` | Autenticado | Resumen de evento, metas y Top 5 |
 | **Dashboard** | `/api/dashboard/active-members` | `GET` | Autenticado | Lista ordenada de miembros activos |
 | **Events** | `/api/events` | `GET` | Autenticado | Historial de eventos y ventana de tiempo |
@@ -82,10 +87,11 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 
 ### `POST /api/auth/login`
 - **Rate Limit:** 30 intentos cada 15 minutos por IP.
+- **Login Dual:** Acepta indistintamente la dirección de correo institucional (`@ffaa.py`) o la cuenta real de Gmail vinculada al perfil.
 - **Request Body:**
   ```json
   {
-    "email": "piloto@ffaa.mil.py",
+    "email": "piloto@ffaa.py",
     "password": "PasswordSeguro2026!"
   }
   ```
@@ -97,11 +103,89 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
       "id": 14,
       "user_id": 14,
       "nick": "Viper_PY",
-      "email": "piloto@ffaa.mil.py",
+      "email": "usuario@gmail.com",
+      "email_institucional": "piloto@ffaa.py",
+      "google_linked": true,
       "role": "OWNER",
       "perf_status": "VERDE",
       "must_change_password": false
     }
+  }
+  ```
+
+### `GET /api/auth/google/status`
+Verifica si el servicio de Google OAuth 2.0 está configurado y activo, y opcionalmente el estado de vinculación de un correo.
+- **Query Params:** `?email=usuario@gmail.com` (opcional)
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "enabled": true,
+    "provider": "google",
+    "linked": true
+  }
+  ```
+
+### `POST /api/auth/link-account`
+Vincula una cuenta de Google (Gmail) con un combatiente existente mediante la comprobación de su indicativo militar y contraseña.
+- **Rate Limit:** 10 intentos cada 15 minutos por IP.
+- **Request Body:**
+  ```json
+  {
+    "email": "combatiente@gmail.com",
+    "callsign": "VIPER",
+    "password": "MiPasswordActual123!"
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "¡Cuenta vinculada exitosamente a VIPER!",
+    "token": "eyJhbGciOiJIUzI1NiIsIn...",
+    "user": {
+      "id": 14,
+      "nick": "VIPER",
+      "email": "combatiente@gmail.com",
+      "email_institucional": "viper@ffaa.py",
+      "google_linked": true,
+      "role": "MEMBER"
+    }
+  }
+  ```
+
+### `POST /api/auth/forgot-password`
+Genera un token criptográfico seguro de un solo uso con vigencia estricta de 15 minutos, y despacha un correo táctico militar mediante Nodemailer.
+- **Rate Limit:** 5 solicitudes cada 15 minutos por IP.
+- **Búsqueda Dual:** Localiza la cuenta tanto si se proporciona el correo institucional (`@ffaa.py`) como el Gmail vinculado.
+- **Request Body:**
+  ```json
+  {
+    "email": "piloto@ffaa.py"
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Si el correo está registrado, se enviaron las instrucciones de restablecimiento."
+  }
+  ```
+
+### `POST /api/auth/reset-password`
+Restablece la contraseña militar del usuario empleando el token de 15 minutos recibido por correo electrónico. Al completarse, incrementa `token_version` para cerrar cualquier otra sesión activa.
+- **Rate Limit:** 10 solicitudes cada 15 minutos por IP.
+- **Request Body:**
+  ```json
+  {
+    "token": "a1b2c3d4e5f6...",
+    "newPassword": "NuevaPasswordFuerte2026!"
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Contraseña actualizada exitosamente. Todas las sesiones activas han sido cerradas."
   }
   ```
 
@@ -116,22 +200,6 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
   }
   ```
 - **Comportamiento Crítico:** Si `isForced` es true o el usuario tiene `must_change_password: true`, no se requiere la contraseña actual. El servidor incrementa `token_version` e invalida todos los tokens previos.
-
-### `POST /api/auth/forgot-password`
-- **Request Body:**
-  ```json
-  {
-    "email": "piloto@ffaa.mil.py"
-  }
-  ```
-- **Response Exitosa (200 OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Contraseña de Viper_PY reseteada. Deberá cambiarla al iniciar sesión.",
-    "temporaryPassword": "MS-4K7P-X9Q2"
-  }
-  ```
 
 ---
 

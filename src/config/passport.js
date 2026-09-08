@@ -39,36 +39,40 @@ export function configurePassport() {
                 }
 
                 // 1. Verificar si el email existe en la tabla users
-                const { data: users, error: userError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .ilike('email', email)
-                    .limit(1);
-
-                if (userError) {
-                    console.error('❌ [Passport Google] Error consultando usuario:', userError);
-                    return done(userError);
+                let users = [];
+                try {
+                    const { data: userData, error: userError } = await supabase
+                        .from('users')
+                        .select('*')
+                        .or(`email.ilike.${email},email_institucional.ilike.${email}`)
+                        .limit(1);
+                    if (!userError && userData) {
+                        users = userData;
+                    } else {
+                        // Fallback si email_institucional aún no existe en supabase
+                        const fallback = await supabase
+                            .from('users')
+                            .select('*')
+                            .ilike('email', email)
+                            .limit(1);
+                        users = fallback.data || [];
+                    }
+                } catch (e) {
+                    const fallback = await supabase
+                        .from('users')
+                        .select('*')
+                        .ilike('email', email)
+                        .limit(1);
+                    users = fallback.data || [];
                 }
 
-                // Si NO existe en users -> Denegar acceso
+                // Si NO existe en users -> Redirigir al flujo de vinculación táctica
                 if (!users || users.length === 0) {
-                    await logSecurityEvent({
-                        supabase,
-                        userId: null,
-                        nick: email,
-                        event: 'LOGIN_GOOGLE_DENIED_NOT_FOUND',
-                        ip: req.ip,
-                        userAgent: req.headers['user-agent'],
-                        metadata: { 
-                            email, 
-                            reason: 'email_not_registered',
-                            google_id: profile.id 
-                        }
-                    });
-
+                    console.log(`ℹ️ [Passport Google] Gmail ${email} no registrado. Procediendo a vinculación de cuenta.`);
                     return done(null, false, { 
-                        code: 'EMAIL_NOT_REGISTERED',
-                        message: '❌ Acceso denegado. Tu correo no está registrado en el escuadrón. Contacta a un administrador.' 
+                        code: 'NOT_LINKED',
+                        email: email,
+                        message: 'Cuenta de Google no vinculada. Redirigiendo a vinculación táctica.' 
                     });
                 }
 

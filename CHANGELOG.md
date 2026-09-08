@@ -6,6 +6,22 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.5.0] - 2026-09-08
+
+### 🚀 Autenticación Militar Dual & Vinculación de Cuentas (v3.5.0)
+- **Login Dual (Institucional + Gmail):** El login tradicional ahora permite iniciar sesión usando el correo institucional (`@ffaa.py`) o el Gmail real vinculado, contrastando contra `email` y `email_institucional`.
+- **Flujo de Vinculación de Cuentas Google (`/link-account`):** Cuando un piloto autentica con una cuenta de Google no registrada previamente, es redirigido automáticamente a la terminal de vinculación (`/link-account?email=...`) para asociar su indicativo de combate (Callsign) y contraseña existente con su cuenta de Google de forma permanente.
+- **Restablecimiento Criptográfico de Contraseñas (Tokens de 15 Minutos):** Reemplazo del reseteo anterior por un flujo criptoseguro con tokens de un solo uso generados con `crypto.randomBytes(32)` y expiración a los 15 minutos. Almacenamiento seguro en la tabla `password_resets`.
+- **Plantilla de Correo C4ISR Militar:** Módulo de correo con diseño táctico militar (#0038A8, #D52B1E, #0B132B) mediante `nodemailer` (`src/utils/email.js`) y función exportada `generateResetEmailHTML()`.
+- **Endpoints Tácticos de API:**
+  - `POST /api/auth/link-account`: Vincula un Gmail real con el combatiente tras validar indicativo y clave actual.
+  - `POST /api/auth/forgot-password`: Genera token de 15 min y despacha correo militar seguro (búsqueda dual en correo institucional y Gmail).
+  - `POST /api/auth/reset-password`: Valida token, vigencia, actualiza contraseña con bcrypt e incrementa `token_version` para invalidar sesiones activas.
+  - `GET /api/auth/google/status`: Provee estado de disponibilidad del servicio OAuth y estado de vinculación de correo.
+- **Interfaz Frontend:** Creación de página táctica `link-account.html`, actualización de `reset-password.html` y modal `components/forgot-password-modal.html`, junto con las funciones cliente `requestPasswordReset`, `confirmPasswordReset` y `checkGoogleStatus` en `js/auth.js`.
+
+---
+
 ## 📌 [3.4.0] - 2026-09-08
 
 ### 🔑 Autenticación Militar Google OAuth 2.0

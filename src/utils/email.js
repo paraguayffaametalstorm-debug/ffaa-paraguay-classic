@@ -40,18 +40,15 @@ export function getEmailTransporter() {
 }
 
 /**
- * Envía el correo militar de restablecimiento de contraseña
+ * Genera el HTML con diseño táctico militar para el correo de restablecimiento
  * @param {Object} params
- * @param {string} params.to - Correo destinatario
  * @param {string} params.nick - Callsign / Indicativo del combatiente
  * @param {string} params.resetUrl - URL completa de restablecimiento
  * @param {string} params.token - Token único criptoseguro
+ * @returns {string} Código HTML táctico
  */
-export async function sendPasswordResetEmail({ to, nick, resetUrl, token }) {
-    const client = getEmailTransporter();
-    const fromAddress = ENV.EMAIL_FROM || '"PARAGUAY-FFAA | METALSTORM" <soporte@paraguay-ffaa.com>';
-
-    const htmlContent = `
+export function generateResetEmailHTML({ nick, resetUrl, token }) {
+    return `
     <!DOCTYPE html>
     <html lang="es">
     <head>
@@ -98,13 +95,28 @@ export async function sendPasswordResetEmail({ to, nick, resetUrl, token }) {
           </p>
         </div>
         <div class="footer">
-          PARAGUAY FFAA [PRY] · Escuadrón Oficial MetalStorm · Versión v3.4.0<br>
+          PARAGUAY FFAA [PRY] · Escuadrón Oficial MetalStorm · Versión v3.5.0<br>
           Mensaje táctico automático emitido por el sistema C4ISR. No responder a esta casilla.
         </div>
       </div>
     </body>
     </html>
     `;
+}
+
+/**
+ * Envía el correo militar de restablecimiento de contraseña
+ * @param {Object} params
+ * @param {string} params.to - Correo destinatario
+ * @param {string} params.nick - Callsign / Indicativo del combatiente
+ * @param {string} params.resetUrl - URL completa de restablecimiento
+ * @param {string} params.token - Token único criptoseguro
+ */
+export async function sendPasswordResetEmail({ to, nick, resetUrl, token }) {
+    const client = getEmailTransporter();
+    const fromAddress = ENV.EMAIL_FROM || '"PARAGUAY-FFAA | METALSTORM" <soporte@paraguay-ffaa.com>';
+
+    const htmlContent = generateResetEmailHTML({ nick, resetUrl, token });
 
     const textContent = `
 PARAGUAY FFAA · METALSTORM

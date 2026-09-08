@@ -5,6 +5,8 @@ import {
     register, 
     changePassword, 
     forgotPassword, 
+    resetPassword,
+    linkAccount,
     googleAuth, 
     googleCallback, 
     googleStatus 
@@ -19,7 +21,9 @@ router.get('/verify', requireAuth, verifyMe);
 router.get('/me', requireAuth, verifyMe);
 router.post('/register', register);
 router.post('/change-password', requireAuth, changePassword);
-router.post('/forgot-password', forgotPassword);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
+router.post('/link-account', authLimiter, linkAccount);
 
 // Google OAuth 2.0 endpoints
 router.get('/google', googleAuth);

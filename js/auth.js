@@ -399,20 +399,44 @@ function backToLogin() {
   showLoginModal();
 }
 
-async function requestPasswordReset() {
-  const emailInput = document.getElementById('resetEmail');
-  if (!emailInput) return;
-  
-  const email = emailInput.value.trim();
+async function requestPasswordReset(customEmail = '') {
+  let email = (typeof customEmail === 'string' && customEmail.trim()) ? customEmail.trim() : '';
   
   if (!email) {
-    showToast('⚠️ Ingresa tu correo institucional', 'warning');
+    const emailInput = document.getElementById('forgotEmail') || document.getElementById('resetEmail');
+    if (emailInput) {
+      email = emailInput.value.trim();
+    }
+  }
+  
+  if (!email) {
+    showToast('⚠️ Ingresa tu correo (institucional o Gmail)', 'warning');
+    const msg = document.getElementById('forgotMessage');
+    if (msg) {
+      msg.textContent = 'Por favor ingresa tu correo electrónico';
+      msg.className = 'status-message error';
+      msg.style.display = 'block';
+    }
     return;
   }
   
-  if (!email.endsWith('@ffaa.py')) {
-    showToast('⚠️ Solo correos institucionales (@ffaa.py)', 'warning');
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showToast('⚠️ Formato de correo inválido', 'warning');
+    const msg = document.getElementById('forgotMessage');
+    if (msg) {
+      msg.textContent = 'Formato de correo inválido';
+      msg.className = 'status-message error';
+      msg.style.display = 'block';
+    }
     return;
+  }
+  
+  const submitBtn = document.getElementById('btnSendReset') || document.getElementById('forgotSubmitBtn');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.dataset.originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = 'Enviando...';
   }
   
   try {
@@ -424,35 +448,117 @@ async function requestPasswordReset() {
       body: JSON.stringify({ email })
     });
     
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || 'Error al enviar instrucciones');
+    const data = await res.json();
+    
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || 'Error al enviar instrucciones de restablecimiento');
     }
     
-    // Mostrar éxito
+    // Mostrar éxito en el modal si existen los elementos
     const resetSuccess = document.getElementById('resetSuccess');
     const resetError = document.getElementById('resetError');
+    const forgotMsg = document.getElementById('forgotMessage');
+    const emailInput = document.getElementById('forgotEmail') || document.getElementById('resetEmail');
     
     if (resetSuccess) resetSuccess.style.display = 'block';
     if (resetError) resetError.style.display = 'none';
+    if (forgotMsg) {
+      forgotMsg.textContent = data.message || 'Instrucciones enviadas. Revisa tu casilla.';
+      forgotMsg.className = 'status-message success';
+      forgotMsg.style.display = 'block';
+    }
     if (emailInput) emailInput.value = '';
     
-    showToast('✅ Instrucciones enviadas a tu correo', 'success');
+    showToast('✅ ' + (data.message || 'Instrucciones enviadas a tu correo'), 'success');
     
-    // Cerrar modal después de 3 segundos
+    // Cerrar modal después de 3.5 segundos
     setTimeout(() => {
-      closeModal('forgotPasswordModal');
-      showLoginModal();
-    }, 3000);
+      if (typeof closeModal === 'function') {
+        closeModal('forgotPasswordModal');
+      }
+      if (typeof showLoginModal === 'function') {
+        showLoginModal();
+      }
+    }, 3500);
+    
+    return data;
     
   } catch (err) {
-    console.error('Error:', err);
+    console.error('Error al solicitar restablecimiento de contraseña:', err);
     const resetError = document.getElementById('resetError');
     const resetSuccess = document.getElementById('resetSuccess');
+    const forgotMsg = document.getElementById('forgotMessage');
     
     if (resetError) resetError.style.display = 'block';
     if (resetSuccess) resetSuccess.style.display = 'none';
+    if (forgotMsg) {
+      forgotMsg.textContent = err.message || 'Error al procesar la solicitud';
+      forgotMsg.className = 'status-message error';
+      forgotMsg.style.display = 'block';
+    }
     showToast('❌ ' + err.message, 'error');
+    throw err;
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      if (submitBtn.dataset.originalText) {
+        submitBtn.innerHTML = submitBtn.dataset.originalText;
+      }
+    }
+  }
+}
+
+// Wrapper para compatibilidad con el modal
+async function handleForgotPassword() {
+  return await requestPasswordReset();
+}
+
+/**
+ * Confirmar restablecimiento de contraseña con token
+ * @param {string} token
+ * @param {string} newPassword
+ */
+async function confirmPasswordReset(token, newPassword) {
+  if (!token || !newPassword) {
+    throw new Error('Token y nueva contraseña son requeridos');
+  }
+  if (newPassword.length < 8) {
+    throw new Error('La nueva contraseña debe tener al menos 8 caracteres');
+  }
+  
+  const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      token: token.trim(),
+      newPassword
+    })
+  });
+  
+  const data = await res.json();
+  if (!res.ok || data.success === false) {
+    throw new Error(data.error || 'Error al restablecer la contraseña');
+  }
+  return data;
+}
+
+/**
+ * Verificar estado de Google OAuth y vinculación de un correo
+ * @param {string} email
+ */
+async function checkGoogleStatus(email = '') {
+  try {
+    const url = email 
+      ? `${API_BASE}/api/auth/google/status?email=${encodeURIComponent(email.trim())}`
+      : `${API_BASE}/api/auth/google/status`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Error consultando estado de Google');
+    return await res.json();
+  } catch (err) {
+    console.error('Error al verificar estado de Google OAuth:', err);
+    return { enabled: false, linked: false };
   }
 }
 
@@ -662,6 +768,13 @@ window.handleChangePassword = handleChangePassword;
 window.resetUserPassword = resetUserPassword;
 window.loginWithGoogle = loginWithGoogle;
 window.handleOAuthCallback = handleOAuthCallback;
+window.handleGoogleOAuthCallback = handleOAuthCallback;
+window.requestPasswordReset = requestPasswordReset;
+window.handleForgotPassword = handleForgotPassword;
+window.confirmPasswordReset = confirmPasswordReset;
+window.checkGoogleStatus = checkGoogleStatus;
+window.showForgotPassword = showForgotPassword;
+window.backToLogin = backToLogin;
 
 // Listener de seguridad para el botón de Google en el DOM
 document.addEventListener('DOMContentLoaded', () => {
