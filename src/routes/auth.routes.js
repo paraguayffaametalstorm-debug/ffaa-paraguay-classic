@@ -1,5 +1,14 @@
 import { Router } from 'express';
-import { login, verifyMe, register, changePassword, forgotPassword } from '../controllers/auth.controller.js';
+import { 
+    login, 
+    verifyMe, 
+    register, 
+    changePassword, 
+    forgotPassword, 
+    googleAuth, 
+    googleCallback, 
+    googleStatus 
+} from '../controllers/auth.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
 
@@ -11,5 +20,10 @@ router.get('/me', requireAuth, verifyMe);
 router.post('/register', register);
 router.post('/change-password', requireAuth, changePassword);
 router.post('/forgot-password', forgotPassword);
+
+// Google OAuth 2.0 endpoints
+router.get('/google', googleAuth);
+router.get('/google/callback', googleCallback);
+router.get('/google/status', googleStatus);
 
 export default router;

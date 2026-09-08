@@ -1,12 +1,26 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.3.2).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.4.0).**
 
 ---
 
 ## 1. Acceso a la Plataforma y Credenciales
 
-### 1.1 Primer Acceso y Reclutas
+### 1.1 Métodos de Inicio de Sesión
+La plataforma cuenta con dos modalidades seguras de autenticación militar:
+
+#### Opción A: Inicio de Sesión Táctica con Google (OAuth 2.0)
+1. En la pantalla de bienvenida o modal de acceso, pulsa el botón **"Iniciar sesión con Google"**.
+2. Selecciona tu cuenta de Google asociada al escuadrón.
+3. El sistema verificará de forma automática que tu correo esté registrado en la base de datos de pilotos activos.
+4. Una vez validada tu identidad, accederás inmediatamente al Cuadro de Mando Operacional.
+> ⚠️ **Requisito:** Tu correo de Google debe haber sido dado de alta previamente por un Administrador del escuadrón. Si no está registrado, el sistema denegará el acceso por motivos de seguridad institucional.
+
+#### Opción B: Correo y Clave Cifrada
+1. Ingresa tu correo institucional y contraseña en los campos del modal.
+2. Pulsa el botón **"Iniciar Sesión Táctica"**.
+
+### 1.2 Primer Acceso y Reclutas
 1. Abre el enlace oficial de combate: [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/).
 2. Ingresa tus credenciales oficiales proporcionadas por tu Oficial de Mando:
    - **Correo Institucional:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).

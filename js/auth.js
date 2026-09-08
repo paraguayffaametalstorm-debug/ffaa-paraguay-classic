@@ -6,8 +6,66 @@
  * Actualizado: 12 de febrero de 2026
  */
 
+// ========== MANEJAR RETORNO DE OAUTH 2.0 (GOOGLE) ==========
+function handleOAuthCallback() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('auth_token') || urlParams.get('token');
+    const error = urlParams.get('auth_error') || urlParams.get('error');
+
+    if (token) {
+      console.log('🔑 Token táctico recibido por callback OAuth');
+      localStorage.setItem('authToken', token);
+
+      // Limpiar parámetros de la URL sin recargar
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+
+      if (typeof showToast === 'function') {
+        showToast('✅ Identificación militar validada con Google', 'success');
+      }
+      return true;
+    }
+
+    if (error) {
+      console.warn('⚠️ Error de autenticación OAuth recibido:', error);
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+
+      const errorDecoded = decodeURIComponent(error);
+      if (typeof showToast === 'function') {
+        showToast(`❌ ${errorDecoded}`, 'error');
+      }
+      return false;
+    }
+  } catch (e) {
+    console.error('❌ Error procesando parámetros OAuth:', e);
+  }
+  return null;
+}
+
+// ========== INICIAR SESIÓN CON GOOGLE OAUTH 2.0 ==========
+function loginWithGoogle() {
+  const btn = document.getElementById('googleLoginBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.75';
+    btn.innerHTML = `
+      <span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;"></span>
+      <span>Conectando con Google...</span>
+    `;
+  }
+
+  console.log('🔗 Redirigiendo a autenticación con Google OAuth 2.0...');
+  const apiBase = (typeof API_BASE !== 'undefined' && API_BASE) ? API_BASE : '';
+  window.location.href = `${apiBase}/api/auth/google`;
+}
+
 // ========== VERIFICAR ESTADO DE AUTENTICACIÓN ==========
 function checkAuthStatus() {
+  // 1. Manejar callback de Google OAuth si está presente en la URL
+  handleOAuthCallback();
+
   const token = localStorage.getItem('authToken');
   
   // ✅ SI NO HAY TOKEN → MOSTRAR LOGIN INMEDIATAMENTE
@@ -602,3 +660,16 @@ async function resetUserPassword(userId) {
 window.changePasswordFromProfile = changePasswordFromProfile;
 window.handleChangePassword = handleChangePassword;
 window.resetUserPassword = resetUserPassword;
+window.loginWithGoogle = loginWithGoogle;
+window.handleOAuthCallback = handleOAuthCallback;
+
+// Listener de seguridad para el botón de Google en el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    const googleBtn = document.getElementById('googleLoginBtn');
+    if (googleBtn) {
+        googleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginWithGoogle();
+        });
+    }
+});
