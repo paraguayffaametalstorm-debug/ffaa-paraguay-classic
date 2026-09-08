@@ -9,19 +9,62 @@ export async function getProfile(req, res, next) {
     if (supabase) {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          nick,
+          email,
+          email_institucional,
+          role,
+          status,
+          full_name,
+          email_personal,
+          phone,
+          notifications_enabled,
+          avg_tokens,
+          weeks_evaluated,
+          perf_status,
+          google_linked,
+          created_at,
+          updated_at
+        `)
         .or(`id.eq.${userId},user_id.eq.${userId}`)
         .limit(1)
         .single();
 
       if (!error && data) {
+        // ✅ Calcula last_event dinámicamente desde performances
+        let lastEvent = 'SQUADRON-ACTIVO';
+        try {
+          const { data: perfData } = await supabase
+            .from('performances')
+            .select('event_id, created_at')
+            .or(`user_id.eq.${userId}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (perfData?.event_id) {
+            lastEvent = perfData.event_id;
+          }
+        } catch (e) {
+          console.warn('⚠️ No se encontró último evento del usuario');
+        }
+
         const { password_hash, password, encrypted_password, ...safe } = data;
-        return res.json({ profile: safe, user: safe });
+        return res.json({ 
+          profile: { ...safe, last_event: lastEvent }, 
+          user: { ...safe, last_event: lastEvent } 
+        });
       }
     }
 
+    // Fallback si Supabase no está disponible
     const { password_hash, password, encrypted_password, ...safe } = req.user;
-    res.json({ profile: safe, user: safe });
+    res.json({ 
+      profile: { ...safe, last_event: 'SQUADRON-ACTIVO' }, 
+      user: { ...safe, last_event: 'SQUADRON-ACTIVO' } 
+    });
   } catch (err) {
     next(err);
   }
