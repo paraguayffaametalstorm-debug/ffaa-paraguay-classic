@@ -6,6 +6,17 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.4.0] - 2026-09-08
+
+### 🔑 Autenticación Militar Google OAuth 2.0
+- **Botón Táctico en Modal de Login:** Integrado botón con el emblema de Google y estilos tácticos militares (`.btn-google`, `.auth-divider`) con retroalimentación visual al hacer clic.
+- **Flujo de Autenticación con Passport.js:** Rutas `/api/auth/google`, `/api/auth/google/callback` y `/api/auth/google/status` con verificación estricta de cuentas activas registradas en la base de datos de escuadrón.
+- **Auditoría de Acceso OAuth:** Registro en `security_events` de accesos concedidos (`LOGIN_SUCCESS_GOOGLE`) o denegados (`LOGIN_GOOGLE_DENIED_NOT_FOUND`, `LOGIN_GOOGLE_DENIED_INACTIVE`).
+- **Manejo Dinámico de Callback en Frontend:** Función `handleOAuthCallback()` en `js/auth.js` que captura parámetros de autenticación, almacena tokens JWT en almacenamiento local y sanitiza la URL mediante `history.replaceState`.
+- **Páginas Institucionales Estáticas:** Despliegue de Política de Privacidad (`/privacy.html`) y Términos de Servicio (`/terms.html`) para cumplimiento normativo de Google OAuth y Fly.io.
+
+---
+
 ## 📌 [3.3.2] - 2026-09-07
 
 ### 🛡️ Seguridad & Anti-Sesión Fantasma (C4ISR Security Update)

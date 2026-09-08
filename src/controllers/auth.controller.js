@@ -4,6 +4,7 @@ import { ENV } from '../config/env.js';
 import { getSupabase } from '../db/supabase.js';
 import { logSecurityEvent } from '../utils/audit.js';
 import { generateTemporaryPassword } from '../utils/security.js';
+import passport, { isGoogleConfigured } from '../config/passport.js';
 
 // ========== LOGIN ==========
 export const login = async (req, res) => {
@@ -366,4 +367,76 @@ export const forgotPassword = async (req, res) => {
         console.error('❌ Error en forgotPassword:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
+};
+
+// ========== GOOGLE OAUTH 2.0 ==========
+export const googleStatus = (req, res) => {
+    res.json({
+        enabled: isGoogleConfigured()
+    });
+};
+
+export const googleAuth = (req, res, next) => {
+    if (!isGoogleConfigured()) {
+        return res.redirect('/?auth_error=' + encodeURIComponent('El inicio de sesión con Google no está habilitado actualmente en el servidor.'));
+    }
+    passport.authenticate('google', { 
+        scope: ['profile', 'email'], 
+        session: false 
+    })(req, res, next);
+};
+
+export const googleCallback = (req, res, next) => {
+    if (!isGoogleConfigured()) {
+        return res.redirect('/?auth_error=' + encodeURIComponent('El inicio de sesión con Google no está habilitado actualmente.'));
+    }
+
+    passport.authenticate('google', { session: false }, async (err, user, info) => {
+        if (err) {
+            console.error('❌ [Google Callback Error]:', err);
+            const msg = err.message || 'Error en la autenticación con Google';
+            return res.redirect(`/?auth_error=${encodeURIComponent(msg)}`);
+        }
+
+        if (!user) {
+            const errorMsg = info?.message || 'Acceso táctico denegado con Google';
+            return res.redirect(`/?auth_error=${encodeURIComponent(errorMsg)}`);
+        }
+
+        try {
+            const supabase = getSupabase();
+            const token = jwt.sign(
+                { 
+                    user_id: user.user_id || user.id,
+                    email: user.email,
+                    role: user.role,
+                    token_version: user.token_version || 0 
+                },
+                ENV.JWT_SECRET,
+                { expiresIn: ENV.JWT_EXPIRES_IN || '7d' }
+            );
+
+            if (supabase) {
+                await logSecurityEvent({
+                    supabase,
+                    userId: user.id || user.user_id,
+                    nick: user.nick,
+                    event: 'LOGIN_SUCCESS_GOOGLE',
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    metadata: { role: user.role, auth_provider: 'google' }
+                });
+
+                await supabase
+                    .from('users')
+                    .update({ last_activity: new Date().toISOString() })
+                    .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
+            }
+
+            return res.redirect(`/?auth_token=${encodeURIComponent(token)}`);
+        } catch (tokenErr) {
+            console.error('❌ [Google Callback Token Error]:', tokenErr);
+            return res.redirect('/?auth_error=' + encodeURIComponent('Error interno procesando sesión militar'));
+        }
+    })(req, res, next);
 };

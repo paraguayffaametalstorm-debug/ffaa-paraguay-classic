@@ -6,7 +6,8 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.3.2-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v3.4.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 
 ---
@@ -16,6 +17,7 @@
 **PARAGUAY-FFAA | METALSTORM** es una plataforma web táctica de grado militar diseñada para la administración, registro y supervisión del escuadrón paraguayo en el simulador de combate aéreo *MetalStorm*.
 
 La plataforma centraliza las operaciones del escuadrón mediante:
+- **Autenticación Militar Híbrida (Google OAuth 2.0 & Claves Cifradas):** Inicio de sesión con cuenta de Google institucional o credenciales cifradas con hashing bcrypt, vinculado a validación estricta de usuarios activos del escuadrón.
 - **Cuadro de Mando Operacional (Dashboard C4ISR):** Telemetría en tiempo real, seguimiento de la meta semanal del escuadrón (175 tokens promedio), panel de miembros en riesgo, gráfico de tendencia histórica y clasificación Top 5 de pilotos.
 - **Registro Táctico de Rendimiento:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla).
 - **Hangar Militar & Starform Upgrades 2.0:** Catálogo de cazas (F-22, Su-57, F-35, Typhoon, Rafale, Gripen, etc.), módulos pasivos/especiales, gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos (piezas y componentes avanzados).

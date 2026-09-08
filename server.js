@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { ENV } from './src/config/env.js';
 import { apiLimiter } from './src/middlewares/rateLimiter.js';
 import { errorHandler } from './src/middlewares/errorHandler.js';
+import passport, { configurePassport } from './src/config/passport.js';
 
 // Route imports
 import authRoutes from './src/routes/auth.routes.js';
@@ -117,6 +118,10 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Global API rate limiter
 app.use('/api/', apiLimiter);
+
+// Passport OAuth Initialization
+configurePassport();
+app.use(passport.initialize());
 
 // ============================================================
 // API ROUTES MOUNTING
