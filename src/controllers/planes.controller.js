@@ -1,8 +1,15 @@
+/**
+ * ============================================================================
+ * PARAGUAY-FFAA | METALSTORM - CONTROLADOR DE HANGAR Y UPGRADES 2.0 v3.5.0
+ * Gestión de flota aérea, modificaciones de combate y calibración de sistemas
+ * ============================================================================
+ */
+
 import { getSupabase } from '../db/supabase.js';
 import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 
-// Default static models catalog
+// Catálogo oficial de modelos de aeronaves
 const DEFAULT_PLANE_MODELS = [
   { id: 1, name: 'F-22 Raptor', type: 'Caza de Superioridad Aérea', tier: 5 },
   { id: 2, name: 'Su-57 Felon', type: 'Caza Polivalente Sigiloso', tier: 5 },
@@ -18,6 +25,7 @@ const DEFAULT_PLANE_MODELS = [
   { id: 12, name: 'A-10C Thunderbolt II', type: 'Avión de Ataque a Tierra (CAS)', tier: 3 }
 ];
 
+// Catálogo oficial de modificaciones tácticas
 const DEFAULT_PLANE_MODS = [
   { id: 1, name: 'Radar AESA Longbow', type: 'Aviónica' },
   { id: 2, name: 'Pod de Guerra Electrónica ECM', type: 'Defensa' },
@@ -29,7 +37,7 @@ const DEFAULT_PLANE_MODS = [
   { id: 8, name: 'Recubrimiento RAM Anti-Radar', type: 'Sigilo' }
 ];
 
-// Costos oficiales de recursos para Upgrades 2.0 (Niveles 1 a 8)
+// Costos oficiales de recursos para Starform Upgrades 2.0 (Niveles 1 a 8)
 export const UPGRADE_COSTS = {
   1: { piezas: 100, avanzadas: 0 },
   2: { piezas: 250, avanzadas: 0 },
@@ -41,6 +49,9 @@ export const UPGRADE_COSTS = {
   8: { piezas: 3500, avanzadas: 350 }
 };
 
+/**
+ * Obtener catálogo de modelos de combate disponibles
+ */
 export async function getCatalogModels(req, res) {
   try {
     const supabase = getSupabase();
@@ -51,16 +62,19 @@ export async function getCatalogModels(req, res) {
         .order('name');
       
       if (!error && data && data.length > 0) {
-        return res.json({ success: true, models: data });
+        return res.json({ success: true, message: 'Catálogo de modelos recuperado', models: data, data });
       }
     }
-    return res.json({ success: true, models: DEFAULT_PLANE_MODELS });
+    return res.json({ success: true, message: 'Catálogo base cargado', models: DEFAULT_PLANE_MODELS, data: DEFAULT_PLANE_MODELS });
   } catch (error) {
-    console.error('❌ Error en getCatalogModels:', error);
-    return res.json({ success: true, models: DEFAULT_PLANE_MODELS });
+    console.error('❌ [Hangar] Error en getCatalogModels:', error);
+    return res.json({ success: true, message: 'Catálogo de emergencia', models: DEFAULT_PLANE_MODELS, data: DEFAULT_PLANE_MODELS });
   }
 }
 
+/**
+ * Obtener catálogo de modificaciones de subsistemas
+ */
 export async function getCatalogMods(req, res) {
   try {
     const supabase = getSupabase();
@@ -71,48 +85,54 @@ export async function getCatalogMods(req, res) {
         .order('name');
       
       if (!error && data && data.length > 0) {
-        return res.json({ success: true, mods: data });
+        return res.json({ success: true, message: 'Catálogo de mods recuperado', mods: data, data });
       }
     }
-    return res.json({ success: true, mods: DEFAULT_PLANE_MODS });
+    return res.json({ success: true, message: 'Catálogo base de mods cargado', mods: DEFAULT_PLANE_MODS, data: DEFAULT_PLANE_MODS });
   } catch (error) {
-    console.error('❌ Error en getCatalogMods:', error);
-    return res.json({ success: true, mods: DEFAULT_PLANE_MODS });
+    console.error('❌ [Hangar] Error en getCatalogMods:', error);
+    return res.json({ success: true, message: 'Catálogo de emergencia de mods', mods: DEFAULT_PLANE_MODS, data: DEFAULT_PLANE_MODS });
   }
 }
 
+/**
+ * Obtener la flota de aeronaves del combatiente autenticado
+ * Soporta UUID como clave primaria y selecciona todos los campos del hangar
+ */
 export async function getMyPlanes(req, res, next) {
   try {
     const supabase = getSupabase();
     const userId = req.user.user_id || req.user.id;
+    const userNick = req.user.nick;
+
+    console.log(`🛩️ [Hangar] Consultando flota de combate para combatiente: ID=${userId}, Nick=${userNick || 'Piloto'}`);
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('planes')
-        .select(`
-          id,
-          user_id,
-          avion_id,
-          nivel,
-          especial_nombre,
-          especial_nivel,
-          pasiva_nombre,
-          pasiva_nivel,
-          mod1_id,
-          mod1_lvl,
-          mod2_id,
-          mod2_lvl,
-          nivel_fuselaje,
-          nivel_motor,
-          nivel_avionica,
-          nivel_armas,
-          recursos_piezas,
-          recursos_avanzadas
-        `)
-        .or(`user_id.eq.${userId}`)
-        .order('id', { ascending: true });
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+      const isNumeric = /^\d+$/.test(String(userId));
+
+      let query = supabase.from('planes').select('*');
+
+      // Búsqueda robusta compatible con UUID y números
+      if (isUUID) {
+        query = query.eq('user_id', userId);
+      } else if (isNumeric) {
+        query = query.or(`user_id.eq.${userId}`);
+      } else {
+        query = query.eq('user_id', userId);
+      }
+
+      query = query.order('id', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('❌ [Hangar] Error en consulta de aeronaves en Supabase:', error.message);
+      }
 
       if (!error && data) {
+        console.log(`✅ [Hangar] Flota recuperada con éxito: ${data.length} aeronaves encontradas`);
+
         const planes = data.map(p => {
           const nf = p.nivel_fuselaje || 0;
           const nm = p.nivel_motor || 0;
@@ -147,21 +167,51 @@ export async function getMyPlanes(req, res, next) {
             sistemas_desbloqueados: (p.nivel || 1) >= 6
           };
         });
-        return res.json({ success: true, planes, total: planes.length });
+
+        return res.json({
+          success: true,
+          message: 'Flota de combate recuperada exitosamente',
+          planes,
+          total: planes.length,
+          data: {
+            planes,
+            total: planes.length
+          }
+        });
       }
     }
 
-    res.json({ success: true, planes: [], total: 0 });
+    console.warn('⚠️ [Hangar] No se encontraron aeronaves registradas o base de datos offline');
+    return res.json({
+      success: true,
+      message: 'Hangar vacío o sin telemetría disponible',
+      planes: [],
+      total: 0,
+      data: { planes: [], total: 0 }
+    });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error crítico en getMyPlanes:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al cargar las aeronaves del hangar',
+      error: err.message,
+      planes: [],
+      total: 0
+    });
   }
 }
 
+/**
+ * Registrar una nueva aeronave en el hangar militar
+ */
 export async function addPlane(req, res, next) {
   try {
     const data = PlaneSchema.parse(req.body);
     const userId = req.user.user_id || req.user.id;
     const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(data.avion_id));
+
+    console.log(`➕ [Hangar] Registrando nueva aeronave (${data.avion_id}) para usuario ID: ${userId}`);
 
     const nf = data.nivel_fuselaje || 0;
     const nm = data.nivel_motor || 0;
@@ -191,7 +241,11 @@ export async function addPlane(req, res, next) {
 
     const supabase = getSupabase();
     if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
+      return res.status(500).json({
+        success: false,
+        message: 'Base de datos militar inaccesible',
+        error: 'DATABASE_UNAVAILABLE'
+      });
     }
 
     const { data: createdPlane, error: insertError } = await supabase
@@ -200,47 +254,63 @@ export async function addPlane(req, res, next) {
       .select()
       .single();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('❌ [Hangar] Error insertando aeronave:', insertError);
+      throw insertError;
+    }
 
-    res.status(201).json({
+    const planeData = {
+      ...(createdPlane || planePayload),
+      model_name: model?.name || data.avion_id,
+      name: model?.name || data.avion_id,
+      type: model?.type || 'Caza de Combate',
+      sistemas_desbloqueados: (data.nivel || 1) >= 6
+    };
+
+    return res.status(201).json({
       success: true,
-      message: 'Aeronave registrada en el hangar',
-      plane: {
-        ...(createdPlane || planePayload),
-        model_name: model?.name || data.avion_id,
-        name: model?.name || data.avion_id,
-        type: model?.type || 'Caza de Combate',
-        sistemas_desbloqueados: (data.nivel || 1) >= 6
-      }
+      message: 'Aeronave asignada y registrada con éxito en el hangar',
+      plane: planeData,
+      data: planeData
     });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error en addPlane:', err);
+    return res.status(400).json({
+      success: false,
+      message: 'No se pudo registrar la aeronave',
+      error: err.message
+    });
   }
 }
 
+/**
+ * Actualizar configuración de aeronave existente
+ */
 export async function updatePlane(req, res, next) {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawId = req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
     const data = PlaneSchema.parse(req.body);
     const userId = req.user.user_id || req.user.id;
     const supabase = getSupabase();
 
     if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
+      return res.status(500).json({ success: false, message: 'Base de datos no disponible', error: 'DATABASE_UNAVAILABLE' });
     }
 
     const { data: existing, error: findError } = await supabase
       .from('planes')
       .select('*')
-      .eq('id', id)
+      .eq('id', planeId)
       .single();
 
     if (findError || !existing) {
-      return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada en el hangar', error: 'PLANE_NOT_FOUND' });
     }
 
     if (String(existing.user_id) !== String(userId) && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'Permisos denegados para modificar esta aeronave', code: 'FORBIDDEN' });
+      return res.status(403).json({ success: false, message: 'Permisos insuficientes para modificar esta aeronave', error: 'FORBIDDEN' });
     }
 
     const updatePayload = {
@@ -263,59 +333,68 @@ export async function updatePlane(req, res, next) {
     const { data: updated, error: updateErr } = await supabase
       .from('planes')
       .update(updatePayload)
-      .eq('id', id)
+      .eq('id', planeId)
       .select()
       .single();
 
     if (updateErr) throw updateErr;
 
     const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(data.avion_id));
+    const resultPlane = {
+      ...(updated || updatePayload),
+      model_name: model?.name || data.avion_id,
+      name: model?.name || data.avion_id,
+      type: model?.type || 'Caza de Combate'
+    };
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Aeronave actualizada correctamente',
-      plane: {
-        ...(updated || updatePayload),
-        model_name: model?.name || data.avion_id,
-        name: model?.name || data.avion_id,
-        type: model?.type || 'Caza de Combate'
-      }
+      message: 'Aeronave actualizada correctamente en el hangar',
+      plane: resultPlane,
+      data: resultPlane
     });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error en updatePlane:', err);
+    return res.status(400).json({ success: false, message: 'Error actualizando aeronave', error: err.message });
   }
 }
 
+/**
+ * Calibrar y mejorar un subsistema de Upgrades 2.0 (Fuselaje, Motor, Aviónica, Armas)
+ */
 export async function updatePlaneSystem(req, res, next) {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawId = req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
     const parsed = UpdatePlaneSystemSchema.parse(req.body);
     const { sistema, nivel, piezas, avanzadas } = parsed;
     const userId = req.user.user_id || req.user.id;
     const supabase = getSupabase();
 
     if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
+      return res.status(500).json({ success: false, message: 'Base de datos no disponible', error: 'DATABASE_UNAVAILABLE' });
     }
 
     const { data: plane, error: findError } = await supabase
       .from('planes')
       .select('*')
-      .eq('id', id)
+      .eq('id', planeId)
       .single();
 
     if (findError || !plane) {
-      return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
     if (String(plane.user_id) !== String(userId) && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'Permisos denegados para modificar esta aeronave', code: 'FORBIDDEN' });
+      return res.status(403).json({ success: false, message: 'Permiso denegado para mejorar esta unidad', error: 'FORBIDDEN' });
     }
 
     if ((plane.nivel || 1) < 6) {
       return res.status(400).json({
-        error: 'Los sistemas de Upgrades 2.0 requieren que la aeronave sea Nivel 6 o superior',
-        code: 'UPGRADE_LOCKED_LEVEL_TOO_LOW'
+        success: false,
+        message: 'Los subsistemas Upgrades 2.0 requieren que la aeronave sea Nivel 6 o superior',
+        error: 'UPGRADE_LOCKED_LEVEL_TOO_LOW'
       });
     }
 
@@ -328,7 +407,7 @@ export async function updatePlaneSystem(req, res, next) {
 
     const columnName = systemColumnMap[sistema];
     if (!columnName) {
-      return res.status(400).json({ error: 'Sistema inválido especificado' });
+      return res.status(400).json({ success: false, message: 'Subsistema militar inválido', error: 'INVALID_SYSTEM' });
     }
 
     const updatePayload = {
@@ -340,48 +419,61 @@ export async function updatePlaneSystem(req, res, next) {
     const { data: updatedPlane, error: updateErr } = await supabase
       .from('planes')
       .update(updatePayload)
-      .eq('id', id)
+      .eq('id', planeId)
       .select()
       .single();
 
     if (updateErr) throw updateErr;
 
     const finalPlane = updatedPlane || { ...plane, ...updatePayload };
+    const nf = finalPlane.nivel_fuselaje || 0;
+    const nm = finalPlane.nivel_motor || 0;
+    const na = finalPlane.nivel_avionica || 0;
+    const nw = finalPlane.nivel_armas || 0;
 
-    res.json({
+    const enrichedPlane = {
+      ...finalPlane,
+      nivel_fuselaje: nf,
+      nivel_motor: nm,
+      nivel_avionica: na,
+      nivel_armas: nw,
+      nivel_sistemas: Math.floor((nf + nm + na + nw) / 4)
+    };
+
+    return res.json({
       success: true,
-      message: `Sistema ${sistema.toUpperCase()} actualizado a nivel ${nivel}`,
-      plane: {
-        ...finalPlane,
-        nivel_fuselaje: finalPlane.nivel_fuselaje || 0,
-        nivel_motor: finalPlane.nivel_motor || 0,
-        nivel_avionica: finalPlane.nivel_avionica || 0,
-        nivel_armas: finalPlane.nivel_armas || 0,
-        nivel_sistemas: Math.floor(((finalPlane.nivel_fuselaje || 0) + (finalPlane.nivel_motor || 0) + (finalPlane.nivel_avionica || 0) + (finalPlane.nivel_armas || 0)) / 4)
-      }
+      message: `Subsistema ${sistema.toUpperCase()} calibrado con éxito a nivel ${nivel}`,
+      plane: enrichedPlane,
+      data: enrichedPlane
     });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error en updatePlaneSystem:', err);
+    return res.status(400).json({ success: false, message: 'Error calibrando subsistema', error: err.message });
   }
 }
 
+/**
+ * Obtener detalles y telemetría de una aeronave por ID
+ */
 export async function getPlaneDetails(req, res, next) {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawId = req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
     const supabase = getSupabase();
 
     if (!supabase) {
-      return res.status(404).json({ error: 'Aeronave no encontrada' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'DATABASE_UNAVAILABLE' });
     }
 
     const { data: plane, error } = await supabase
       .from('planes')
       .select('*')
-      .eq('id', id)
+      .eq('id', planeId)
       .single();
 
     if (error || !plane) {
-      return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
     const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(plane.avion_id));
@@ -394,98 +486,118 @@ export async function getPlaneDetails(req, res, next) {
     const na = plane.nivel_avionica || 0;
     const nw = plane.nivel_armas || 0;
 
-    res.json({
-      success: true,
-      plane: {
-        id: plane.id,
-        user_id: plane.user_id,
-        avion_id: plane.avion_id,
-        model_name: modelName,
-        type: modelType,
-        nivel: plane.nivel,
-        especial_nombre: plane.especial_nombre,
-        pasiva_nombre: plane.pasiva_nombre,
-        mod1_id: plane.mod1_id,
-        mod1_lvl: plane.mod1_lvl,
-        mod2_id: plane.mod2_id,
-        mod2_lvl: plane.mod2_lvl,
-        desbloqueado_upgrades: isUnlocked,
-        recursos_piezas: plane.recursos_piezas || 0,
-        recursos_avanzadas: plane.recursos_avanzadas || 0,
-        sistemas: {
-          fuselaje: {
-            nombre: 'Fuselaje',
-            descripcion: 'Resistencia estructural, blindaje e integridad del fuselaje',
-            nivel: nf,
-            max: 8,
-            disponible: isUnlocked,
-            costo_siguiente: UPGRADE_COSTS[nf + 1] || null
-          },
-          motor: {
-            nombre: 'Motor',
-            descripcion: 'Empuje, aceleración, postcombustión y velocidad punta',
-            nivel: nm,
-            max: 8,
-            disponible: isUnlocked,
-            costo_siguiente: UPGRADE_COSTS[nm + 1] || null
-          },
-          avionica: {
-            nombre: 'Aviónica',
-            descripcion: 'Adquisición de radar, tiempo de enganche y contramedidas ECM',
-            nivel: na,
-            max: 8,
-            disponible: isUnlocked,
-            costo_siguiente: UPGRADE_COSTS[na + 1] || null
-          },
-          armas: {
-            nombre: 'Armas',
-            descripcion: 'Cadencia de fuego, tiempo de recarga y daño balístico/misiles',
-            nivel: nw,
-            max: 8,
-            disponible: isUnlocked,
-            costo_siguiente: UPGRADE_COSTS[nw + 1] || null
-          }
+    const planeDetail = {
+      id: plane.id,
+      user_id: plane.user_id,
+      avion_id: plane.avion_id,
+      model_name: modelName,
+      type: modelType,
+      nivel: plane.nivel,
+      especial_nombre: plane.especial_nombre,
+      pasiva_nombre: plane.pasiva_nombre,
+      mod1_id: plane.mod1_id,
+      mod1_lvl: plane.mod1_lvl,
+      mod2_id: plane.mod2_id,
+      mod2_lvl: plane.mod2_lvl,
+      desbloqueado_upgrades: isUnlocked,
+      recursos_piezas: plane.recursos_piezas || 0,
+      recursos_avanzadas: plane.recursos_avanzadas || 0,
+      sistemas: {
+        fuselaje: {
+          nombre: 'Fuselaje',
+          descripcion: 'Resistencia estructural, blindaje e integridad',
+          nivel: nf,
+          max: 8,
+          disponible: isUnlocked,
+          costo_siguiente: UPGRADE_COSTS[nf + 1] || null
         },
-        upgrade_costs: UPGRADE_COSTS
-      }
+        motor: {
+          nombre: 'Motor',
+          descripcion: 'Empuje, aceleración, postcombustión y velocidad punta',
+          nivel: nm,
+          max: 8,
+          disponible: isUnlocked,
+          costo_siguiente: UPGRADE_COSTS[nm + 1] || null
+        },
+        avionica: {
+          nombre: 'Aviónica',
+          descripcion: 'Adquisición de radar, tiempo de enganche y ECM',
+          nivel: na,
+          max: 8,
+          disponible: isUnlocked,
+          costo_siguiente: UPGRADE_COSTS[na + 1] || null
+        },
+        armas: {
+          nombre: 'Armas',
+          descripcion: 'Cadencia de fuego, tiempo de recarga y daño balístico',
+          nivel: nw,
+          max: 8,
+          disponible: isUnlocked,
+          costo_siguiente: UPGRADE_COSTS[nw + 1] || null
+        }
+      },
+      upgrade_costs: UPGRADE_COSTS
+    };
+
+    return res.json({
+      success: true,
+      message: 'Telemetría de combate obtenida',
+      plane: planeDetail,
+      data: planeDetail
     });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error en getPlaneDetails:', err);
+    return res.status(500).json({ success: false, message: 'Error interno en telemetría', error: err.message });
   }
 }
 
+/**
+ * Eliminar una aeronave del hangar
+ */
 export async function deletePlane(req, res, next) {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawId = req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
     const userId = req.user.user_id || req.user.id;
     const supabase = getSupabase();
 
     if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
+      return res.status(500).json({ success: false, message: 'Base de datos no disponible', error: 'DATABASE_UNAVAILABLE' });
     }
 
     const { data: plane, error: findError } = await supabase
       .from('planes')
       .select('user_id')
-      .eq('id', id)
+      .eq('id', planeId)
       .single();
 
     if (findError || !plane) {
-      return res.status(404).json({ error: 'Aeronave no encontrada', code: 'PLANE_NOT_FOUND' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
     if (String(plane.user_id) !== String(userId) && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
-      return res.status(403).json({ error: 'Permisos denegados para eliminar esta aeronave', code: 'FORBIDDEN' });
+      return res.status(403).json({ success: false, message: 'Permiso denegado para eliminar esta aeronave', error: 'FORBIDDEN' });
     }
 
-    await supabase.from('planes').delete().eq('id', id);
+    await supabase.from('planes').delete().eq('id', planeId);
 
-    res.json({ success: true, message: 'Aeronave eliminada del hangar' });
+    console.log(`🗑️ [Hangar] Aeronave con ID ${planeId} eliminada del hangar militar`);
+
+    return res.json({
+      success: true,
+      message: 'Aeronave retirada y eliminada del hangar militar'
+    });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error en deletePlane:', err);
+    return res.status(500).json({ success: false, message: 'Error al eliminar aeronave', error: err.message });
   }
 }
 
+/**
+ * Exportar reporte de flota de combate en formato CSV militar
+ */
 export async function exportPlanesCSV(req, res, next) {
   try {
     const supabase = getSupabase();
@@ -505,6 +617,7 @@ export async function exportPlanesCSV(req, res, next) {
       'Fuselaje_Nv', 'Motor_Nv', 'Avionica_Nv', 'Armas_Nv', 'Promedio_Sistemas',
       'Habilidad_Especial', 'Habilidad_Pasiva', 'Mod1', 'Mod1_Nivel', 'Mod2', 'Mod2_Nivel'
     ];
+
     const rows = userPlanes.map(p => {
       const nf = p.nivel_fuselaje || 0;
       const nm = p.nivel_motor || 0;
@@ -535,29 +648,35 @@ export async function exportPlanesCSV(req, res, next) {
     const csv = buildSanitizedCSV(headers, rows);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="hangar_escuadron.csv"');
-    res.send(csv);
+    return res.send(csv);
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error exportando flota a CSV:', err);
+    return res.status(500).json({ success: false, message: 'Error exportando flota', error: err.message });
   }
 }
 
+/**
+ * Obtener estadísticas de combate y rendimiento de una aeronave
+ */
 export async function getPlaneStats(req, res, next) {
   try {
-    const id = parseInt(req.params.id, 10);
+    const rawId = req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
     const supabase = getSupabase();
 
     if (!supabase) {
-      return res.status(404).json({ error: 'Aeronave no encontrada' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'DATABASE_UNAVAILABLE' });
     }
 
     const { data: plane, error } = await supabase
       .from('planes')
       .select('*')
-      .eq('id', id)
+      .eq('id', planeId)
       .single();
 
     if (error || !plane) {
-      return res.status(404).json({ error: 'Aeronave no encontrada' });
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
     const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(plane.avion_id));
@@ -578,7 +697,6 @@ export async function getPlaneStats(req, res, next) {
     };
 
     const levelFactor = (plane.nivel || 1) / 20;
-
     const bonusMotor = 1 + ((plane.nivel_motor || 0) * 0.025);
     const bonusFuselaje = 1 + ((plane.nivel_fuselaje || 0) * 0.03);
     const bonusArmas = 1 + ((plane.nivel_armas || 0) * 0.035);
@@ -594,9 +712,9 @@ export async function getPlaneStats(req, res, next) {
     };
 
     const base_raw = { ...max_raw };
-
     const current = {};
     const base = {};
+
     stat_keys.forEach(k => {
       current[k] = Math.min(100, Math.round((current_raw[k] / max_raw[k]) * 100));
       base[k] = 100;
@@ -605,8 +723,9 @@ export async function getPlaneStats(req, res, next) {
     const mod1Obj = DEFAULT_PLANE_MODS.find(m => String(m.id) === String(plane.mod1_id));
     const mod2Obj = DEFAULT_PLANE_MODS.find(m => String(m.id) === String(plane.mod2_id));
 
-    res.json({
+    return res.json({
       success: true,
+      message: 'Estadísticas de aeronave calculadas',
       plane: {
         id: plane.id,
         model_name: modelName,
@@ -634,7 +753,9 @@ export async function getPlaneStats(req, res, next) {
       base_raw,
       current_raw
     });
+
   } catch (err) {
-    next(err);
+    console.error('❌ [Hangar] Error calculando estadísticas de aeronave:', err);
+    return res.status(500).json({ success: false, message: 'Error interno en estadísticas', error: err.message });
   }
 }
