@@ -166,6 +166,15 @@ app.use(
   })
 );
 
+// Explicit routes for tactical auth pages
+app.get('/link-account', (req, res) => {
+  res.sendFile(path.join(__dirname, 'link-account.html'));
+});
+
+app.get('/reset-password', (req, res) => {
+  res.sendFile(path.join(__dirname, 'reset-password.html'));
+});
+
 // SPA fallback for all remaining client routes
 app.get('*all', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vincular Cuenta Google · PARAGUAY-FFAA | METALSTORM</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/global.css">
+  <link rel="stylesheet" href="/css/tactical-design.css">
+  
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      margin: 0;
+      background-color: #0B132B;
+      color: #E0E6ED;
+      font-family: 'Rajdhani', 'Segoe UI', Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    .link-card {
+      background: #1C2541;
+      border: 1px solid #3A506B;
+      border-top: 4px solid #0038A8;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 480px;
+      padding: 2.25rem 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid #3A506B;
+    }
+
+    .header-logo img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+    }
+
+    .header-titles h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 1.5px;
+    }
+
+    .header-titles .subtitle {
+      margin: 2px 0 0;
+      font-size: 0.75rem;
+      color: #718096;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.5px;
+    }
+
+    .google-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 56, 168, 0.15);
+      border: 1px solid rgba(77, 150, 255, 0.3);
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin-bottom: 1.25rem;
+    }
+
+    .google-badge svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .google-badge-info {
+      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #CBD5E1;
+      word-break: break-all;
+    }
+
+    .google-badge-info strong {
+      color: #64DFDF;
+      display: block;
+      font-size: 0.85rem;
+    }
+
+    .tactical-notice {
+      background: rgba(213, 43, 30, 0.1);
+      border-left: 3px solid #D52B1E;
+      padding: 10px 14px;
+      margin-bottom: 1.5rem;
+      font-size: 0.8rem;
+      color: #FFAAA6;
+      line-height: 1.4;
+      border-radius: 2px;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      color: #94A3B8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 0.4rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(11, 19, 43, 0.85);
+      border: 1px solid #3A506B;
+      color: #FFFFFF;
+      padding: 0.75rem 0.85rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #4D96FF;
+      box-shadow: 0 0 10px rgba(77, 150, 255, 0.25);
+    }
+
+    .toggle-visibility {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #718096;
+      user-select: none;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: #0038A8;
+      border: 1px solid #4D96FF;
+      color: #FFFFFF;
+      padding: 0.85rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      margin-top: 1.5rem;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: #002878;
+      box-shadow: 0 0 15px rgba(77, 150, 255, 0.4);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .alert-box {
+      padding: 12px 14px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+
+    .alert-error {
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid #D52B1E;
+      color: #FFAAA6;
+    }
+
+    .alert-success {
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid #2ECC71;
+      color: #86EFAC;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #718096;
+      text-decoration: none;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #4D96FF;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #FFFFFF;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="link-card" id="linkCard">
+    <!-- Header -->
+    <div class="header-logo">
+      <img src="/logo-escuadron.png" alt="Insignia FFAA" onerror="this.style.display='none'">
+      <div class="header-titles">
+        <h1>PARAGUAY FFAA</h1>
+        <div class="subtitle">SISTEMA C4ISR · VINCULACIÓN GOOGLE OAUTH</div>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div id="alertBox" class="alert-box"></div>
+
+    <!-- Google Email Detected Badge -->
+    <div class="google-badge" id="googleBadge">
+      <svg viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.98 0 12s.45 3.84 1.25 5.42l4.03-3.15z"/>
+        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+      </svg>
+      <div class="google-badge-info">
+        <span>Cuenta Google a vincular:</span>
+        <strong id="displayGoogleEmail">Cargando correo...</strong>
+      </div>
+    </div>
+
+    <div class="tactical-notice">
+      ⚠️ <strong>PRIMER ACCESO CON GOOGLE:</strong> Tu cuenta de Google aún no está vinculada a un perfil del escuadrón. Ingresa tu <strong>Indicativo (Callsign)</strong> y <strong>Contraseña actual</strong> para vincularlas permanentemente.
+    </div>
+
+    <!-- Main Link Form -->
+    <form id="linkForm" onsubmit="handleLinkAccount(event)">
+      <!-- Hidden or visible Email Input -->
+      <div class="form-group" id="manualEmailGroup" style="display: none;">
+        <label for="googleEmail">Correo Google (Gmail)</label>
+        <input type="email" id="googleEmail" class="form-input" placeholder="usuario@gmail.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="callsign">Indicativo de Combate (Callsign / Nick)</label>
+        <div class="input-wrapper">
+          <input type="text" id="callsign" class="form-input" placeholder="Ej: VIPER, GHOST, THOR" required autocomplete="username">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contraseña de Combate Actual</label>
+        <div class="input-wrapper">
+          <input type="password" id="password" class="form-input" placeholder="Ingresa tu contraseña militar" required autocomplete="current-password" style="padding-right: 2.5rem;">
+          <span class="toggle-visibility" onclick="toggleVisibility('password')" role="button">👁️</span>
+        </div>
+      </div>
+
+      <button type="submit" id="btnSubmit" class="btn-submit">
+        <span id="btnText">Vincular y Continuar</span>
+        <span id="btnSpinner" class="spinner" style="display: none;"></span>
+      </button>
+
+      <a href="/" class="back-link">← Cancelar y volver al Acceso Principal</a>
+    </form>
+
+    <!-- Success View -->
+    <div id="successView" style="display: none; text-align: center; padding: 1rem 0;">
+      <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎖️</div>
+      <h2 style="color: #2ECC71; font-size: 1.3rem; margin: 0 0 0.5rem; font-weight: 700;">¡VINCULACIÓN EXITOSA!</h2>
+      <p id="successMessage" style="color: #CBD5E1; font-size: 0.9rem; line-height: 1.5; margin: 0 0 1.5rem;">
+        Tu cuenta de Google ha sido vinculada al escuadrón. A partir de ahora podrás ingresar con un solo clic o con tu correo institucional.
+      </p>
+      <a href="/" id="btnGoHome" class="btn-submit" style="text-decoration: none;">Ingresar a la Terminal Táctica</a>
+    </div>
+  </div>
+
+  <script>
+    // Extraer correo de Google desde los parámetros de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let targetEmail = urlParams.get('email') || '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const displayElem = document.getElementById('displayGoogleEmail');
+      const emailInput = document.getElementById('googleEmail');
+      const manualGroup = document.getElementById('manualEmailGroup');
+
+      if (targetEmail) {
+        displayElem.textContent = targetEmail;
+        emailInput.value = targetEmail;
+      } else {
+        displayElem.textContent = 'No especificado en enlace';
+        manualGroup.style.display = 'block';
+      }
+    });
+
+    function toggleVisibility(inputId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function showAlert(message, type = 'error') {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.textContent = message;
+      alertBox.className = `alert-box alert-${type}`;
+      alertBox.style.display = 'block';
+    }
+
+    async function handleLinkAccount(e) {
+      e.preventDefault();
+
+      const callsign = document.getElementById('callsign').value.trim();
+      const password = document.getElementById('password').value;
+      const email = (targetEmail || document.getElementById('googleEmail').value).trim();
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      if (!email) {
+        showAlert('Se requiere la dirección de correo de Google a vincular', 'error');
+        return;
+      }
+
+      if (!callsign) {
+        showAlert('Ingresa tu indicativo de combate (Callsign)', 'error');
+        return;
+      }
+
+      if (!password) {
+        showAlert('Ingresa tu contraseña actual del escuadrón', 'error');
+        return;
+      }
+
+      // Bloquear botón durante la solicitud
+      btnSubmit.disabled = true;
+      btnText.textContent = 'Vinculando con Sistema C4ISR...';
+      btnSpinner.style.display = 'inline-block';
+      document.getElementById('alertBox').style.display = 'none';
+
+      try {
+        const response = await fetch('/api/auth/link-account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            callsign,
+            password
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Guardar token de sesión
+          if (data.token) {
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('token', data.token);
+          }
+          if (data.user) {
+            localStorage.setItem('current_user', JSON.stringify(data.user));
+          }
+
+          document.getElementById('linkForm').style.display = 'none';
+          document.getElementById('googleBadge').style.display = 'none';
+          const notice = document.querySelector('.tactical-notice');
+          if (notice) notice.style.display = 'none';
+
+          const successMsg = document.getElementById('successMessage');
+          successMsg.textContent = data.message || `¡Cuenta de Google (${email}) vinculada exitosamente!`;
+          document.getElementById('successView').style.display = 'block';
+
+          // Redirigir a la aplicación principal tras 2 segundos
+          setTimeout(() => {
+            window.location.href = `/?auth_token=${encodeURIComponent(data.token)}`;
+          }, 2000);
+        } else {
+          showAlert(data.error || 'No se pudo vincular la cuenta', 'error');
+          btnSubmit.disabled = false;
+          btnText.textContent = 'Vincular y Continuar';
+          btnSpinner.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Error al vincular cuenta:', err);
+        showAlert('Error de conexión con el servidor táctico. Inténtalo nuevamente.', 'error');
+        btnSubmit.disabled = false;
+        btnText.textContent = 'Vincular y Continuar';
+        btnSpinner.style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

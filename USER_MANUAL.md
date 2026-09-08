@@ -1,24 +1,30 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.4.0).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.5.0).**
 
 ---
 
-## 1. Acceso a la Plataforma y Credenciales
+## 1. Acceso a la Plataforma, Login Dual y Credenciales
 
-### 1.1 Métodos de Inicio de Sesión
-La plataforma cuenta con dos modalidades seguras de autenticación militar:
+### 1.1 Métodos de Inicio de Sesión (Login Dual)
+La plataforma cuenta con modalidades seguras y flexibles de autenticación militar:
 
 #### Opción A: Inicio de Sesión Táctica con Google (OAuth 2.0)
 1. En la pantalla de bienvenida o modal de acceso, pulsa el botón **"Iniciar sesión con Google"**.
-2. Selecciona tu cuenta de Google asociada al escuadrón.
-3. El sistema verificará de forma automática que tu correo esté registrado en la base de datos de pilotos activos.
-4. Una vez validada tu identidad, accederás inmediatamente al Cuadro de Mando Operacional.
-> ⚠️ **Requisito:** Tu correo de Google debe haber sido dado de alta previamente por un Administrador del escuadrón. Si no está registrado, el sistema denegará el acceso por motivos de seguridad institucional.
+2. Selecciona tu cuenta de Google.
+3. **Primer Acceso (Vinculación de Cuenta):**
+   - Si tu cuenta de Google aún no ha sido vinculada, el sistema te redirigirá automáticamente a la pantalla táctica **"Vincular Cuenta Google"** (`/link-account`).
+   - Introduce tu **Indicativo de Combate (Callsign)** (ej: `VIPER`) y tu **Contraseña militar actual**.
+   - Presiona **"Vincular y Continuar"**. A partir de ese momento, tu cuenta de Google quedará asociada permanentemente a tu expediente del escuadrón y podrás ingresar con un solo clic.
+4. **Accesos Posteriores:**
+   - Al pulsar "Iniciar sesión con Google", ingresarás directamente sin necesidad de volver a ingresar contraseña.
 
-#### Opción B: Correo y Clave Cifrada
-1. Ingresa tu correo institucional y contraseña en los campos del modal.
-2. Pulsa el botón **"Iniciar Sesión Táctica"**.
+#### Opción B: Inicio de Sesión Tradicional Dual
+1. En el campo **"Correo Institucional / Gmail"**, ingresa cualquiera de tus correos reconocidos:
+   - Tu correo institucional `@ffaa.py` (ej: `viper@ffaa.py`).
+   - O tu dirección real de **Gmail** previamente vinculada.
+2. Ingresa tu contraseña militar en el campo inferior.
+3. Pulsa el botón **"Iniciar Sesión Táctica"**.
 
 ### 1.2 Primer Acceso y Reclutas
 1. Abre el enlace oficial de combate: [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/).
@@ -30,12 +36,20 @@ La plataforma cuenta con dos modalidades seguras de autenticación militar:
    - No utilices secuencias débiles o predecibles.
 4. Al guardar tu nueva clave, el sistema registrará tu sesión segura e ingresarás directamente al **Cuadro de Mando Operacional (Dashboard)**.
 
-### 1.2 ¿Olvidaste tu Contraseña o Sesión Bloqueada?
-1. Contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o canal seguro de Discord.
-2. El oficial ingresará al panel administrativo y ejecutará el comando seguro de reseteo (`Reset Pass`).
-3. El sistema generará una contraseña temporal única de formato `MS-XXXX-XXXX` que el oficial te entregará por vía privada.
-4. Al iniciar sesión, deberás definir obligatoriamente tu nueva contraseña de 8 o más caracteres.
-5. **Seguridad Anti-Sesión Fantasma:** Al resetear o cambiar la clave, cualquier sesión que haya quedado abierta en otros dispositivos será **invalidada de forma instantánea** mediante el control criptográfico `token_version`.
+### 1.3 Recuperación Autónoma de Contraseña (15 Minutos)
+Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo mediante canal seguro:
+1. En el modal de inicio de sesión, pulsa en el enlace **"¿Olvidaste tu clave?"**.
+2. Ingresa tu correo electrónico registrado (puedes utilizar tu correo institucional `@ffaa.py` o tu Gmail vinculado).
+3. Presiona **"Enviar Enlace Táctico"**.
+4. Recibirás en tu bandeja de entrada un correo con diseño C4ISR militar con un **enlace de autorización de un solo uso válido por 15 minutos**.
+5. Abre el enlace (te llevará a `/reset-password?token=...`), introduce tu nueva contraseña (mínimo 8 caracteres), confírmala y presiona **"Actualizar Contraseña"**.
+6. **Seguridad Anti-Sesión Fantasma:** Al completarse el restablecimiento, todas las sesiones activas previas quedarán invalidadas inmediatamente.
+
+### 1.4 Asistencia de Mando y Reseteo Administrativo
+1. Si no tienes acceso a tu correo electrónico, contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o Discord.
+2. El oficial ingresará al panel administrativo y ejecutará el comando de reseteo (`Reset Pass`).
+3. El sistema generará una contraseña temporal única `MS-XXXX-XXXX` que el oficial te entregará por canal privado.
+4. Al iniciar sesión con dicha clave, deberás definir obligatoriamente tu nueva contraseña.
 
 ---
 
@@ -128,4 +142,4 @@ Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar ap
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.3.2 · Actualizado: Septiembre 2026*
+*Versión: v3.5.0 · Actualizado: Septiembre 2026*
