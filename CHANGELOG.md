@@ -6,6 +6,36 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.4.0] - 2026-09-08
+
+### 🚀 Acceso con Google OAuth 2.0 Restringido (C4ISR Squadron Whitelist)
+- **Estrategia Google OAuth Stateless:** Integración de `passport` y `passport-google-oauth20` en `src/config/passport.js` sin persistencia de sesión por cookies (`session: false`), adaptado al estándar RESTful JWT de la plataforma.
+- **Validación Restringida a Usuarios Registrados:**
+  - Solo los correos electrónicos previamente registrados en la tabla `users` pueden acceder.
+  - Si el correo de Google no existe en la base de datos, se rechaza de inmediato con el error: *"❌ Acceso denegado. Tu correo no está registrado en el escuadrón. Contacta a un administrador."* y se registra el evento `LOGIN_GOOGLE_DENIED_NOT_FOUND` en `security_events`.
+  - Si el usuario existe pero su estado es inactivo (`status: 'INACTIVE'` o `is_active: false`), se bloquea con el error: *"⚠️ Cuenta desactivada. Contacta a tu oficial de operaciones."* y se registra `LOGIN_GOOGLE_DENIED_INACTIVE`.
+- **Nuevos Endpoints de Autenticación:**
+  - `GET /api/auth/google`: Inicia el flujo de autorización ante Google solicitando alcances de `profile` y `email`.
+  - `GET /api/auth/google/callback`: Recibe el código de autorización, valida el usuario en Supabase, emite el token JWT con su `token_version` y despacha el payload vía `postMessage` (o redirección en ventanas completas).
+- **Interfaz Gráfica de Inicio Táctico:** Nuevo botón oficial *"Iniciar Sesión con Google"* con diseño táctico militar integrado en `index.html` y gestión emergente / redirect en `js/auth.js`.
+
+### 🔑 Reestablecimiento Criptográfico de Contraseña por Correo Electrónico
+- **Tokens Criptoseguros de Corta Duración:** Los enlaces de recuperación se generan con `crypto.randomBytes(32).toString('hex')` y poseen una ventana de vigencia estricta de **15 minutos**.
+- **Almacén de Tokens `password_resets`:** Nueva tabla en PostgreSQL (`sql/updates_v3.4.0.sql`) con control de unicidad, expiración (`expires_at`), consumo (`used`), IP y User-Agent para prevenir ataques de reutilización.
+- **Invalidación Total de Sesiones Previas:** Al completar el restablecimiento exitoso de la clave, el sistema incrementa automáticamente el `token_version` del usuario en `users`, forzando el cierre de sesión en todos los demás dispositivos y terminales activos.
+- **Servicio de Envío Nodemailer:** Utilidad `src/utils/email.js` para despacho de correos en formato HTML táctico militar y texto plano respaldado por las credenciales `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` y `EMAIL_SECURE`.
+- **Nueva Interfaz Web `reset-password.html`:** Página dedicada con diseño cockpit, telemetría militar, validación en tiempo real de longitud mínima (8 caracteres), confirmación de clave y consumo seguro del token.
+- **Nuevos Endpoints:**
+  - `POST /api/auth/forgot-password`: Genera el token de restablecimiento, lo persiste en `password_resets` y despacha el correo electrónico al combatiente.
+  - `POST /api/auth/reset-password`: Valida el token, comprueba la vigencia y no reutilización, cifra la nueva clave con `bcrypt` (factor 10) e incrementa el `token_version`.
+
+### ⚡ Infraestructura & PWA
+- **Service Worker v3.4.0:** Actualizado `CACHE_NAME` a `PARAGUAY-FFAA-METALSTORM-v3.4.0` en `sw.js` incorporando precarga de `/reset-password.html`.
+- **Actualización de Versión:** `package.json` actualizado a la versión `3.4.0`.
+- **Auditoría de Seguridad:** Nuevos eventos registrados en `security_events`: `LOGIN_GOOGLE_SUCCESS`, `LOGIN_GOOGLE_DENIED_NOT_FOUND`, `LOGIN_GOOGLE_DENIED_INACTIVE`, `PASSWORD_RESET_REQUESTED` y `PASSWORD_RESET_SUCCESS`.
+
+---
+
 ## 📌 [3.3.2] - 2026-09-07
 
 ### 🛡️ Seguridad & Anti-Sesión Fantasma (C4ISR Security Update)

@@ -1,27 +1,46 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.3.2).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.4.0).**
 
 ---
 
 ## 1. Acceso a la Plataforma y Credenciales
 
-### 1.1 Primer Acceso y Reclutas
+### 1.1 Métodos de Autenticación de Combate
+La plataforma ofrece dos mecanismos de acceso táctico seguro:
+
+#### A. Autenticación con Credenciales Directas (Email y Contraseña)
 1. Abre el enlace oficial de combate: [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/).
 2. Ingresa tus credenciales oficiales proporcionadas por tu Oficial de Mando:
-   - **Correo Institucional:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).
-   - **Contraseña Temporal:** Formato militar criptoseguro de alta entropía `MS-XXXX-XXXX` (ejemplo: `MS-8K3P-Q7W2`).
-3. **Cambio Obligatorio:** Al autenticarte por primera vez con una clave temporal, el sistema desplegará de inmediato el modal de cambio forzado:
-   - Tu nueva contraseña personal debe tener **al menos 8 caracteres**.
-   - No utilices secuencias débiles o predecibles.
-4. Al guardar tu nueva clave, el sistema registrará tu sesión segura e ingresarás directamente al **Cuadro de Mando Operacional (Dashboard)**.
+   - **Correo Institucional o Personal:** Tu correo registrado en el escuadrón.
+   - **Contraseña:** Tu contraseña asignada o establecida previamente.
+3. **Reclutas con Clave Temporal:** Si es tu primer ingreso con una clave militar temporal `MS-XXXX-XXXX`, el sistema exigirá de forma obligatoria cambiar la clave por una personal de **al menos 8 caracteres**.
 
-### 1.2 ¿Olvidaste tu Contraseña o Sesión Bloqueada?
-1. Contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o canal seguro de Discord.
-2. El oficial ingresará al panel administrativo y ejecutará el comando seguro de reseteo (`Reset Pass`).
-3. El sistema generará una contraseña temporal única de formato `MS-XXXX-XXXX` que el oficial te entregará por vía privada.
-4. Al iniciar sesión, deberás definir obligatoriamente tu nueva contraseña de 8 o más caracteres.
-5. **Seguridad Anti-Sesión Fantasma:** Al resetear o cambiar la clave, cualquier sesión que haya quedado abierta en otros dispositivos será **invalidada de forma instantánea** mediante el control criptográfico `token_version`.
+#### B. Autenticación con Google (Gmail Restringido)
+1. En la pantalla principal de inicio de sesión, presiona el botón **"Continuar con Google"**.
+2. Se abrirá una ventana emergente segura donde podrás seleccionar o iniciar sesión con tu cuenta de Google.
+3. **Restricción Militar por Lista Blanca:**
+   - **Solo pueden ingresar correos que ya estén registrados en la nómina del escuadrón.**
+   - Si tu correo no figura en el sistema, recibirás la alerta:  
+     `❌ Acceso denegado. Tu correo no está registrado en el escuadrón. Contacta a un administrador.`
+   - Si tu cuenta militar se encuentra desactivada:  
+     `⚠️ Cuenta desactivada. Contacta a tu oficial de operaciones.`
+4. Si el correo es reconocido y está activo, la sesión se iniciará de forma automática y la ventana emergente se cerrará, cargando tu Cuadro de Mando Operacional.
+
+### 1.2 Recuperación Autónoma de Contraseña por Correo
+Si olvidaste tu clave de acceso o necesitas restaurarla:
+1. En el formulario de inicio de sesión, presiona **"¿Olvidaste tu contraseña?"**.
+2. Se desplegará el modal táctico de recuperación: ingresa tu correo electrónico registrado y presiona **"Enviar Enlace de Recuperación"**.
+3. Revisa tu bandeja de entrada (y la carpeta de spam si es necesario). Recibirás un correo oficial del escuadrón con un **enlace táctico de un solo uso válido por 15 minutos**.
+4. Haz clic en el enlace o cópialo en tu navegador. Se abrirá la interfaz táctica de restablecimiento (`/reset-password.html`).
+5. Ingresa tu nueva contraseña militar (mínimo 8 caracteres), confírmala y presiona **"Actualizar Contraseña"**.
+6. **Medida de Seguridad C4ISR:** Al guardar la nueva clave, el sistema incrementa el control `token_version` e **invalida al instante cualquier sesión activa** en todos tus dispositivos. A continuación, podrás iniciar sesión normalmente.
+
+### 1.3 Asistencia Administrativa de Clave
+En caso de no tener acceso a tu correo:
+1. Contacta a un **Oficial ADMIN** o al **Comandante OWNER** por los canales seguros del escuadrón.
+2. El oficial ejecutará el comando de reseteo administrativo (`Reset Pass`).
+3. El sistema emitirá una clave temporal `MS-XXXX-XXXX`. Al iniciar sesión con ella, deberás configurar una nueva contraseña obligatoriamente.
 
 ---
 
@@ -102,6 +121,12 @@ Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máxi
 
 ## 5. Preguntas Frecuentes (FAQ)
 
+**¿Por qué recibo error al intentar ingresar con Google?**  
+Por razones de seguridad operacional, el acceso vía Google está restringido estrictamente a las cuentas registradas en la nómina del escuadrón. Si utilizas un correo distinto o personal que no fue dado de alta por el oficial de operaciones, el acceso será rechazado.
+
+**¿Cuánto tiempo tengo para usar el enlace de restablecimiento de contraseña?**  
+El token criptográfico expira tras **15 minutos** de haber sido emitido. Si transcurre más tiempo, deberás volver a solicitar el enlace desde el formulario de recuperación.
+
 **¿Qué debo hacer si no puedo ingresar con mi clave temporal?**  
 Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`). Si persiste, solicita a un Oficial que genere una nueva clave temporal.
 
@@ -109,9 +134,9 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.3.2.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.4.0.
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.3.2 · Actualizado: Septiembre 2026*
+*Versión: v3.4.0 · Actualizado: Septiembre 2026*

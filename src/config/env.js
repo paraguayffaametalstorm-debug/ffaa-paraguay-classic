@@ -14,5 +14,18 @@ export const ENV = {
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'https://paraguay-ffaa-metalstorm.fly.dev'
-      ]
+      ],
+
+  // Google OAuth 2.0
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL || '',
+
+  // Servicio de Correo Electrónico (Nodemailer)
+  EMAIL_HOST: process.env.EMAIL_HOST || '',
+  EMAIL_PORT: process.env.EMAIL_PORT || '587',
+  EMAIL_USER: process.env.EMAIL_USER || '',
+  EMAIL_PASS: process.env.EMAIL_PASS || '',
+  EMAIL_FROM: process.env.EMAIL_FROM || '',
+  EMAIL_SECURE: process.env.EMAIL_SECURE || 'false'
 };

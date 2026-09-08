@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.3.2-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v3.4.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 
 ---
@@ -17,13 +17,15 @@
 
 La plataforma centraliza las operaciones del escuadrón mediante:
 - **Cuadro de Mando Operacional (Dashboard C4ISR):** Telemetría en tiempo real, seguimiento de la meta semanal del escuadrón (175 tokens promedio), panel de miembros en riesgo, gráfico de tendencia histórica y clasificación Top 5 de pilotos.
+- **Autenticación Restringida con Google OAuth 2.0:** Acceso oficial para cuentas Google validado de forma estricta contra la lista blanca de correos autorizados y activos en la base del escuadrón (`users`).
+- **Restablecimiento Criptográfico de Contraseña:** Flujo de autoservicio vía correo electrónico con tokens de alta entropía (`crypto.randomBytes(32)`), vigencia militar de 15 minutos, invalidación total de sesiones previas con `token_version` e interfaz dedicada `reset-password.html`.
 - **Registro Táctico de Rendimiento:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla).
 - **Hangar Militar & Starform Upgrades 2.0:** Catálogo de cazas (F-22, Su-57, F-35, Typhoon, Rafale, Gripen, etc.), módulos pasivos/especiales, gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos (piezas y componentes avanzados).
 - **Control de Mando RBAC & Cuotas Institucionales:** Restricción jerárquica estricta (1 Comandante en Jefe `OWNER`, máximo 3 Oficiales `ADMIN` y máximo 8 `VETERANO`).
 - **Seguridad Criptográfica & Anti-Sesión Fantasma:** Contraseñas temporales aleatorias de alta entropía (`MS-XXXX-XXXX`), invalidación instantánea de JWT mediante `token_version` y hashing con `bcryptjs`.
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
-- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.3.2 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.4.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
 
 ---
 
@@ -45,6 +47,8 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 | **Persistencia** | Supabase (PostgreSQL) | `^2.112.4` | Base de datos relacional con RLS e índices |
 | **Validación de Datos** | Zod | `^4.5.4` | Validación de esquemas y tipos en runtime |
 | **Criptografía & Auth** | JSON Web Token (JWT) | `^9.0.3` | Firma de tokens con control de `token_version` |
+| **OAuth 2.0 Provider** | Passport.js + Google OAuth | `^0.7.0` / `^2.0.0` | Autenticación restringida con Google |
+| **Despacho de Correo** | Nodemailer | `^10.0.1` | Envío de correos SMTP para restablecimiento de claves |
 | **Hashing de Claves** | Bcryptjs | `^3.0.3` | Hashing con salt rounds factor 10 |
 | **Seguridad HTTP** | Helmet | `^8.3.0` | Cabeceras HTTP seguras (adaptado para iframe/PWA) |
 | **Rate Limiting** | express-rate-limit | `^8.7.0` | Limitador de tráfico (Auth, API, Bulk) |
@@ -73,10 +77,13 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 ├── manifest.json                 # Manifiesto PWA para instalación standalone
 ├── metadata.json                 # Metadatos del entorno AI Studio
 ├── package.json                  # Dependencias y scripts del proyecto
+├── privacy.html                  # Política de Privacidad estática táctica (/privacy)
 ├── PWA_SETUP.md                  # Guía de configuración PWA y Service Worker
 ├── README.md                     # Documentación principal del sistema
+├── reset-password.html           # Interfaz táctica para restablecer contraseña
 ├── server.js                     # Servidor Express, middlewares y montaje de rutas
-├── sw.js                         # Service Worker v3.3.2 (Cache-First estáticos)
+├── sw.js                         # Service Worker v3.4.0 (Cache-First estáticos)
+├── terms.html                    # Términos de Servicio estáticos tácticos (/terms)
 ├── USER_MANUAL.md                # Manual operativo para pilotos y oficiales
 │
 ├── components/                   # Vistas y componentes HTML inyectados en runtime
@@ -95,9 +102,11 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 │   ├── performance-export.html   # Centro de exportación de reportes CSV
 │   ├── performance-form.html     # Formulario de registro de tokens semanales
 │   ├── planes-view.html          # Hangar militar y gestión de Upgrades 2.0
+│   ├── privacy-policy.html       # Componente modular de política de privacidad
 │   ├── profile-view.html         # Expediente personal del piloto y cambio de clave
 │   ├── session-warning.html      # Modal de expiración y advertencia de sesión
-│   └── settings-view.html        # Configuración de interfaz, temas y alertas
+│   ├── settings-view.html        # Configuración de interfaz, temas y alertas
+│   └── terms-of-service.html     # Componente modular de términos de servicio
 │
 ├── css/                          # Sistema de diseño militar y tokens CSS
 │   ├── components.css            # Estilos de botones, tablas, formularios y tarjetas
@@ -118,11 +127,13 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 │   └── views.js                  # Enrutador cliente y orquestador de vistas
 │
 ├── sql/
+│   ├── updates_v3.4.0.sql        # Migración tabla password_resets e índices
 │   └── upgrades_2_0.sql          # Migración DDL para sistemas Upgrades 2.0
 │
 └── src/                          # Núcleo del servidor Backend (ES Modules)
     ├── config/
-    │   └── env.js                # Validación y carga centralizada de variables de entorno
+    │   ├── env.js                # Validación y carga centralizada de variables de entorno
+    │   └── passport.js           # Estrategia Google OAuth 2.0 (stateless)
     ├── controllers/              # Controladores de lógica de negocio
     │   ├── admin.controller.js   # Gestión de miembros, roles, estados y carga masiva
     │   ├── auth.controller.js    # Login, verify, register, password change & reset
@@ -142,7 +153,11 @@ La plataforma centraliza las operaciones del escuadrón mediante:
     │   └── rateLimiter.js        # Limitadores de peticiones por IP
     ├── routes/                   # Enrutadores Express modulares
     ├── scripts/                  # Utilidades CLI de diagnóstico y mantenimiento
-    └── utils/                    # Seguridad, auditoría, esquemas y sanitización CSV
+    └── utils/                    # Seguridad, auditoría, esquemas, Nodemailer y sanitización CSV
+        ├── audit.js              # Registro de eventos y seguridad
+        ├── email.js              # Plantillas y despacho de correo Nodemailer
+        ├── security.js           # Entropía militar y tokens criptográficos
+        └── schemas.js            # Validación Zod en runtime
 ```
 
 ---
@@ -191,6 +206,16 @@ El servidor táctico responderá en `http://localhost:3000`.
 | `SUPABASE_SERVICE_ROLE_KEY` | **Sí** | - | Clave de servicio para operaciones de backend con privilegios |
 | `SUPABASE_ANON_KEY` | Opcional | - | Clave anónima para consultas de diagnóstico del cliente |
 | `ALLOWED_ORIGINS` | Opcional | *(localhost, fly.dev)* | Orígenes autorizados para CORS separados por comas |
+| `APP_URL` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | URL base de la aplicación para enlaces de recuperación |
+| `GOOGLE_CLIENT_ID` | Recomendada | - | Client ID de Google Cloud Console para OAuth 2.0 |
+| `GOOGLE_CLIENT_SECRET` | Recomendada | - | Client Secret de Google Cloud Console para OAuth 2.0 |
+| `GOOGLE_CALLBACK_URL` | Opcional | `/api/auth/google/callback` | Ruta de retorno del flujo OAuth |
+| `EMAIL_HOST` | Recomendada | - | Servidor SMTP (ej. `smtp.gmail.com`) para reseteo de claves |
+| `EMAIL_PORT` | Opcional | `587` | Puerto SMTP (`587` TLS o `465` SSL) |
+| `EMAIL_SECURE` | Opcional | `false` | Conexión SSL estricta (`true` para puerto 465) |
+| `EMAIL_USER` | Recomendada | - | Usuario o correo institucional de envío |
+| `EMAIL_PASS` | Recomendada | - | Contraseña o App Password de Google |
+| `EMAIL_FROM` | Opcional | `PARAGUAY-FFAA Escuadrón <no-reply@ffaa.py>` | Remitente en cabecera de correos |
 
 ---
 

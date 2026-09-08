@@ -8,6 +8,21 @@
 
 // ========== VERIFICAR ESTADO DE AUTENTICACIÓN ==========
 function checkAuthStatus() {
+  // 1. Verificar parámetros de URL para Google OAuth (token o error)
+  const urlParams = new URLSearchParams(window.location.search);
+  const oauthToken = urlParams.get('token');
+  const authError = urlParams.get('auth_error');
+
+  if (authError) {
+    showToast(decodeURIComponent(authError), 'error');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  if (oauthToken) {
+    localStorage.setItem('authToken', oauthToken);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
   const token = localStorage.getItem('authToken');
   
   // ✅ SI NO HAY TOKEN → MOSTRAR LOGIN INMEDIATAMENTE
@@ -318,6 +333,69 @@ async function changeTemporaryPassword() {
   }
 }
 
+// ========== INICIAR SESIÓN CON GOOGLE OAUTH ==========
+function loginWithGoogle() {
+  const width = 500;
+  const height = 650;
+  const left = window.screenX + (window.outerWidth - width) / 2;
+  const top = window.screenY + (window.outerHeight - height) / 2;
+  const googleUrl = `${API_BASE}/api/auth/google`;
+
+  console.log('🌐 Iniciando flujo Google OAuth...');
+
+  // Listener para recibir el resultado desde la ventana emergente
+  const messageHandler = (event) => {
+    if (!event.data || typeof event.data !== 'object') return;
+
+    if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+      window.removeEventListener('message', messageHandler);
+      console.log('✅ Google OAuth autenticado exitosamente');
+      
+      const { token, user } = event.data;
+      if (token) {
+        localStorage.setItem('authToken', token);
+      }
+      if (user) {
+        currentUser = user;
+      }
+
+      closeModal('loginModal');
+
+      if (user?.must_change_password) {
+        showPasswordChangeModal();
+        return;
+      }
+
+      updateUserUI(currentUser);
+      showToast(`✅ Bienvenido, [PRY] ${currentUser?.nick || currentUser?.email}`, 'success');
+      markUserOnline();
+      showView('appView');
+
+      const helpFab = document.getElementById('helpFab');
+      if (helpFab) helpFab.style.display = '';
+      if (typeof initHelpSystem === 'function') initHelpSystem();
+    } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+      window.removeEventListener('message', messageHandler);
+      console.warn('❌ Google OAuth error recibido:', event.data.error);
+      showToast(event.data.error || 'Error en inicio con Google', 'error');
+    }
+  };
+
+  window.addEventListener('message', messageHandler);
+
+  const popup = window.open(
+    googleUrl,
+    'GoogleAuthFFAA',
+    `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
+  );
+
+  // Si el navegador bloqueó la apertura de ventana emergente, redirigir en la pestaña actual
+  if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+    console.warn('⚠️ Ventana emergente bloqueada, redirigiendo en la misma pestaña...');
+    window.location.href = googleUrl;
+  }
+}
+
 // ========== RECUPERACIÓN DE CONTRASEÑA ==========
 
 function showForgotPassword() {
@@ -327,13 +405,11 @@ function showForgotPassword() {
   }
   
   // Limpiar campos y mensajes
-  const resetEmail = document.getElementById('resetEmail');
-  const resetSuccess = document.getElementById('resetSuccess');
-  const resetError = document.getElementById('resetError');
+  const forgotEmail = document.getElementById('forgotEmail') || document.getElementById('resetEmail');
+  const forgotAlert = document.getElementById('forgotAlert');
   
-  if (resetEmail) resetEmail.value = '';
-  if (resetSuccess) resetSuccess.style.display = 'none';
-  if (resetError) resetError.style.display = 'none';
+  if (forgotEmail) forgotEmail.value = '';
+  if (forgotAlert) forgotAlert.style.display = 'none';
 }
 
 function backToLogin() {
@@ -341,62 +417,81 @@ function backToLogin() {
   showLoginModal();
 }
 
-async function requestPasswordReset() {
-  const emailInput = document.getElementById('resetEmail');
+async function handleForgotPassword() {
+  const emailInput = document.getElementById('forgotEmail') || document.getElementById('resetEmail');
+  const alertEl = document.getElementById('forgotAlert');
+  const btnSubmit = document.getElementById('btnForgotSubmit');
+  const btnText = document.getElementById('btnForgotText');
+  const btnSpinner = document.getElementById('btnForgotSpinner');
+
   if (!emailInput) return;
-  
   const email = emailInput.value.trim();
-  
+
   if (!email) {
-    showToast('⚠️ Ingresa tu correo institucional', 'warning');
+    showToast('⚠️ Ingresa tu correo registrado', 'warning');
+    if (alertEl) {
+      alertEl.textContent = 'Por favor ingresa tu correo registrado en el escuadrón.';
+      alertEl.style.background = 'rgba(248, 113, 113, 0.15)';
+      alertEl.style.border = '1px solid var(--red-danger)';
+      alertEl.style.color = '#FFAAA6';
+      alertEl.style.display = 'block';
+    }
     return;
   }
-  
-  if (!email.endsWith('@ffaa.py')) {
-    showToast('⚠️ Solo correos institucionales (@ffaa.py)', 'warning');
-    return;
-  }
-  
+
+  // Estado de carga
+  if (btnSubmit) btnSubmit.disabled = true;
+  if (btnText) btnText.textContent = 'Enviando...';
+  if (btnSpinner) btnSpinner.style.display = 'inline-block';
+  if (alertEl) alertEl.style.display = 'none';
+
   try {
     const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
-    
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || 'Error al enviar instrucciones');
+
+    const data = await res.json();
+
+    if (alertEl) {
+      alertEl.textContent = data.message || 'Si el correo está registrado en el escuadrón, recibirás un enlace de restablecimiento (15 min).';
+      alertEl.style.background = 'rgba(74, 222, 128, 0.15)';
+      alertEl.style.border = '1px solid var(--green-tactical)';
+      alertEl.style.color = '#86EFAC';
+      alertEl.style.display = 'block';
     }
-    
-    // Mostrar éxito
-    const resetSuccess = document.getElementById('resetSuccess');
-    const resetError = document.getElementById('resetError');
-    
-    if (resetSuccess) resetSuccess.style.display = 'block';
-    if (resetError) resetError.style.display = 'none';
-    if (emailInput) emailInput.value = '';
-    
+
     showToast('✅ Instrucciones enviadas a tu correo', 'success');
-    
-    // Cerrar modal después de 3 segundos
+    emailInput.value = '';
+
     setTimeout(() => {
       closeModal('forgotPasswordModal');
       showLoginModal();
-    }, 3000);
-    
+      if (alertEl) alertEl.style.display = 'none';
+      if (btnSubmit) btnSubmit.disabled = false;
+      if (btnText) btnText.textContent = 'Enviar Enlace';
+      if (btnSpinner) btnSpinner.style.display = 'none';
+    }, 3500);
+
   } catch (err) {
-    console.error('Error:', err);
-    const resetError = document.getElementById('resetError');
-    const resetSuccess = document.getElementById('resetSuccess');
-    
-    if (resetError) resetError.style.display = 'block';
-    if (resetSuccess) resetSuccess.style.display = 'none';
-    showToast('❌ ' + err.message, 'error');
+    console.error('❌ Error en forgotPassword:', err);
+    if (alertEl) {
+      alertEl.textContent = 'Error de conexión con el servidor táctico.';
+      alertEl.style.background = 'rgba(248, 113, 113, 0.15)';
+      alertEl.style.border = '1px solid var(--red-danger)';
+      alertEl.style.color = '#FFAAA6';
+      alertEl.style.display = 'block';
+    }
+    showToast('❌ Error de conexión al solicitar restablecimiento', 'error');
+    if (btnSubmit) btnSubmit.disabled = false;
+    if (btnText) btnText.textContent = 'Enviar Enlace';
+    if (btnSpinner) btnSpinner.style.display = 'none';
   }
 }
+
+// Alias para compatibilidad
+const requestPasswordReset = handleForgotPassword;
 
 // ========== MANEJO DE PRESENCIA (USUARIOS CONECTADOS) ==========
 
@@ -599,6 +694,10 @@ async function resetUserPassword(userId) {
 }
 
 // Exportar funciones para uso global
+window.loginWithGoogle = loginWithGoogle;
+window.showForgotPassword = showForgotPassword;
+window.handleForgotPassword = handleForgotPassword;
+window.requestPasswordReset = requestPasswordReset;
 window.changePasswordFromProfile = changePasswordFromProfile;
 window.handleChangePassword = handleChangePassword;
 window.resetUserPassword = resetUserPassword;
