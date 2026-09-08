@@ -1,0 +1,66 @@
+<div id="exportView" class="view" style="display:none;">
+  <div class="view-header" style="margin-bottom:1.5rem;">
+    <h2>🖼️ Generador de Reportes Gráficos de Rendimiento</h2>
+    <p class="subtitle">Exportación de actas militares en formato PNG de alta fidelidad para el Escuadrón</p>
+  </div>
+
+  <!-- Control & Selection Card -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;align-items:end;">
+      <div>
+        <label for="exportEventSel" style="font-size:0.85rem;color:#a0aec0;font-weight:700;">Seleccionar Evento</label>
+        <select id="exportEventSel" onchange="onExportEventChange()" style="width:100%;">
+          <option value="">Cargando eventos...</option>
+        </select>
+      </div>
+
+      <div id="exportOptionsGroup" style="display:none;">
+        <label for="exportSortSel" style="font-size:0.85rem;color:#a0aec0;font-weight:700;">Ordenar Rendimientos</label>
+        <select id="exportSortSel" onchange="onExportSortChange()" style="width:100%;">
+          <option value="tokens_desc">Tokens (Mayor a Menor)</option>
+          <option value="tokens_asc">Tokens (Menor a Mayor)</option>
+          <option value="nick_asc">Piloto (Alfabético A-Z)</option>
+          <option value="status">Estado (Verde → Negro)</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button id="exportRefreshBtn" onclick="onExportEventChange()" class="btn-secondary" style="display:none;">
+          🔄 Recargar
+        </button>
+        <button id="exportDlBtn" onclick="downloadExportImage()" class="btn-primary" disabled style="width:100%;">
+          📥 Descargar Imagen PNG
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Stats of Selected Event -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Total Pilotos</h4>
+      <div id="expStTotal" style="font-size:1.8rem;font-weight:700;color:#ffffff;">-</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Promedio Escuadrón</h4>
+      <div id="expStAvg" style="font-size:1.8rem;font-weight:700;color:var(--color-secondary,#d4af37);">-</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Pilotos en Verde</h4>
+      <div id="expStVerde" style="font-size:1.8rem;font-weight:700;color:#28a745;">-</div>
+    </div>
+    <div class="card stat-card" style="text-align:center;">
+      <h4 style="font-size:0.85rem;color:#a0aec0;">Pilotos en Riesgo</h4>
+      <div id="expStRisk" style="font-size:1.8rem;font-weight:700;color:#dc3545;">-</div>
+    </div>
+  </div>
+
+  <div id="exportLoading" style="display:none;justify-content:center;align-items:center;padding:3rem;">
+    <div class="loading-text"><span class="loading-spinner"></span> Renderizando acta gráfica...</div>
+  </div>
+
+  <!-- Canvas Preview Wrapper -->
+  <div id="exportPreviewWrap" class="card" style="display:none;text-align:center;overflow-x:auto;padding:1.5rem;background:rgba(0,0,0,0.5);">
+    <canvas id="exportCanvas" style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.8);"></canvas>
+  </div>
+</div>

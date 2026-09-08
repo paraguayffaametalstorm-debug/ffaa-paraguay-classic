@@ -1,0 +1,94 @@
+<header id="header" class="tactical-header">
+  <div class="header-container">
+    <!-- Mobile Hamburger Toggle Button (Visible on < 1024px) -->
+    <button id="mobileMenuToggleBtn" class="btn-hamburger" onclick="toggleMobileDrawer()" aria-label="Abrir Menú Táctico" title="Menú">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+
+    <div class="logo-section" onclick="showView('appView')" style="cursor:pointer;" title="Volver al Cuadro de Mando">
+      <img src="/logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" class="logo" loading="lazy" />
+      <div class="logo-text">
+        <h1 class="escuadron-title">PARAGUAY-FFAA</h1>
+        <span class="escuadron-subtitle">[PRY] · METALSTORM</span>
+      </div>
+    </div>
+    
+    <div class="title-section">
+      <h2>SISTEMA DE GESTIÓN Y RENDIMIENTO MILITAR</h2>
+      <p>CENTRO DE MANDO TÁCTICO · ESCUADRÓN OFICIAL</p>
+    </div>
+
+    <div class="nav-section">
+      <!-- Live Online Indicator -->
+      <div class="online-indicator-badge" title="Pilotos activos en la plataforma">
+        <span class="online-pulse-dot"></span>
+        <span class="online-text">Pilotos: <strong id="onlineCount">1</strong></span>
+      </div>
+
+      <!-- Quick Sync / Refresh Button -->
+      <button onclick="refreshCurrentView()" class="btn-icon-tactical" title="Sincronizar Datos" aria-label="Actualizar">
+        <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+      </button>
+
+      <!-- User Identification Pill -->
+      <div id="userHeaderInfo" class="user-header-pill" onclick="showView('profileView')" style="cursor:pointer;" title="Ver Mi Perfil">
+        <span id="userName" class="user-callsign"></span>
+        <span id="userRole" class="user-role-container"></span>
+      </div>
+
+      <button id="loginBtn" onclick="showLoginModal()" class="btn-primary btn-sm" style="display:none;">
+        <i data-lucide="log-in" style="width:15px;height:15px;"></i> Iniciar Sesión
+      </button>
+      <button id="logoutBtn" onclick="logout()" class="btn-danger btn-sm" style="display:none;" title="Cerrar Sesión">
+        <i data-lucide="log-out" style="width:15px;height:15px;"></i> <span class="btn-text-desktop">Salir</span>
+      </button>
+      <button id="helpBtn" class="btn-secondary btn-sm" title="Ayuda y Soporte">
+        <i data-lucide="help-circle" style="width:15px;height:15px;"></i> <span class="btn-text-desktop">Ayuda</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Desktop Navigation Strip (Visible on Desktop >= 1024px) -->
+  <nav class="nav-menu desktop-nav-menu" aria-label="Menú Principal">
+    <button onclick="showView('appView')" class="nav-tab active" data-view="appView">
+      <i data-lucide="layout-dashboard" class="lucide-icon"></i> Dashboard
+    </button>
+    <button onclick="showView('performanceForm')" class="nav-tab" data-view="performanceForm">
+      <i data-lucide="clipboard-check" class="lucide-icon"></i> Cargar Rendimiento
+    </button>
+    <button onclick="showView('planesView')" class="nav-tab" data-view="planesView">
+      <i data-lucide="plane" class="lucide-icon"></i> Hangar Aeronaves
+    </button>
+    <button onclick="showView('historialView')" class="nav-tab" data-view="historialView">
+      <i data-lucide="activity" class="lucide-icon"></i> Mi Historial
+    </button>
+    <button onclick="showView('normativasView')" class="nav-tab" data-view="normativasView">
+      <i data-lucide="book-open" class="lucide-icon"></i> Normativas
+    </button>
+    <button onclick="showView('profileView')" class="nav-tab" data-view="profileView">
+      <i data-lucide="user-circle-2" class="lucide-icon"></i> Mi Perfil
+    </button>
+    <button onclick="showView('settingsView')" class="nav-tab" data-view="settingsView">
+      <i data-lucide="settings" class="lucide-icon"></i> Configuración
+    </button>
+    <button onclick="showView('helpView')" class="nav-tab" data-view="helpView">
+      <i data-lucide="help-circle" class="lucide-icon"></i> Guía & FAQ
+    </button>
+    
+    <!-- Administrative Tabs -->
+    <button id="adminBtn" onclick="showView('adminPanel')" class="nav-tab nav-tab-admin" data-view="adminPanel" style="display:none;">
+      <i data-lucide="shield-check" class="lucide-icon"></i> Panel Admin
+    </button>
+    <button id="allPerformancesBtn" onclick="showView('allPerformancesView')" class="nav-tab nav-tab-admin" data-view="allPerformancesView" style="display:none;">
+      <i data-lucide="trending-up" class="lucide-icon"></i> Rendimientos Globales
+    </button>
+    <button id="ownerBtn" onclick="showView('ownerPanelView')" class="nav-tab nav-tab-owner" data-view="ownerPanelView" style="display:none;">
+      <i data-lucide="crown" class="lucide-icon"></i> Centro de Control
+    </button>
+    <button id="exportBtn" onclick="showView('exportView')" class="nav-tab" data-view="exportView" style="display:none;">
+      <i data-lucide="file-image" class="lucide-icon"></i> Reporte PNG
+    </button>
+  </nav>
+</header>

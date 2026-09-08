@@ -1,0 +1,114 @@
+{
+  "name": "PARAGUAY-FFAA | METALSTORM - Sistema de Rendimiento",
+  "short_name": "PARAGUAY-FFAA | METALSTORM",
+  "description": "Sistema de Rendimiento del Escuadrón FFAA Paraguay [PRY] - Metalstorm",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1b2a",
+  "theme_color": "#1a3a6c",
+  "scope": "/",
+  "id": "/",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "games"],
+  "icons": [
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-escuadron.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard en móvil"
+    },
+    {
+      "src": "/screenshots/dashboard-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard en escritorio"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Ver estadísticas del piloto",
+      "url": "/",
+      "icons": [{ "src": "/logo-escuadron.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ingresar Rendimiento",
+      "short_name": "Rendimiento",
+      "description": "Registrar rendimiento semanal",
+      "url": "/#performanceForm",
+      "icons": [{ "src": "/logo-escuadron.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mis Aeronaves",
+      "short_name": "Aeronaves",
+      "description": "Ver mis aviones",
+      "url": "/#planesView",
+      "icons": [{ "src": "/logo-escuadron.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mi Perfil",
+      "short_name": "Perfil",
+      "description": "Ver y editar perfil",
+      "url": "/#profileView",
+      "icons": [{ "src": "/logo-escuadron.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "display_override": ["standalone", "fullscreen", "minimal-ui"]
+}

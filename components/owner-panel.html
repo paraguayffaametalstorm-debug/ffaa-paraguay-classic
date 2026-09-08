@@ -1,0 +1,105 @@
+<div id="ownerPanelView" class="view" style="display:none;">
+  <div class="view-header" style="margin-bottom:1.5rem;">
+    <h2>👑 Centro de Control & Auditoría Máxima (Owner)</h2>
+    <p class="subtitle">Monitoreo forense, logs de errores y gestión de backups de base de datos</p>
+  </div>
+
+  <!-- Owner Summary Stats -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="border-left:4px solid #68d391;">
+      <h4>Auditorías (24h)</h4>
+      <div id="ownerAudits24h" style="font-size:1.8rem;font-weight:700;color:#68d391;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #fc8181;">
+      <h4>Errores (24h)</h4>
+      <div id="ownerErrors24h" style="font-size:1.8rem;font-weight:700;color:#fc8181;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #d4af37;">
+      <h4>Total Registros</h4>
+      <div id="ownerTotalAudit" style="font-size:1.8rem;font-weight:700;color:#d4af37;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #63b3ed;">
+      <h4>Copias de Respaldo</h4>
+      <div id="ownerBackupCount" style="font-size:1.8rem;font-weight:700;color:#63b3ed;">-</div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem;">
+    <div style="display:flex;border-bottom:1px solid rgba(212,175,55,0.3);background:rgba(0,0,0,0.3);">
+      <button id="tabBtnAudit" onclick="switchOwnerTab('audit')" class="btn-secondary active" style="flex:1;border-radius:0;padding:12px;border:none;border-bottom:2px solid transparent;">
+        📋 Log de Auditoría
+      </button>
+      <button id="tabBtnErrors" onclick="switchOwnerTab('errors')" class="btn-secondary" style="flex:1;border-radius:0;padding:12px;border:none;border-bottom:2px solid transparent;">
+        ⚠️ Registro de Errores
+      </button>
+      <button id="tabBtnBackups" onclick="switchOwnerTab('backups')" class="btn-secondary" style="flex:1;border-radius:0;padding:12px;border:none;border-bottom:2px solid transparent;">
+        🗃️ Copias de Seguridad (Backups)
+      </button>
+    </div>
+
+    <div style="padding:1.5rem;">
+      <!-- Audit Tab -->
+      <div id="ownerTabAudit">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.2rem;align-items:end;">
+          <div>
+            <label for="auditFilterAction" style="font-size:0.8rem;color:#a0aec0;">Acción</label>
+            <input type="text" id="auditFilterAction" placeholder="Ej: LOGIN" oninput="loadAuditLogs(1)" />
+          </div>
+          <div>
+            <label for="auditFilterNick" style="font-size:0.8rem;color:#a0aec0;">Piloto</label>
+            <input type="text" id="auditFilterNick" placeholder="Nick..." oninput="loadAuditLogs(1)" />
+          </div>
+          <div>
+            <label for="auditFilterResult" style="font-size:0.8rem;color:#a0aec0;">Resultado</label>
+            <select id="auditFilterResult" onchange="loadAuditLogs(1)">
+              <option value="">Todos</option>
+              <option value="SUCCESS">SUCCESS</option>
+              <option value="FAILURE">FAILURE</option>
+            </select>
+          </div>
+          <div>
+            <label for="auditFilterEntity" style="font-size:0.8rem;color:#a0aec0;">Entidad</label>
+            <input type="text" id="auditFilterEntity" placeholder="Entidad..." oninput="loadAuditLogs(1)" />
+          </div>
+        </div>
+
+        <div id="auditLogsContainer"></div>
+        <div id="auditPagination" class="pagination" style="display:flex;justify-content:center;gap:6px;margin-top:1rem;"></div>
+      </div>
+
+      <!-- Errors Tab -->
+      <div id="ownerTabErrors" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.2rem;align-items:end;">
+          <div>
+            <label for="errorFilterLevel" style="font-size:0.8rem;color:#a0aec0;">Nivel</label>
+            <select id="errorFilterLevel" onchange="loadErrorLogs(1)">
+              <option value="">Todos</option>
+              <option value="error">ERROR</option>
+              <option value="warn">WARN</option>
+            </select>
+          </div>
+          <div>
+            <label for="errorFilterRoute" style="font-size:0.8rem;color:#a0aec0;">Ruta API</label>
+            <input type="text" id="errorFilterRoute" placeholder="/api/..." oninput="loadErrorLogs(1)" />
+          </div>
+        </div>
+
+        <div id="errorLogsContainer"></div>
+        <div id="errorPagination" class="pagination" style="display:flex;justify-content:center;gap:6px;margin-top:1rem;"></div>
+      </div>
+
+      <!-- Backups Tab -->
+      <div id="ownerTabBackups" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+          <p style="margin:0;font-size:0.9rem;color:#cbd5e0;">Resguardos JSON automáticos y manuales de la base de datos.</p>
+          <button id="btnManualBackup" onclick="triggerManualBackup()" class="btn-primary">
+            ▶️ Ejecutar Backup Ahora
+          </button>
+        </div>
+
+        <div id="backupListContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </div>
+  </div>
+</div>

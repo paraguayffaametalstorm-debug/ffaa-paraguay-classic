@@ -1,0 +1,34 @@
+<div id="helpModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header">
+      <h3>❓ Centro de Ayuda & Soporte</h3>
+      <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
+    </div>
+    <div class="modal-body" style="font-size:0.95rem;line-height:1.6;color:#e2e8f0;">
+      <h4 style="color:var(--color-secondary,#d4af37);margin-bottom:6px;">🎖️ Tabla de Estados de Rendimiento</h4>
+      <ul style="list-style:none;padding:0;margin-bottom:14px;">
+        <li style="margin-bottom:6px;"><span class="status-badge status-verde">🟢 VERDE</span> : <strong>175+ tokens</strong> — Operatividad plena</li>
+        <li style="margin-bottom:6px;"><span class="status-badge status-naranja">🟠 NARANJA</span> : <strong>130 - 174 tokens</strong> — Rendimiento estándar</li>
+        <li style="margin-bottom:6px;"><span class="status-badge status-rojo">🔴 ROJO</span> : <strong>100 - 129 tokens</strong> — Advertencia de inactividad</li>
+        <li style="margin-bottom:6px;"><span class="status-badge status-negro">⚫ NEGRO</span> : <strong>Menos de 100 tokens</strong> — Estado crítico</li>
+      </ul>
+
+      <h4 style="color:var(--color-secondary,#d4af37);margin-bottom:6px;">⏱️ Ventana de Carga de Eventos</h4>
+      <p style="margin-bottom:14px;color:#a0aec0;font-size:0.88rem;">
+        Los eventos estándar cierran los jueves a las 08:59 (PY). Los Black Market abren de lunes a miércoles según disposición del mando.
+      </p>
+
+      <div style="text-align:center;margin-top:16px;">
+        <button onclick="closeModal('helpModal');if(typeof startTour==='function')startTour();" class="btn-primary" style="margin-right:8px;">
+          🚀 Iniciar Tour Guiado
+        </button>
+        <button onclick="closeModal('helpModal');showView('helpView');" class="btn-secondary">
+          📖 Ver Manual Completo
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('helpModal')" class="btn-secondary">Cerrar</button>
+    </div>
+  </div>
+</div>

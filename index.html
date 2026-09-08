@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="description" content="Sistema de Rendimiento y Gestión para el Escuadrón PARAGUAY FFAA [PRY] en MetalStorm">
+  <meta property="og:title" content="PARAGUAY-FFAA | METALSTORM">
+  <meta property="og:description" content="Sistema de Rendimiento y Gestión para el Escuadrón PARAGUAY FFAA [PRY] en MetalStorm">
+  
+  <!-- PWA Meta Tags & Mobile Enhancements -->
+  <meta name="theme-color" content="#0B132B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PARAGUAY-FFAA">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="PARAGUAY-FFAA | METALSTORM">
+  <meta name="format-detection" content="telephone=no">
+  
+  <!-- Icons para iOS -->
+  <link rel="apple-touch-icon" href="/logo-escuadron.png">
+  <link rel="apple-touch-icon" sizes="72x72"   href="/logo-escuadron.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/logo-escuadron.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/logo-escuadron.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/logo-escuadron.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/logo-escuadron.png">
+  
+  <title>PARAGUAY-FFAA | METALSTORM</title>
+  
+  <!-- Fonts: Rajdhani (tactical military), Inter (clean UI), JetBrains Mono (data/code) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- ✅ Estilos modulares con cache-busting -->
+  <link rel="stylesheet" href="/css/global.css?v=3.3.0">
+  <link rel="stylesheet" href="/css/components.css?v=3.3.0">
+  <link rel="stylesheet" href="/css/views.css?v=3.3.0">
+  <link rel="stylesheet" href="/css/tactical-design.css?v=3.3.0">
+  <link rel="stylesheet" href="/css/help.css?v=3.3.0">
+  
+  <link rel="icon" href="/logo-escuadron.png">
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+
+  <!-- Header Component -->
+  <div id="headerContainer"></div>
+  
+  <!-- Main Content -->
+  <div id="mainContent">
+    <!-- ✅ Login Modal - OCULTO POR DEFECTO -->
+    <div id="loginModal" class="modal">
+      <div class="modal-content tactical-corners" style="max-width:440px;">
+        <div class="modal-header" style="border-bottom:1px solid var(--border-tactical);padding-bottom:1rem;">
+          <div style="display:flex;align-items:center;gap:10px;justify-content:center;width:100%;">
+            <img src="/logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" style="width:36px;height:36px;" />
+            <h3 style="margin:0;font-family:var(--font-tactical);letter-spacing:1px;color:var(--gold-rank);">
+              ACCESO TÁCTICO MILITAR
+            </h3>
+          </div>
+        </div>
+        <div class="modal-body" style="padding-top:1.25rem;">
+          <!-- Telemetry Status Badge -->
+          <div class="login-system-status">
+            <span class="online-pulse-dot"></span>
+            <span>ESTADO DEL SISTEMA: ONLINE · C4ISR READY</span>
+          </div>
+
+          <label style="font-size:0.8rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;letter-spacing:0.5px;">Correo Institucional / Indicativo</label>
+          <div style="position:relative;margin-bottom:1rem;">
+            <input type="email" id="loginEmail" placeholder="piloto@ffaa.mil.py" required
+                   autocomplete="email" inputmode="email"
+                   style="background:rgba(17,24,39,0.85);border:1px solid var(--border-tactical);color:#fff;padding:0.75rem 0.85rem;border-radius:4px;width:100%;font-family:var(--font-mono);font-size:0.9rem;">
+          </div>
+
+          <label style="font-size:0.8rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;letter-spacing:0.5px;">Clave Cifrada de Acceso</label>
+          <div class="password-container" style="position:relative;margin-bottom:1.25rem;">
+            <input type="password" id="loginPassword" placeholder="••••••••••••" required
+                   autocomplete="current-password"
+                   onkeypress="if(event.key==='Enter') login()"
+                   style="background:rgba(17,24,39,0.85);border:1px solid var(--border-tactical);color:#fff;padding:0.75rem 2.5rem 0.75rem 0.85rem;border-radius:4px;width:100%;font-family:var(--font-mono);font-size:0.9rem;">
+            <span class="toggle-password" onclick="togglePasswordVisibility('loginPassword')" role="button" tabindex="0" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--steel-gray);">👁️</span>
+          </div>
+
+          <button onclick="login()" class="btn-primary" style="width:100%;padding:0.85rem;font-size:1rem;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <i data-lucide="shield-check" style="width:18px;height:18px;"></i> Iniciar Sesión Táctica
+          </button>
+          
+          <div class="login-links" style="margin-top:1.2rem;display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;">
+            <a href="#" onclick="showForgotPassword()" style="color:var(--steel-gray);text-decoration:none;">¿Olvidaste tu clave?</a>
+            <span style="color:var(--steel-dark);font-family:var(--font-mono);">PRY-FFAA v3.3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- VIEWS CONTAINER - Todas las vistas se inyectan aquí dinámicamente -->
+    <div id="viewsContainer"></div>
+  </div>
+  
+  <!-- Footer Component -->
+  <div id="footerContainer"></div>
+  
+  <!-- Modals Components -->
+  <div id="modalsContainer"></div>
+  
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+  
+  <!-- ✅ VARIABLES GLOBALES -->
+  <script>
+    const API_BASE = '';
+    let currentUser    = null;
+    let currentEvent   = null;
+    let sessionTimeout = null;
+  </script>
+  
+  <!-- ✅ Component Loader - Carga dinámica de componentes HTML -->
+  <script>
+    // ── Lista de componentes dinámicos (slice(5) en adelante se cargan como vistas) ──
+    const COMPONENTS = [
+      'header', 'footer', 'help-modal', 'session-warning',
+      'forgot-password-modal',
+      // Vistas principales
+      'dashboard', 'performance-form', 'planes-view', 'historial-view',
+      'profile-view', 'normativas-view', 'admin-panel', 'all-performances',
+      'settings-view',
+      'help-view',
+      'owner-panel',
+      'performance-export'
+    ];
+
+    Promise.all([
+      // Header y footer (siempre cargados)
+      fetch('/components/header.html').then(r => r.text()).catch(() => ''),
+      fetch('/components/footer.html').then(r => r.text()).catch(() => ''),
+
+      // Modales fijos
+      Promise.all([
+        fetch('/components/help-modal.html').then(r => r.text()).catch(() => ''),
+        fetch('/components/session-warning.html').then(r => r.text()).catch(() => ''),
+        fetch('/components/forgot-password-modal.html').then(r => r.text()).catch(() => ''),
+        fetch('/components/aircraft-stats-modal.html').then(r => r.text()).catch(() => '')
+      ]).then(([h, s, f, a]) => h + s + f + a),
+
+      // Vistas dinámicas (índice 5 en adelante) - INCLUYE performance-export
+      Promise.all(
+        COMPONENTS.slice(5).map(view =>
+          fetch(`/components/${view}.html`)
+            .then(r => {
+              if (!r.ok) throw new Error(`404: /components/${view}.html`);
+              return r.text();
+            })
+            .catch(err => {
+              console.error(`❌ Error cargando vista: ${view}`, err);
+              return `<div id="${view.replace('-view','').replace('-panel','').replace('-form','')}View" class="view" style="display:none;"><p style="color:#dc3545;text-align:center;padding:2rem;">⚠️ Error cargando vista: ${view}</p></div>`;
+            })
+        )
+      ).then(views => views.join('\n'))
+
+    ]).then(([header, footer, modals, views]) => {
+      document.getElementById('headerContainer').innerHTML  = header;
+      document.getElementById('footerContainer').innerHTML  = footer;
+      document.getElementById('modalsContainer').innerHTML  = modals;
+      document.getElementById('viewsContainer').innerHTML   = views;
+
+      console.log('✅ Componentes cargados correctamente');
+      console.log('📦 Vistas disponibles:', COMPONENTS.slice(5).join(', '));
+
+      if (typeof initApp === 'function') {
+        console.log('🚀 Ejecutando initApp()...');
+        initApp();
+      } else {
+        console.warn('⚠️ initApp() no disponible aún - esperando scripts');
+        setTimeout(() => {
+          if (typeof checkAuthStatus === 'function') checkAuthStatus();
+        }, 500);
+      }
+    }).catch(err => {
+      console.error('❌ Error crítico cargando componentes:', err);
+      const container = document.getElementById('viewsContainer');
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:3rem;color:#fff;">
+            <h2 style="color:#dc3545;">⚠️ Error de carga</h2>
+            <p>No se pudieron cargar los componentes de la interfaz.</p>
+            <button onclick="location.reload()" class="btn-primary" style="margin-top:1rem;">🔄 Recargar página</button>
+          </div>
+        `;
+      }
+    });
+  </script>
+  
+  <!-- ============================================================
+       ✅ SCRIPTS EN ORDEN CRÍTICO DE DEPENDENCIAS
+       ============================================================ -->
+  
+  <!-- 1. Librerías externas (no dependen de nada) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- 2. Utils (funciones base, no depende de nada) -->
+  <script src="/js/utils.js?v=3.1.0"></script>
+  
+  <!-- 3. API client (depende de utils) -->
+  <script src="/js/api.js?v=3.1.0"></script>
+  
+  <!-- 4. VIEWS (contiene showView, VIEWS, loadViewData) -->
+  <script src="/js/views.js?v=3.3.1"></script>
+  
+  <!-- 5. PERFORMANCE (contiene loadAdminPilotList, initPerformanceForm, savePerformance) -->
+  <script src="/js/performance.js?v=3.3.1"></script>
+  
+  <!-- 6. AUTH (depende de views - showView YA ESTÁ DISPONIBLE) -->
+  <script src="/js/auth.js?v=3.3.1"></script>
+  
+  <!-- 7. Profile y Settings (dependen de views) -->
+  <script src="/js/profile.js?v=3.3.1"></script>
+  <script src="/js/settings.js?v=3.3.1"></script>
+  
+  <!-- 8. Main (inicialización final) -->
+  <script src="/js/main.js?v=3.3.1"></script>
+  
+  <!-- 9. Tour (último) -->
+  <script src="/js/tour.js?v=3.3.1"></script>
+
+  <!-- ✅ Service Worker — PWA + auto-actualización -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[SW] Registrado:', reg.scope);
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                showUpdateToast();
+              }
+            });
+          });
+        }).catch(err => console.error('[SW] Error al registrar:', err));
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (window._swUpdating) window.location.reload();
+        });
+      });
+    }
+
+    function showUpdateToast() {
+      const show = () => {
+        const container = document.getElementById('toastContainer');
+        if (!container) { setTimeout(show, 500); return; }
+        const toast = document.createElement('div');
+        toast.className = 'toast info';
+        toast.style.cssText = 'display:flex;align-items:center;gap:10px;min-width:280px;';
+        toast.innerHTML = `
+          <span>🔄 Nueva versión disponible</span>
+          <button onclick="applyUpdate()" style="
+            background:var(--accent,#4a90e2);border:none;color:#fff;
+            padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.85rem;
+            margin-left:auto;white-space:nowrap;">
+            Actualizar
+          </button>`;
+        container.appendChild(toast);
+      };
+      show();
+    }
+
+    function applyUpdate() {
+      window._swUpdating = true;
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+        else window.location.reload();
+      });
+    }
+  </script>
+
+  <!-- ✅ Mobile Side Drawer Overlay -->
+  <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()" aria-hidden="true"></div>
+
+  <!-- ✅ Mobile Side Drawer (Táctico Militar) -->
+  <aside id="mobileSideDrawer" class="mobile-side-drawer" aria-label="Menú Lateral Táctico" aria-hidden="true">
+    <div class="drawer-header">
+      <div class="drawer-user-card" onclick="showView('profileView'); closeMobileDrawer();">
+        <div class="drawer-avatar">
+          <img src="/logo-escuadron.png" alt="Escuadrón" class="drawer-avatar-img" />
+          <span class="drawer-avatar-badge" id="drawerRoleInsignia">🇵🇾</span>
+        </div>
+        <div class="drawer-user-meta">
+          <div class="drawer-callsign" id="drawerUserName">Piloto Militar</div>
+          <div class="drawer-role-tag" id="drawerUserRole"><span class="role-badge role-miembro">MIEMBRO</span></div>
+        </div>
+      </div>
+      <button class="drawer-close-btn" onclick="closeMobileDrawer()" aria-label="Cerrar menú">✕</button>
+    </div>
+
+    <div class="drawer-quick-stats">
+      <div class="drawer-stat-item">
+        <span class="d-stat-label">Pilotos Activos</span>
+        <span class="d-stat-val" id="drawerOnlineCount">🟢 1</span>
+      </div>
+      <div class="drawer-stat-item">
+        <span class="d-stat-label">Estado</span>
+        <span class="d-stat-val" id="drawerUserStatus"><span class="status-badge status-verde" style="font-size:0.7rem;padding:2px 6px;">VERDE</span></span>
+      </div>
+    </div>
+
+    <div class="drawer-content">
+      <div class="drawer-section-title">OPERACIONES DE VUELO</div>
+      <div class="drawer-nav-list">
+        <button class="drawer-nav-btn active" onclick="showView('appView'); closeMobileDrawer();" data-view="appView">
+          <i data-lucide="layout-dashboard" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Cuadro de Mando</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('performanceForm'); closeMobileDrawer();" data-view="performanceForm">
+          <i data-lucide="clipboard-check" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Cargar Rendimiento (Tokens)</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('planesView'); closeMobileDrawer();" data-view="planesView">
+          <i data-lucide="plane" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Hangar de Aeronaves</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('historialView'); closeMobileDrawer();" data-view="historialView">
+          <i data-lucide="activity" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Mi Historial de Eventos</span>
+        </button>
+      </div>
+
+      <div class="drawer-section-title">INFORMACIÓN & DOCTRINA</div>
+      <div class="drawer-nav-list">
+        <button class="drawer-nav-btn" onclick="showView('normativasView'); closeMobileDrawer();" data-view="normativasView">
+          <i data-lucide="book-open" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Normativas & Reglamentos</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('helpView'); closeMobileDrawer();" data-view="helpView">
+          <i data-lucide="help-circle" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Manual de Piloto & FAQ</span>
+        </button>
+        <button id="drawerExportBtn" class="drawer-nav-btn" onclick="showView('exportView'); closeMobileDrawer();" data-view="exportView" style="display:none;">
+          <i data-lucide="file-image" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Exportar Reporte PNG</span>
+        </button>
+      </div>
+
+      <!-- Sección Administrativa (Sólo Admin/Owner) -->
+      <div id="drawerAdminSection" style="display:none;">
+        <div class="drawer-section-title drawer-admin-title">MANDO & COMANDO</div>
+        <div class="drawer-nav-list">
+          <button id="drawerAdminBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('adminPanel'); closeMobileDrawer();" data-view="adminPanel">
+            <i data-lucide="shield-check" class="drawer-nav-icon"></i>
+            <span class="drawer-nav-text">Panel de Administración</span>
+          </button>
+          <button id="drawerAllPerfBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('allPerformancesView'); closeMobileDrawer();" data-view="allPerformancesView">
+            <i data-lucide="trending-up" class="drawer-nav-icon"></i>
+            <span class="drawer-nav-text">Rendimientos Globales</span>
+          </button>
+          <button id="drawerOwnerBtn" class="drawer-nav-btn drawer-btn-owner" onclick="showView('ownerPanelView'); closeMobileDrawer();" data-view="ownerPanelView" style="display:none;">
+            <i data-lucide="crown" class="drawer-nav-icon"></i>
+            <span class="drawer-nav-text">Centro de Control Owner</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="drawer-section-title">SISTEMA</div>
+      <div class="drawer-nav-list">
+        <button class="drawer-nav-btn" onclick="showView('profileView'); closeMobileDrawer();" data-view="profileView">
+          <i data-lucide="user-circle-2" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Mi Perfil Militar</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="showView('settingsView'); closeMobileDrawer();" data-view="settingsView">
+          <i data-lucide="settings" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Configuración de Cuenta</span>
+        </button>
+        <button class="drawer-nav-btn" onclick="refreshCurrentView(); closeMobileDrawer();">
+          <i data-lucide="refresh-cw" class="drawer-nav-icon"></i>
+          <span class="drawer-nav-text">Sincronizar Datos</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button id="drawerLoginBtn" onclick="showLoginModal(); closeMobileDrawer();" class="btn-primary" style="width:100%;display:none;">
+        <i data-lucide="log-in"></i> Iniciar Sesión
+      </button>
+      <button id="drawerLogoutBtn" onclick="logout(); closeMobileDrawer();" class="btn-danger" style="width:100%;display:none;">
+        <i data-lucide="log-out"></i> Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ✅ Mobile Bottom Navigation Bar -->
+  <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navegación Móvil Principal">
+    <button class="mobile-nav-item active" onclick="showView('appView')" data-view="appView" aria-label="Inicio">
+      <i data-lucide="layout-dashboard" class="mobile-nav-icon"></i>
+      <span class="mobile-nav-label">Inicio</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('planesView')" data-view="planesView" aria-label="Pilotos y Flota">
+      <i data-lucide="plane" class="mobile-nav-icon"></i>
+      <span class="mobile-nav-label">Pilotos</span>
+    </button>
+    <button class="mobile-nav-item mobile-nav-highlight" onclick="showView('performanceForm')" data-view="performanceForm" aria-label="Rendimiento">
+      <div class="mobile-nav-icon-circle">
+        <i data-lucide="clipboard-check" class="mobile-nav-icon" style="color:#0A0E1A;"></i>
+      </div>
+      <span class="mobile-nav-label">Rendimiento</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('profileView')" data-view="profileView" aria-label="Perfil">
+      <i data-lucide="user-circle-2" class="mobile-nav-icon"></i>
+      <span class="mobile-nav-label">Perfil</span>
+    </button>
+    <button class="mobile-nav-item" onclick="showView('settingsView')" data-view="settingsView" aria-label="Configuración">
+      <i data-lucide="settings" class="mobile-nav-icon"></i>
+      <span class="mobile-nav-label">Ajustes</span>
+    </button>
+  </nav>
+
+</body>
+</html>

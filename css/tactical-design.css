@@ -1,0 +1,407 @@
+/* ==========================================================================
+   PARAGUAY-FFAA | METALSTORM - TACTICAL MILITARY DESIGN SYSTEM (C4ISR / HUD)
+   ========================================================================== */
+
+:root {
+  /* ── TACTICAL PALETTE ─────────────────────────────────────────────────── */
+  --bg-dark: #0A0E1A;            /* Base profunda tipo cockpit nocturno */
+  --bg-panel: #111827;           /* Paneles tácticos de mando */
+  --bg-card: #1A2235;            /* Superficie de tarjetas y widgets */
+  --bg-card-hover: #222E47;      /* Hover activo */
+  --border-tactical: #2A3A5C;    /* Bordes técnicos estructurados */
+  --border-tactical-glow: rgba(96, 165, 250, 0.4);
+
+  /* Indicadores de Estado y Telemetría */
+  --green-tactical: #4ADE80;     /* Verde fósforo militar - Estado OK / Óptimo */
+  --amber-alert: #FBBF24;        /* Ámbar táctico - Advertencia / Atención */
+  --red-danger: #F87171;         /* Rojo alarma - Crítico / Peligro */
+  --blue-telemetry: #60A5FA;     /* Azul telemetría / Sensores radar */
+
+  /* Rango, Texto y Contraste */
+  --gold-rank: #D4AF37;          /* Oro militar - Rangos, mandos y medallas */
+  --gold-rank-glow: rgba(212, 175, 55, 0.35);
+  --steel-gray: #94A3B8;         /* Acero técnico - Texto secundario */
+  --steel-dark: #64748B;         /* Acero atenuado */
+  --white-tactical: #F1F5F9;     /* Blanco técnico de alta legibilidad */
+
+  /* ── TIPOGRAFÍA TÁCTICA ───────────────────────────────────────────────── */
+  --font-tactical: 'Rajdhani', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* ── SOMBRAS Y EFECTOS HUD ────────────────────────────────────────────── */
+  --hud-glow-green: 0 0 15px rgba(74, 222, 128, 0.25);
+  --hud-glow-blue: 0 0 15px rgba(96, 165, 250, 0.25);
+  --hud-glow-gold: 0 0 15px rgba(212, 175, 55, 0.3);
+  --hud-scanline: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px);
+}
+
+/* ── BASE RESET & COCKPIT BACKGROUND ────────────────────────────────────── */
+body {
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(212, 175, 55, 0.04) 0%, transparent 40%),
+    linear-gradient(to right, rgba(42, 58, 92, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(42, 58, 92, 0.1) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  color: var(--white-tactical);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6,
+.tactical-title,
+.stat-value,
+.metric-value,
+.escuadron-title,
+.nav-tab,
+.mobile-nav-label {
+  font-family: var(--font-tactical);
+  letter-spacing: 0.5px;
+}
+
+/* ── SCANLINE OVERLAY EFFECT ─────────────────────────────────────────────── */
+.scanline-active::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  z-index: 2;
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes tacticalPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.96); }
+}
+
+@keyframes hudGlitchLine {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+/* ── TACTICAL CARDS (HUD CORNER BRACKETS) ─────────────────────────────────── */
+.tactical-card,
+.stat-card-tactical,
+.dashboard-card,
+.panel-tactical {
+  background: var(--bg-card);
+  border: 1px solid var(--border-tactical);
+  border-radius: 6px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.tactical-card:hover,
+.stat-card-tactical:hover {
+  border-color: var(--blue-telemetry);
+  box-shadow: var(--hud-glow-blue), 0 8px 24px rgba(0, 0, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Technical Corner Brackets */
+.tactical-corners {
+  position: relative;
+}
+.tactical-corners::before,
+.tactical-corners::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--blue-telemetry);
+  pointer-events: none;
+  z-index: 3;
+}
+.tactical-corners::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--blue-telemetry);
+  border-left: 2px solid var(--blue-telemetry);
+}
+.tactical-corners::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--blue-telemetry);
+  border-right: 2px solid var(--blue-telemetry);
+}
+
+/* ── STATUS BADGES TÁCTICOS ──────────────────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-tactical);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.status-verde,
+.status-badge.status-verde {
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--green-tactical);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  box-shadow: var(--hud-glow-green);
+}
+
+.status-naranja,
+.status-amarillo,
+.status-badge.status-naranja,
+.status-badge.status-amarillo {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--amber-alert);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
+}
+
+.status-rojo,
+.status-badge.status-rojo {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--red-danger);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.25);
+}
+
+.status-negro,
+.status-badge.status-negro {
+  background: rgba(15, 23, 42, 0.8);
+  color: #94A3B8;
+  border: 1px solid #475569;
+}
+
+/* ── RANK BADGES ─────────────────────────────────────────────────────────── */
+.role-badge {
+  font-family: var(--font-tactical);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.role-owner,
+.role-admin {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.08) 100%);
+  color: var(--gold-rank);
+  border: 1px solid var(--gold-rank);
+  box-shadow: var(--hud-glow-gold);
+}
+
+.role-oficial {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--blue-telemetry);
+  border: 1px solid var(--blue-telemetry);
+}
+
+.role-miembro,
+.role-cadete {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--steel-gray);
+  border: 1px solid var(--steel-gray);
+}
+
+/* ── TACTICAL BUTTONS ────────────────────────────────────────────────────── */
+.btn,
+button.btn-primary,
+button.btn-secondary,
+button.btn-danger {
+  font-family: var(--font-tactical);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
+  color: #0A0E1A;
+  border: 1px solid #FCD34D;
+  box-shadow: var(--hud-glow-gold);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #F59E0B 0%, #D4AF37 100%);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-panel);
+  color: var(--white-tactical);
+  border: 1px solid var(--border-tactical);
+}
+
+.btn-secondary:hover {
+  border-color: var(--blue-telemetry);
+  color: var(--blue-telemetry);
+  box-shadow: var(--hud-glow-blue);
+}
+
+.btn-danger {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--red-danger);
+  border: 1px solid var(--red-danger);
+}
+
+.btn-danger:hover {
+  background: var(--red-danger);
+  color: #0A0E1A;
+  box-shadow: 0 0 15px rgba(248, 113, 113, 0.5);
+}
+
+/* ── HUD HEADER BAR ──────────────────────────────────────────────────────── */
+.tactical-header {
+  background: rgba(10, 14, 26, 0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--border-tactical);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.online-indicator-badge {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 4px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--green-tactical);
+}
+
+.online-pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--green-tactical);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--green-tactical);
+  animation: tacticalPulse 2s infinite ease-in-out;
+}
+
+/* ── NAVIGATION TABS (DESKTOP & MOBILE) ──────────────────────────────────── */
+.nav-tab {
+  background: transparent;
+  color: var(--steel-gray);
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-tab:hover {
+  color: var(--white-tactical);
+  border-bottom-color: var(--steel-gray);
+}
+
+.nav-tab.active {
+  color: var(--gold-rank);
+  border-bottom-color: var(--gold-rank);
+  text-shadow: var(--hud-glow-gold);
+}
+
+/* ── TACTICAL LOGIN MODAL ────────────────────────────────────────────────── */
+#loginModal .modal-content {
+  background: linear-gradient(180deg, #111827 0%, #0A0E1A 100%);
+  border: 1px solid var(--border-tactical);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(212, 175, 55, 0.3);
+  position: relative;
+}
+
+.login-system-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-bottom: 18px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--green-tactical);
+  letter-spacing: 1px;
+}
+
+/* ── LUCIDE ICON CONTAINER ALIGNMENT ─────────────────────────────────────── */
+.lucide-icon,
+i[data-lucide] {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.75px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.icon-tactical-green { stroke: var(--green-tactical); }
+.icon-tactical-amber { stroke: var(--amber-alert); }
+.icon-tactical-blue  { stroke: var(--blue-telemetry); }
+.icon-tactical-gold  { stroke: var(--gold-rank); }
+.icon-tactical-steel { stroke: var(--steel-gray); }
+
+/* ── DATA TABLES (C4ISR STYLE) ──────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-tactical);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.data-table th {
+  background: rgba(10, 14, 26, 0.9);
+  color: var(--gold-rank);
+  font-family: var(--font-tactical);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-tactical);
+}
+
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(42, 58, 92, 0.4);
+  font-size: 0.9rem;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(96, 165, 250, 0.05);
+}
