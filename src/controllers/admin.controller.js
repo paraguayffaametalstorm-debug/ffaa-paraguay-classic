@@ -4,23 +4,9 @@ import {
   AddMemberSchema,
   UpdateMemberStatusSchema,
   UpdateMemberRoleSchema,
-  BulkUploadSchema,
-  PlaneModelSchema
+  BulkUploadSchema
 } from '../utils/schemas.js';
 import { logAuditChange } from '../utils/audit.js';
-
-function formatJsonField(val) {
-  if (val === undefined || val === null || val === '') return null;
-  if (typeof val === 'object') return val;
-  if (typeof val === 'string') {
-    try {
-      return JSON.parse(val);
-    } catch {
-      return val;
-    }
-  }
-  return val;
-}
 
 // ============================================================
 // 1. LISTAR USUARIOS / MIEMBROS
@@ -34,7 +20,7 @@ export async function getUsers(req, res, next) {
 
     const { data, error } = await supabase
       .from('users')
-      .select('id, user_id, nick, email, role, status, last_activity, created_at, updated_at')
+      .select('id, user_id, nick, email, role, status, last_activity, avg_tokens, weeks_evaluated, perf_status, created_at, updated_at')
       .order('nick', { ascending: true });
 
     if (error) {
@@ -49,9 +35,9 @@ export async function getUsers(req, res, next) {
       role: (u.role || 'MIEMBRO').toUpperCase(),
       status: (u.status || 'ACTIVE').toUpperCase(),
       last_activity: u.last_activity || u.updated_at || u.created_at || null,
-      avg_tokens: 0,
-      weeks_evaluated: 0,
-      perf_status: 'VERDE',
+      avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0,
+      weeks_evaluated: typeof u.weeks_evaluated === 'number' ? u.weeks_evaluated : 0,
+      perf_status: u.perf_status || 'VERDE',
       created_at: u.created_at || null,
       updated_at: u.updated_at || null
     }));
@@ -340,7 +326,16 @@ export async function addMember(req, res, next) {
       role: assignedRole,
       must_change_password: true,
       token_version: 1,
+      phone: '',
+      callsign: '',
+      discord: '',
+      bio: '',
+      joined_date: new Date().toISOString().split('T')[0],
+      perf_status: 'VERDE',
       status: 'ACTIVE',
+      avg_tokens: 0,
+      weeks_evaluated: 0,
+      trend: 'stable',
       last_activity: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -391,7 +386,7 @@ export async function bulkUploadEvent(req, res, next) {
     for (const item of bulkList) {
       const { data: foundUsers } = await supabase
         .from('users')
-        .select('id, user_id, nick, email, role')
+        .select('id, user_id, nick, role')
         .ilike('nick', item.nick.trim())
         .limit(1);
 
@@ -407,8 +402,12 @@ export async function bulkUploadEvent(req, res, next) {
             nick: item.nick,
             role: item.role || 'MIEMBRO',
             must_change_password: true,
-            token_version: 1,
+            joined_date: new Date().toISOString().split('T')[0],
+            perf_status: 'VERDE',
             status: 'ACTIVE',
+            avg_tokens: item.tokens,
+            weeks_evaluated: 1,
+            trend: 'stable',
             last_activity: new Date().toISOString(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -426,7 +425,7 @@ export async function bulkUploadEvent(req, res, next) {
       const perfRecord = {
         user_id: targetUser?.user_id || targetUser?.id,
         nick: targetUser?.nick || item.nick,
-        user_email: targetUser?.email || `${item.nick.toLowerCase().replace(/[^a-z0-9]/g, '')}@ffaa.py`,
+        role: targetUser?.role || item.role || 'MIEMBRO',
         event_id,
         tokens: item.tokens,
         days_connected: 4,
@@ -463,10 +462,11 @@ export async function activateBlackMarket(req, res, next) {
       type: 'BLACK_MARKET',
       start_date: new Date().toISOString().split('T')[0],
       end_date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+      is_open: true,
       status: 'OPEN'
     };
 
-    await supabase.from('events').update({ status: 'CLOSED' }).neq('id', 'NONE');
+    await supabase.from('events').update({ is_open: false, status: 'CLOSED' }).neq('id', 'NONE');
     await supabase.from('events').insert(bmEvent);
 
     res.json({ message: 'Operación Black Market activada exitosamente', event_id: bmEvent.id });
@@ -474,273 +474,3 @@ export async function activateBlackMarket(req, res, next) {
     next(err);
   }
 }
-
-// ============================================================
-// 7. ADMINISTRACIÓN DEL CATÁLOGO DE AVIONES (PLANE_MODELS)
-// ============================================================
-
-/**
- * GET /api/admin/planes
- * Obtiene todos los aviones del catálogo (plane_models)
- */
-export async function getAdminPlanes(req, res, next) {
-  try {
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
-    }
-
-    const { data, error } = await supabase
-      .from('plane_models')
-      .select('*')
-      .order('id', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
-    const planes = (data || []).map(p => ({
-      id: String(p.id),
-      name: p.name || 'Sin Nombre',
-      type: p.type || 'Caza de Combate',
-      special_name: p.special_name || null,
-      special_levels: p.special_levels || null,
-      passive_name: p.passive_name || null,
-      passive_levels: p.passive_levels || null,
-      is_active: p.is_active !== false,
-      stats_real: p.stats_real || null,
-      sistemas_disponibles: p.sistemas_disponibles || null,
-      created_at: p.created_at || null,
-      updated_at: p.updated_at || null
-    }));
-
-    res.json({
-      success: true,
-      planes,
-      total: planes.length
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * POST /api/admin/planes
- * Registra un nuevo modelo de avión en el catálogo (plane_models)
- */
-export async function addAdminPlane(req, res, next) {
-  try {
-    const parsed = PlaneModelSchema.parse(req.body);
-    const supabase = getSupabase();
-    if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
-    }
-
-    const planeId = String(parsed.id).trim();
-
-    // Validar si el ID ya existe en plane_models
-    const { data: existing, error: checkErr } = await supabase
-      .from('plane_models')
-      .select('id, name')
-      .eq('id', planeId)
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      return res.status(409).json({
-        error: `Ya existe una aeronave con el ID "${planeId}" (${existing[0].name}) en el catálogo.`,
-        code: 'PLANE_MODEL_ALREADY_EXISTS'
-      });
-    }
-
-    const newPlaneModel = {
-      id: planeId,
-      name: parsed.name.trim(),
-      type: parsed.type.trim(),
-      special_name: parsed.special_name?.trim() || null,
-      special_levels: formatJsonField(parsed.special_levels),
-      passive_name: parsed.passive_name?.trim() || null,
-      passive_levels: formatJsonField(parsed.passive_levels),
-      is_active: parsed.is_active !== undefined ? Boolean(parsed.is_active) : true,
-      stats_real: formatJsonField(parsed.stats_real),
-      sistemas_disponibles: formatJsonField(parsed.sistemas_disponibles)
-    };
-
-    const { data: inserted, error: insertErr } = await supabase
-      .from('plane_models')
-      .insert(newPlaneModel)
-      .select()
-      .single();
-
-    if (insertErr) {
-      throw insertErr;
-    }
-
-    // Auditoría de comando
-    await logAuditChange({
-      supabase,
-      actorId: req.user.user_id || req.user.id,
-      actorNick: req.user.nick || req.user.email,
-      targetId: planeId,
-      targetNick: newPlaneModel.name,
-      action: 'PLANE_MODEL_CREATED',
-      details: {
-        id: planeId,
-        name: newPlaneModel.name,
-        type: newPlaneModel.type,
-        is_active: newPlaneModel.is_active
-      }
-    });
-
-    res.status(201).json({
-      success: true,
-      message: `Aeronave "${newPlaneModel.name}" agregada exitosamente al catálogo`,
-      plane: inserted || newPlaneModel
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * PUT /api/admin/planes/:id
- * Modifica las especificaciones de un avión existente en el catálogo
- */
-export async function updateAdminPlane(req, res, next) {
-  try {
-    const planeId = String(req.params.id).trim();
-    const parsed = PlaneModelSchema.partial().parse(req.body);
-    const supabase = getSupabase();
-
-    if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
-    }
-
-    const { data: existingData, error: findErr } = await supabase
-      .from('plane_models')
-      .select('*')
-      .eq('id', planeId)
-      .limit(1);
-
-    if (findErr || !existingData || existingData.length === 0) {
-      return res.status(404).json({
-        error: `Aeronave con ID "${planeId}" no encontrada en el catálogo`,
-        code: 'PLANE_MODEL_NOT_FOUND'
-      });
-    }
-
-    const existing = existingData[0];
-    const updatePayload = {};
-
-    if (parsed.name !== undefined) updatePayload.name = parsed.name.trim();
-    if (parsed.type !== undefined) updatePayload.type = parsed.type.trim();
-    if (parsed.special_name !== undefined) updatePayload.special_name = parsed.special_name ? parsed.special_name.trim() : null;
-    if (parsed.special_levels !== undefined) updatePayload.special_levels = formatJsonField(parsed.special_levels);
-    if (parsed.passive_name !== undefined) updatePayload.passive_name = parsed.passive_name ? parsed.passive_name.trim() : null;
-    if (parsed.passive_levels !== undefined) updatePayload.passive_levels = formatJsonField(parsed.passive_levels);
-    if (parsed.is_active !== undefined) updatePayload.is_active = Boolean(parsed.is_active);
-    if (parsed.stats_real !== undefined) updatePayload.stats_real = formatJsonField(parsed.stats_real);
-    if (parsed.sistemas_disponibles !== undefined) updatePayload.sistemas_disponibles = formatJsonField(parsed.sistemas_disponibles);
-
-    const { data: updated, error: updateErr } = await supabase
-      .from('plane_models')
-      .update(updatePayload)
-      .eq('id', planeId)
-      .select()
-      .single();
-
-    if (updateErr) {
-      throw updateErr;
-    }
-
-    await logAuditChange({
-      supabase,
-      actorId: req.user.user_id || req.user.id,
-      actorNick: req.user.nick || req.user.email,
-      targetId: planeId,
-      targetNick: updated?.name || existing.name,
-      action: 'PLANE_MODEL_UPDATED',
-      details: {
-        id: planeId,
-        changes: updatePayload
-      }
-    });
-
-    res.json({
-      success: true,
-      message: `Aeronave "${updated?.name || existing.name}" actualizada correctamente`,
-      plane: updated || { ...existing, ...updatePayload }
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-/**
- * DELETE /api/admin/planes/:id o PATCH /api/admin/planes/:id/status
- * Activa o desactiva un avión en el catálogo
- */
-export async function toggleAdminPlaneStatus(req, res, next) {
-  try {
-    const planeId = String(req.params.id).trim();
-    const supabase = getSupabase();
-
-    if (!supabase) {
-      return res.status(500).json({ error: 'Database client unavailable' });
-    }
-
-    const { data: existingData, error: findErr } = await supabase
-      .from('plane_models')
-      .select('*')
-      .eq('id', planeId)
-      .limit(1);
-
-    if (findErr || !existingData || existingData.length === 0) {
-      return res.status(404).json({
-        error: `Aeronave con ID "${planeId}" no encontrada en el catálogo`,
-        code: 'PLANE_MODEL_NOT_FOUND'
-      });
-    }
-
-    const existing = existingData[0];
-    const newStatus = req.body && req.body.is_active !== undefined 
-      ? Boolean(req.body.is_active) 
-      : !existing.is_active;
-
-    const { data: updated, error: updateErr } = await supabase
-      .from('plane_models')
-      .update({ is_active: newStatus })
-      .eq('id', planeId)
-      .select()
-      .single();
-
-    if (updateErr) {
-      throw updateErr;
-    }
-
-    await logAuditChange({
-      supabase,
-      actorId: req.user.user_id || req.user.id,
-      actorNick: req.user.nick || req.user.email,
-      targetId: planeId,
-      targetNick: existing.name,
-      action: newStatus ? 'PLANE_MODEL_ACTIVATED' : 'PLANE_MODEL_DEACTIVATED',
-      details: {
-        id: planeId,
-        previous_status: existing.is_active,
-        new_status: newStatus
-      }
-    });
-
-    res.json({
-      success: true,
-      message: `Aeronave "${existing.name}" ${newStatus ? 'activada' : 'desactivada'} en el catálogo`,
-      is_active: newStatus,
-      plane: updated || { ...existing, is_active: newStatus }
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export const deleteAdminPlane = toggleAdminPlaneStatus;
-
