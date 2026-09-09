@@ -393,22 +393,43 @@ export const changePassword = async (req, res) => {
         const newHash = await bcrypt.hash(newPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
+        console.log('🔍 [changePassword] Actualizando usuario con:', {
+            id: user.id,
+            user_id: user.user_id,
+            newTokenVersion,
+            newHash: newHash.substring(0, 20) + '...'
+        });
+
         // 4. Actualizar en Supabase e invalidar sesiones previas (CONSULTA TIPADA + .select())
-        const { data: updateData, error: updateError } = await supabase
+        let updateQuery = supabase
             .from('users')
             .update({
                 password_hash: newHash,
                 must_change_password: false,
                 token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
-            })
-            .eq('id', user.id)
+            });
+
+        // Aplicar MISMA LÓGICA tipada que se usó para buscar
+        if (user.id && typeof user.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+            updateQuery = updateQuery.eq('id', user.id);
+        } else if (user.user_id && (typeof user.user_id === 'number' || /^\d+$/.test(String(user.user_id)))) {
+            updateQuery = updateQuery.eq('user_id', Number(user.user_id));
+        } else if (user.email) {
+            updateQuery = updateQuery.eq('email', user.email);
+        } else {
+            updateQuery = updateQuery.eq('id', user.id);
+        }
+
+        const { data: updateData, error: updateError } = await updateQuery
             .select('id, email, nick, user_id, role, token_version, must_change_password');
 
         if (updateError) {
             console.error('❌ Error actualizando contraseña en Supabase:', updateError);
             throw updateError;
         }
+
+        console.log('✅ [changePassword] Filas actualizadas con éxito:', updateData?.length || 0);
 
         await logSecurityEvent({
             supabase,
