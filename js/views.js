@@ -26,7 +26,8 @@ const VIEWS = {
   ADMIN:            'adminPanel',
   ALL_PERFORMANCES: 'allPerformancesView',
   SETTINGS:         'settingsView',
-  EXPORT:           'exportView'
+  EXPORT:           'exportView',
+  ADMIN_PLANES:     'adminPlaneModels'
 };
 
 const VIEW_ALIASES = {
@@ -59,8 +60,14 @@ const VIEW_ALIASES = {
   'ownerPanel':       'ownerPanelView',
   'ownerPanelView':   'ownerPanelView',
   'export':           'exportView',
-  'exportView':       'exportView'
+  'exportView':       'exportView',
+  'adminPlaneModels': VIEWS.ADMIN_PLANES,
+  'admin-plane-models': VIEWS.ADMIN_PLANES,
+  'adminPlaneModelsView': VIEWS.ADMIN_PLANES,
+  'planeModels':      VIEWS.ADMIN_PLANES,
+  'plane-models':     VIEWS.ADMIN_PLANES
 };
+
 
 // Mostrar una vista específica
 function showView(viewId) {
@@ -227,6 +234,12 @@ function loadViewData(viewId) {
       
     case 'ownerPanelView':
       loadOwnerPanel();
+      break;
+      
+    case VIEWS.ADMIN_PLANES:
+    case 'adminPlaneModels':
+    case 'adminPlaneModelsView':
+      loadAdminPlaneModels();
       break;
       
     case 'help':
@@ -2504,5 +2517,623 @@ window.exportPlanesXLSX = exportPlanesXLSX;
 window.toggleMobileDrawer = toggleMobileDrawer;
 window.openMobileDrawer = openMobileDrawer;
 window.closeMobileDrawer = closeMobileDrawer;
+
+// ============================================================
+// GESTIÓN DE MODELOS DE AERONAVES (CATÁLOGO ADMIN / OWNER v3.6.0)
+// ============================================================
+
+window.currentAdminPlaneModels = [];
+window.filteredAdminPlaneModels = [];
+
+/**
+ * Cargar y renderizar modelos de aeronaves para administradores
+ */
+async function loadAdminPlaneModels(forceRefresh = false) {
+  const container = document.getElementById('adminPlaneModelsList');
+  if (!container) return;
+
+  if (container.innerHTML.trim() === '' || forceRefresh) {
+    container.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">
+        <span style="font-size:2.2rem;display:block;margin-bottom:8px;">⏳</span>
+        <p style="margin:0;font-size:1.1rem;font-weight:600;">Sincronizando catálogo oficial de cazas...</p>
+        <small style="color:#718096;">Consultando base de datos táctica C4ISR</small>
+      </div>`;
+  }
+
+  try {
+    const models = await apiGetPlaneModels(true);
+    window.currentAdminPlaneModels = Array.isArray(models) ? models : [];
+
+    // Calcular métricas
+    const total = window.currentAdminPlaneModels.length;
+    const active = window.currentAdminPlaneModels.filter(m => m.is_active !== false).length;
+    const inactive = window.currentAdminPlaneModels.filter(m => m.is_active === false).length;
+    const highTier = window.currentAdminPlaneModels.filter(m => Number(m.tier) >= 4).length;
+
+    const elTotal = document.getElementById('catalogTotalModels');
+    const elActive = document.getElementById('catalogActiveModels');
+    const elInactive = document.getElementById('catalogInactiveModels');
+    const elHighTier = document.getElementById('catalogHighTierModels');
+
+    if (elTotal) elTotal.textContent = total;
+    if (elActive) elActive.textContent = active;
+    if (elInactive) elInactive.textContent = inactive;
+    if (elHighTier) elHighTier.textContent = highTier;
+
+    filterAdminPlaneModels();
+  } catch (err) {
+    console.error('❌ [AdminPlanes] Error cargando catálogo:', err);
+    container.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:2.5rem;background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:6px;color:#e74c3c;">
+        <span style="font-size:2rem;display:block;margin-bottom:8px;">⚠️</span>
+        <h4 style="margin:0 0 6px 0;">Error al cargar catálogo de aeronaves</h4>
+        <p style="margin:0 0 1rem 0;font-size:0.9rem;">${escapeHTML(err.message || 'Error de conexión')}</p>
+        <button onclick="loadAdminPlaneModels(true)" class="btn-primary" style="background:#e74c3c;border-color:#e74c3c;">
+          🔄 Reintentar Carga
+        </button>
+      </div>`;
+  }
+}
+
+/**
+ * Filtrar modelos según búsqueda de texto, tier militar y estado
+ */
+function filterAdminPlaneModels() {
+  const query = (document.getElementById('catalogSearchInput')?.value || '').trim().toLowerCase();
+  const tierFilter = (document.getElementById('catalogTierFilter')?.value || '').trim();
+  const statusFilter = (document.getElementById('catalogStatusFilter')?.value || '').trim();
+
+  let filtered = [...window.currentAdminPlaneModels];
+
+  if (query) {
+    filtered = filtered.filter(m => {
+      const name = (m.name || '').toLowerCase();
+      const type = (m.type || '').toLowerCase();
+      const id = String(m.id || '').toLowerCase();
+      const special = (m.special_name || '').toLowerCase();
+      const passive = (m.passive_name || '').toLowerCase();
+      return name.includes(query) || type.includes(query) || id.includes(query) || special.includes(query) || passive.includes(query);
+    });
+  }
+
+  if (tierFilter) {
+    filtered = filtered.filter(m => String(m.tier || 3) === tierFilter);
+  }
+
+  if (statusFilter === 'active') {
+    filtered = filtered.filter(m => m.is_active !== false);
+  } else if (statusFilter === 'inactive') {
+    filtered = filtered.filter(m => m.is_active === false);
+  }
+
+  window.filteredAdminPlaneModels = filtered;
+  renderAdminPlaneModels(filtered);
+}
+
+/**
+ * Resetear filtros del catálogo
+ */
+function resetCatalogFilters() {
+  const sInput = document.getElementById('catalogSearchInput');
+  const tFilter = document.getElementById('catalogTierFilter');
+  const stFilter = document.getElementById('catalogStatusFilter');
+
+  if (sInput) sInput.value = '';
+  if (tFilter) tFilter.value = '';
+  if (stFilter) stFilter.value = 'active';
+
+  filterAdminPlaneModels();
+}
+
+/**
+ * Renderizar tarjetas de aeronaves en el panel de administración
+ */
+function renderAdminPlaneModels(models) {
+  const container = document.getElementById('adminPlaneModelsList');
+  if (!container) return;
+
+  if (!models || models.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:3rem;background:rgba(17,24,39,0.7);border:1px dashed #374151;border-radius:8px;color:#a0aec0;">
+        <span style="font-size:2.5rem;display:block;margin-bottom:10px;">🛩️</span>
+        <h4 style="margin:0 0 8px 0;color:#fff;">No se encontraron modelos de aeronaves</h4>
+        <p style="margin:0 0 1rem 0;font-size:0.9rem;">Prueba modificando los filtros de búsqueda o agrega un nuevo modelo al catálogo.</p>
+        <button onclick="openCreatePlaneModelModal()" class="btn-primary">
+          ➕ Registrar Nueva Aeronave
+        </button>
+      </div>`;
+    return;
+  }
+
+  const tierColors = {
+    5: { bg: 'rgba(212,175,55,0.2)', border: '#d4af37', text: '#ffd700', label: 'TIER 5 · ÉLITE' },
+    4: { bg: 'rgba(155,89,182,0.2)', border: '#9b59b6', text: '#c084fc', label: 'TIER 4 · PESADO' },
+    3: { bg: 'rgba(52,152,219,0.2)', border: '#3498db', text: '#60a5fa', label: 'TIER 3 · MULTIRROL' },
+    2: { bg: 'rgba(46,204,113,0.2)', border: '#2ecc71', text: '#34d399', label: 'TIER 2 · TÁCTICO' },
+    1: { bg: 'rgba(149,165,166,0.2)', border: '#95a5a6', text: '#cbd5e0', label: 'TIER 1 · BASE' }
+  };
+
+  const cardsHtml = models.map(m => {
+    const tierConfig = tierColors[m.tier || 3] || tierColors[3];
+    const isActive = m.is_active !== false;
+    const stats = m.stats_real || {};
+    const vel = stats.velocidad || stats.speed || '2200';
+    const agi = stats.agilidad || stats.agility || '85';
+    const armor = stats.blindaje || stats.armor || '1200';
+    const power = stats.potencia_armas || stats.firepower || '1200';
+
+    const specialName = m.special_name || 'Habilidad Estándar';
+    const passiveName = m.passive_name || 'Sistemas Básicos';
+
+    return `
+      <div class="card tactical-corners" style="display:flex;flex-direction:column;justify-content:space-between;padding:1.1rem;background:rgba(17,24,39,0.92);border:1px solid ${isActive ? 'rgba(55,65,81,0.8)' : 'rgba(231,76,60,0.5)'};${!isActive ? 'opacity:0.75;' : ''}">
+        <!-- Top Bar: Tier, ID y Status -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="background:${tierConfig.bg};border:1px solid ${tierConfig.border};color:${tierConfig.text};font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:3px;font-family:var(--font-tactical);">
+                ${tierConfig.label}
+              </span>
+              <span style="background:rgba(255,255,255,0.08);color:#cbd5e0;font-size:0.7rem;padding:2px 6px;border-radius:3px;font-family:var(--font-mono);">
+                ID: ${escapeHTML(String(m.id))}
+              </span>
+            </div>
+            <div>
+              ${isActive ? 
+                `<span style="background:rgba(46,204,113,0.15);border:1px solid #2ecc71;color:#2ecc71;font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:10px;">
+                  ● ACTIVO
+                </span>` : 
+                `<span style="background:rgba(231,76,60,0.15);border:1px solid #e74c3c;color:#e74c3c;font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:10px;">
+                  ✕ DESACTIVADO
+                </span>`
+              }
+            </div>
+          </div>
+
+          <!-- Nombre y Tipo -->
+          <div style="margin-bottom:12px;">
+            <h3 style="margin:0 0 4px 0;font-size:1.15rem;color:#ffffff;font-family:var(--font-tactical);letter-spacing:0.5px;">
+              ${escapeHTML(m.name)}
+            </h3>
+            <div style="font-size:0.8rem;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+              <span>🎯</span>
+              <span>${escapeHTML(m.type || 'Caza de Combate')}</span>
+            </div>
+          </div>
+
+          <!-- Estadísticas Tácticas -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:rgba(10,15,25,0.8);padding:8px;border-radius:4px;border:1px solid #1e293b;margin-bottom:12px;text-align:center;">
+            <div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;">Velocidad</div>
+              <div style="font-size:0.85rem;font-weight:700;color:#38bdf8;font-family:var(--font-mono);">${vel} <span style="font-size:0.65rem;">km/h</span></div>
+            </div>
+            <div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;">Agilidad</div>
+              <div style="font-size:0.85rem;font-weight:700;color:#4ade80;font-family:var(--font-mono);">${agi}</div>
+            </div>
+            <div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;">Blindaje</div>
+              <div style="font-size:0.85rem;font-weight:700;color:#fbbf24;font-family:var(--font-mono);">${armor}</div>
+            </div>
+            <div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;">Potencia</div>
+              <div style="font-size:0.85rem;font-weight:700;color:#f87171;font-family:var(--font-mono);">${power}</div>
+            </div>
+          </div>
+
+          <!-- Habilidades -->
+          <div style="font-size:0.75rem;color:#cbd5e0;margin-bottom:12px;display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              <span style="color:#60a5fa;">⚡</span>
+              <span style="color:#94a3b8;">Esp:</span>
+              <strong style="color:#e2e8f0;">${escapeHTML(specialName)}</strong>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              <span style="color:#34d399;">🛡️</span>
+              <span style="color:#94a3b8;">Pas:</span>
+              <strong style="color:#e2e8f0;">${escapeHTML(passiveName)}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div style="display:flex;gap:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:auto;">
+          <button onclick="openEditPlaneModelModal('${escapeHTML(String(m.id))}')" class="btn-secondary btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;" title="Editar Parámetros">
+            ✏️ Editar
+          </button>
+          <button onclick="viewPlaneModelFullDetails('${escapeHTML(String(m.id))}')" class="btn-secondary btn-sm" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;" title="Ver Ficha Técnica">
+            📋 Ficha
+          </button>
+          ${isActive ? 
+            `<button onclick="togglePlaneModelStatus('${escapeHTML(String(m.id))}', true)" class="btn-danger btn-sm" style="padding:4px 8px;" title="Desactivar del Catálogo">
+              🚫
+            </button>` : 
+            `<button onclick="togglePlaneModelStatus('${escapeHTML(String(m.id))}', false)" class="btn-primary btn-sm" style="background:#2ecc71;border-color:#2ecc71;padding:4px 8px;" title="Reactivar en Catálogo">
+              ♻️
+            </button>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = cardsHtml;
+}
+
+/**
+ * Abrir modal para crear una nueva aeronave
+ */
+function openCreatePlaneModelModal() {
+  const form = document.getElementById('planeModelForm');
+  if (form) form.reset();
+
+  const modeEl = document.getElementById('modelFormMode');
+  const idEl = document.getElementById('modelFormId');
+  const titleEl = document.getElementById('planeModelModalTitle');
+  const saveBtn = document.getElementById('btnSavePlaneModel');
+
+  if (modeEl) modeEl.value = 'create';
+  if (idEl) {
+    idEl.value = '';
+    idEl.disabled = false;
+    idEl.readOnly = false;
+  }
+  if (titleEl) titleEl.textContent = '✈️ Registrar Nuevo Modelo de Avión';
+  if (saveBtn) saveBtn.textContent = '💾 Guardar Modelo en Catálogo';
+
+  // Valores predeterminados tácticos
+  const tierEl = document.getElementById('modelFormTier');
+  const activeEl = document.getElementById('modelFormActive');
+  const velEl = document.getElementById('statVelocidad');
+  const agiEl = document.getElementById('statAgilidad');
+  const armEl = document.getElementById('statBlindaje');
+  const powEl = document.getElementById('statArmas');
+
+  if (tierEl) tierEl.value = '3';
+  if (activeEl) activeEl.value = 'true';
+  if (velEl) velEl.value = '2100';
+  if (agiEl) agiEl.value = '88';
+  if (armEl) armEl.value = '1250';
+  if (powEl) powEl.value = '1300';
+
+  const sFus = document.getElementById('sysFuselaje');
+  const sMot = document.getElementById('sysMotor');
+  const sAvi = document.getElementById('sysAvionica');
+  const sArm = document.getElementById('sysArmas');
+
+  if (sFus) sFus.checked = true;
+  if (sMot) sMot.checked = true;
+  if (sAvi) sAvi.checked = true;
+  if (sArm) sArm.checked = true;
+
+  const specLvls = document.getElementById('modelFormSpecialLevels');
+  const passLvls = document.getElementById('modelFormPassiveLevels');
+
+  if (specLvls) specLvls.value = JSON.stringify({ "1": "Evasión +10%", "2": "Evasión +20%" }, null, 2);
+  if (passLvls) passLvls.value = JSON.stringify({ "1": "Blindaje +8%", "2": "Blindaje +16%" }, null, 2);
+
+  showModal('planeModelModal');
+}
+
+/**
+ * Abrir modal para editar una aeronave existente
+ */
+function openEditPlaneModelModal(id) {
+  const model = window.currentAdminPlaneModels.find(m => String(m.id) === String(id));
+  if (!model) {
+    showToast('❌ Modelo de aeronave no encontrado', 'error');
+    return;
+  }
+
+  const modeEl = document.getElementById('modelFormMode');
+  const idEl = document.getElementById('modelFormId');
+  const nameEl = document.getElementById('modelFormName');
+  const typeEl = document.getElementById('modelFormType');
+  const tierEl = document.getElementById('modelFormTier');
+  const activeEl = document.getElementById('modelFormActive');
+  const titleEl = document.getElementById('planeModelModalTitle');
+  const saveBtn = document.getElementById('btnSavePlaneModel');
+
+  if (modeEl) modeEl.value = 'edit';
+  if (idEl) {
+    idEl.value = model.id;
+    idEl.disabled = true;
+    idEl.readOnly = true;
+  }
+  if (nameEl) nameEl.value = model.name || '';
+  if (typeEl) typeEl.value = model.type || '';
+  if (tierEl) tierEl.value = String(model.tier || 3);
+  if (activeEl) activeEl.value = model.is_active !== false ? 'true' : 'false';
+  if (titleEl) titleEl.textContent = `✏️ Modificar Aeronave: ${model.name}`;
+  if (saveBtn) saveBtn.textContent = '💾 Actualizar Parámetros Oficiales';
+
+  // Stats
+  const stats = model.stats_real || {};
+  const velEl = document.getElementById('statVelocidad');
+  const agiEl = document.getElementById('statAgilidad');
+  const armEl = document.getElementById('statBlindaje');
+  const powEl = document.getElementById('statArmas');
+
+  if (velEl) velEl.value = stats.velocidad || stats.speed || '2000';
+  if (agiEl) agiEl.value = stats.agilidad || stats.agility || '85';
+  if (armEl) armEl.value = stats.blindaje || stats.armor || '1200';
+  if (powEl) powEl.value = stats.potencia_armas || stats.firepower || '1200';
+
+  // Habilidades
+  const specName = document.getElementById('modelFormSpecialName');
+  const specLvls = document.getElementById('modelFormSpecialLevels');
+  const passName = document.getElementById('modelFormPassiveName');
+  const passLvls = document.getElementById('modelFormPassiveLevels');
+
+  if (specName) specName.value = model.special_name || '';
+  if (specLvls) {
+    specLvls.value = model.special_levels ? 
+      (typeof model.special_levels === 'object' ? JSON.stringify(model.special_levels, null, 2) : String(model.special_levels)) : '';
+  }
+
+  if (passName) passName.value = model.passive_name || '';
+  if (passLvls) {
+    passLvls.value = model.passive_levels ? 
+      (typeof model.passive_levels === 'object' ? JSON.stringify(model.passive_levels, null, 2) : String(model.passive_levels)) : '';
+  }
+
+  // Sistemas
+  const sistemas = model.sistemas_disponibles || {};
+  const sFus = document.getElementById('sysFuselaje');
+  const sMot = document.getElementById('sysMotor');
+  const sAvi = document.getElementById('sysAvionica');
+  const sArm = document.getElementById('sysArmas');
+
+  if (sFus) sFus.checked = sistemas.fuselaje !== false;
+  if (sMot) sMot.checked = sistemas.motor !== false;
+  if (sAvi) sAvi.checked = sistemas.avionica !== false;
+  if (sArm) sArm.checked = sistemas.armas !== false;
+
+  showModal('planeModelModal');
+}
+
+/**
+ * Guardar modelo (Creación o Actualización)
+ */
+async function handleSavePlaneModel(event) {
+  event.preventDefault();
+
+  const mode = document.getElementById('modelFormMode')?.value || 'create';
+  const id = document.getElementById('modelFormId')?.value?.trim();
+  const name = document.getElementById('modelFormName')?.value?.trim();
+  const type = document.getElementById('modelFormType')?.value?.trim();
+  const tier = parseInt(document.getElementById('modelFormTier')?.value, 10) || 3;
+  const isActive = document.getElementById('modelFormActive')?.value === 'true';
+
+  if (!id) {
+    showToast('❌ El identificador militar es obligatorio', 'error');
+    return;
+  }
+  if (!name || name.length < 2) {
+    showToast('❌ El nombre del avión debe tener al menos 2 caracteres', 'error');
+    return;
+  }
+  if (!type || type.length < 2) {
+    showToast('❌ El tipo de avión es obligatorio', 'error');
+    return;
+  }
+
+  // Parsear JSON o fallback
+  let specialLevels = null;
+  const specText = document.getElementById('modelFormSpecialLevels')?.value?.trim();
+  if (specText) {
+    try {
+      specialLevels = JSON.parse(specText);
+    } catch {
+      specialLevels = { "1": specText };
+    }
+  }
+
+  let passiveLevels = null;
+  const passText = document.getElementById('modelFormPassiveLevels')?.value?.trim();
+  if (passText) {
+    try {
+      passiveLevels = JSON.parse(passText);
+    } catch {
+      passiveLevels = { "1": passText };
+    }
+  }
+
+  const velocidad = parseInt(document.getElementById('statVelocidad')?.value, 10) || 2000;
+  const agilidad = parseInt(document.getElementById('statAgilidad')?.value, 10) || 85;
+  const blindaje = parseInt(document.getElementById('statBlindaje')?.value, 10) || 1200;
+  const potenciaArmas = parseInt(document.getElementById('statArmas')?.value, 10) || 1200;
+
+  const statsReal = {
+    velocidad,
+    agilidad,
+    blindaje,
+    potencia_armas: potenciaArmas
+  };
+
+  const sistemasDisponibles = {
+    fuselaje: document.getElementById('sysFuselaje')?.checked ?? true,
+    motor: document.getElementById('sysMotor')?.checked ?? true,
+    avionica: document.getElementById('sysAvionica')?.checked ?? true,
+    armas: document.getElementById('sysArmas')?.checked ?? true
+  };
+
+  const specialName = document.getElementById('modelFormSpecialName')?.value?.trim() || null;
+  const passiveName = document.getElementById('modelFormPassiveName')?.value?.trim() || null;
+
+  const payload = {
+    id,
+    name,
+    type,
+    tier,
+    special_name: specialName,
+    special_levels: specialLevels,
+    passive_name: passiveName,
+    passive_levels: passiveLevels,
+    stats_real: statsReal,
+    sistemas_disponibles: sistemasDisponibles,
+    is_active: isActive
+  };
+
+  const saveBtn = document.getElementById('btnSavePlaneModel');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⏳ Guardando...';
+  }
+
+  try {
+    if (mode === 'create') {
+      await apiCreatePlaneModel(payload);
+    } else {
+      await apiUpdatePlaneModel(id, payload);
+    }
+
+    closeModal('planeModelModal');
+    await loadAdminPlaneModels(true);
+
+    // Refrescar selector de aeronaves en hangar si está disponible
+    if (typeof loadPlaneModels === 'function') {
+      loadPlaneModels();
+    }
+  } catch (err) {
+    console.error('❌ Error guardando modelo:', err);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Guardar Modelo en Catálogo';
+    }
+  }
+}
+
+/**
+ * Desactivar (Soft-Delete) o Reactivar Modelo
+ */
+async function togglePlaneModelStatus(id, currentlyActive) {
+  const model = window.currentAdminPlaneModels.find(m => String(m.id) === String(id));
+  const planeName = model ? model.name : id;
+
+  if (currentlyActive) {
+    const confirmed = confirm(`¿Confirmas la DESACTIVACIÓN operativa del modelo "${planeName}" (ID: ${id})?\n\nEl modelo no aparecerá en el catálogo para nuevos pilotos, pero el historial y cazas existentes se preservarán.`);
+    if (!confirmed) return;
+
+    try {
+      await apiDeletePlaneModel(id);
+      await loadAdminPlaneModels(true);
+      if (typeof loadPlaneModels === 'function') loadPlaneModels();
+    } catch (err) {
+      console.error('Error desactivando modelo:', err);
+    }
+  } else {
+    try {
+      await apiRestorePlaneModel(id);
+      await loadAdminPlaneModels(true);
+      if (typeof loadPlaneModels === 'function') loadPlaneModels();
+    } catch (err) {
+      console.error('Error reactivando modelo:', err);
+    }
+  }
+}
+
+/**
+ * Inspección completa de ficha técnica
+ */
+function viewPlaneModelFullDetails(id) {
+  const model = window.currentAdminPlaneModels.find(m => String(m.id) === String(id));
+  if (!model) {
+    showToast('❌ Modelo no encontrado', 'error');
+    return;
+  }
+
+  const titleEl = document.getElementById('planeModelDetailTitle');
+  const bodyEl = document.getElementById('planeModelDetailBody');
+
+  if (titleEl) titleEl.textContent = `📋 Ficha Técnica: ${model.name}`;
+  if (bodyEl) {
+    const stats = model.stats_real || {};
+    const sistemas = model.sistemas_disponibles || {};
+
+    bodyEl.innerHTML = `
+      <div style="background:rgba(10,15,25,0.9);padding:1rem;border-radius:6px;border:1px solid #2d3748;margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <h4 style="margin:0;font-size:1.2rem;color:#d4af37;font-family:var(--font-tactical);">${escapeHTML(model.name)}</h4>
+            <div style="font-size:0.85rem;color:#94a3b8;">${escapeHTML(model.type)} · Tier ${model.tier || 3}</div>
+          </div>
+          <div>
+            <span style="font-family:var(--font-mono);font-size:0.8rem;background:rgba(255,255,255,0.1);padding:3px 8px;border-radius:4px;color:#fff;">
+              ID: ${escapeHTML(String(model.id))}
+            </span>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;font-size:0.85rem;">
+          <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:4px;">
+            <div style="color:#64748b;font-size:0.75rem;">VELOCIDAD PUNTA</div>
+            <div style="font-size:1rem;font-weight:700;color:#38bdf8;font-family:var(--font-mono);">${stats.velocidad || 2000} km/h</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:4px;">
+            <div style="color:#64748b;font-size:0.75rem;">AGILIDAD DE COMBATE</div>
+            <div style="font-size:1rem;font-weight:700;color:#4ade80;font-family:var(--font-mono);">${stats.agilidad || 85} / 100</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:4px;">
+            <div style="color:#64748b;font-size:0.75rem;">RESISTENCIA DE BLINDAJE</div>
+            <div style="font-size:1rem;font-weight:700;color:#fbbf24;font-family:var(--font-mono);">${stats.blindaje || 1200} HP</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);padding:8px;border-radius:4px;">
+            <div style="color:#64748b;font-size:0.75rem;">POTENCIA DE ARMAS</div>
+            <div style="font-size:1rem;font-weight:700;color:#f87171;font-family:var(--font-mono);">${stats.potencia_armas || 1200} PTS</div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #2d3748;padding-top:10px;margin-bottom:10px;">
+          <div style="font-size:0.8rem;color:#60a5fa;font-weight:600;margin-bottom:4px;">⚡ HABILIDAD ESPECIAL</div>
+          <div style="font-size:0.9rem;font-weight:600;color:#fff;">${escapeHTML(model.special_name || 'Sin habilidad especial')}</div>
+          <pre style="background:rgba(0,0,0,0.5);padding:6px;border-radius:4px;font-size:0.75rem;color:#94a3b8;margin:4px 0 0 0;overflow-x:auto;">${escapeHTML(JSON.stringify(model.special_levels || {}, null, 2))}</pre>
+        </div>
+
+        <div style="border-top:1px solid #2d3748;padding-top:10px;margin-bottom:10px;">
+          <div style="font-size:0.8rem;color:#34d399;font-weight:600;margin-bottom:4px;">🛡️ HABILIDAD PASIVA</div>
+          <div style="font-size:0.9rem;font-weight:600;color:#fff;">${escapeHTML(model.passive_name || 'Sin habilidad pasiva')}</div>
+          <pre style="background:rgba(0,0,0,0.5);padding:6px;border-radius:4px;font-size:0.75rem;color:#94a3b8;margin:4px 0 0 0;overflow-x:auto;">${escapeHTML(JSON.stringify(model.passive_levels || {}, null, 2))}</pre>
+        </div>
+
+        <div style="border-top:1px solid #2d3748;padding-top:10px;">
+          <div style="font-size:0.8rem;color:#d4af37;font-weight:600;margin-bottom:6px;">⚙️ SUBSISTEMAS DE MEJORA STARFORM 2.0</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:3px;background:${sistemas.fuselaje !== false ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'};color:${sistemas.fuselaje !== false ? '#2ecc71' : '#e74c3c'};">
+              Fuselaje: ${sistemas.fuselaje !== false ? 'Habilitado' : 'No'}
+            </span>
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:3px;background:${sistemas.motor !== false ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'};color:${sistemas.motor !== false ? '#2ecc71' : '#e74c3c'};">
+              Motor: ${sistemas.motor !== false ? 'Habilitado' : 'No'}
+            </span>
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:3px;background:${sistemas.avionica !== false ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'};color:${sistemas.avionica !== false ? '#2ecc71' : '#e74c3c'};">
+              Aviónica: ${sistemas.avionica !== false ? 'Habilitado' : 'No'}
+            </span>
+            <span style="font-size:0.75rem;padding:2px 8px;border-radius:3px;background:${sistemas.armas !== false ? 'rgba(46,204,113,0.2)' : 'rgba(231,76,60,0.2)'};color:${sistemas.armas !== false ? '#2ecc71' : '#e74c3c'};">
+              Armamento: ${sistemas.armas !== false ? 'Habilitado' : 'No'}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button onclick="closeModal('planeModelDetailModal')" class="btn-secondary">Cerrar</button>
+        <button onclick="closeModal('planeModelDetailModal'); openEditPlaneModelModal('${escapeHTML(String(model.id))}');" class="btn-primary">
+          ✏️ Modificar Este Caza
+        </button>
+      </div>`;
+  }
+
+  showModal('planeModelDetailModal');
+}
+
+window.loadAdminPlaneModels = loadAdminPlaneModels;
+window.filterAdminPlaneModels = filterAdminPlaneModels;
+window.resetCatalogFilters = resetCatalogFilters;
+window.renderAdminPlaneModels = renderAdminPlaneModels;
+window.openCreatePlaneModelModal = openCreatePlaneModelModal;
+window.openEditPlaneModelModal = openEditPlaneModelModal;
+window.handleSavePlaneModel = handleSavePlaneModel;
+window.togglePlaneModelStatus = togglePlaneModelStatus;
+window.viewPlaneModelFullDetails = viewPlaneModelFullDetails;
 
 console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');

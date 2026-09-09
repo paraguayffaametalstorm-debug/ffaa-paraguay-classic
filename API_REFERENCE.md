@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.5.0 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.6.0 del núcleo táctico.**
 
 ---
 
@@ -58,6 +58,12 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Planes** | `/api/planes` o `/my-planes` | `GET` | Autenticado | Cazas registrados en el hangar personal |
 | **Planes** | `/api/planes/:id/stats` | `GET` | Autenticado | Métricas de combate de la aeronave |
 | **Planes** | `/api/planes/:id/system` | `PUT` | Autenticado | **Upgrades 2.0**: Mejorar Fuselaje/Motor/Aviónica/Armas |
+| **Catalog** | `/api/plane-models` | `GET` | Autenticado | Listar catálogo de cazas (activos e inactivos) |
+| **Catalog** | `/api/plane-models/:id` | `GET` | Autenticado | Obtener ficha técnica completa de un caza |
+| **Catalog** | `/api/plane-models` | `POST` | `ADMIN` / `OWNER` | Registrar nuevo modelo de aeronave |
+| **Catalog** | `/api/plane-models/:id` | `PUT` | `ADMIN` / `OWNER` | Actualizar parámetros técnicos y combate |
+| **Catalog** | `/api/plane-models/:id` | `DELETE` | `ADMIN` / `OWNER` | Desactivar modelo del catálogo (soft-delete) |
+| **Catalog** | `/api/plane-models/:id/restore` | `POST` | `ADMIN` / `OWNER` | Reactivar modelo en el catálogo |
 | **Planes** | `/api/planes` | `POST` | Autenticado | Adquirir o registrar aeronave en hangar |
 | **Planes** | `/api/planes/:id` | `PUT` | Autenticado | Modificar nivel o mods de aeronave |
 | **Planes** | `/api/planes/:id` | `DELETE` | Autenticado | Desarmar o eliminar caza del hangar |
@@ -434,3 +440,142 @@ Consulta los eventos registrados en `audit_logs` con paginación y filtros.
 
 ### `POST /api/owner/backup/run`
 Genera un respaldo snapshot estructurado en memoria/JSON de las tablas maestras (`users`, `performances`, `events`).
+
+---
+
+## 7. Gestión de Catálogo de Aeronaves (`/api/plane-models`)
+
+*(Módulo v3.6.0 para administración y calibración del catálogo de flota aérea oficial)*
+
+### `GET /api/plane-models`
+Obtiene la lista de modelos de aviones del catálogo oficial.
+- **Acceso:** Autenticado (`requireAuth`).
+- **Query Params:**
+  - `include_inactive`: `true` | `false` (por defecto `false` para pilotos, `true` para panel de administración).
+  - `tier`: `1` | `2` | `3` | `4` | `5`.
+  - `type`: Filtro de texto por tipo de caza.
+  - `search`: Búsqueda textual en nombre, id o habilidades.
+  - `all`: `true` para omitir paginación.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "models": [
+      {
+        "id": "101",
+        "name": "F-5E Tiger II",
+        "type": "Caza Ligero de Superioridad Aérea",
+        "tier": 1,
+        "is_active": true,
+        "special_name": "Giro Táctico Rápido",
+        "passive_name": "Resistencia Mejorada",
+        "stats_real": {
+          "velocidad": 1740,
+          "agilidad": 78,
+          "blindaje": 980,
+          "potencia_armas": 1100
+        },
+        "sistemas_disponibles": {
+          "fuselaje": true,
+          "motor": true,
+          "avionica": true,
+          "armas": true
+        }
+      }
+    ],
+    "total": 24
+  }
+  ```
+
+### `GET /api/plane-models/:id`
+Obtiene los detalles completos y ficha técnica de un modelo específico.
+- **Acceso:** Autenticado (`requireAuth`).
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "model": { ... }
+  }
+  ```
+
+### `POST /api/plane-models`
+Registra un nuevo modelo de avión en el catálogo del escuadrón.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Validación:** Validado vía Zod (`PlaneModelSchema`).
+- **Auditoría:** Registrado en `audit_logs` con acción `CREATE_PLANE_MODEL`.
+- **Request Body:**
+  ```json
+  {
+    "id": "125",
+    "name": "F-15EX Eagle II",
+    "type": "Caza Pesado de Superioridad Aérea y Ataque",
+    "tier": 4,
+    "special_name": "Salva Masiva AMRAAM",
+    "special_levels": { "1": "Alcance misil +15%", "2": "Alcance misil +30%" },
+    "passive_name": "Radar AESA APG-82",
+    "passive_levels": { "1": "Detección radar +20%", "2": "Detección radar +40%" },
+    "stats_real": {
+      "velocidad": 2650,
+      "agilidad": 84,
+      "blindaje": 1550,
+      "potencia_armas": 1900
+    },
+    "sistemas_disponibles": {
+      "fuselaje": true,
+      "motor": true,
+      "avionica": true,
+      "armas": true
+    },
+    "is_active": true
+  }
+  ```
+- **Response Exitosa (201 Created):**
+  ```json
+  {
+    "success": true,
+    "message": "Modelo de aeronave 'F-15EX Eagle II' registrado exitosamente",
+    "model": { ... }
+  }
+  ```
+
+### `PUT /api/plane-models/:id`
+Actualiza los parámetros tácticos, estadísticos o habilidades de un modelo de avión existente.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Validación:** Validado vía Zod (`UpdatePlaneModelSchema`).
+- **Auditoría:** Registrado en `audit_logs` con acción `UPDATE_PLANE_MODEL`.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Modelo de aeronave '125' actualizado exitosamente",
+    "model": { ... }
+  }
+  ```
+
+### `DELETE /api/plane-models/:id`
+Desactiva un modelo de aeronave del catálogo militar (**Soft-Delete**).
+- **Comportamiento:** Establece `is_active = false`. No borra datos físicos de la base de datos para no corromper los hangares de los pilotos que ya poseen este avión.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Auditoría:** Registrado en `audit_logs` con acción `DEACTIVATE_PLANE_MODEL`.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Modelo de aeronave '125' desactivado del catálogo militar (soft-delete)"
+  }
+  ```
+
+### `POST /api/plane-models/:id/restore`
+Reactiva un modelo previamente desactivado en el catálogo militar.
+- **Comportamiento:** Establece `is_active = true`.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Auditoría:** Registrado en `audit_logs` con acción `RESTORE_PLANE_MODEL`.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Modelo de aeronave '125' reactivado exitosamente en el catálogo militar",
+    "model": { ... }
+  }
+  ```
+

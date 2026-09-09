@@ -101,3 +101,19 @@ export const NormativaSchema = z.object({
   resumen: z.string().min(10),
   nivel_confidencialidad: z.enum(['PUBLICO', 'RESTRINGIDO', 'SECRETO']).default('PUBLICO')
 });
+
+export const PlaneModelSchema = z.object({
+  id: z.union([z.string(), z.number()]).transform(v => String(v).trim()),
+  name: z.string().min(2, 'Nombre de aeronave requerido (mín. 2 caracteres)').max(100),
+  type: z.string().min(2, 'Tipo de aeronave requerido').max(80),
+  special_name: z.string().optional().nullable(),
+  special_levels: z.union([z.record(z.any()), z.array(z.any()), z.string()]).optional().nullable(),
+  passive_name: z.string().optional().nullable(),
+  passive_levels: z.union([z.record(z.any()), z.array(z.any()), z.string()]).optional().nullable(),
+  stats_real: z.union([z.record(z.any()), z.array(z.any()), z.string()]).optional().nullable(),
+  sistemas_disponibles: z.union([z.record(z.any()), z.array(z.any()), z.string()]).optional().nullable(),
+  tier: z.number().int().min(1).max(6).optional().nullable(),
+  is_active: z.boolean().optional().default(true)
+});
+
+export const UpdatePlaneModelSchema = PlaneModelSchema.partial().omit({ id: true });

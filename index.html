@@ -140,7 +140,7 @@
       'forgot-password-modal',
       // Vistas principales
       'dashboard', 'performance-form', 'planes-view', 'historial-view',
-      'profile-view', 'normativas-view', 'admin-panel', 'all-performances',
+      'profile-view', 'normativas-view', 'admin-panel', 'admin-plane-models', 'all-performances',
       'settings-view',
       'help-view',
       'owner-panel',
@@ -367,6 +367,10 @@
           <button id="drawerAdminBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('adminPanel'); closeMobileDrawer();" data-view="adminPanel">
             <i data-lucide="shield-check" class="drawer-nav-icon"></i>
             <span class="drawer-nav-text">Panel de Administración</span>
+          </button>
+          <button id="drawerAdminPlanesBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('adminPlaneModels'); closeMobileDrawer();" data-view="adminPlaneModels">
+            <i data-lucide="plane" class="drawer-nav-icon"></i>
+            <span class="drawer-nav-text">Catálogo de Cazas</span>
           </button>
           <button id="drawerAllPerfBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('allPerformancesView'); closeMobileDrawer();" data-view="allPerformancesView">
             <i data-lucide="trending-up" class="drawer-nav-icon"></i>
