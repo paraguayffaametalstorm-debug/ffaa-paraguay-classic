@@ -2198,7 +2198,12 @@ async function resetPilotPassword(userId, nick) {
     });
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || 'Error al resetear');
-    alert(`✅ Contraseña de ${nick} reseteada.\n\nClave temporal: ${data.temporaryPassword}\n\nIndícasela al piloto para que inicie sesión.`);
+    const tempPass = data.temporaryPassword || data.data?.temporaryPassword;
+    if (tempPass) {
+      showTemporaryPasswordModal(nick, tempPass);
+    } else {
+      alert(`✅ Contraseña de ${nick} reseteada.\n\nClave temporal: ${data.temporaryPassword}\n\nIndícasela al piloto para que inicie sesión.`);
+    }
   } catch (err) {
     console.error('Error reseteando password:', err);
     showToast('❌ ' + err.message, 'error');
@@ -2229,13 +2234,209 @@ async function addNewMember() {
     if (!res.ok) {
       throw new Error(data.error || 'Error al registrar piloto');
     }
-    showToast(`✅ Piloto ${nick} registrado con éxito`, 'success');
+
+    const tempPass = data.temporaryPassword || data.data?.temporaryPassword;
+    if (tempPass) {
+      showTemporaryPasswordModal(nick, tempPass);
+    } else {
+      showToast(`✅ Piloto ${nick} registrado con éxito`, 'success');
+    }
+
     if (nickInput) nickInput.value = '';
     if (emailInput) emailInput.value = '';
     loadAdminPanel();
   } catch (err) {
     console.error('Error registrando piloto:', err);
     showToast('❌ ' + err.message, 'error');
+  }
+}
+
+function showTemporaryPasswordModal(nick, tempPass) {
+  // Cerrar y limpiar modal previo si estuviera presente
+  closeTemporaryPasswordModal();
+
+  const modal = document.createElement('div');
+  modal.id = 'tempPasswordModal';
+  modal.className = 'modal show';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'tempPasswordModalTitle');
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100vw';
+  modal.style.height = '100vh';
+  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.78)';
+  modal.style.backdropFilter = 'blur(4px)';
+  modal.style.zIndex = '9999';
+
+  modal.innerHTML = `
+    <div class="modal-content tactical-corners" style="max-width: 460px; width: 92%; border-top: 4px solid #0038A8; background: #0B132B; border: 1px solid #2A3A5C; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85); padding: 1.5rem; border-radius: 4px; position: relative; color: #E2E8F0; box-sizing: border-box;">
+      
+      <!-- Modal Header -->
+      <div class="modal-header" style="border-bottom: 1px solid #2A3A5C; padding-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem; line-height: 1;">🔑</span>
+          <div>
+            <h3 id="tempPasswordModalTitle" style="margin: 0; font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; color: #D4AF37; font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">
+              CREDENCIALES DE COMBATE
+            </h3>
+            <span style="font-size: 0.75rem; color: #94A3B8; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">
+              ALTA DE PILOTO · PROTOCOLO C4ISR
+            </span>
+          </div>
+        </div>
+        <button type="button" onclick="closeTemporaryPasswordModal()" aria-label="Cerrar modal" style="color: #94A3B8; background: none; border: none; font-size: 1.6rem; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Identificación del Piloto -->
+        <div style="margin-bottom: 1rem; background: rgba(15, 23, 42, 0.6); padding: 8px 12px; border-radius: 4px; border-left: 3px solid #38BDF8;">
+          <span style="display: block; font-size: 0.7rem; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.8px; font-family: 'Rajdhani', sans-serif; font-weight: 600;">
+            Piloto Registrado:
+          </span>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #38BDF8; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px;">
+            ${escapeHTML(nick || '')}
+          </div>
+        </div>
+
+        <!-- Contraseña Temporal Destacada -->
+        <div style="margin-bottom: 1.15rem; background: rgba(10, 15, 25, 0.95); border: 1.5px solid #2A3A5C; border-radius: 6px; padding: 1.1rem 0.8rem; text-align: center;">
+          <div style="font-size: 0.7rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; font-family: 'Rajdhani', sans-serif; margin-bottom: 6px; font-weight: 600;">
+            Contraseña Temporal de Acceso
+          </div>
+          <div id="tempPasswordDisplay" style="font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; color: #D4AF37; letter-spacing: 2px; user-select: all; padding: 0.25rem 0; word-break: break-all;">
+            ${escapeHTML(tempPass || '')}
+          </div>
+          <input type="hidden" id="rawTempPassword" value="${escapeHTML(tempPass || '')}" />
+          <div style="font-size: 0.72rem; color: #64748B; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
+            (Haz clic sobre la clave para seleccionarla)
+          </div>
+        </div>
+
+        <!-- Advertencia de Seguridad -->
+        <div style="display: flex; align-items: flex-start; gap: 10px; background: rgba(213, 43, 30, 0.15); border: 1px solid #D52B1E; border-radius: 4px; padding: 10px 12px; margin-bottom: 1.25rem; font-size: 0.82rem; line-height: 1.45; color: #FFAAA6;">
+          <span style="color: #D52B1E; font-size: 1.1rem; line-height: 1; flex-shrink: 0;">⚠️</span>
+          <div>
+            <strong style="color: #FF7B72; display: block; margin-bottom: 2px; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; font-size: 0.85rem;">ADVERTENCIA DE SEGURIDAD:</strong>
+            <span style="color: #E2E8F0;">Clave de un solo uso, caduca tras el primer inicio de sesión. Indícasela al combatiente para que configure su clave definitiva.</span>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #2A3A5C; padding-top: 1rem;">
+          <button type="button" id="btnCopyTempPassword" onclick="copyTemporaryPassword()" class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.65rem 1.2rem; font-size: 0.88rem; border: 1px solid #0038A8; color: #60A5FA; background: rgba(0, 56, 168, 0.2); font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+            📋 Copiar clave
+          </button>
+          <button type="button" onclick="closeTemporaryPasswordModal()" class="btn-primary" style="padding: 0.65rem 1.4rem; font-size: 0.88rem; background: #0038A8; border: 1px solid #0038A8; color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px;">
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Cerrar al hacer clic fuera del contenido del modal
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeTemporaryPasswordModal();
+    }
+  });
+
+  // Cerrar con la tecla ESC
+  const handleEsc = (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      closeTemporaryPasswordModal();
+    }
+  };
+  window._tempPasswordModalEscHandler = handleEsc;
+  document.addEventListener('keydown', handleEsc);
+
+  document.body.appendChild(modal);
+}
+
+function closeTemporaryPasswordModal() {
+  if (window._tempPasswordModalEscHandler) {
+    document.removeEventListener('keydown', window._tempPasswordModalEscHandler);
+    window._tempPasswordModalEscHandler = null;
+  }
+  const modal = document.getElementById('tempPasswordModal');
+  if (modal) {
+    modal.classList.remove('show');
+    if (modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
+  }
+}
+
+async function copyTemporaryPassword() {
+  const inputEl = document.getElementById('rawTempPassword');
+  const password = inputEl ? inputEl.value : (document.getElementById('tempPasswordDisplay')?.textContent || '').trim();
+  const btn = document.getElementById('btnCopyTempPassword');
+
+  if (!password) {
+    showToast('⚠️ No hay contraseña para copiar', 'warning');
+    return;
+  }
+
+  let success = false;
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(password);
+      success = true;
+    } catch (err) {
+      console.warn('Clipboard API falló, ejecutando fallback:', err);
+      success = fallbackCopyPassword(password);
+    }
+  } else {
+    success = fallbackCopyPassword(password);
+  }
+
+  if (success) {
+    showToast('📋 Contraseña copiada al portapapeles', 'success');
+    if (btn) {
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '✅ ¡Copiada!';
+      btn.style.background = 'rgba(46, 204, 113, 0.25)';
+      btn.style.borderColor = '#2ecc71';
+      btn.style.color = '#2ecc71';
+      setTimeout(() => {
+        if (btn && document.body.contains(btn)) {
+          btn.innerHTML = originalHtml;
+          btn.style.background = 'rgba(0, 56, 168, 0.2)';
+          btn.style.borderColor = '#0038A8';
+          btn.style.color = '#60A5FA';
+        }
+      }, 2500);
+    }
+  } else {
+    showToast('⚠️ Selecciona y copia la clave manualmente', 'warning');
+  }
+}
+
+function fallbackCopyPassword(password) {
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = password;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.opacity = '0';
+    textArea.style.pointerEvents = 'none';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error('Error en fallbackCopyPassword:', err);
+    return false;
   }
 }
 
@@ -2524,6 +2725,10 @@ window.resetMemberFilters = resetMemberFilters;
 window.toggleMembersSection = toggleMembersSection;
 window.refreshAdminStats = refreshAdminStats;
 window.addNewMember = addNewMember;
+window.showTemporaryPasswordModal = showTemporaryPasswordModal;
+window.closeTemporaryPasswordModal = closeTemporaryPasswordModal;
+window.copyTemporaryPassword = copyTemporaryPassword;
+window.fallbackCopyPassword = fallbackCopyPassword;
 window.showUploadEventModal = showUploadEventModal;
 window.uploadEventBulk = uploadEventBulk;
 window.loadAdminEvents = loadAdminEvents;
