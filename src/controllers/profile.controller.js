@@ -166,8 +166,6 @@ export async function updateProfile(req, res, next) {
     };
 
     if (data.phone !== undefined) updateFields.phone = data.phone;
-    if (data.callsign !== undefined) updateFields.callsign = data.callsign;
-    if (data.discord !== undefined) updateFields.discord = data.discord;
     if (data.bio !== undefined) updateFields.bio = data.bio;
     if (data.nick !== undefined && data.nick.trim()) updateFields.nick = data.nick.trim();
     if (data.full_name !== undefined) updateFields.full_name = data.full_name;

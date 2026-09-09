@@ -80,7 +80,7 @@ export function configurePassport() {
 
                 // 2. Verificar si el usuario está inactivo
                 const userStatus = (user.status || '').toUpperCase();
-                if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO' || user.is_active === false) {
+                if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO') {
                     await logSecurityEvent({
                         supabase,
                         userId: user.id || user.user_id,

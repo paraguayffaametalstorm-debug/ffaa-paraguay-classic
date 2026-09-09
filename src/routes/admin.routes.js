@@ -109,7 +109,6 @@ router.post('/users/:userId/reset-password', async (req, res) => {
                     .update({
                         password_hash: hashedPassword,
                         must_change_password: true,
-                        password_changed_at: new Date().toISOString(),
                         token_version: newTokenVersion,
                         updated_at: new Date().toISOString()
                     })

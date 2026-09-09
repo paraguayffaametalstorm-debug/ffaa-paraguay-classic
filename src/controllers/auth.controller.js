@@ -324,7 +324,6 @@ export const changePassword = async (req, res) => {
             .update({
                 password_hash: newHash,
                 must_change_password: false,
-                password_changed_at: new Date().toISOString(),
                 token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
             })
@@ -449,7 +448,7 @@ export const linkAccount = async (req, res) => {
 
         // 3. Verificar estado de la cuenta
         const userStatus = (user.status || '').toUpperCase();
-        if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO' || user.is_active === false) {
+        if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO') {
             return res.status(403).json({
                 success: false,
                 error: '⚠️ La cuenta de este combatiente se encuentra inactiva. Contacta a un administrador.'
@@ -575,14 +574,14 @@ export const forgotPassword = async (req, res) => {
         try {
             const { data, error } = await supabase
                 .from('users')
-                .select('id, nick, email, email_institucional, token_version, status, is_active')
+                .select('id, nick, email, email_institucional, token_version, status')
                 .or(`email.ilike.${cleanEmail},email_institucional.ilike.${cleanEmail}`)
                 .limit(1);
             if (!error && data && data.length > 0) user = data[0];
         } catch (e) {
             const fallback = await supabase
                 .from('users')
-                .select('id, nick, email, token_version, status, is_active')
+                .select('id, nick, email, token_version, status')
                 .ilike('email', cleanEmail)
                 .limit(1);
             if (fallback.data && fallback.data.length > 0) user = fallback.data[0];
@@ -598,7 +597,7 @@ export const forgotPassword = async (req, res) => {
 
         // 2. Verificar estado de la cuenta
         const userStatus = (user.status || '').toUpperCase();
-        if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO' || user.is_active === false) {
+        if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO') {
             return res.json({
                 success: true,
                 message: 'Si el correo está registrado en el escuadrón, se enviarán instrucciones de restablecimiento.'
@@ -754,7 +753,6 @@ export const resetPassword = async (req, res) => {
             .update({
                 password_hash: hashedPassword,
                 must_change_password: false,
-                password_changed_at: new Date().toISOString(),
                 token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
             })
