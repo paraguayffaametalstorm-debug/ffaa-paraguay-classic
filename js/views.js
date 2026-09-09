@@ -571,9 +571,10 @@ function formatEventTitle(event) {
 }
 
 function loadPerformanceForm() {
-  if (!currentUser) return;
+  const user = currentUser || window.currentUser;
+  if (!user) return;
   const perfUserName = document.getElementById('perfUserName');
-  if (perfUserName) perfUserName.textContent = currentUser.nick || currentUser.email;
+  if (perfUserName) perfUserName.textContent = user.nick || user.email || 'Piloto';
   const tokens = document.getElementById('tokens');
   if (tokens) tokens.value = '';
   const flewInGroup = document.getElementById('flewInGroup');
@@ -585,11 +586,23 @@ function loadPerformanceForm() {
   if (typeof selectDays === 'function') selectDays(0);
   const saveBtn = document.getElementById('btnSavePerf');
   if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Guardar Rendimiento'; }
-  const isAdmin = currentUser.role === 'OWNER' || currentUser.role === 'ADMIN';
-  const targetGroup = document.getElementById('performanceTargetGroup');
+  const userRole = (user.role || '').toUpperCase();
+  const isAdmin = userRole === 'OWNER' || userRole === 'ADMIN';
+  const targetGroup = document.getElementById('performanceTargetGroup') || document.getElementById('adminPilotSelectorContainer');
   if (targetGroup) targetGroup.style.display = isAdmin ? 'block' : 'none';
   if (isAdmin) {
-    loadActiveMembers();
+    if (typeof window.loadAdminPilotList === 'function') {
+      window.loadAdminPilotList();
+    } else {
+      loadActiveMembers();
+    }
+  } else {
+    const sel = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
+    if (sel) {
+      sel.innerHTML = `<option value="self">— Mi propio rendimiento (${user.nick || user.email || 'Piloto'}) —</option>`;
+      sel.value = 'self';
+    }
+    if (typeof onTargetPilotChange === 'function') onTargetPilotChange();
   }
   loadOpenEvents();
 }
@@ -612,24 +625,26 @@ function loadActiveMembers() {
     const sel = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
     if (!sel) return;
     sel.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
-    const members = data.members || data.activeMembers || data.users || (Array.isArray(data) ? data : []);
+    const members = data.members || data.activeMembers || data.users || data.data || (Array.isArray(data) ? data : []);
     
     // Filtrar solo activos y ordenar alfabéticamente
     const activeMembers = members
       .filter(p => {
         const st = (p.status || '').toUpperCase();
-        return !st || st === 'ACTIVE' || st === 'ACTIVO';
+        return st !== 'INACTIVE' && st !== 'INACTIVO';
       })
       .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
 
+    const user = currentUser || window.currentUser;
+    const currentUserId = user?.user_id || user?.id;
+
     activeMembers.forEach(m => {
       const uid = m.user_id || m.id;
-      if (currentUser && (uid === currentUser.user_id || uid === currentUser.id)) return;
+      const isSelf = String(uid) === String(currentUserId) || (m.email && m.email.toLowerCase() === user?.email?.toLowerCase());
       const opt = document.createElement('option');
       opt.value = uid;
       const roleUpper = (m.role || 'MIEMBRO').toUpperCase();
-      const roleBadge = roleUpper === 'OWNER' ? '👑' : roleUpper === 'ADMIN' ? '⭐' : '';
-      opt.textContent = `${roleBadge} ${m.nick || m.email || 'Sin Nick'} (${roleUpper})`.trim();
+      opt.textContent = `${m.nick || m.email || 'Sin Nick'} (${roleUpper}) ${isSelf ? '· [Tú]' : ''}`.trim();
       sel.appendChild(opt);
     });
     sel.value = 'self';
@@ -1777,17 +1792,22 @@ function resetNormativasFilters() {
 let adminMembersCache = [];
 
 async function loadAdminPanel() {
+  const tableBody = document.getElementById('membersTableBody');
+  if (tableBody && (!adminMembersCache || adminMembersCache.length === 0)) {
+    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#a0aec0;">⏳ Sincronizando registros militares de la escuadra...</td></tr>';
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/admin/users`, { headers: getAuthHeaders() });
     let members = [];
     if (res.ok) {
       const mData = await res.json();
-      members = mData.users || mData.members || (Array.isArray(mData) ? mData : []);
+      members = mData.users || mData.members || mData.data || (Array.isArray(mData) ? mData : []);
     } else {
       const fallback = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
       if (fallback.ok) {
         const fbData = await fallback.json();
-        members = fbData.users || fbData.members || (Array.isArray(fbData) ? fbData : []);
+        members = fbData.users || fbData.members || fbData.data || (Array.isArray(fbData) ? fbData : []);
       }
     }
 
@@ -1797,11 +1817,78 @@ async function loadAdminPanel() {
     renderAdminMembersTable(members);
 
     const updateEl = document.getElementById('lastUpdate');
-    if (updateEl) updateEl.textContent = new Date().toLocaleTimeString();
+    if (updateEl) updateEl.textContent = new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // Cargar eventos para el panel de eventos y Black Market
+    loadAdminEvents();
 
   } catch (err) {
     console.error('Error cargando admin panel:', err);
     showToast('❌ Error al cargar panel de administración', 'error');
+  }
+}
+
+async function loadAdminEvents() {
+  try {
+    const res = await fetch(`${API_BASE}/api/events`, { headers: getAuthHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    const events = data.events || [];
+    renderAdminEvents(events);
+  } catch (err) {
+    console.warn('⚠️ No se pudieron cargar eventos de admin:', err);
+  }
+}
+
+function renderAdminEvents(events) {
+  const container = document.getElementById('adminEventsList');
+  const bmInfo = document.getElementById('blackMarketInfo');
+
+  if (bmInfo) {
+    const bmEvent = events.find(e => e.type === 'BLACK_MARKET' || e.type === 'BM');
+    if (bmEvent) {
+      const isOpen = Boolean(bmEvent.is_open || bmEvent.status === 'OPEN');
+      bmInfo.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <strong style="color:#e2e8f0;font-size:1rem;">${escapeHTML(bmEvent.title || 'Black Market')}</strong>
+            <div style="font-size:0.82rem;color:#94a3b8;margin-top:2px;">
+              Límite operativo: <strong style="color:#d4af37;">250 Tokens</strong> · Ventana: Lunes 17:00 a Miércoles 16:59 (PY)
+            </div>
+          </div>
+          <span class="status-badge status-${isOpen ? 'verde' : 'negro'}" style="padding:4px 10px;font-size:0.8rem;">
+            ${isOpen ? '🟢 OPERATIVO' : '🔴 CERRADO'}
+          </span>
+        </div>
+      `;
+    } else {
+      bmInfo.innerHTML = '<p style="color:#94a3b8;font-size:0.85rem;margin:0;">No hay evento Black Market programado actualmente.</p>';
+    }
+  }
+
+  if (container) {
+    if (!events || events.length === 0) {
+      container.innerHTML = '<p style="color:#94a3b8;grid-column:1/-1;">No hay eventos registrados en el sistema</p>';
+      return;
+    }
+    container.innerHTML = events.slice(0, 8).map(ev => {
+      const isOpen = Boolean(ev.is_open || ev.status === 'OPEN');
+      return `
+        <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <strong style="color:#f8fafc;font-size:0.88rem;">${escapeHTML(ev.title || ev.id)}</strong>
+            <span class="status-badge status-${isOpen ? 'verde' : 'negro'}" style="font-size:0.68rem;padding:2px 6px;">
+              ${isOpen ? 'ABIERTO' : 'CERRADO'}
+            </span>
+          </div>
+          <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">
+            Tipo: <strong style="color:#cbd5e1;">${ev.type || 'SQUADRON'}</strong><br>
+            Inicio: ${ev.start_date ? new Date(ev.start_date).toLocaleDateString() : '-'}<br>
+            Fin: ${ev.end_date ? new Date(ev.end_date).toLocaleDateString() : '-'}
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 }
 
@@ -1816,10 +1903,16 @@ function renderAdminStats(members) {
   if (members.length > 0) {
     const sum = members.reduce((s, m) => s + (Number(m.avg_tokens) || 0), 0);
     const avg = (sum / members.length).toFixed(1);
-    const atRisk = members.filter(m => (m.perf_status === 'ROJO' || m.perf_status === 'NEGRO')).length;
+    const atRisk = members.filter(m => {
+      const st = (m.perf_status || '').toUpperCase();
+      return st === 'ROJO' || st === 'NEGRO';
+    }).length;
 
     if (avgEl) avgEl.textContent = `${avg} tokens`;
     if (riskEl) riskEl.textContent = atRisk;
+  } else {
+    if (avgEl) avgEl.textContent = `0 tokens`;
+    if (riskEl) riskEl.textContent = '0';
   }
 }
 
@@ -1839,19 +1932,19 @@ function renderPilotsByStatus(members) {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">
       <div style="background:rgba(46,204,113,0.1);border:1px solid #2ecc71;border-radius:8px;padding:12px;text-align:center;">
         <span style="color:#2ecc71;font-weight:700;font-size:1.3rem;">${counts.VERDE}</span>
-        <div style="font-size:0.75rem;color:#a0aec0;">VERDE (${Math.round((counts.VERDE/total)*100)}%)</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:2px;">VERDE (${Math.round((counts.VERDE/total)*100)}%)</div>
       </div>
       <div style="background:rgba(243,156,18,0.1);border:1px solid #f39c12;border-radius:8px;padding:12px;text-align:center;">
         <span style="color:#f39c12;font-weight:700;font-size:1.3rem;">${counts.NARANJA}</span>
-        <div style="font-size:0.75rem;color:#a0aec0;">NARANJA (${Math.round((counts.NARANJA/total)*100)}%)</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:2px;">NARANJA (${Math.round((counts.NARANJA/total)*100)}%)</div>
       </div>
       <div style="background:rgba(231,76,60,0.1);border:1px solid #e74c3c;border-radius:8px;padding:12px;text-align:center;">
         <span style="color:#e74c3c;font-weight:700;font-size:1.3rem;">${counts.ROJO}</span>
-        <div style="font-size:0.75rem;color:#a0aec0;">ROJO (${Math.round((counts.ROJO/total)*100)}%)</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:2px;">ROJO (${Math.round((counts.ROJO/total)*100)}%)</div>
       </div>
       <div style="background:rgba(148,163,184,0.1);border:1px solid #64748b;border-radius:8px;padding:12px;text-align:center;">
         <span style="color:#94a3b8;font-weight:700;font-size:1.3rem;">${counts.NEGRO}</span>
-        <div style="font-size:0.75rem;color:#a0aec0;">NEGRO (${Math.round((counts.NEGRO/total)*100)}%)</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:2px;">NEGRO (${Math.round((counts.NEGRO/total)*100)}%)</div>
       </div>
     </div>
   `;
@@ -1869,84 +1962,112 @@ function formatLastActivity(dateStr) {
 }
 
 function renderAdminMembersTable(members) {
-  const container = document.getElementById('membersSectionBody');
-  if (!container) return;
+  const tableBody = document.getElementById('membersTableBody');
+  const noResultsMsg = document.getElementById('noResultsMessage');
 
-  const existingTable = document.getElementById('adminMembersTable');
-  if (existingTable) existingTable.remove();
+  // Limpiar cualquier tabla redundante previa
+  const existingDynamicTable = document.getElementById('adminMembersTable');
+  if (existingDynamicTable) existingDynamicTable.remove();
 
-  const isOwner = currentUser && currentUser.role === 'OWNER';
+  if (!members || members.length === 0) {
+    if (tableBody) tableBody.innerHTML = '';
+    if (noResultsMsg) noResultsMsg.style.display = 'block';
+    return;
+  }
 
-  const tableDiv = document.createElement('div');
-  tableDiv.id = 'adminMembersTable';
-  tableDiv.style.marginTop = '15px';
-  tableDiv.innerHTML = `
-    <div style="overflow-x:auto;">
-      <table class="data-table" style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
-            <th style="padding:10px 8px;">Piloto / Nick</th>
-            <th style="padding:10px 8px;">Email</th>
-            <th style="padding:10px 8px;">Rol / Rango</th>
-            <th style="padding:10px 8px;">Estado</th>
-            <th style="padding:10px 8px;">Últ. Actividad</th>
-            <th style="padding:10px 8px;">Promedio</th>
-            <th style="padding:10px 8px;text-align:center;">Gestión & Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${members.map(m => {
-            const userId = m.id || m.user_id;
-            const currentRole = (m.role || 'MIEMBRO').toUpperCase();
-            const currentStatus = (m.status || 'ACTIVE').toUpperCase();
-            const isActive = currentStatus === 'ACTIVE';
+  if (noResultsMsg) noResultsMsg.style.display = 'none';
 
-            return `
-            <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(231,76,60,0.05)' : 'transparent'};">
-              <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span>${escapeHTML(m.nick || '-')}</span>
-                  ${m.email === (currentUser?.email) ? '<span style="font-size:0.7rem;color:#d4af37;background:rgba(212,175,55,0.15);padding:1px 5px;border-radius:4px;">(Tú)</span>' : ''}
-                </div>
-              </td>
-              <td style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
-              <td style="padding:10px 8px;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span class="role-badge role-${currentRole}">${escapeHTML(currentRole)}</span>
-                  <select onchange="changeUserRole('${userId}', this.value, '${escapeHTML(m.nick || '')}')" 
-                          style="background:#0f172a;color:#cbd5e1;border:1px solid #334155;border-radius:4px;padding:2px 4px;font-size:0.75rem;cursor:pointer;">
-                    <option value="MIEMBRO" ${currentRole === 'MIEMBRO' ? 'selected' : ''}>MIEMBRO</option>
-                    <option value="VETERANO" ${currentRole === 'VETERANO' ? 'selected' : ''}>VETERANO</option>
-                    <option value="ADMIN" ${currentRole === 'ADMIN' ? 'selected' : ''} ${!isOwner && currentRole !== 'ADMIN' ? 'disabled' : ''}>ADMIN</option>
-                    ${isOwner ? `<option value="OWNER" ${currentRole === 'OWNER' ? 'selected' : ''}>OWNER</option>` : ''}
-                  </select>
-                </div>
-              </td>
-              <td style="padding:10px 8px;">
-                ${isActive 
-                  ? '<span class="status-badge" style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid #2ecc71;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">ACTIVE</span>' 
-                  : '<span class="status-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid #e74c3c;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">INACTIVE</span>'
-                }
-              </td>
-              <td style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
-              <td style="padding:10px 8px;font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</td>
-              <td style="padding:10px 8px;text-align:center;">
-                <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
-                  ${isActive 
-                    ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
-                    : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
-                  }
-                  <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
-                </div>
-              </td>
+  const isOwner = currentUser && (currentUser.role === 'OWNER' || (currentUser.role || '').toUpperCase() === 'OWNER');
+
+  const rowsHtml = members.map(m => {
+    const userId = m.id || m.user_id;
+    const currentRole = (m.role || 'MIEMBRO').toUpperCase();
+    const currentStatus = (m.status || 'ACTIVE').toUpperCase();
+    const isActive = currentStatus === 'ACTIVE';
+    const isSelf = currentUser && (
+      String(userId) === String(currentUser.user_id || currentUser.id) ||
+      (m.email && m.email.toLowerCase() === (currentUser.email || '').toLowerCase())
+    );
+    const perfStatus = (m.perf_status || 'VERDE').toUpperCase();
+
+    return `
+      <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(231,76,60,0.05)' : 'transparent'};">
+        <td style="padding:10px 8px;font-weight:600;color:#f8fafc;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span>${escapeHTML(m.nick || '-')}</span>
+            ${isSelf ? '<span style="font-size:0.7rem;color:#d4af37;background:rgba(212,175,55,0.15);padding:1px 5px;border-radius:4px;">(Tú)</span>' : ''}
+          </div>
+        </td>
+        <td style="padding:10px 8px;font-size:0.82rem;color:#94a3b8;">${escapeHTML(m.email || '-')}</td>
+        <td style="padding:10px 8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span class="role-badge role-${currentRole}">${escapeHTML(currentRole)}</span>
+            <select onchange="changeUserRole('${userId}', this.value, '${escapeHTML(m.nick || '')}')" 
+                    style="background:#0f172a;color:#cbd5e1;border:1px solid #334155;border-radius:4px;padding:2px 4px;font-size:0.75rem;cursor:pointer;">
+              <option value="MIEMBRO" ${currentRole === 'MIEMBRO' ? 'selected' : ''}>MIEMBRO</option>
+              <option value="VETERANO" ${currentRole === 'VETERANO' ? 'selected' : ''}>VETERANO</option>
+              <option value="ADMIN" ${currentRole === 'ADMIN' ? 'selected' : ''} ${!isOwner && currentRole !== 'ADMIN' ? 'disabled' : ''}>ADMIN</option>
+              ${isOwner ? `<option value="OWNER" ${currentRole === 'OWNER' ? 'selected' : ''}>OWNER</option>` : ''}
+            </select>
+          </div>
+        </td>
+        <td style="padding:10px 8px;">
+          ${isActive 
+            ? '<span class="status-badge" style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid #2ecc71;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">ACTIVE</span>' 
+            : '<span class="status-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid #e74c3c;padding:2px 8px;border-radius:12px;font-size:0.75rem;font-weight:600;">INACTIVE</span>'
+          }
+        </td>
+        <td style="padding:10px 8px;font-size:0.8rem;color:#cbd5e1;">${formatLastActivity(m.last_activity)}</td>
+        <td style="padding:10px 8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:600;color:#f8fafc;">${m.avg_tokens || 0}</span>
+            <span class="status-badge status-${perfStatus.toLowerCase()}" style="font-size:0.7rem;padding:1px 6px;">${perfStatus}</span>
+          </div>
+        </td>
+        <td style="padding:10px 8px;text-align:center;">
+          <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
+            ${isActive 
+              ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
+              : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
+            }
+            <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (tableBody) {
+    tableBody.innerHTML = rowsHtml;
+  } else {
+    // Si no existe membersTableBody en el DOM, renderizar dentro del contenedor
+    const container = document.getElementById('membersSectionBody');
+    if (!container) return;
+    const tableDiv = document.createElement('div');
+    tableDiv.id = 'adminMembersTable';
+    tableDiv.style.marginTop = '15px';
+    tableDiv.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table class="data-table" style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
+              <th style="padding:10px 8px;">Piloto</th>
+              <th style="padding:10px 8px;">Email</th>
+              <th style="padding:10px 8px;">Rol</th>
+              <th style="padding:10px 8px;">Estado</th>
+              <th style="padding:10px 8px;">Últ. Actividad</th>
+              <th style="padding:10px 8px;">Prom. Tokens</th>
+              <th style="padding:10px 8px;text-align:center;">Gestión & Acciones</th>
             </tr>
-          `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-  container.appendChild(tableDiv);
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+    container.appendChild(tableDiv);
+  }
 }
 
 async function changeUserRole(userId, newRole, nick) {
@@ -2018,9 +2139,98 @@ async function resetPilotPassword(userId, nick) {
   }
 }
 
+async function addNewMember() {
+  const nickInput = document.getElementById('newMemberNick');
+  const emailInput = document.getElementById('newMemberEmail');
+  const roleInput = document.getElementById('newMemberRole');
+
+  const nick = nickInput?.value?.trim();
+  const email = emailInput?.value?.trim();
+  const role = roleInput?.value || 'MIEMBRO';
+
+  if (!nick || !email) {
+    showToast('⚠️ Ingresa el nickname y correo institucional del piloto', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/members`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ nick, email, role })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al registrar piloto');
+    }
+    showToast(`✅ Piloto ${nick} registrado con éxito`, 'success');
+    if (nickInput) nickInput.value = '';
+    if (emailInput) emailInput.value = '';
+    loadAdminPanel();
+  } catch (err) {
+    console.error('Error registrando piloto:', err);
+    showToast('❌ ' + err.message, 'error');
+  }
+}
+
+function showUploadEventModal() {
+  showModal('uploadEventModal');
+}
+
+async function uploadEventBulk() {
+  const eventIdInput = document.getElementById('eventIdInput');
+  const bulkDataInput = document.getElementById('eventBulkData');
+
+  const event_id = eventIdInput?.value?.trim();
+  const text = bulkDataInput?.value?.trim();
+
+  if (!event_id || !text) {
+    showToast('⚠️ Ingresa el ID del evento y los registros', 'warning');
+    return;
+  }
+
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  const performances = [];
+
+  for (const line of lines) {
+    const parts = line.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      const nick = parts[0];
+      const tokens = parseInt(parts[1], 10) || 0;
+      const role = parts[2] ? parts[2].toUpperCase() : 'MIEMBRO';
+      performances.push({ nick, tokens, role });
+    }
+  }
+
+  if (performances.length === 0) {
+    showToast('⚠️ Formato incorrecto. Usa: Nick, Tokens, Rol (uno por línea)', 'warning');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/bulk-upload`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ event_id, performances })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error en carga masiva');
+    }
+    showToast(`✅ ${data.message || 'Carga masiva procesada con éxito'}`, 'success');
+    closeModal('uploadEventModal');
+    if (bulkDataInput) bulkDataInput.value = '';
+    loadAdminPanel();
+  } catch (err) {
+    console.error('Error en carga masiva:', err);
+    showToast('❌ ' + err.message, 'error');
+  }
+}
+
 function filterMembers() {
-  const search = (document.getElementById('memberSearch')?.value || '').toLowerCase();
+  const search = (document.getElementById('memberSearch')?.value || '').toLowerCase().trim();
   const role = document.getElementById('roleFilter')?.value || '';
+  const weeks = document.getElementById('weeksFilter')?.value || '';
   const perfStatus = document.getElementById('perfStatusFilter')?.value || '';
   const status = document.getElementById('statusFilter')?.value || '';
 
@@ -2028,9 +2238,16 @@ function filterMembers() {
     const nick = (m.nick || '').toLowerCase();
     const email = (m.email || '').toLowerCase();
     if (search && !nick.includes(search) && !email.includes(search)) return false;
-    if (role && m.role !== role) return false;
-    if (perfStatus && m.perf_status !== perfStatus) return false;
+    if (role && (m.role || '').toUpperCase() !== role.toUpperCase()) return false;
+    if (perfStatus && (m.perf_status || '').toUpperCase() !== perfStatus.toUpperCase()) return false;
     if (status && (m.status || 'ACTIVE').toUpperCase() !== status.toUpperCase()) return false;
+    if (weeks) {
+      const w = Number(m.weeks_evaluated) || 0;
+      if (weeks === '1' && w !== 1) return false;
+      if (weeks === '2' && w !== 2) return false;
+      if (weeks === '3' && w !== 3) return false;
+      if (weeks === '4+' && w < 4) return false;
+    }
     return true;
   });
 
@@ -2240,6 +2457,10 @@ window.filterMembers = filterMembers;
 window.resetMemberFilters = resetMemberFilters;
 window.toggleMembersSection = toggleMembersSection;
 window.refreshAdminStats = refreshAdminStats;
+window.addNewMember = addNewMember;
+window.showUploadEventModal = showUploadEventModal;
+window.uploadEventBulk = uploadEventBulk;
+window.loadAdminEvents = loadAdminEvents;
 window.loadAllPerformances = loadAllPerformances;
 window.renderAllPerformances = renderAllPerformances;
 window.updateAllPerformancesStats = updateAllPerformancesStats;

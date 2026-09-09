@@ -136,12 +136,16 @@ async function loadAdminPilotList() {
 
     if (!pilotSelect) return;
 
-    // Verificar si el usuario tiene permisos
-    const userRole = (window.currentUser?.role || '').toUpperCase();
+    // Verificar si el usuario tiene permisos (ADMIN / OWNER)
+    const user = window.currentUser || currentUser;
+    const userRole = (user?.role || '').toUpperCase();
     const hasAdminAccess = ['OWNER', 'ADMIN'].includes(userRole);
 
     if (!hasAdminAccess) {
         if (adminSelectorContainer) adminSelectorContainer.style.display = 'none';
+        pilotSelect.innerHTML = `<option value="self">— Mi propio rendimiento (${user?.nick || user?.email || 'Piloto'}) —</option>`;
+        pilotSelect.value = 'self';
+        if (typeof onTargetPilotChange === 'function') onTargetPilotChange();
         return;
     }
 
@@ -156,7 +160,7 @@ async function loadAdminPilotList() {
 
         if (res.ok) {
             const data = await res.json();
-            members = data.members || data.users || [];
+            members = data.members || data.users || data.data || [];
         } else {
             // Fallback a /api/events/active-members
             const resFallback = await fetch('/api/events/active-members', {
@@ -164,7 +168,7 @@ async function loadAdminPilotList() {
             });
             if (resFallback.ok) {
                 const dataFallback = await resFallback.json();
-                members = dataFallback.members || dataFallback.activeMembers || [];
+                members = dataFallback.members || dataFallback.activeMembers || dataFallback.users || [];
             }
         }
 
@@ -177,30 +181,27 @@ async function loadAdminPilotList() {
         const activeMembers = members
             .filter(m => {
                 const status = (m.status || '').toUpperCase();
-                if (status === 'INACTIVE' || status === 'INACTIVO') {
-                    return false;
-                }
-                return status === 'ACTIVE' || status === 'ACTIVO' || !status;
+                return status !== 'INACTIVE' && status !== 'INACTIVO';
             })
             .sort((a, b) => (a.nick || a.email || '').localeCompare(b.nick || b.email || ''));
 
         // Limpiar opciones anteriores
         pilotSelect.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
 
-        // ✅ SIN emojis: todos los pilotos son iguales, solo indicando (Tú) si es el usuario actual
-        const currentUserId = window.currentUser?.user_id || window.currentUser?.id;
+        const currentUserId = user?.user_id || user?.id;
 
         activeMembers.forEach(pilot => {
             const uid = pilot.user_id || pilot.id;
-            const isCurrentUser = (uid === currentUserId || (pilot.email && pilot.email?.toLowerCase() === window.currentUser?.email?.toLowerCase()));
+            const isCurrentUser = (String(uid) === String(currentUserId) || (pilot.email && pilot.email?.toLowerCase() === user?.email?.toLowerCase()));
 
             const option = document.createElement('option');
             option.value = uid;
-            option.textContent = `${pilot.nick || pilot.email || 'Sin Nick'} ${isCurrentUser ? '(Tú)' : ''}`.trim();
+            const role = (pilot.role || 'MIEMBRO').toUpperCase();
+            option.textContent = `${pilot.nick || pilot.email || 'Sin Nick'} (${role}) ${isCurrentUser ? '· [Tú]' : ''}`.trim();
             pilotSelect.appendChild(option);
         });
 
-        console.log(`✅ [Performance] ${activeMembers.length} pilotos activos cargados en el selector (sin emojis)`);
+        console.log(`✅ [Performance] ${activeMembers.length} pilotos activos cargados en el selector`);
 
     } catch (err) {
         console.error('Error cargando lista de pilotos:', err);
@@ -372,7 +373,7 @@ function onTargetPilotChange() {
 
     const val = select.value;
     isAdminMode = val && val !== 'self' && val !== '';
-    targetUserId = isAdminMode ? parseInt(val, 10) : null;
+    targetUserId = isAdminMode ? val : null;
 
     const banner = document.getElementById('targetOverrideBanner') || document.getElementById('adminPilotWarning');
     const userNameEl = document.getElementById('perfUserName');

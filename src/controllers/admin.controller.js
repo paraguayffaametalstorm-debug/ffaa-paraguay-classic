@@ -18,7 +18,7 @@ export async function getUsers(req, res, next) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
 
-    const { data, error } = await supabase
+    const { data: users, error } = await supabase
       .from('users')
       .select('id, user_id, nick, email, role, status, last_activity, avg_tokens, weeks_evaluated, perf_status, created_at, updated_at')
       .order('nick', { ascending: true });
@@ -27,22 +27,90 @@ export async function getUsers(req, res, next) {
       throw error;
     }
 
-    const safeUsers = (data || []).map(u => ({
-      id: u.id || u.user_id,
-      user_id: u.user_id || u.id,
-      nick: u.nick || u.email?.split('@')[0] || 'Sin Nick',
-      email: u.email || '',
-      role: (u.role || 'MIEMBRO').toUpperCase(),
-      status: (u.status || 'ACTIVE').toUpperCase(),
-      last_activity: u.last_activity || u.updated_at || u.created_at || null,
-      avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0,
-      weeks_evaluated: typeof u.weeks_evaluated === 'number' ? u.weeks_evaluated : 0,
-      perf_status: u.perf_status || 'VERDE',
-      created_at: u.created_at || null,
-      updated_at: u.updated_at || null
-    }));
+    // Obtener métricas de performances para calcular promedios y estado en tiempo real
+    const avgMap = {};
+    try {
+      const { data: perfData } = await supabase
+        .from('performances')
+        .select('user_id, tokens, days_connected, status, nick, created_at')
+        .order('created_at', { ascending: false });
+
+      if (perfData && perfData.length > 0) {
+        perfData.forEach(p => {
+          const keyId = p.user_id ? String(p.user_id) : '';
+          const keyNick = (p.nick || '').toLowerCase();
+
+          [keyId, keyNick].filter(Boolean).forEach(k => {
+            if (!avgMap[k]) {
+              avgMap[k] = {
+                sum: 0,
+                count: 0,
+                latestStatus: p.status,
+                lastActivity: p.created_at
+              };
+            }
+            avgMap[k].sum += Number(p.tokens) || 0;
+            avgMap[k].count += 1;
+          });
+        });
+      }
+    } catch (perfErr) {
+      console.warn('⚠️ [Admin getUsers] No se pudieron calcular métricas de performances:', perfErr.message);
+    }
+
+    const safeUsers = (users || []).map(u => {
+      const idKey = u.id ? String(u.id) : '';
+      const uidKey = u.user_id ? String(u.user_id) : '';
+      const nickKey = (u.nick || '').toLowerCase();
+      const perfStats = avgMap[idKey] || avgMap[uidKey] || avgMap[nickKey] || null;
+
+      const avgTokens = perfStats && perfStats.count > 0 
+        ? Math.round(perfStats.sum / perfStats.count) 
+        : (typeof u.avg_tokens === 'number' ? u.avg_tokens : 0);
+
+      const weeksEvaluated = perfStats && perfStats.count > 0 
+        ? perfStats.count 
+        : (typeof u.weeks_evaluated === 'number' ? u.weeks_evaluated : 0);
+
+      // Determinación de estado según normativa militar (Art. 26)
+      let perfStatus = u.perf_status;
+      if (perfStats && perfStats.latestStatus) {
+        perfStatus = perfStats.latestStatus;
+      } else if (avgTokens > 0) {
+        if (avgTokens >= 175) perfStatus = 'VERDE';
+        else if (avgTokens >= 130) perfStatus = 'NARANJA';
+        else if (avgTokens >= 100) perfStatus = 'ROJO';
+        else perfStatus = 'NEGRO';
+      } else if (!perfStatus) {
+        perfStatus = 'PENDIENTE';
+      }
+
+      const lastAct = (perfStats && perfStats.lastActivity) 
+        || u.last_activity 
+        || u.updated_at 
+        || u.created_at 
+        || null;
+
+      return {
+        id: u.id || u.user_id,
+        user_id: u.user_id || u.id,
+        nick: u.nick || u.email?.split('@')[0] || 'Sin Nick',
+        email: u.email || '',
+        role: (u.role || 'MIEMBRO').toUpperCase(),
+        status: (u.status || 'ACTIVE').toUpperCase(),
+        last_activity: lastAct,
+        avg_tokens: avgTokens,
+        weeks_evaluated: weeksEvaluated,
+        perf_status: (perfStatus || 'PENDIENTE').toUpperCase(),
+        created_at: u.created_at || null,
+        updated_at: u.updated_at || null
+      };
+    });
 
     res.json({
+      success: true,
+      message: 'Lista de pilotos obtenida con éxito',
+      data: safeUsers,
       users: safeUsers,
       members: safeUsers,
       total: safeUsers.length
