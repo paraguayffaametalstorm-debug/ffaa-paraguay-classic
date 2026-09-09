@@ -94,7 +94,7 @@ export async function getUsers(req, res, next) {
 
       return {
         id: u.id || u.user_id,
-        user_id: u.user_id || u.id,
+        user_id: Number.isInteger(u.user_id) ? Number(u.user_id) : (Number.isInteger(Number(u.user_id)) && !isNaN(Number(u.user_id)) ? Number(u.user_id) : null),
         nick: u.nick || u.email?.split('@')[0] || 'Sin Nick',
         email: u.email || '',
         role: (u.role || 'MIEMBRO').toUpperCase(),
