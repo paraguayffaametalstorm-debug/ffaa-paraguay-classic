@@ -134,10 +134,10 @@
   
   <!-- ✅ Component Loader - Carga dinámica de componentes HTML -->
   <script>
-    // ── Lista de componentes dinámicos (slice(5) en adelante se cargan como vistas) ──
+    // ── Lista de componentes dinámicos (slice(6) en adelante se cargan como vistas) ──
     const COMPONENTS = [
       'header', 'footer', 'help-modal', 'session-warning',
-      'forgot-password-modal',
+      'forgot-password-modal', 'change-password-modal',
       // Vistas principales
       'dashboard', 'performance-form', 'planes-view', 'historial-view',
       'profile-view', 'normativas-view', 'admin-panel', 'admin-plane-models', 'all-performances',
@@ -163,12 +163,13 @@
         fetch('/components/help-modal.html').then(r => r.text()).catch(() => ''),
         fetch('/components/session-warning.html').then(r => r.text()).catch(() => ''),
         fetch('/components/forgot-password-modal.html').then(r => r.text()).catch(() => ''),
-        fetch('/components/aircraft-stats-modal.html').then(r => r.text()).catch(() => '')
-      ]).then(([h, s, f, a]) => h + s + f + a),
+        fetch('/components/aircraft-stats-modal.html').then(r => r.text()).catch(() => ''),
+        fetch('/components/change-password-modal.html').then(r => r.text()).catch(() => '')
+      ]).then(([h, s, f, a, c]) => h + s + f + a + c),
 
-      // Vistas dinámicas (índice 5 en adelante) - INCLUYE performance-export
+      // Vistas dinámicas (índice 6 en adelante) - INCLUYE performance-export
       Promise.all(
-        COMPONENTS.slice(5).map(view =>
+        COMPONENTS.slice(6).map(view =>
           fetch(`/components/${view}.html`)
             .then(r => {
               if (!r.ok) throw new Error(`404: /components/${view}.html`);

@@ -1,6 +1,6 @@
 // Service Worker - PARAGUAY-FFAA | METALSTORM PWA
 // ⬇️ BUMP DE VERSIÓN EN CADA DEPLOY
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.7.0';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.7.1';
 
 // ✅ Assets versionados
 const STATIC_ASSETS = [
@@ -39,7 +39,8 @@ const STATIC_ASSETS = [
   '/components/help-modal.html',
   '/components/session-warning.html',
   '/components/forgot-password-modal.html',
-  '/components/aircraft-stats-modal.html'
+  '/components/aircraft-stats-modal.html',
+  '/components/change-password-modal.html'
 ];
 
 // Instalación - Precache de assets
