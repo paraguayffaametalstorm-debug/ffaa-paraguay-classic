@@ -8,6 +8,26 @@ import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
 import { sendPasswordResetEmail } from '../utils/email.js';
 import passport, { isGoogleConfigured } from '../config/passport.js';
 
+// ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
+function buildUserQuery(supabase, user, selectFields = '*') {
+    let query = supabase.from('users').select(selectFields);
+    
+    if (user?.id && typeof user.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+        query = query.eq('id', user.id);
+    } else if (user?.user_id && (typeof user.user_id === 'number' || /^\d+$/.test(String(user.user_id)))) {
+        query = query.eq('user_id', Number(user.user_id));
+    } else if (user?.email) {
+        query = query.eq('email', user.email);
+    } else if (user?.id) {
+        query = query.eq('id', user.id);
+    } else {
+        // Fallback: buscar por email si está disponible
+        query = query.eq('email', user?.email || '');
+    }
+    
+    return query;
+}
+
 // ========== LOGIN (DUAL: TRADICIONAL + GOOGLE OAUTH) ==========
 export const login = async (req, res) => {
     try {
@@ -135,12 +155,20 @@ export const login = async (req, res) => {
             metadata: { role: user.role }
         });
 
-        // 5. Actualizar last_activity
+        // 5. Actualizar last_activity (CONSULTA TIPADA)
         try {
-            await supabase
+            let activityQuery = supabase
                 .from('users')
-                .update({ last_activity: new Date().toISOString() })
-                .or(`id.eq.${user.id},user_id.eq.${user.user_id}`);
+                .update({ last_activity: new Date().toISOString() });
+            
+            if (user.id && typeof user.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+                activityQuery = activityQuery.eq('id', user.id);
+            } else if (user.user_id && typeof user.user_id === 'number') {
+                activityQuery = activityQuery.eq('user_id', Number(user.user_id));
+            } else {
+                activityQuery = activityQuery.eq('id', user.id);
+            }
+            await activityQuery;
         } catch (err) {
             console.warn('⚠️ [Auth] Error actualizando last_activity:', err.message);
         }
@@ -150,7 +178,6 @@ export const login = async (req, res) => {
         
         const userResponse = {
             ...safeUser,
-            // ✅ FORZAR user_id a número entero, NUNCA UUID
             user_id: Number.isInteger(user.user_id) ? Number(user.user_id) : (Number.isInteger(Number(user.user_id)) && !isNaN(Number(user.user_id)) ? Number(user.user_id) : null),
             must_change_password: Boolean(user.must_change_password)
         };
@@ -194,7 +221,6 @@ export const verifyMe = async (req, res) => {
         res.json({ 
             user: {
                 ...safeUser,
-                // ✅ FORZAR user_id a número entero, NUNCA UUID
                 user_id: Number.isInteger(safeUser.user_id) ? Number(safeUser.user_id) : (Number.isInteger(user.user_id) ? Number(user.user_id) : (Number.isInteger(Number(user.user_id)) && !isNaN(Number(user.user_id)) ? Number(user.user_id) : null)),
                 must_change_password: Boolean(safeUser.must_change_password)
             }
@@ -230,10 +256,7 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
-        // ✅ Consultar el último user_id usado antes de insertar
         const nextUserId = await getNextUserId(supabase);
-
-        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA
         const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
@@ -285,7 +308,6 @@ export const register = async (req, res) => {
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword, isForced } = req.body;
-        const userId = req.user?.user_id || req.user?.id;
         const supabase = getSupabase();
 
         // Validar nueva contraseña reglamentaria (mínimo 8 caracteres, mayúscula, minúscula y número)
@@ -307,12 +329,22 @@ export const changePassword = async (req, res) => {
             });
         }
 
-        // 1. Obtener usuario militar completo
-        const { data: userData, error: userError } = await supabase
+        // 1. Obtener usuario militar completo (CONSULTA TIPADA)
+        let userQuery = supabase
             .from('users')
-            .select('password_hash, must_change_password, token_version, nick, id, user_id, role, email')
-            .or(`id.eq.${userId},user_id.eq.${userId}`)
-            .limit(1);
+            .select('password_hash, must_change_password, token_version, nick, id, user_id, role, email');
+
+        if (req.user?.id && typeof req.user.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.user.id)) {
+            userQuery = userQuery.eq('id', req.user.id);
+        } else if (req.user?.user_id && (typeof req.user.user_id === 'number' || /^\d+$/.test(String(req.user.user_id)))) {
+            userQuery = userQuery.eq('user_id', Number(req.user.user_id));
+        } else if (req.user?.email) {
+            userQuery = userQuery.eq('email', req.user.email);
+        } else {
+            userQuery = userQuery.eq('id', req.user?.id || '');
+        }
+
+        const { data: userData, error: userError } = await userQuery.limit(1);
 
         if (userError || !userData || userData.length === 0) {
             return res.status(404).json({
@@ -361,8 +393,8 @@ export const changePassword = async (req, res) => {
         const newHash = await bcrypt.hash(newPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        // 4. Actualizar en Supabase e invalidar sesiones previas incrementando token_version
-        const { error: updateError } = await supabase
+        // 4. Actualizar en Supabase e invalidar sesiones previas (CONSULTA TIPADA + .select())
+        const { data: updateData, error: updateError } = await supabase
             .from('users')
             .update({
                 password_hash: newHash,
@@ -370,9 +402,11 @@ export const changePassword = async (req, res) => {
                 token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
             })
-            .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
+            .eq('id', user.id)
+            .select('id, email, nick, user_id, role, token_version, must_change_password');
 
         if (updateError) {
+            console.error('❌ Error actualizando contraseña en Supabase:', updateError);
             throw updateError;
         }
 
@@ -391,6 +425,7 @@ export const changePassword = async (req, res) => {
             : (typeof user.user_id === 'string' && /^\d+$/.test(user.user_id.trim()) ? parseInt(user.user_id.trim(), 10) : null);
 
         // 5. Generar nuevo JWT con token_version actualizado
+        const updatedUserData = updateData && updateData.length > 0 ? updateData[0] : user;
         const newToken = jwt.sign(
             { 
                 user_id: Number.isInteger(parsedUserId) ? Number(parsedUserId) : null,
@@ -530,7 +565,6 @@ export const linkAccount = async (req, res) => {
         }
 
         // 6. Preparar datos de actualización
-        // Respaldar email_institucional si no estaba guardado previamente
         const institutionalEmail = user.email_institucional || user.email || `${user.nick.toLowerCase()}@ffaa.py`;
 
         const updatePayload = {
@@ -540,10 +574,12 @@ export const linkAccount = async (req, res) => {
             updated_at: new Date().toISOString()
         };
 
-        const { error: updateError } = await supabase
+        // ✅ CORREGIDO: Agregar .select() después de .update()
+        const { data: updateData, error: updateError } = await supabase
             .from('users')
             .update(updatePayload)
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .select('id, email, nick, user_id, role, token_version, must_change_password, google_id, google_linked');
 
         if (updateError) {
             console.error('❌ Error vinculando cuenta Google en Supabase:', updateError);
@@ -617,7 +653,6 @@ export const forgotPassword = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        // 1. Buscar en email O email_institucional
         let user = null;
         try {
             const { data, error } = await supabase
@@ -635,7 +670,6 @@ export const forgotPassword = async (req, res) => {
             if (fallback.data && fallback.data.length > 0) user = fallback.data[0];
         }
 
-        // Si no existe, responder con mensaje neutro por seguridad (anti-enumeración de cuentas)
         if (!user) {
             return res.json({
                 success: true,
@@ -643,7 +677,6 @@ export const forgotPassword = async (req, res) => {
             });
         }
 
-        // 2. Verificar estado de la cuenta
         const userStatus = (user.status || '').toUpperCase();
         if (userStatus === 'INACTIVE' || userStatus === 'INACTIVO') {
             return res.json({
@@ -652,11 +685,9 @@ export const forgotPassword = async (req, res) => {
             });
         }
 
-        // 3. Generar token criptoseguro (crypto.randomBytes, 32 bytes)
         const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-        // 4. Guardar token en tabla password_resets
         const { error: resetError } = await supabase
             .from('password_resets')
             .insert({
@@ -674,12 +705,10 @@ export const forgotPassword = async (req, res) => {
             });
         }
 
-        // 5. Construir enlace seguro de restablecimiento
         const baseUrl = ENV.FRONTEND_URL || 'https://paraguay-ffaa-metalstorm.fly.dev';
         const resetUrl = `${baseUrl.replace(/\/$/, '')}/reset-password?token=${token}`;
         const destinationEmail = user.email || cleanEmail;
 
-        // 6. Enviar correo militar táctico
         let emailResult = null;
         try {
             emailResult = await sendPasswordResetEmail({
@@ -692,7 +721,6 @@ export const forgotPassword = async (req, res) => {
             console.error('❌ Error enviando email de restablecimiento:', mailErr.message);
         }
 
-        // 7. Registrar evento en security_events
         await logSecurityEvent({
             supabase,
             userId: user.id,
@@ -741,7 +769,6 @@ export const resetPassword = async (req, res) => {
             return res.status(500).json({ success: false, error: 'Servicio de base de datos no disponible' });
         }
 
-        // 1. Buscar token en password_resets
         const { data: resets, error: resetErr } = await supabase
             .from('password_resets')
             .select('*')
@@ -757,7 +784,6 @@ export const resetPassword = async (req, res) => {
 
         const resetRecord = resets[0];
 
-        // 2. Validar que no haya sido utilizado
         if (resetRecord.used) {
             return res.status(400).json({
                 success: false,
@@ -765,7 +791,6 @@ export const resetPassword = async (req, res) => {
             });
         }
 
-        // 3. Validar vigencia temporal (máximo 15 minutos)
         const now = new Date();
         const expiresAt = new Date(resetRecord.expires_at);
         if (now > expiresAt) {
@@ -775,7 +800,6 @@ export const resetPassword = async (req, res) => {
             });
         }
 
-        // 4. Obtener usuario correspondiente
         const { data: users, error: userErr } = await supabase
             .from('users')
             .select('id, nick, email, token_version')
@@ -791,12 +815,11 @@ export const resetPassword = async (req, res) => {
 
         const user = users[0];
 
-        // 5. Cifrar nueva contraseña y aumentar token_version (invalidar sesiones activas)
         const hashedPassword = await bcrypt.hash(targetPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        // 6. Actualizar usuario en users
-        const { error: updateError } = await supabase
+        // ✅ CORREGIDO: Agregar .select() después de .update()
+        const { data: updateData, error: updateError } = await supabase
             .from('users')
             .update({
                 password_hash: hashedPassword,
@@ -804,7 +827,8 @@ export const resetPassword = async (req, res) => {
                 token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
             })
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .select('id, email, nick, user_id, role, token_version, must_change_password');
 
         if (updateError) {
             console.error('❌ Error actualizando contraseña en Supabase:', updateError);
@@ -814,13 +838,11 @@ export const resetPassword = async (req, res) => {
             });
         }
 
-        // 7. Marcar token como utilizado para prevenir ataques de repetición
         await supabase
             .from('password_resets')
             .update({ used: true })
             .eq('id', resetRecord.id);
 
-        // 8. Registrar evento en security_events
         await logSecurityEvent({
             supabase,
             userId: user.id,
@@ -912,9 +934,7 @@ export const googleCallback = (req, res, next) => {
             return res.redirect(`/?auth_error=${encodeURIComponent(msg)}`);
         }
 
-        // Si el usuario no fue autenticado
         if (!user) {
-            // Si el correo no está registrado en el escuadrón -> Redirigir a página de vinculación táctica
             if (info?.code === 'NOT_LINKED' && info?.email) {
                 console.log(`🔗 [Google Callback] Redirigiendo a /link-account para el correo ${info.email}`);
                 return res.redirect(`/link-account?email=${encodeURIComponent(info.email)}`);
@@ -927,7 +947,6 @@ export const googleCallback = (req, res, next) => {
         try {
             const supabase = getSupabase();
 
-            // ✅ Asegurar que user_id sea un número entero, NUNCA UUID
             let numericUserId = (typeof user.user_id === 'number' && Number.isInteger(user.user_id))
                 ? user.user_id
                 : (typeof user.user_id === 'string' && /^\d+$/.test(user.user_id.trim()) ? parseInt(user.user_id.trim(), 10) : null);
@@ -965,10 +984,19 @@ export const googleCallback = (req, res, next) => {
                     metadata: { role: user.role, auth_provider: 'google' }
                 });
 
-                await supabase
+                // ✅ CORREGIDO: last_activity con consulta tipada
+                let activityQuery = supabase
                     .from('users')
-                    .update({ last_activity: new Date().toISOString() })
-                    .or(`id.eq.${user.id},user_id.eq.${user.user_id}`);
+                    .update({ last_activity: new Date().toISOString() });
+                
+                if (user.id && typeof user.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) {
+                    activityQuery = activityQuery.eq('id', user.id);
+                } else if (user.user_id && typeof user.user_id === 'number') {
+                    activityQuery = activityQuery.eq('user_id', Number(user.user_id));
+                } else {
+                    activityQuery = activityQuery.eq('id', user.id);
+                }
+                await activityQuery;
             }
 
             const mustChangeParam = user.must_change_password ? '&must_change_password=true' : '';

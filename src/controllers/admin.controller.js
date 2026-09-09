@@ -9,6 +9,24 @@ import {
 import { logAuditChange } from '../utils/audit.js';
 import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
 
+// ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
+function buildUserQuery(supabase, id, selectFields = 'id, user_id, nick, email, role, status') {
+    let query = supabase.from('users').select(selectFields);
+    
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+    const isNumeric = /^\d+$/.test(String(id));
+    
+    if (isUUID) {
+        query = query.eq('id', id);
+    } else if (isNumeric) {
+        query = query.eq('user_id', Number(id));
+    } else {
+        query = query.eq('id', id);
+    }
+    
+    return query;
+}
+
 // ============================================================
 // 1. LISTAR USUARIOS / MIEMBROS
 // ============================================================
@@ -28,7 +46,7 @@ export async function getUsers(req, res, next) {
       throw error;
     }
 
-    // Obtener métricas de performances para calcular promedios y estado en tiempo real
+    // Obtener métricas de performances
     const avgMap = {};
     try {
       const { data: perfData } = await supabase
@@ -73,7 +91,6 @@ export async function getUsers(req, res, next) {
         ? perfStats.count 
         : (typeof u.weeks_evaluated === 'number' ? u.weeks_evaluated : 0);
 
-      // Determinación de estado según normativa militar (Art. 26)
       let perfStatus = u.perf_status;
       if (perfStats && perfStats.latestStatus) {
         perfStatus = perfStats.latestStatus;
@@ -124,7 +141,7 @@ export async function getUsers(req, res, next) {
 export const getMembers = getUsers;
 
 // ============================================================
-// 2. CAMBIAR ROL (CON LÍMITES POR NORMATIVA)
+// 2. CAMBIAR ROL (CON LÍMITES POR NORMATIVA) - CORREGIDO
 // ============================================================
 export async function updateUserRole(req, res, next) {
   try {
@@ -137,12 +154,9 @@ export async function updateUserRole(req, res, next) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
 
-    // 1. Buscar usuario objetivo
-    const { data: targetData, error: targetErr } = await supabase
-      .from('users')
-      .select('id, user_id, nick, email, role, status')
-      .or(`id.eq.${id},user_id.eq.${id}`)
-      .limit(1);
+    // 1. Buscar usuario objetivo (CONSULTA TIPADA)
+    let userQuery = buildUserQuery(supabase, id);
+    const { data: targetData, error: targetErr } = await userQuery.limit(1);
 
     if (targetErr || !targetData || targetData.length === 0) {
       return res.status(404).json({ error: 'Piloto no encontrado', code: 'USER_NOT_FOUND' });
@@ -154,12 +168,11 @@ export async function updateUserRole(req, res, next) {
     const actorId = req.user.user_id || req.user.id;
     const actorNick = req.user.nick || req.user.email;
 
-    // 2. Validar jerarquía y permisos de quien ejecuta la acción
+    // 2. Validar jerarquía
     if (actorRole !== 'OWNER' && actorRole !== 'ADMIN') {
       return res.status(403).json({ error: 'Permiso denegado: Se requiere rol de Administración o Comandancia' });
     }
 
-    // Solo OWNER puede modificar al OWNER o nombrar a otro ADMIN / OWNER
     if (currentRole === 'OWNER' && actorRole !== 'OWNER') {
       return res.status(403).json({ error: 'No tienes permiso para modificar al Comandante General (OWNER)' });
     }
@@ -168,15 +181,11 @@ export async function updateUserRole(req, res, next) {
       return res.status(403).json({ error: 'Solo el Comandante General (OWNER) puede nombrar Administradores o transferir el mando' });
     }
 
-    // Si el rol ya es el mismo
     if (currentRole === newRole) {
       return res.json({ message: `El usuario ya posee el rango ${newRole}`, role: newRole });
     }
 
     // 3. Validar límites según normativa militar
-    // - Máximo 1 OWNER
-    // - Máximo 3 ADMIN
-    // - Máximo 8 VETERANO
     if (newRole === 'OWNER') {
       const { count: ownerCount } = await supabase
         .from('users')
@@ -184,7 +193,6 @@ export async function updateUserRole(req, res, next) {
         .eq('role', 'OWNER');
 
       if ((ownerCount || 0) >= 1 && currentRole !== 'OWNER') {
-        // Degradar al OWNER anterior a ADMIN para mantener máximo 1 OWNER
         await supabase
           .from('users')
           .update({ role: 'ADMIN', updated_at: new Date().toISOString() })
@@ -216,15 +224,27 @@ export async function updateUserRole(req, res, next) {
       }
     }
 
-    // 4. Actualizar rol en la base de datos
+    // 4. Actualizar rol (CONSULTA TIPADA)
     const targetUserId = targetUser.id || targetUser.user_id;
-    const { error: updateError } = await supabase
+    let updateQuery = supabase
       .from('users')
       .update({
         role: newRole,
         updated_at: new Date().toISOString()
-      })
-      .or(`id.eq.${id},user_id.eq.${id}`);
+      });
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+    const isNumeric = /^\d+$/.test(String(id));
+
+    if (isUUID) {
+      updateQuery = updateQuery.eq('id', id);
+    } else if (isNumeric) {
+      updateQuery = updateQuery.eq('user_id', Number(id));
+    } else {
+      updateQuery = updateQuery.eq('id', id);
+    }
+
+    const { error: updateError } = await updateQuery;
 
     if (updateError) {
       throw updateError;
@@ -260,7 +280,7 @@ export async function updateUserRole(req, res, next) {
 export const updateMemberRole = updateUserRole;
 
 // ============================================================
-// 3. CAMBIAR ESTADO (ACTIVE ↔ INACTIVE)
+// 3. CAMBIAR ESTADO (ACTIVE ↔ INACTIVE) - CORREGIDO
 // ============================================================
 export async function updateUserStatus(req, res, next) {
   try {
@@ -273,12 +293,9 @@ export async function updateUserStatus(req, res, next) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
 
-    // 1. Buscar usuario objetivo
-    const { data: targetData, error: targetErr } = await supabase
-      .from('users')
-      .select('id, user_id, nick, email, role, status')
-      .or(`id.eq.${id},user_id.eq.${id}`)
-      .limit(1);
+    // 1. Buscar usuario objetivo (CONSULTA TIPADA)
+    let userQuery = buildUserQuery(supabase, id);
+    const { data: targetData, error: targetErr } = await userQuery.limit(1);
 
     if (targetErr || !targetData || targetData.length === 0) {
       return res.status(404).json({ error: 'Piloto no encontrado', code: 'USER_NOT_FOUND' });
@@ -295,20 +312,31 @@ export async function updateUserStatus(req, res, next) {
       return res.status(403).json({ error: 'No se puede desactivar la cuenta del Comandante General (OWNER)' });
     }
 
-    // Si es ADMIN, solo el OWNER puede desactivarlo
     if (targetRole === 'ADMIN' && actorRole !== 'OWNER') {
       return res.status(403).json({ error: 'Solo el Comandante General (OWNER) puede desactivar a un Administrador' });
     }
 
-    // 3. Actualizar status en Supabase
+    // 3. Actualizar status (CONSULTA TIPADA)
     const targetUserId = targetUser.id || targetUser.user_id;
-    const { error: updateError } = await supabase
+    let updateQuery = supabase
       .from('users')
       .update({
         status: newStatus,
         updated_at: new Date().toISOString()
-      })
-      .or(`id.eq.${id},user_id.eq.${id}`);
+      });
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+    const isNumeric = /^\d+$/.test(String(id));
+
+    if (isUUID) {
+      updateQuery = updateQuery.eq('id', id);
+    } else if (isNumeric) {
+      updateQuery = updateQuery.eq('user_id', Number(id));
+    } else {
+      updateQuery = updateQuery.eq('id', id);
+    }
+
+    const { error: updateError } = await updateQuery;
 
     if (updateError) {
       throw updateError;
@@ -367,7 +395,6 @@ export async function addMember(req, res, next) {
       });
     }
 
-    // Validar límites si se intenta registrar como ADMIN o VETERANO
     const assignedRole = (data.role || 'MIEMBRO').toUpperCase();
     if (assignedRole === 'ADMIN') {
       const { count: adminCount } = await supabase
@@ -387,10 +414,7 @@ export async function addMember(req, res, next) {
       }
     }
 
-    // ✅ Obtener el siguiente user_id entero incremental antes de insertar
     const nextUserId = await getNextUserId(supabase);
-
-    // ✅ Generar contraseña temporal segura con formato táctico MS-XXXX-XXXX
     const tempPassword = generateTemporaryPassword();
     const defaultHash = await bcrypt.hash(tempPassword, 10);
     const newMember = {
@@ -422,7 +446,6 @@ export async function addMember(req, res, next) {
       throw insertError;
     }
 
-    // Registrar en auditoría táctica
     await logAuditChange({
       supabase,
       actorId: req.user.user_id || req.user.id,
@@ -463,8 +486,6 @@ export async function bulkUploadEvent(req, res, next) {
 
     let processed = 0;
     const createdUsers = [];
-
-    // ✅ Obtener el último user_id antes del bucle para asignar correlativos a los nuevos usuarios
     let nextUserId = await getNextUserId(supabase);
 
     for (const item of bulkList) {
@@ -479,7 +500,6 @@ export async function bulkUploadEvent(req, res, next) {
       if (!targetUser) {
         const currentUserId = nextUserId++;
         const cleanNick = item.nick.toLowerCase().replace(/[^a-z0-9]/g, '');
-        // ✅ Generar contraseña táctica temporal segura (Formato MS-XXXX-XXXX)
         const tempPassword = generateTemporaryPassword();
         const defaultHash = await bcrypt.hash(tempPassword, 10);
 
@@ -509,7 +529,6 @@ export async function bulkUploadEvent(req, res, next) {
 
         targetUser = newUser;
 
-        // Rastrear piloto creado con su contraseña temporal
         createdUsers.push({
           id: targetUser?.id,
           user_id: targetUser?.user_id || currentUserId,
