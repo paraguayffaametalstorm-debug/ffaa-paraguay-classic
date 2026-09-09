@@ -7,6 +7,7 @@ import {
   BulkUploadSchema
 } from '../utils/schemas.js';
 import { logAuditChange } from '../utils/audit.js';
+import { generateTemporaryPassword } from '../utils/security.js';
 
 // ============================================================
 // 1. LISTAR USUARIOS / MIEMBROS
@@ -386,7 +387,9 @@ export async function addMember(req, res, next) {
       }
     }
 
-    const defaultHash = await bcrypt.hash('123456', 10);
+    // ✅ Generar contraseña temporal segura con formato táctico MS-XXXX-XXXX
+    const tempPassword = generateTemporaryPassword();
+    const defaultHash = await bcrypt.hash(tempPassword, 10);
     const newMember = {
       email: data.email.toLowerCase().trim(),
       password_hash: defaultHash,
@@ -419,7 +422,7 @@ export async function addMember(req, res, next) {
       throw insertError;
     }
 
-    // Registrar en auditoría
+    // Registrar en auditoría táctica
     await logAuditChange({
       supabase,
       actorId: req.user.user_id || req.user.id,
@@ -431,7 +434,17 @@ export async function addMember(req, res, next) {
     });
 
     const { password_hash, ...safe } = createdUser || newMember;
-    res.status(201).json({ message: 'Piloto registrado con éxito', member: safe });
+    res.status(201).json({
+      success: true,
+      message: 'Piloto registrado con éxito. Contraseña táctica temporal generada.',
+      temporaryPassword: tempPassword,
+      data: {
+        ...safe,
+        temporaryPassword: tempPassword
+      },
+      member: safe,
+      user: safe
+    });
   } catch (err) {
     next(err);
   }
@@ -449,7 +462,7 @@ export async function bulkUploadEvent(req, res, next) {
     }
 
     let processed = 0;
-    const defaultHash = await bcrypt.hash('123456', 10);
+    const createdUsers = [];
 
     for (const item of bulkList) {
       const { data: foundUsers } = await supabase
@@ -462,6 +475,10 @@ export async function bulkUploadEvent(req, res, next) {
 
       if (!targetUser) {
         const cleanNick = item.nick.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // ✅ Generar contraseña táctica temporal segura (Formato MS-XXXX-XXXX)
+        const tempPassword = generateTemporaryPassword();
+        const defaultHash = await bcrypt.hash(tempPassword, 10);
+
         const { data: newUser } = await supabase
           .from('users')
           .insert({
@@ -483,6 +500,15 @@ export async function bulkUploadEvent(req, res, next) {
           .select()
           .single();
         targetUser = newUser;
+
+        // Rastrear piloto creado con su contraseña temporal
+        createdUsers.push({
+          id: targetUser?.id || targetUser?.user_id,
+          nick: item.nick,
+          email: `${cleanNick}@ffaa.py`,
+          temporaryPassword: tempPassword,
+          role: item.role || 'MIEMBRO'
+        });
       }
 
       let status = 'VERDE';
@@ -507,7 +533,16 @@ export async function bulkUploadEvent(req, res, next) {
       processed++;
     }
 
-    res.json({ message: `Carga masiva completada: ${processed} registros procesados` });
+    res.json({
+      success: true,
+      message: `Carga masiva completada: ${processed} registros procesados`,
+      data: {
+        processed,
+        createdUsers
+      },
+      createdUsers,
+      total_processed: processed
+    });
   } catch (err) {
     next(err);
   }
