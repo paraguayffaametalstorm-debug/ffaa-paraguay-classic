@@ -667,8 +667,17 @@ async function changePasswordFromProfile(currentPassword, newPassword) {
 
         const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Error al cambiar la contraseña');
+        if (!response.ok || data.success === false) {
+            throw new Error(data.message || data.error || 'Error al cambiar la contraseña');
+        }
+
+        // Actualizar nuevo token para mantener la sesión válida con el nuevo token_version
+        const newToken = data.token || data.data?.token;
+        if (newToken) {
+            localStorage.setItem('authToken', newToken);
+            if (window.currentUser) {
+                window.currentUser.token_version = (window.currentUser.token_version || 0) + 1;
+            }
         }
 
         return data;
@@ -687,24 +696,24 @@ async function handleChangePassword() {
         const confirm = document.getElementById('confirmPassword')?.value;
 
         if (!current || !newPass || !confirm) {
-            showToast('❌ Completa todos los campos', 'error');
+            showToast('❌ Completa todos los campos tácticos', 'error');
             return;
         }
 
         if (newPass !== confirm) {
-            showToast('❌ Las contraseñas no coinciden', 'error');
+            showToast('❌ Las nuevas contraseñas no coinciden', 'error');
             return;
         }
 
-        if (newPass.length < 6) {
-            showToast('❌ La contraseña debe tener al menos 6 caracteres', 'error');
+        if (newPass.length < 8) {
+            showToast('❌ La clave táctica debe tener al menos 8 caracteres', 'error');
             return;
         }
 
         const result = await changePasswordFromProfile(current, newPass);
 
         if (result.success) {
-            showToast('✅ Contraseña actualizada correctamente', 'success');
+            showToast('✅ ' + (result.message || 'Contraseña táctica actualizada correctamente'), 'success');
             // Limpiar campos
             const currentPassEl = document.getElementById('currentPassword');
             const newPassEl = document.getElementById('newPassword');
@@ -719,7 +728,7 @@ async function handleChangePassword() {
                 closeModal('changePasswordModal');
             }
         } else {
-            showToast('❌ ' + (result.error || 'Error al cambiar la contraseña'), 'error');
+            showToast('❌ ' + (result.message || result.error || 'Error al cambiar la contraseña'), 'error');
         }
 
     } catch (error) {
