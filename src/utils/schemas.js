@@ -117,3 +117,38 @@ export const PlaneModelSchema = z.object({
 });
 
 export const UpdatePlaneModelSchema = PlaneModelSchema.partial().omit({ id: true });
+
+// ============================================================
+// ESQUEMAS BLACK MARKET (v3.7.0)
+// ============================================================
+
+export const BmEventSchema = z.object({
+  name: z.string().min(3, 'El nombre del evento debe tener al menos 3 caracteres').max(120),
+  description: z.string().max(1000).optional().nullable(),
+  start_date: z.string().min(8, 'Fecha de inicio inválida'),
+  end_date: z.string().min(8, 'Fecha de finalización inválida'),
+  is_active: z.boolean().optional().default(false),
+  aircraft_id: z.union([z.string(), z.number()]).transform(v => String(v).trim()).optional().nullable(),
+  max_points: z.number().int().min(50).max(500).optional().default(250),
+  max_discount: z.number().int().min(10).max(100).optional().default(50)
+});
+
+export const UpdateBmEventSchema = BmEventSchema.partial();
+
+export const BmMissionSchema = z.object({
+  bm_event_id: z.union([z.string(), z.number()]),
+  day: z.number().int().min(1).max(5),
+  type: z.enum(['dedication', 'skill', 'teamwork']),
+  description: z.string().min(3, 'Descripción de misión requerida').max(255),
+  requirement: z.string().min(3, 'Requisito de misión requerido').max(255),
+  target_value: z.number().int().min(1).max(5000),
+  points: z.number().int().min(5).max(100).optional().default(25),
+  is_active: z.boolean().optional().default(true)
+});
+
+export const UpdateBmMissionSchema = BmMissionSchema.partial().omit({ bm_event_id: true });
+
+export const CompleteBmMissionSchema = z.object({
+  completed: z.boolean().optional().default(true)
+});
+

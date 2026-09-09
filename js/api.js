@@ -972,3 +972,185 @@ window.apiCreatePlaneModel  = apiCreatePlaneModel;
 window.apiUpdatePlaneModel  = apiUpdatePlaneModel;
 window.apiDeletePlaneModel  = apiDeletePlaneModel;
 window.apiRestorePlaneModel = apiRestorePlaneModel;
+
+// ============================================================
+// BLACK MARKET (BM) API CLIENT (v3.7.0)
+// ============================================================
+
+async function apiGetBmEvents() {
+  const res = await fetch(`${API_BASE}/api/bm/events`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiGetBmActiveEvent() {
+  const res = await fetch(`${API_BASE}/api/bm/events/active`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiGetBmEventById(id) {
+  const res = await fetch(`${API_BASE}/api/bm/events/${encodeURIComponent(id)}`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiCreateBmEvent(data) {
+  const res = await fetch(`${API_BASE}/api/bm/events`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al crear evento Black Market');
+  return json;
+}
+
+async function apiUpdateBmEvent(id, data) {
+  const res = await fetch(`${API_BASE}/api/bm/events/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al actualizar evento Black Market');
+  return json;
+}
+
+async function apiActivateBmEvent(id) {
+  const res = await fetch(`${API_BASE}/api/bm/events/${encodeURIComponent(id)}/activate`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al activar evento');
+  return json;
+}
+
+async function apiDeactivateBmEvent(id) {
+  const res = await fetch(`${API_BASE}/api/bm/events/${encodeURIComponent(id)}/deactivate`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al desactivar evento');
+  return json;
+}
+
+async function apiGetBmMissionsToday() {
+  const res = await fetch(`${API_BASE}/api/bm/missions/today`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiGetBmMissionsByEvent(eventId) {
+  const res = await fetch(`${API_BASE}/api/bm/missions/${encodeURIComponent(eventId)}`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiCompleteBmMission(missionId, completed = true) {
+  const res = await fetch(`${API_BASE}/api/bm/missions/${encodeURIComponent(missionId)}/complete`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ completed })
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al actualizar misión');
+  return json;
+}
+
+async function apiCreateBmMission(data) {
+  const res = await fetch(`${API_BASE}/api/bm/missions`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al crear misión');
+  return json;
+}
+
+async function apiUpdateBmMission(id, data) {
+  const res = await fetch(`${API_BASE}/api/bm/missions/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al actualizar misión');
+  return json;
+}
+
+async function apiDeleteBmMission(id) {
+  const res = await fetch(`${API_BASE}/api/bm/missions/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al desactivar misión');
+  return json;
+}
+
+async function apiGetBmProgress() {
+  const res = await fetch(`${API_BASE}/api/bm/progress`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiGetBmDiscount() {
+  const res = await fetch(`${API_BASE}/api/bm/discount`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiPurchaseBmDiscount() {
+  const res = await fetch(`${API_BASE}/api/bm/discount/purchase`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Error al adquirir aeronave');
+  return json;
+}
+
+async function apiGetBmStats() {
+  const res = await fetch(`${API_BASE}/api/bm/stats`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+async function apiGetBmLeaderboard() {
+  const res = await fetch(`${API_BASE}/api/bm/leaderboard`, {
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
+window.apiGetBmEvents          = apiGetBmEvents;
+window.apiGetBmActiveEvent     = apiGetBmActiveEvent;
+window.apiGetBmEventById       = apiGetBmEventById;
+window.apiCreateBmEvent        = apiCreateBmEvent;
+window.apiUpdateBmEvent        = apiUpdateBmEvent;
+window.apiActivateBmEvent      = apiActivateBmEvent;
+window.apiDeactivateBmEvent    = apiDeactivateBmEvent;
+window.apiGetBmMissionsToday   = apiGetBmMissionsToday;
+window.apiGetBmMissionsByEvent = apiGetBmMissionsByEvent;
+window.apiCompleteBmMission    = apiCompleteBmMission;
+window.apiCreateBmMission      = apiCreateBmMission;
+window.apiUpdateBmMission      = apiUpdateBmMission;
+window.apiDeleteBmMission      = apiDeleteBmMission;
+window.apiGetBmProgress        = apiGetBmProgress;
+window.apiGetBmDiscount        = apiGetBmDiscount;
+window.apiPurchaseBmDiscount   = apiPurchaseBmDiscount;
+window.apiGetBmStats           = apiGetBmStats;
+window.apiGetBmLeaderboard     = apiGetBmLeaderboard;
+

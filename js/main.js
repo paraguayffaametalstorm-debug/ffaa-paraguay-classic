@@ -6,6 +6,7 @@
 // Inicializaci?3n (se llama despu??s de cargar componentes)
 function initApp() {
     if (typeof initSettingsOnLoad === 'function') initSettingsOnLoad();
+    if (typeof initBmModule === 'function') initBmModule();
     console.log('e??� PARAGUAY-FFAA | METALSTORM iniciando...');
     
     // a????? NO mostrar ninguna vista aqu?- - dejar que checkAuthStatus() controle
@@ -180,6 +181,11 @@ function updateUserUI(user) {
     } else {
         if (ownerBtn) ownerBtn.style.display = 'none';
         if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'none';
+    }
+
+    // Visibilidad de controles Black Market (v3.7.0)
+    if (typeof updateBmAdminVisibility === 'function') {
+        updateBmAdminVisibility();
     }
 }
 

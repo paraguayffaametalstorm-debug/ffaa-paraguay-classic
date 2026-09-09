@@ -55,6 +55,9 @@
     <button onclick="showView('appView')" class="nav-tab active" data-view="appView">
       <i data-lucide="layout-dashboard" class="lucide-icon"></i> Dashboard
     </button>
+    <button onclick="showView('bmMissionsView')" class="nav-tab" data-view="bmMissionsView" style="color:#ff7675;font-weight:700;">
+      <i data-lucide="flame" class="lucide-icon" style="color:#e74c3c;"></i> Black Market
+    </button>
     <button onclick="showView('performanceForm')" class="nav-tab" data-view="performanceForm">
       <i data-lucide="clipboard-check" class="lucide-icon"></i> Cargar Rendimiento
     </button>
@@ -80,6 +83,9 @@
     <!-- Administrative Tabs -->
     <button id="adminBtn" onclick="showView('adminPanel')" class="nav-tab nav-tab-admin" data-view="adminPanel" style="display:none;">
       <i data-lucide="shield-check" class="lucide-icon"></i> Panel Admin
+    </button>
+    <button id="bmAdminNavBtn" onclick="showView('bmPanelView')" class="nav-tab nav-tab-admin" data-view="bmPanelView" style="display:none;color:#d4af37;">
+      <i data-lucide="tag" class="lucide-icon"></i> Gestión BM
     </button>
     <button id="adminPlanesBtn" onclick="showView('adminPlaneModels')" class="nav-tab nav-tab-admin" data-view="adminPlaneModels" style="display:none;">
       <i data-lucide="plane" class="lucide-icon"></i> Catálogo Cazas

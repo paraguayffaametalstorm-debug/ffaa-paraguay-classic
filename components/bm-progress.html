@@ -1,0 +1,119 @@
+<div id="bmProgressView" class="view" style="display:none;">
+  <!-- Header Principal Táctico -->
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem;">
+    <div>
+      <span style="background:rgba(46,204,113,0.2);border:1px solid #2ecc71;color:#2ecc71;padding:4px 10px;border-radius:4px;font-size:0.75rem;font-weight:800;letter-spacing:1px;">
+        ESTADO OPERATIVO INDIVIDUAL
+      </span>
+      <h2 style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        📊 Mi Progreso en Black Market
+      </h2>
+      <p class="subtitle">
+        Monitoreo de puntos acumulados, porcentaje de descuento y cumplimiento de objetivos tácticos
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="refreshBmProgress()" class="btn-secondary">🔄 Actualizar Progreso</button>
+      <button onclick="showView('bmMissionsView')" class="btn-secondary">🎯 Ir a Misiones</button>
+      <button onclick="showView('bmDiscountView')" class="btn-primary" style="background:#c0392b;border-color:#e74c3c;">
+        🏷️ Canjear Aeronave
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de Navegación Rápida Black Market -->
+  <div class="card" style="margin-bottom:1.5rem;padding:8px 12px;background:rgba(10,14,26,0.85);border:1px solid rgba(231,76,60,0.35);">
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;" class="bm-tab-strip">
+      <button onclick="showView('bmMissionsView')" class="btn-sm btn-secondary">
+        🎯 Misiones Diarias
+      </button>
+      <button onclick="showView('bmProgressView')" class="btn-sm btn-primary" style="background:#e74c3c;border-color:#ff7675;">
+        📊 Mi Progreso & Puntos
+      </button>
+      <button onclick="showView('bmDiscountView')" class="btn-sm btn-secondary">
+        🏷️ Descuentos & Hangar BM
+      </button>
+      <button onclick="showView('bmLeaderboardView')" class="btn-sm btn-secondary">
+        🏆 Tabla de Posiciones
+      </button>
+      <button id="bmPanelNavTab2" onclick="showView('bmPanelView')" class="btn-sm btn-secondary" style="display:none;color:#d4af37;border-color:rgba(212,175,55,0.4);">
+        ⚙️ Centro de Control (Admin)
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid de Métricas Principales del Piloto -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="border-left:4px solid #e74c3c;">
+      <h4>Puntos Acumulados</h4>
+      <div id="progTotalPoints" style="font-size:2rem;font-weight:800;color:#ff7675;">0 / 250</div>
+      <small style="color:#a0aec0;">Límite del evento: 250 pts</small>
+    </div>
+
+    <div class="card stat-card" style="border-left:4px solid #2ecc71;">
+      <h4>Descuento Desbloqueado</h4>
+      <div id="progDiscountPercent" style="font-size:2rem;font-weight:800;color:#2ecc71;">0%</div>
+      <small style="color:#a0aec0;">Descuento máximo: 50%</small>
+    </div>
+
+    <div class="card stat-card" style="border-left:4px solid #d4af37;">
+      <h4>Misiones Completadas</h4>
+      <div id="progCompletedCount" style="font-size:2rem;font-weight:800;color:#d4af37;">0 / 15</div>
+      <small style="color:#a0aec0;">3 misiones x 5 días</small>
+    </div>
+
+    <div class="card stat-card" style="border-left:4px solid #3498db;">
+      <h4>Bonus Diarios Obtenidos</h4>
+      <div id="progBonusPoints" style="font-size:2rem;font-weight:800;color:#3498db;">0 pts</div>
+      <small style="color:#a0aec0;">+25 pts por cada día al 100%</small>
+    </div>
+  </div>
+
+  <!-- Barra de Nivel Táctico de Descuento (Escala 0% a 50%) -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;gap:8px;">
+      <h3 style="margin:0;">🎯 Escala de Bonificación en Adquisición de Caza</h3>
+      <span id="progDiscountBadge" class="status-badge" style="background:#e74c3c;color:#fff;">0% Descuento</span>
+    </div>
+
+    <!-- Barra de progreso visual -->
+    <div style="background:rgba(0,0,0,0.4);border-radius:10px;height:24px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.1);margin-bottom:1rem;">
+      <div id="progDiscountBar" style="width:0%;height:100%;background:linear-gradient(90deg, #f39c12 0%, #2ecc71 100%);transition:width 0.4s ease;border-radius:10px;"></div>
+    </div>
+
+    <!-- Hitos militares en la barra -->
+    <div style="display:grid;grid-template-columns:repeat(5, 1fr);text-align:center;font-size:0.75rem;gap:4px;">
+      <div style="padding:6px;background:rgba(255,255,255,0.03);border-radius:4px;">
+        <strong style="color:#cbd5e0;">50 pts</strong><br><span style="color:#2ecc71;">10% Desc</span>
+      </div>
+      <div style="padding:6px;background:rgba(255,255,255,0.03);border-radius:4px;">
+        <strong style="color:#cbd5e0;">100 pts</strong><br><span style="color:#2ecc71;">20% Desc</span>
+      </div>
+      <div style="padding:6px;background:rgba(255,255,255,0.03);border-radius:4px;">
+        <strong style="color:#cbd5e0;">150 pts</strong><br><span style="color:#2ecc71;">30% Desc</span>
+      </div>
+      <div style="padding:6px;background:rgba(255,255,255,0.03);border-radius:4px;">
+        <strong style="color:#cbd5e0;">200 pts</strong><br><span style="color:#2ecc71;">40% Desc</span>
+      </div>
+      <div style="padding:6px;background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:4px;">
+        <strong style="color:#fff;">250 pts</strong><br><span style="color:#2ecc71;font-weight:700;">50% MÁX</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desglose Día por Día -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3 style="margin-bottom:1rem;">📅 Cumplimiento Diario (5 Días Operativos)</h3>
+    <div id="progDaysBreakdown" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+      <!-- Tarjetas por día generadas por JS -->
+    </div>
+  </div>
+
+  <!-- Historial Reciente de Misiones -->
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">📝 Registro de Misiones Cumplidas</h3>
+    <div id="progMissionsLog">
+      <p style="color:#a0aec0;text-align:center;padding:1.5rem;">No has completado misiones todavía. ¡Dirígete a Misiones Diarias para comenzar!</p>
+    </div>
+  </div>
+</div>

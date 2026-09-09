@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.6.0).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.7.0).**
 
 ---
 
@@ -151,7 +151,44 @@ Los Oficiales `ADMIN` y el Comandante `OWNER` disponen de la consola táctica de
 
 ---
 
-## 3. Escala Oficial del Semáforo Militar
+## 3. Operación Black Market (BM) - v3.7.0
+
+El **Black Market** es un evento táctico especial de alta prioridad que se celebra cada 1 a 2 meses en reemplazo temporal del Squadron Event regular.
+
+### 3.1 Reglas Generales y Calendario
+- **Duración:** Exactamente **5 días continuos de combate** (iniciando el miércoles y concluyendo el domingo a las 23:59:59).
+- **Puntuación Máxima:** **250 puntos BM** acumulables (máximo 50 puntos por día).
+- **Descuento Máximo:** **50% de descuento** en la adquisición del caza táctico exclusivo en oferta.
+- **Relación de Canje:** Cada punto BM acumulado otorga un **0.2% de descuento** ($250 \text{ pts} \times 0.2\% = 50\%$).
+
+### 3.2 Tipos de Misiones Diarias (3 por Día)
+Cada día se activan 3 misiones simultáneas:
+1. **✈️ Dedicación:** Volar aviones con roles específicos del escuadrón (por ejemplo, *Caza de Superioridad Aérea*, *Interceptor* o *Bombardero Táctico*).
+2. **🏆 Habilidad:** Alcanzar o volar aviones con una cantidad mínima de trofeos de combate (escala progresiva de 100 a 800 trofeos, con incremento de +150 por día).
+3. **👥 Trabajo en Equipo:** Volar en formación con compañeros del escuadrón (de 2 a 6 compañeros, sumando +1 compañero por día).
+
+### 3.3 Sistema de Puntos y Bonificación Diaria
+- **Puntaje Base:** Cada misión cumplida otorga **+25 puntos BM**.
+- **Bonus Diario:** Al completar **las 3 misiones del día**, el piloto recibe un **Bonus de +25 puntos adicionales**, alcanzando el tope diario de **50 puntos**.
+- Cumplir los 5 días al 100% asegura los 250 puntos y el descuento total del 50%.
+
+### 3.4 Procedimiento de Reclamo y Descuento
+1. Ingresa a la sección **Black Market** desde el menú principal o el botón táctico en el Dashboard.
+2. En la pestaña **"🎯 Misiones"**, revisa los objetivos del día actual y marca como cumplidas las misiones realizadas.
+3. En la pestaña **"📊 Mi Progreso"**, consulta el desglose día por día, tus puntos acumulados y el porcentaje de descuento desbloqueado.
+4. En la pestaña **"✈️ Oferta & Descuento"**, visualiza la ficha técnica completa del caza en promoción, el precio base en tokens y el precio final descontado.
+5. Al decidir la compra, presiona **"⚡ Reclamar Aeronave con Descuento Militar"**. La aeronave se registrará automáticamente en tu Hangar personal.
+
+### 3.5 Consola de Gestión para Oficiales (ADMIN / OWNER)
+Los Oficiales con rango ADMIN o OWNER disponen de la pestaña **"⚙️ Consola Oficial BM"**:
+- **Creación de Eventos:** Programar nuevas fechas de inicio/fin, nombre clave de la operación y asignación del caza en oferta desde el catálogo.
+- **Activación / Desactivación:** Alternar el estado activo con un solo clic.
+- **Configuración de Misiones:** Agregar, modificar requerimientos o desactivar misiones específicas con soft-delete.
+- **Telemetría del Evento:** Monitorear en tiempo real la cantidad de pilotos participantes, puntos totales acumulados y aeronaves adquiridas.
+
+---
+
+## 4. Escala Oficial del Semáforo Militar
 
 La evaluación del combatiente se determina en el servidor considerando **tanto los tokens como los días de conexión**:
 
@@ -164,7 +201,7 @@ La evaluación del combatiente se determina en el servidor considerando **tanto 
 
 ---
 
-## 4. Estructura Jerárquica y Cuotas Militares (RBAC)
+## 5. Estructura Jerárquica y Cuotas Militares (RBAC)
 
 Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máximas de oficiales:
 
@@ -175,7 +212,7 @@ Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máxi
 
 ---
 
-## 5. Preguntas Frecuentes (FAQ)
+## 6. Preguntas Frecuentes (FAQ)
 
 **¿Qué debo hacer si no puedo ingresar con mi clave temporal?**  
 Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`). Si persiste, solicita a un Oficial que genere una nueva clave temporal.
@@ -184,9 +221,9 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.6.0.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.7.0.
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.6.0 · Actualizado: Septiembre 2026*
+*Versión: v3.7.0 · Actualizado: Septiembre 2026*

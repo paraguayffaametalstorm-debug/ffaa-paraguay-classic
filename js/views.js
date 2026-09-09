@@ -27,7 +27,12 @@ const VIEWS = {
   ALL_PERFORMANCES: 'allPerformancesView',
   SETTINGS:         'settingsView',
   EXPORT:           'exportView',
-  ADMIN_PLANES:     'adminPlaneModels'
+  ADMIN_PLANES:     'adminPlaneModels',
+  BM_MISSIONS:      'bmMissionsView',
+  BM_PROGRESS:      'bmProgressView',
+  BM_DISCOUNT:      'bmDiscountView',
+  BM_LEADERBOARD:   'bmLeaderboardView',
+  BM_PANEL:         'bmPanelView'
 };
 
 const VIEW_ALIASES = {
@@ -65,7 +70,24 @@ const VIEW_ALIASES = {
   'admin-plane-models': VIEWS.ADMIN_PLANES,
   'adminPlaneModelsView': VIEWS.ADMIN_PLANES,
   'planeModels':      VIEWS.ADMIN_PLANES,
-  'plane-models':     VIEWS.ADMIN_PLANES
+  'plane-models':     VIEWS.ADMIN_PLANES,
+  'bm':               VIEWS.BM_MISSIONS,
+  'bm-missions':      VIEWS.BM_MISSIONS,
+  'bmMissions':       VIEWS.BM_MISSIONS,
+  'bmMissionsView':   VIEWS.BM_MISSIONS,
+  'bm-progress':      VIEWS.BM_PROGRESS,
+  'bmProgress':       VIEWS.BM_PROGRESS,
+  'bmProgressView':   VIEWS.BM_PROGRESS,
+  'bm-discount':      VIEWS.BM_DISCOUNT,
+  'bmDiscount':       VIEWS.BM_DISCOUNT,
+  'bmDiscountView':   VIEWS.BM_DISCOUNT,
+  'bm-leaderboard':   VIEWS.BM_LEADERBOARD,
+  'bmLeaderboard':    VIEWS.BM_LEADERBOARD,
+  'bmLeaderboardView':VIEWS.BM_LEADERBOARD,
+  'bm-panel':         VIEWS.BM_PANEL,
+  'bmPanel':          VIEWS.BM_PANEL,
+  'bmPanelView':      VIEWS.BM_PANEL,
+  'bmAdmin':          VIEWS.BM_PANEL
 };
 
 
@@ -245,6 +267,33 @@ function loadViewData(viewId) {
     case 'help':
     case 'helpView':
       loadHelpView();
+      break;
+
+    // Módulo Black Market (v3.7.0)
+    case 'bmMissionsView':
+    case 'bm':
+    case 'bmMissions':
+      if (typeof loadBmMissionsView === 'function') loadBmMissionsView();
+      break;
+
+    case 'bmProgressView':
+    case 'bmProgress':
+      if (typeof loadBmProgressView === 'function') loadBmProgressView();
+      break;
+
+    case 'bmDiscountView':
+    case 'bmDiscount':
+      if (typeof loadBmDiscountView === 'function') loadBmDiscountView();
+      break;
+
+    case 'bmLeaderboardView':
+    case 'bmLeaderboard':
+      if (typeof loadBmLeaderboardView === 'function') loadBmLeaderboardView();
+      break;
+
+    case 'bmPanelView':
+    case 'bmPanel':
+      if (typeof loadBmPanelView === 'function') loadBmPanelView();
       break;
       
     default:

@@ -6,6 +6,34 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.7.0] - 2026-09-08
+
+### 🔥 Sistema Completo de Black Market (BM)
+- **Controlador Maestro de Black Market (`src/controllers/bm.controller.js`):**
+  - Gestión integral de eventos Black Market de 5 días de duración (miércoles a domingo) con sincronización dual Supabase / memoria.
+  - 3 tipos de misiones diarias: **Dedicación** (roles específicos de aeronave), **Habilidad** (trofeos mínimos de combate de 100 a 800) y **Trabajo en equipo** (vuelo con 2 a 6 compañeros).
+  - Sistema de puntuación táctica: 25 pts por misión cumplida más **bonus diario de +25 pts** al cumplir las 3 misiones del día (50 pts/día, máx 250 pts).
+  - Cálculo de descuento progresivo: 1 punto = 0.2% de descuento, alcanzando hasta **50% de descuento** con 250 puntos.
+  - Flujo de adquisición del caza en promoción con descuento militar integrado directamente al Hangar personal del piloto.
+  - Auditoría C4ISR militar en `security_events` y `audit_logs` para activación de eventos, completado de misiones y adquisiciones.
+- **Rutas de API RESTful (`src/routes/bm.routes.js`, `server.js`):**
+  - 15 endpoints especializados bajo `/api/bm/*` para eventos, misiones, progreso individual, cotizaciones de descuento, adquisiciones, tabla de clasificación y estadísticas.
+  - Validación estricta con Zod (`CreateBmEventSchema`, `UpdateBmEventSchema`, `CreateBmMissionSchema`, `UpdateBmMissionSchema`, `CompleteBmMissionSchema`).
+- **Controlador Frontend y Cliente API (`js/bm.js`, `js/api.js`):**
+  - Estado reactivo centralizado `bmState` con soporte offline, actualización en vivo y control de permisos por roles (`ADMIN`/`OWNER`).
+  - Funciones de cliente API con cabeceras Bearer JWT (`apiGetBmActiveEvent`, `apiCompleteBmMission`, `apiPurchaseBmDiscount`, etc.).
+- **Vistas y Componentes Tácticos (`components/bm-*.html`):**
+  - `bm-missions.html`: Selector táctico de los 5 días de combate, misiones con badges de tipo e insignias de bonus diario.
+  - `bm-progress.html`: Barra de progreso calibrada al 50%, KPI de puntos y misiones, y desglose día por día.
+  - `bm-discount.html`: Ficha técnica de la aeronave en oferta (F-15EX Eagle II), desglose de precio base/ahorro/precio final y botón de adquisición.
+  - `bm-leaderboard.html`: Podio Top 3 de combate, tabla clasificatoria con búsqueda en tiempo real y badges de estado.
+  - `bm-panel.html`: Consola de mando oficial para crear y activar eventos, configurar misiones diarias y monitorear telemetría.
+- **Navegación e Integración SPA (`index.html`, `components/header.html`, `components/dashboard.html`, `js/views.js`):**
+  - Registro de vistas `bmMissionsView`, `bmProgressView`, `bmDiscountView`, `bmLeaderboardView` y `bmPanelView` en el enrutador SPA.
+  - Acceso directo desde barra de navegación de escritorio, cajón lateral móvil y botón de acción rápida en el Cuadro de Mando Operacional.
+
+---
+
 ## 📌 [3.6.0] - 2026-09-08
 
 ### ✈️ Sistema de Gestión de Catálogo de Aeronaves (CRUD ADMIN / OWNER)

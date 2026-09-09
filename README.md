@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.5.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v3.7.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 
@@ -17,17 +17,18 @@
 **PARAGUAY-FFAA | METALSTORM** es una plataforma web táctica de grado militar diseñada para la administración, registro y supervisión del escuadrón paraguayo en el simulador de combate aéreo *MetalStorm*.
 
 La plataforma centraliza las operaciones del escuadrón mediante:
+- **Sistema de Eventos Black Market (BM) (v3.7.0):** Evento táctico especial que reemplaza al Squadron Event cada 1-2 meses. 5 días de combate (miércoles a domingo) con 3 tipos de misiones diarias (Dedicación, Habilidad y Trabajo en equipo). Acumulación de hasta 250 puntos (50 pts/día) para desbloquear hasta un 50% de descuento en cazas exclusivos (F-15EX Eagle II, etc.).
 - **Autenticación Militar Híbrida Dual (v3.5.0):** Inicio de sesión flexible admitiendo tanto el correo institucional del escuadrón (`@ffaa.py`) como cuentas de Gmail vinculadas (Google OAuth 2.0 y tradicional), con sistema de vinculación guiado (`/link-account`).
 - **Restablecimiento Criptográfico de Contraseñas:** Envío de tokens temporales de un solo uso válidos por 15 minutos (`/reset-password`) con formato militar C4ISR vía Nodemailer.
 - **Cuadro de Mando Operacional (Dashboard C4ISR):** Telemetría en tiempo real, seguimiento de la meta semanal del escuadrón (175 tokens promedio), panel de miembros en riesgo, gráfico de tendencia histórica y clasificación Top 5 de pilotos.
 - **Registro Táctico de Rendimiento & Selector de Pilotos:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla), incluyendo selector táctico de combatientes (`#performanceTarget`) exclusivo para oficiales `ADMIN` y `OWNER` con banner de modo oficial.
 - **Panel de Administración Militar Avanzado:** Gestión de combatientes con cálculo en tiempo real de `avg_tokens`, `weeks_evaluated` y distintivos de semáforo militar `perf_status` conforme a las normativas del escuadrón.
-- **Hangar Militar & Starform Upgrades 2.0:** Flota operacional completa de 23 cazas de combate (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Rafale, Gripen, etc.), módulos pasivos/especiales, gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos (piezas y componentes avanzados).
+- **Catálogo & Hangar Militar (Upgrades 2.0):** Flota operacional de cazas de combate, CRUD completo de modelos para Oficiales (ADMIN/OWNER), gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos.
 - **Control de Mando RBAC & Cuotas Institucionales:** Restricción jerárquica estricta (1 Comandante en Jefe `OWNER`, máximo 3 Oficiales `ADMIN` y máximo 8 `VETERANO`).
 - **Seguridad Criptográfica & Anti-Sesión Fantasma:** Contraseñas temporales aleatorias de alta entropía (`MS-XXXX-XXXX`), invalidación instantánea de JWT mediante `token_version` y hashing con `bcryptjs`.
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
-- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.5.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.7.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
 
 ---
 
@@ -87,8 +88,14 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 │
 ├── components/                   # Vistas y componentes HTML inyectados en runtime
 │   ├── admin-panel.html          # Panel de gestión de pilotos, roles y carga masiva
+│   ├── admin-plane-models.html   # Gestión de catálogo oficial de cazas (CRUD ADMIN/OWNER)
 │   ├── aircraft-stats-modal.html # Modal de detalles tácticos de aeronaves
 │   ├── all-performances.html     # Tabla histórica global de rendimientos
+│   ├── bm-discount.html          # Ficha técnica y reclamo de oferta del caza Black Market
+│   ├── bm-leaderboard.html       # Tabla de posiciones y podio Black Market
+│   ├── bm-missions.html          # Vista de misiones tácticas diarias (Días 1 a 5)
+│   ├── bm-panel.html             # Consola oficial de gestión Black Market (ADMIN/OWNER)
+│   ├── bm-progress.html          # Panel de progreso individual y cálculo de descuentos
 │   ├── dashboard.html            # Cuadro de mando operacional principal
 │   ├── footer.html               # Pie de página institucional militar
 │   ├── forgot-password-modal.html# Modal de recuperación asistida de credenciales
@@ -113,8 +120,9 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 │   └── views.css                 # Moduladores de diseño para cada vista
 │
 ├── js/                           # Lógica del cliente modular
-│   ├── api.js                    # Wrapper HTTP con Bearer JWT automático
+│   ├── api.js                    # Wrapper HTTP con Bearer JWT automático y endpoints BM
 │   ├── auth.js                   # Manejo de sesiones, JWT, storage y expiración
+│   ├── bm.js                     # Controlador táctico Black Market (Misiones, progreso y descuentos)
 │   ├── main.js                   # Inicialización, registro de Service Worker y eventos
 │   ├── performance.js            # Lógica de registro y cálculo de rendimientos
 │   ├── profile.js                # Gestión del expediente militar y cambio de clave
@@ -132,11 +140,13 @@ La plataforma centraliza las operaciones del escuadrón mediante:
     ├── controllers/              # Controladores de lógica de negocio
     │   ├── admin.controller.js   # Gestión de miembros, roles, estados y carga masiva
     │   ├── auth.controller.js    # Login, verify, register, password change & reset
+    │   ├── bm.controller.js      # Eventos Black Market, misiones, progreso y descuentos
     │   ├── dashboard.controller.js# Resumen C4ISR, promedios y Top 5
     │   ├── events.controller.js  # Ventanas operativas y eventos activos
     │   ├── normativas.controller.js# Reglamentos, circulares y descargas oficiales
     │   ├── owner.controller.js   # Auditoría de seguridad y respaldos de datos
     │   ├── performances.controller.js# Registro de tokens y exportación CSV
+    │   ├── plane-models.controller.js# Catálogo de modelos de aeronaves militares (CRUD)
     │   ├── planes.controller.js  # Hangar de aeronaves y Upgrades 2.0
     │   ├── profile.controller.js # Perfil del combatiente y datos personales
     │   └── settings.controller.js# Ajustes de usuario y preferencias
@@ -207,6 +217,28 @@ El servidor táctico responderá en `http://localhost:3000`.
 | `EMAIL_PASS` | Opcional | - | Contraseña de aplicación o credencial SMTP |
 | `EMAIL_FROM` | Opcional | `"PARAGUAY-FFAA \| METALSTORM" <soporte@paraguay-ffaa.com>` | Remitente en cabeceras de correos tácticos |
 | `ALLOWED_ORIGINS` | Opcional | *(localhost, fly.dev)* | Orígenes autorizados para CORS separados por comas |
+
+---
+
+## 🔥 Sistema de Eventos Black Market (BM) - v3.7.0
+
+El **Black Market** es un evento táctico especial de 5 días de duración (miércoles a domingo) que reemplaza periódicamente al Squadron Event regular en MetalStorm:
+
+- **Estructura Operativa de 5 Días:** 3 misiones tácticas diarias (15 misiones en total).
+  - **Dedicación:** Despliegue de aeronaves con roles específicos (Cazas de Superioridad Aérea, Interceptores, Bombarderos).
+  - **Habilidad:** Cumplimiento de metas con umbrales crecientes de trofeos de combate (100 a 800 trofeos, incrementando +150 por día).
+  - **Trabajo en Equipo:** Misiones en patrulla con compañeros del escuadrón (de 2 a 6 pilotos, sumando +1 por día).
+- **Puntuación y Bonificación Diaria:**
+  - 25 puntos BM por cada misión cumplida.
+  - **Bonus Diario de +25 puntos** al completar las 3 misiones del día.
+  - Puntuación máxima: **50 puntos por día**, hasta un total de **250 puntos acumulables**.
+- **Descuento Militar Progresivo:**
+  - Relación: 1 punto BM = 0.2% de descuento.
+  - Descuento máximo alcanzable: **50% de descuento** en la compra de la aeronave exclusiva del evento.
+  - Incorporación automática de la aeronave adquirida al Hangar de combate del piloto.
+- **Consola de Mando para Oficiales (ADMIN / OWNER):**
+  - Panel especializado para crear nuevos eventos, definir fechas de inicio y fin, seleccionar aeronave promocional, activar/desactivar eventos y editar misiones con soft-delete.
+  - Telemetría en tiempo real de participación, puntos acumulados y adquisiciones de aeronaves.
 
 ---
 

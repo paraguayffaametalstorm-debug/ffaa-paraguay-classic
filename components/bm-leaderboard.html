@@ -1,0 +1,83 @@
+<div id="bmLeaderboardView" class="view" style="display:none;">
+  <!-- Header Principal Táctico -->
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem;">
+    <div>
+      <span style="background:rgba(243,156,18,0.2);border:1px solid #f39c12;color:#f39c12;padding:4px 10px;border-radius:4px;font-size:0.75rem;font-weight:800;letter-spacing:1px;">
+        RANKING DE COMBATE C4ISR
+      </span>
+      <h2 style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        🏆 Tabla de Posiciones · Black Market
+      </h2>
+      <p class="subtitle">
+        Clasificación oficial de combatientes del escuadrón según puntos acumulados y objetivos cumplidos
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="refreshBmLeaderboard()" class="btn-secondary">🔄 Actualizar Ranking</button>
+      <button onclick="showView('bmMissionsView')" class="btn-secondary">🎯 Ir a Misiones</button>
+      <button onclick="showView('bmProgressView')" class="btn-primary" style="background:#e74c3c;border-color:#ff7675;">
+        📊 Mi Puntuación
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de Navegación Rápida Black Market -->
+  <div class="card" style="margin-bottom:1.5rem;padding:8px 12px;background:rgba(10,14,26,0.85);border:1px solid rgba(231,76,60,0.35);">
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;" class="bm-tab-strip">
+      <button onclick="showView('bmMissionsView')" class="btn-sm btn-secondary">
+        🎯 Misiones Diarias
+      </button>
+      <button onclick="showView('bmProgressView')" class="btn-sm btn-secondary">
+        📊 Mi Progreso & Puntos
+      </button>
+      <button onclick="showView('bmDiscountView')" class="btn-sm btn-secondary">
+        🏷️ Descuentos & Hangar BM
+      </button>
+      <button onclick="showView('bmLeaderboardView')" class="btn-sm btn-primary" style="background:#e74c3c;border-color:#ff7675;">
+        🏆 Tabla de Posiciones
+      </button>
+      <button id="bmPanelNavTab4" onclick="showView('bmPanelView')" class="btn-sm btn-secondary" style="display:none;color:#d4af37;border-color:rgba(212,175,55,0.4);">
+        ⚙️ Centro de Control (Admin)
+      </button>
+    </div>
+  </div>
+
+  <!-- Podio Táctico Top 3 -->
+  <div id="bmPodiumContainer" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <!-- Renderizado por JS: 1er puesto Oro, 2do Plata, 3ero Bronce -->
+  </div>
+
+  <!-- Tabla Completa de Posiciones -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px;">
+      <h3 style="margin:0;">🎖️ Registro General de Participantes</h3>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="text" id="bmLeaderboardSearch" placeholder="Filtrar por piloto..." oninput="filterBmLeaderboard()" style="padding:6px 12px;font-size:0.85rem;border-radius:6px;max-width:220px;" />
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="tactical-table" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid rgba(255,255,255,0.1);text-align:left;font-size:0.8rem;color:#a0aec0;text-transform:uppercase;">
+            <th style="padding:10px;">Puesto</th>
+            <th style="padding:10px;">Piloto</th>
+            <th style="padding:10px;">Rango</th>
+            <th style="padding:10px;text-align:center;">Misiones</th>
+            <th style="padding:10px;text-align:center;">Días Activos</th>
+            <th style="padding:10px;text-align:right;">Puntos BM</th>
+            <th style="padding:10px;text-align:right;">Descuento</th>
+            <th style="padding:10px;text-align:center;">Adquisición</th>
+          </tr>
+        </thead>
+        <tbody id="bmLeaderboardTbody">
+          <tr>
+            <td colspan="8" style="text-align:center;padding:2rem;color:#a0aec0;">
+              Cargando posiciones del escuadrón...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

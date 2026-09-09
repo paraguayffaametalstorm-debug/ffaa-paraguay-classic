@@ -579,3 +579,177 @@ Reactiva un modelo previamente desactivado en el catálogo militar.
   }
   ```
 
+---
+
+## 🛒 Módulo Black Market (BM) - v3.7.0
+
+Sistema de eventos tácticos especiales que reemplaza al Squadron Event cada 1-2 meses.
+- **Duración:** 5 días de combate (miércoles a domingo).
+- **Misiones Diarias:** 3 misiones diarias (Dedicación, Habilidad, Trabajo en equipo).
+- **Puntuación:** 25 pts por misión cumplida + 25 pts de bonus al completar las 3 del día (50 pts/día, máx 250 pts).
+- **Descuento:** 1 punto = 0.2% de descuento (máximo 50% de descuento con 250 puntos).
+
+### `GET /api/bm/events`
+Obtiene la lista histórica y actual de eventos Black Market.
+- **Permisos:** Requiere token de autenticación.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "events": [
+      {
+        "id": 1,
+        "name": "Operación Black Market F-15EX",
+        "start_date": "2026-03-04T00:00:00.000Z",
+        "end_date": "2026-03-08T23:59:59.000Z",
+        "is_active": true,
+        "aircraft_id": "125",
+        "aircraft_name": "F-15EX Eagle II"
+      }
+    ]
+  }
+  ```
+
+### `GET /api/bm/events/active`
+Obtiene los detalles del evento Black Market actualmente activo, incluyendo el día operativo actual (1 a 5) y el tiempo restante.
+- **Permisos:** Requiere token de autenticación.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "active": true,
+    "event": { ... },
+    "current_day": 3,
+    "remaining_ms": 172800000
+  }
+  ```
+
+### `POST /api/bm/events`
+Crea un nuevo evento Black Market en el sistema.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Validación:** Validado vía Zod (`CreateBmEventSchema`).
+- **Body:**
+  ```json
+  {
+    "name": "Operación Black Market Su-57",
+    "description": "Evento táctico especial de 5 días con descuento en caza furtivo.",
+    "start_date": "2026-04-01T00:00:00.000Z",
+    "end_date": "2026-04-05T23:59:59.000Z",
+    "aircraft_id": "126",
+    "is_active": false
+  }
+  ```
+
+### `POST /api/bm/events/:id/activate` / `POST /api/bm/events/:id/deactivate`
+Activa o desactiva un evento Black Market.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Auditoría:** Registrado en eventos de seguridad y auditoría.
+
+### `GET /api/bm/missions/today`
+Obtiene las 3 misiones tácticas correspondientes al día operativo actual, con el estado de completado para el usuario solicitante.
+- **Permisos:** Requiere token de autenticación.
+
+### `GET /api/bm/missions/:eventId`
+Obtiene todas las misiones del evento agrupadas por los 5 días (1 a 5).
+- **Permisos:** Requiere token de autenticación.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "missions": [ ... ],
+    "by_day": {
+      "1": [ ... ],
+      "2": [ ... ],
+      "3": [ ... ],
+      "4": [ ... ],
+      "5": [ ... ]
+    }
+  }
+  ```
+
+### `POST /api/bm/missions/:id/complete`
+Marca o desmarca una misión como completada por el piloto autenticado.
+- **Permisos:** Requiere token de autenticación.
+- **Body:** `{ "completed": true }`
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "¡Misión táctica completada! +25 puntos adjudicados",
+    "progress": {
+      "mission_id": "bm-1-1-dedication",
+      "completed": true,
+      "points_earned": 25
+    }
+  }
+  ```
+
+### `POST /api/bm/missions` / `PUT /api/bm/missions/:id` / `DELETE /api/bm/missions/:id`
+Gestión de misiones tácticas (Creación, edición y soft-delete con `is_active: false`).
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+
+### `GET /api/bm/progress`
+Devuelve el desglose detallado de puntos, bonus por día completado, total acumulado y porcentaje de descuento del piloto.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "active": true,
+    "total_points": 125,
+    "discount_percentage": 25,
+    "completed_count": 4,
+    "bonus_points": 25,
+    "completed_by_day": { "1": 3, "2": 1 }
+  }
+  ```
+
+### `GET /api/bm/discount`
+Obtiene la cotización oficial de la aeronave en promoción aplicando el descuento militar ganado.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "active": true,
+    "aircraft": { "name": "F-15EX Eagle II", "tier": 4 },
+    "total_points": 200,
+    "discount_percentage": 40,
+    "pricing": {
+      "base_price": 5000,
+      "discount_amount": 2000,
+      "final_price": 3000
+    },
+    "purchased": false
+  }
+  ```
+
+### `POST /api/bm/discount/purchase`
+Efectúa la adquisición de la aeronave aplicando el descuento ganado e incorporándola al hangar del piloto.
+- **Permisos:** Requiere token de autenticación.
+
+### `GET /api/bm/stats`
+Estadísticas consolidadas del evento (participantes, puntos acumulados, compras realizadas).
+- **Permisos:** Requiere token de autenticación.
+
+### `GET /api/bm/leaderboard`
+Tabla de clasificación ordenada por puntos acumulados en el Black Market activo.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "leaderboard": [
+      {
+        "rank": 1,
+        "user_id": 1,
+        "nick": "FALCON-01",
+        "role": "OWNER",
+        "total_points": 250,
+        "discount_percentage": 50,
+        "completed_missions": 15,
+        "days_active": 5,
+        "purchased": true
+      }
+    ]
+  }
+  ```
+
+

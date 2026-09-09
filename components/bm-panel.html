@@ -1,0 +1,241 @@
+<div id="bmPanelView" class="view" style="display:none;">
+  <!-- Header Principal Táctico -->
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem;">
+    <div>
+      <span style="background:rgba(212,175,55,0.2);border:1px solid #d4af37;color:#d4af37;padding:4px 10px;border-radius:4px;font-size:0.75rem;font-weight:800;letter-spacing:1px;">
+        COMANDANCIA DE ESCUADRÓN
+      </span>
+      <h2 style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        ⚙️ Gestión de Black Market · Consola Oficial
+      </h2>
+      <p class="subtitle">
+        Control de eventos especiales, activación operativa, configuración de misiones diarias y monitoreo C4ISR
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="refreshBmPanel()" class="btn-secondary">🔄 Actualizar</button>
+      <button onclick="showCreateBmEventModal()" class="btn-primary" style="background:#27ae60;border-color:#2ecc71;">
+        ➕ Nuevo Evento BM
+      </button>
+      <button onclick="showView('adminPanel')" class="btn-secondary">🛡️ Volver a Admin</button>
+    </div>
+  </div>
+
+  <!-- Barra de Navegación Rápida Black Market -->
+  <div class="card" style="margin-bottom:1.5rem;padding:8px 12px;background:rgba(10,14,26,0.85);border:1px solid rgba(231,76,60,0.35);">
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;" class="bm-tab-strip">
+      <button onclick="showView('bmMissionsView')" class="btn-sm btn-secondary">
+        🎯 Misiones Diarias
+      </button>
+      <button onclick="showView('bmProgressView')" class="btn-sm btn-secondary">
+        📊 Mi Progreso & Puntos
+      </button>
+      <button onclick="showView('bmDiscountView')" class="btn-sm btn-secondary">
+        🏷️ Descuentos & Hangar BM
+      </button>
+      <button onclick="showView('bmLeaderboardView')" class="btn-sm btn-secondary">
+        🏆 Tabla de Posiciones
+      </button>
+      <button onclick="showView('bmPanelView')" class="btn-sm btn-primary" style="background:#d4af37;color:#000;font-weight:700;">
+        ⚙️ Centro de Control (Admin)
+      </button>
+    </div>
+  </div>
+
+  <!-- Métricas KPI del Black Market -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="border-left:4px solid #3498db;">
+      <h4>Pilotos Participantes</h4>
+      <div id="bmAdminStatPilots" style="font-size:1.8rem;font-weight:700;color:#3498db;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #d4af37;">
+      <h4>Puntos Globales Generados</h4>
+      <div id="bmAdminStatPoints" style="font-size:1.8rem;font-weight:700;color:#d4af37;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #2ecc71;">
+      <h4>Aeronaves Canjeadas</h4>
+      <div id="bmAdminStatPurchased" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">-</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #e74c3c;">
+      <h4>Misiones Cumplidas</h4>
+      <div id="bmAdminStatMissions" style="font-size:1.8rem;font-weight:700;color:#e74c3c;">-</div>
+    </div>
+  </div>
+
+  <!-- Evento Activo & Control Operacional -->
+  <div class="card" style="margin-bottom:1.5rem;border:1.5px solid rgba(212,175,55,0.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px;">
+      <h3 style="margin:0;color:#d4af37;">⚡ Estado del Evento Operativo</h3>
+      <div id="bmAdminEventActions" style="display:flex;gap:8px;"></div>
+    </div>
+
+    <div id="bmAdminCurrentEventDetails">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Historial de Todos los Eventos BM -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h3 style="margin-bottom:1rem;">📂 Registro Histórico de Eventos Black Market</h3>
+    <div class="table-responsive">
+      <table class="tactical-table" style="width:100%;">
+        <thead>
+          <tr style="border-bottom:2px solid rgba(255,255,255,0.1);text-align:left;font-size:0.8rem;color:#a0aec0;">
+            <th style="padding:10px;">ID</th>
+            <th style="padding:10px;">Nombre del Evento</th>
+            <th style="padding:10px;">Período</th>
+            <th style="padding:10px;">Caza en Oferta</th>
+            <th style="padding:10px;">Estado</th>
+            <th style="padding:10px;text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="bmAdminEventsTbody">
+          <tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#a0aec0;">Cargando eventos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Editor de Misiones Diarias del Evento -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 style="margin:0;">🎯 Misiones Tácticas del Evento Activo</h3>
+        <span style="font-size:0.85rem;color:#a0aec0;">Configuración de objetivos diarios (Dedicación, Habilidad, Trabajo en Equipo)</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <select id="bmAdminDayFilter" onchange="filterAdminMissionsByDay()" style="padding:6px 12px;font-size:0.85rem;border-radius:6px;">
+          <option value="all">Todos los Días (1 a 5)</option>
+          <option value="1">Día 1 (Miércoles)</option>
+          <option value="2">Día 2 (Jueves)</option>
+          <option value="3">Día 3 (Viernes)</option>
+          <option value="4">Día 4 (Sábado)</option>
+          <option value="5">Día 5 (Domingo)</option>
+        </select>
+        <button onclick="showCreateBmMissionModal()" class="btn-primary btn-sm" style="background:#2980b9;border-color:#3498db;">
+          ➕ Añadir Misión
+        </button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="tactical-table" style="width:100%;">
+        <thead>
+          <tr style="border-bottom:2px solid rgba(255,255,255,0.1);text-align:left;font-size:0.8rem;color:#a0aec0;">
+            <th style="padding:10px;">Día</th>
+            <th style="padding:10px;">Categoría</th>
+            <th style="padding:10px;">Descripción</th>
+            <th style="padding:10px;">Objetivo / Meta</th>
+            <th style="padding:10px;text-align:center;">Puntos</th>
+            <th style="padding:10px;text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="bmAdminMissionsTbody">
+          <tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#a0aec0;">Cargando misiones...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Crear / Editar Evento BM -->
+  <div id="bmEventModal" class="modal" style="display:none;">
+    <div class="modal-content card" style="max-width:550px;margin:5% auto;position:relative;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 id="bmEventModalTitle" style="margin:0;color:#d4af37;">Nuevo Evento Black Market</h3>
+        <button type="button" onclick="closeBmEventModal()" class="btn-icon-tactical" style="font-size:1.2rem;">✖</button>
+      </div>
+      <form id="bmEventForm" onsubmit="saveBmEvent(event)">
+        <input type="hidden" id="bmEventFormId" value="" />
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.85rem;color:#cbd5e0;">Nombre del Evento *</label>
+          <input type="text" id="bmEventFormName" required placeholder="Ej: Operación Tormenta Negra · BM 2026" style="width:100%;" />
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.85rem;color:#cbd5e0;">Descripción Táctica</label>
+          <textarea id="bmEventFormDescription" rows="2" placeholder="Detalles operativos para los pilotos..." style="width:100%;"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div class="form-group">
+            <label style="font-size:0.85rem;color:#cbd5e0;">Fecha de Inicio *</label>
+            <input type="datetime-local" id="bmEventFormStartDate" required style="width:100%;" />
+          </div>
+          <div class="form-group">
+            <label style="font-size:0.85rem;color:#cbd5e0;">Fecha de Finalización *</label>
+            <input type="datetime-local" id="bmEventFormEndDate" required style="width:100%;" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.85rem;color:#cbd5e0;">Aeronave en Oferta (Catálogo Oficial) *</label>
+          <select id="bmEventFormAircraft" required style="width:100%;">
+            <option value="">— Seleccionar Aeronave —</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="bmEventFormIsActive" style="width:18px;height:18px;" />
+            <span style="font-size:0.9rem;color:#fff;">Activar inmediatamente como evento operativo principal</span>
+          </label>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" onclick="closeBmEventModal()" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background:#27ae60;border-color:#2ecc71;">Guardar Evento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Crear / Editar Misión BM -->
+  <div id="bmMissionModal" class="modal" style="display:none;">
+    <div class="modal-content card" style="max-width:500px;margin:5% auto;position:relative;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 id="bmMissionModalTitle" style="margin:0;color:#3498db;">Editar Misión Black Market</h3>
+        <button type="button" onclick="closeBmMissionModal()" class="btn-icon-tactical" style="font-size:1.2rem;">✖</button>
+      </div>
+      <form id="bmMissionForm" onsubmit="saveBmMission(event)">
+        <input type="hidden" id="bmMissionFormId" value="" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div class="form-group">
+            <label style="font-size:0.85rem;color:#cbd5e0;">Día (1 a 5) *</label>
+            <select id="bmMissionFormDay" required style="width:100%;">
+              <option value="1">Día 1 (Miércoles)</option>
+              <option value="2">Día 2 (Jueves)</option>
+              <option value="3">Día 3 (Viernes)</option>
+              <option value="4">Día 4 (Sábado)</option>
+              <option value="5">Día 5 (Domingo)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="font-size:0.85rem;color:#cbd5e0;">Tipo de Misión *</label>
+            <select id="bmMissionFormType" required style="width:100%;">
+              <option value="dedication">Dedicación (Rol Específico)</option>
+              <option value="skill">Habilidad (Trofeos)</option>
+              <option value="teamwork">Trabajo en Equipo (Grupo)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.85rem;color:#cbd5e0;">Descripción Táctica *</label>
+          <input type="text" id="bmMissionFormDesc" required placeholder="Ej: Volar 3 partidas con Cazas Ligeros" style="width:100%;" />
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label style="font-size:0.85rem;color:#cbd5e0;">Requisito Operativo *</label>
+          <input type="text" id="bmMissionFormReq" required placeholder="Ej: Volar cazas de rol ligero" style="width:100%;" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+          <div class="form-group">
+            <label style="font-size:0.85rem;color:#cbd5e0;">Valor Meta *</label>
+            <input type="number" id="bmMissionFormTarget" required min="1" max="5000" placeholder="Ej: 3" style="width:100%;" />
+          </div>
+          <div class="form-group">
+            <label style="font-size:0.85rem;color:#cbd5e0;">Puntos Otorgados</label>
+            <input type="number" id="bmMissionFormPoints" required min="5" max="100" value="25" style="width:100%;" />
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" onclick="closeBmMissionModal()" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background:#2980b9;border-color:#3498db;">Guardar Misión</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
