@@ -98,7 +98,10 @@ export const login = async (req, res) => {
         }
 
         // 3.1 Garantizar user_id entero reglamentario (autorreparación de registros previos sin user_id)
-        let numericUserId = user.user_id != null ? Number(user.user_id) : null;
+        let numericUserId = (typeof user.user_id === 'number' && Number.isInteger(user.user_id))
+            ? user.user_id
+            : (typeof user.user_id === 'string' && /^\d+$/.test(user.user_id.trim()) ? parseInt(user.user_id.trim(), 10) : null);
+
         if (!Number.isInteger(numericUserId)) {
             numericUserId = await getNextUserId(supabase);
             await supabase
@@ -106,12 +109,14 @@ export const login = async (req, res) => {
                 .update({ user_id: numericUserId, updated_at: new Date().toISOString() })
                 .eq('id', user.id);
             user.user_id = numericUserId;
+        } else {
+            user.user_id = numericUserId;
         }
 
         // 4. Generar JWT con token_version
         const token = jwt.sign(
             { 
-                user_id: Number(user.user_id),
+                user_id: Number.isInteger(user.user_id) ? Number(user.user_id) : null,
                 email: user.email,
                 role: user.role,
                 token_version: user.token_version || 0 
@@ -145,7 +150,8 @@ export const login = async (req, res) => {
         
         const userResponse = {
             ...safeUser,
-            user_id: Number(user.user_id),
+            // ✅ FORZAR user_id a número entero, NUNCA UUID
+            user_id: Number.isInteger(user.user_id) ? Number(user.user_id) : (Number.isInteger(Number(user.user_id)) && !isNaN(Number(user.user_id)) ? Number(user.user_id) : null),
             must_change_password: Boolean(user.must_change_password)
         };
 
@@ -169,7 +175,10 @@ export const verifyMe = async (req, res) => {
         }
 
         const supabase = getSupabase();
-        let numericUserId = user.user_id != null ? Number(user.user_id) : null;
+        let numericUserId = (typeof user.user_id === 'number' && Number.isInteger(user.user_id))
+            ? user.user_id
+            : (typeof user.user_id === 'string' && /^\d+$/.test(user.user_id.trim()) ? parseInt(user.user_id.trim(), 10) : null);
+
         if (!Number.isInteger(numericUserId) && supabase && user.id) {
             numericUserId = await getNextUserId(supabase);
             await supabase
@@ -177,13 +186,16 @@ export const verifyMe = async (req, res) => {
                 .update({ user_id: numericUserId, updated_at: new Date().toISOString() })
                 .eq('id', user.id);
             user.user_id = numericUserId;
+        } else if (Number.isInteger(numericUserId)) {
+            user.user_id = numericUserId;
         }
 
         const { password_hash, password, encrypted_password, ...safeUser } = user;
         res.json({ 
             user: {
                 ...safeUser,
-                user_id: Number(user.user_id),
+                // ✅ FORZAR user_id a número entero, NUNCA UUID
+                user_id: Number.isInteger(safeUser.user_id) ? Number(safeUser.user_id) : (Number.isInteger(user.user_id) ? Number(user.user_id) : (Number.isInteger(Number(user.user_id)) && !isNaN(Number(user.user_id)) ? Number(user.user_id) : null)),
                 must_change_password: Boolean(safeUser.must_change_password)
             }
         });
@@ -374,10 +386,14 @@ export const changePassword = async (req, res) => {
             metadata: { forced_change: isForcedChange }
         });
 
+        const parsedUserId = (typeof user.user_id === 'number' && Number.isInteger(user.user_id))
+            ? user.user_id
+            : (typeof user.user_id === 'string' && /^\d+$/.test(user.user_id.trim()) ? parseInt(user.user_id.trim(), 10) : null);
+
         // 5. Generar nuevo JWT con token_version actualizado
         const newToken = jwt.sign(
             { 
-                user_id: user.user_id || user.id,
+                user_id: Number.isInteger(parsedUserId) ? Number(parsedUserId) : null,
                 email: user.email,
                 role: user.role,
                 token_version: newTokenVersion 
@@ -388,6 +404,7 @@ export const changePassword = async (req, res) => {
 
         const updatedUser = {
             ...user,
+            user_id: Number.isInteger(parsedUserId) ? Number(parsedUserId) : null,
             must_change_password: false,
             token_version: newTokenVersion
         };
@@ -909,9 +926,26 @@ export const googleCallback = (req, res, next) => {
 
         try {
             const supabase = getSupabase();
+
+            // ✅ Asegurar que user_id sea un número entero, NUNCA UUID
+            let numericUserId = (typeof user.user_id === 'number' && Number.isInteger(user.user_id))
+                ? user.user_id
+                : (typeof user.user_id === 'string' && /^\d+$/.test(user.user_id.trim()) ? parseInt(user.user_id.trim(), 10) : null);
+
+            if (!Number.isInteger(numericUserId) && supabase && user.id) {
+                numericUserId = await getNextUserId(supabase);
+                await supabase
+                    .from('users')
+                    .update({ user_id: numericUserId, updated_at: new Date().toISOString() })
+                    .eq('id', user.id);
+                user.user_id = numericUserId;
+            } else if (Number.isInteger(numericUserId)) {
+                user.user_id = numericUserId;
+            }
+
             const token = jwt.sign(
                 { 
-                    user_id: user.user_id || user.id,
+                    user_id: Number.isInteger(user.user_id) ? Number(user.user_id) : null,
                     email: user.email,
                     role: user.role,
                     token_version: user.token_version || 0 
@@ -923,7 +957,7 @@ export const googleCallback = (req, res, next) => {
             if (supabase) {
                 await logSecurityEvent({
                     supabase,
-                    userId: user.id || user.user_id,
+                    userId: user.user_id || user.id,
                     nick: user.nick,
                     event: 'LOGIN_SUCCESS_GOOGLE',
                     ip: req.ip,
@@ -934,7 +968,7 @@ export const googleCallback = (req, res, next) => {
                 await supabase
                     .from('users')
                     .update({ last_activity: new Date().toISOString() })
-                    .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
+                    .or(`id.eq.${user.id},user_id.eq.${user.user_id}`);
             }
 
             const mustChangeParam = user.must_change_password ? '&must_change_password=true' : '';

@@ -60,9 +60,13 @@ export async function requireAuth(req, res, next) {
           }
           // ==========================================
 
+          const parsedUserId = (typeof u.user_id === 'number' && Number.isInteger(u.user_id))
+            ? u.user_id
+            : (typeof u.user_id === 'string' && /^\d+$/.test(u.user_id.trim()) ? parseInt(u.user_id.trim(), 10) : null);
+
           user = {
             ...u,
-            user_id: u.user_id ? Number(u.user_id) : (Number.isInteger(Number(u.id)) ? Number(u.id) : u.id),
+            user_id: Number.isInteger(parsedUserId) ? Number(parsedUserId) : null,
             status: u.status || 'ACTIVE'
           };
         }

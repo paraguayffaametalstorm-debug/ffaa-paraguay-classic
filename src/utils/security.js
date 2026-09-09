@@ -57,20 +57,30 @@ export async function getNextUserId(supabase) {
         const { data, error } = await supabase
             .from('users')
             .select('user_id')
-            .not('user_id', 'is', null)
-            .order('user_id', { ascending: false })
-            .limit(1);
+            .not('user_id', 'is', null);
 
         if (error) {
             console.error('⚠️ [getNextUserId] Error consultando user_id máximo:', error.message);
             return 1;
         }
 
-        const maxUserId = (data && data.length > 0 && data[0].user_id != null)
-            ? parseInt(data[0].user_id, 10)
-            : 0;
+        let maxUserId = 0;
+        if (Array.isArray(data)) {
+            for (const row of data) {
+                const val = row?.user_id;
+                // Verificar que sea estrictamente un entero numérico o string numérico puro (ej. "12", no UUIDs)
+                if (typeof val === 'number' && Number.isInteger(val)) {
+                    if (val > maxUserId) maxUserId = val;
+                } else if (typeof val === 'string' && /^\d+$/.test(val.trim())) {
+                    const parsed = parseInt(val.trim(), 10);
+                    if (Number.isInteger(parsed) && parsed > maxUserId) {
+                        maxUserId = parsed;
+                    }
+                }
+            }
+        }
 
-        return (Number.isInteger(maxUserId) && maxUserId > 0 ? maxUserId : 0) + 1;
+        return Number.isInteger(maxUserId) && maxUserId >= 0 ? maxUserId + 1 : 1;
     } catch (err) {
         console.error('⚠️ [getNextUserId] Excepción al obtener siguiente user_id:', err);
         return 1;
