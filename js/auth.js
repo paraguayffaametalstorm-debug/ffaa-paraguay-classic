@@ -109,6 +109,12 @@ function checkAuthStatus() {
     }
     
     console.log(`✅ Usuario autenticado: ${currentUser.nick} (user_id: ${currentUser.user_id}, tipo: number)`);
+    window.currentUser = currentUser;
+
+    // 🔔 ACTUALIZAR UI PARA TODOS LOS ROLES (MIEMBRO, VETERANO, ADMIN, OWNER)
+    if (typeof updateUserUI === 'function') {
+      updateUserUI(currentUser);
+    }
     
     // 🔒 Verificar si debe cambiar contraseña (por base de datos o por bandera en sesión)
     const sessionMustChange = sessionStorage.getItem('must_change_password') === 'true';
@@ -119,7 +125,9 @@ function checkAuthStatus() {
       return;
     }
     
-    updateUserUI(currentUser);
+    if (typeof updateUserUI === 'function') {
+      updateUserUI(currentUser);
+    }
     closeModal('loginModal');
     showView('appView');
 
@@ -179,6 +187,12 @@ function login() {
     }
     
     console.log(`✅ user_id verificado: ${currentUser.user_id} (tipo: number)`);
+    window.currentUser = currentUser;
+
+    // 🔔 ACTUALIZAR UI INMEDIATAMENTE PARA TODOS LOS ROLES (MIEMBRO, VETERANO, ADMIN, OWNER)
+    if (typeof updateUserUI === 'function') {
+      updateUserUI(currentUser);
+    }
     
     // 🔒 Verificar si debe cambiar contraseña
     if (currentUser.must_change_password) {
@@ -190,7 +204,9 @@ function login() {
     
     // ✅ Flujo normal (contraseña ya cambiada)
     sessionStorage.removeItem('must_change_password');
-    updateUserUI(currentUser);
+    if (typeof updateUserUI === 'function') {
+      updateUserUI(currentUser);
+    }
     closeModal('loginModal');
     showToast(`✅ Bienvenido, ${currentUser.nick || currentUser.email}`, 'success');
     
@@ -223,6 +239,7 @@ function logout() {
   localStorage.removeItem('tempToken');
   sessionStorage.removeItem('must_change_password');
   currentUser = null;
+  window.currentUser = null;
   
   if (typeof sessionTimeout !== 'undefined' && sessionTimeout) {
     clearTimeout(sessionTimeout);
@@ -231,12 +248,26 @@ function logout() {
   // Detener polling de usuarios conectados
   stopOnlineUsersPolling();
   
-  // Ocultar/Mostrar botones de login/logout
+  // Ocultar/Mostrar botones de login/logout en Desktop y Mobile Drawer
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
+  const drawerLoginBtn = document.getElementById('drawerLoginBtn');
+  const drawerLogoutBtn = document.getElementById('drawerLogoutBtn');
   
-  if (loginBtn) loginBtn.style.display = 'block';
+  if (loginBtn) loginBtn.style.display = 'inline-flex';
   if (logoutBtn) logoutBtn.style.display = 'none';
+  if (drawerLoginBtn) drawerLoginBtn.style.display = 'block';
+  if (drawerLogoutBtn) drawerLogoutBtn.style.display = 'none';
+
+  // Limpiar identificación de usuario
+  const userNameEl = document.getElementById('userName');
+  if (userNameEl) userNameEl.textContent = '';
+  const userRoleEl = document.getElementById('userRole');
+  if (userRoleEl) userRoleEl.innerHTML = '';
+  const drawerUserNickEl = document.getElementById('drawerUserNick');
+  if (drawerUserNickEl) drawerUserNickEl.textContent = '';
+  const drawerUserRoleEl = document.getElementById('drawerUserRole');
+  if (drawerUserRoleEl) drawerUserRoleEl.innerHTML = '';
   
   // ✅ AYUDA: Ocultar FAB al cerrar sesión
   const helpFabLogout = document.getElementById('helpFab');
@@ -308,6 +339,11 @@ function showLoginModal() {
  * @param {Object} options - { forced: boolean }
  */
 async function showPasswordChangeModal(options = { forced: false }) {
+  // Asegurar que la interfaz táctica refleje la sesión activa y botón de cerrar sesión
+  if (currentUser && typeof updateUserUI === 'function') {
+    updateUserUI(currentUser);
+  }
+
   // Determinar si es forzado por opciones, por currentUser o por sessionStorage
   const isForced = Boolean(
     options?.forced || 
@@ -943,6 +979,10 @@ async function handleChangePassword() {
             // Cerrar modal si existe
             if (typeof closeModal === 'function') {
                 closeModal('changePasswordModal');
+            }
+
+            if (typeof updateUserUI === 'function' && currentUser) {
+                updateUserUI(currentUser);
             }
         } else {
             showToast('❌ ' + (result.message || result.error || 'Error al cambiar la contraseña'), 'error');

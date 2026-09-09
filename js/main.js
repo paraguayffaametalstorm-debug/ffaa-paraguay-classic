@@ -79,115 +79,150 @@ function startCountdown() {
 function extendSession() {
     closeModal('sessionWarningModal');
     resetSessionTimer();
-    showToast('a??Sesi?3n extendida', 'success');
+    showToast('⏱️ Sesión extendida', 'success');
 }
 
 // Función para actualizar el estado del usuario en la UI
 function updateUserUI(user) {
+    if (!user) {
+        console.warn('⚠️ [updateUserUI] Se invocó sin usuario válido');
+        return;
+    }
+
     currentUser = user;
+    window.currentUser = user;
     
-    // === OCULTAR LOGIN / MOSTRAR LOGOUT ===
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const drawerLoginBtn = document.getElementById('drawerLoginBtn');
-    const drawerLogoutBtn = document.getElementById('drawerLogoutBtn');
-    
-    if (loginBtn) loginBtn.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'block';
-    if (drawerLoginBtn) drawerLoginBtn.style.display = 'none';
-    if (drawerLogoutBtn) drawerLogoutBtn.style.display = 'flex';
-    
-    // === ACTUALIZAR NOMBRE DE USUARIO ===
-    const userNameEl = document.getElementById('userName');
-    if (userNameEl) {
-        userNameEl.textContent = user.nick || user.email;
-    }
-
-    const drawerUserNickEl = document.getElementById('drawerUserNick');
-    if (drawerUserNickEl) {
-        drawerUserNickEl.textContent = user.nick || user.email;
-    }
-    
-    // === ACTUALIZAR ROL ===
-    const userRoleEl = document.getElementById('userRole');
-    if (userRoleEl) {
-        const roleBadge = document.createElement('span');
-        roleBadge.className = `role-badge role-${user.role}`;
-        roleBadge.textContent = user.role.toUpperCase();
+    const applyUI = () => {
+        // === OCULTAR LOGIN / MOSTRAR LOGOUT (PARA TODOS LOS ROLES) ===
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const drawerLoginBtn = document.getElementById('drawerLoginBtn');
+        const drawerLogoutBtn = document.getElementById('drawerLogoutBtn');
         
-        userRoleEl.innerHTML = '';
-        userRoleEl.appendChild(roleBadge);
-    }
-
-    const drawerUserRoleEl = document.getElementById('drawerUserRole');
-    if (drawerUserRoleEl) {
-        const roleBadge = document.createElement('span');
-        roleBadge.className = `role-badge role-${user.role}`;
-        roleBadge.textContent = user.role.toUpperCase();
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (logoutBtn) {
+            logoutBtn.style.display = 'inline-flex';
+            logoutBtn.removeAttribute('hidden');
+        }
+        if (drawerLoginBtn) drawerLoginBtn.style.display = 'none';
+        if (drawerLogoutBtn) {
+            drawerLogoutBtn.style.display = 'flex';
+            drawerLogoutBtn.removeAttribute('hidden');
+        }
         
-        drawerUserRoleEl.innerHTML = '';
-        drawerUserRoleEl.appendChild(roleBadge);
-    }
+        // === ACTUALIZAR NOMBRE DE USUARIO ===
+        const userNameEl = document.getElementById('userName');
+        if (userNameEl) {
+            userNameEl.textContent = user.nick || user.email || 'PILOTO';
+        }
 
-    // Actualizar stats rápidos en el drawer
-    const drawerAvgTokensEl = document.getElementById('drawerAvgTokens');
-    if (drawerAvgTokensEl) {
-        drawerAvgTokensEl.textContent = user.avg_tokens || '185';
-    }
+        const drawerUserNickEl = document.getElementById('drawerUserNick');
+        if (drawerUserNickEl) {
+            drawerUserNickEl.textContent = user.nick || user.email || 'PILOTO';
+        }
+        
+        // === ACTUALIZAR ROL ===
+        const userRoleStr = (user.role || 'MIEMBRO').toUpperCase();
+        const userRoleEl = document.getElementById('userRole');
+        if (userRoleEl) {
+            const roleBadge = document.createElement('span');
+            roleBadge.className = `role-badge role-${userRoleStr.toLowerCase()}`;
+            roleBadge.textContent = userRoleStr;
+            
+            userRoleEl.innerHTML = '';
+            userRoleEl.appendChild(roleBadge);
+        }
 
-    const drawerPerfStatusEl = document.getElementById('drawerPerfStatus');
-    if (drawerPerfStatusEl) {
-        const st = (user.perf_status || 'VERDE').toUpperCase();
-        drawerPerfStatusEl.textContent = st;
-        drawerPerfStatusEl.className = `d-stat-val status-badge status-${st.toLowerCase()}`;
-    }
-    
-    // === MOSTRAR/OCULTAR BOTONES DE ADMIN ===
-    const adminBtn = document.getElementById('adminBtn');
-    const adminPlanesBtn = document.getElementById('adminPlanesBtn');
-    const allPerformancesBtn = document.getElementById('allPerformancesBtn');
-    const uploadNormativaBtn = document.getElementById('uploadNormativaBtn');
-    const viewAllNormativasBtn = document.getElementById('viewAllNormativasBtn');
-    const uploadEventBtn = document.getElementById('uploadEventBtn');
-    const mobileAdminNavItem = document.getElementById('mobileAdminNavItem');
-    const drawerAdminSection = document.getElementById('drawerAdminSection');
-    const drawerAdminPlanesBtn = document.getElementById('drawerAdminPlanesBtn');
-    const drawerOwnerBtn = document.getElementById('drawerOwnerBtn');
-    
-    if (user.role === 'OWNER' || user.role === 'ADMIN') {
-        if (adminBtn) adminBtn.style.display = 'inline-flex';
-        if (adminPlanesBtn) adminPlanesBtn.style.display = 'inline-flex';
-        if (allPerformancesBtn) allPerformancesBtn.style.display = 'inline-flex';
-        if (uploadNormativaBtn) uploadNormativaBtn.style.display = 'block';
-        if (viewAllNormativasBtn) viewAllNormativasBtn.style.display = 'block';
-        if (uploadEventBtn) uploadEventBtn.style.display = 'block';
-        if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'flex';
-        if (drawerAdminSection) drawerAdminSection.style.display = 'block';
-        if (drawerAdminPlanesBtn) drawerAdminPlanesBtn.style.display = 'flex';
-    } else {
-        if (adminBtn) adminBtn.style.display = 'none';
-        if (adminPlanesBtn) adminPlanesBtn.style.display = 'none';
-        if (allPerformancesBtn) allPerformancesBtn.style.display = 'none';
-        if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'none';
-        if (drawerAdminSection) drawerAdminSection.style.display = 'none';
-        if (drawerAdminPlanesBtn) drawerAdminPlanesBtn.style.display = 'none';
-    }
-    
-    // Centro de Control exclusivo OWNER
-    const ownerBtn = document.getElementById('ownerBtn');
-    if (user.role === 'OWNER') {
-        if (ownerBtn) ownerBtn.style.display = 'inline-flex';
-        if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'flex';
-    } else {
-        if (ownerBtn) ownerBtn.style.display = 'none';
-        if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'none';
-    }
+        const drawerUserRoleEl = document.getElementById('drawerUserRole');
+        if (drawerUserRoleEl) {
+            const roleBadge = document.createElement('span');
+            roleBadge.className = `role-badge role-${userRoleStr.toLowerCase()}`;
+            roleBadge.textContent = userRoleStr;
+            
+            drawerUserRoleEl.innerHTML = '';
+            drawerUserRoleEl.appendChild(roleBadge);
+        }
 
-    // Visibilidad de controles Black Market (v3.7.0)
-    if (typeof updateBmAdminVisibility === 'function') {
-        updateBmAdminVisibility();
+        // Actualizar stats rápidos en el drawer
+        const drawerAvgTokensEl = document.getElementById('drawerAvgTokens');
+        if (drawerAvgTokensEl) {
+            drawerAvgTokensEl.textContent = user.avg_tokens || '185';
+        }
+
+        const drawerPerfStatusEl = document.getElementById('drawerPerfStatus');
+        if (drawerPerfStatusEl) {
+            const st = (user.perf_status || 'VERDE').toUpperCase();
+            drawerPerfStatusEl.textContent = st;
+            drawerPerfStatusEl.className = `d-stat-val status-badge status-${st.toLowerCase()}`;
+        }
+        
+        // === MOSTRAR/OCULTAR BOTONES DE ADMIN (EXCLUSIVO ADMIN / OWNER) ===
+        const isAdmin = userRoleStr === 'OWNER' || userRoleStr === 'ADMIN';
+        const isOwner = userRoleStr === 'OWNER';
+
+        const adminBtn = document.getElementById('adminBtn');
+        const adminPlanesBtn = document.getElementById('adminPlanesBtn');
+        const allPerformancesBtn = document.getElementById('allPerformancesBtn');
+        const uploadNormativaBtn = document.getElementById('uploadNormativaBtn');
+        const viewAllNormativasBtn = document.getElementById('viewAllNormativasBtn');
+        const uploadEventBtn = document.getElementById('uploadEventBtn');
+        const mobileAdminNavItem = document.getElementById('mobileAdminNavItem');
+        const drawerAdminSection = document.getElementById('drawerAdminSection');
+        const drawerAdminPlanesBtn = document.getElementById('drawerAdminPlanesBtn');
+        const drawerOwnerBtn = document.getElementById('drawerOwnerBtn');
+        
+        if (isAdmin) {
+            if (adminBtn) adminBtn.style.display = 'inline-flex';
+            if (adminPlanesBtn) adminPlanesBtn.style.display = 'inline-flex';
+            if (allPerformancesBtn) allPerformancesBtn.style.display = 'inline-flex';
+            if (uploadNormativaBtn) uploadNormativaBtn.style.display = 'block';
+            if (viewAllNormativasBtn) viewAllNormativasBtn.style.display = 'block';
+            if (uploadEventBtn) uploadEventBtn.style.display = 'block';
+            if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'flex';
+            if (drawerAdminSection) drawerAdminSection.style.display = 'block';
+            if (drawerAdminPlanesBtn) drawerAdminPlanesBtn.style.display = 'flex';
+        } else {
+            if (adminBtn) adminBtn.style.display = 'none';
+            if (adminPlanesBtn) adminPlanesBtn.style.display = 'none';
+            if (allPerformancesBtn) allPerformancesBtn.style.display = 'none';
+            if (uploadNormativaBtn) uploadNormativaBtn.style.display = 'none';
+            if (viewAllNormativasBtn) viewAllNormativasBtn.style.display = 'none';
+            if (uploadEventBtn) uploadEventBtn.style.display = 'none';
+            if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'none';
+            if (drawerAdminSection) drawerAdminSection.style.display = 'none';
+            if (drawerAdminPlanesBtn) drawerAdminPlanesBtn.style.display = 'none';
+        }
+        
+        // Centro de Control exclusivo OWNER
+        const ownerBtn = document.getElementById('ownerBtn');
+        if (isOwner) {
+            if (ownerBtn) ownerBtn.style.display = 'inline-flex';
+            if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'flex';
+        } else {
+            if (ownerBtn) ownerBtn.style.display = 'none';
+            if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'none';
+        }
+
+        // Visibilidad de controles Black Market (v3.7.0)
+        if (typeof updateBmAdminVisibility === 'function') {
+            updateBmAdminVisibility();
+        }
+
+        if (typeof refreshLucideIcons === 'function') {
+            refreshLucideIcons();
+        }
+    };
+
+    applyUI();
+    // Resguardo si los componentes del header/drawer aún están completando su inyección DOM
+    if (!document.getElementById('logoutBtn') || !document.getElementById('drawerLogoutBtn')) {
+        setTimeout(applyUI, 100);
+        setTimeout(applyUI, 400);
     }
 }
+
+// Exponer globalmente
+window.updateUserUI = updateUserUI;
 
 // ============================================
 // PWA - FUNCIONALIDADES DE INSTALACI��?N Y OFFLINE
