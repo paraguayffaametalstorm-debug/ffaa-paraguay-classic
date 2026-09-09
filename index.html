@@ -144,7 +144,13 @@
       'settings-view',
       'help-view',
       'owner-panel',
-      'performance-export'
+      'performance-export',
+      // Módulo Black Market (v3.7.0)
+      'bm-missions',
+      'bm-progress',
+      'bm-discount',
+      'bm-leaderboard',
+      'bm-panel'
     ];
 
     Promise.all([
@@ -225,10 +231,13 @@
   <!-- 4. VIEWS (contiene showView, VIEWS, loadViewData) -->
   <script src="/js/views.js?v=3.3.1"></script>
   
-  <!-- 5. PERFORMANCE (contiene loadAdminPilotList, initPerformanceForm, savePerformance) -->
+  <!-- 5. BLACK MARKET (v3.7.0 - Módulo de eventos, misiones y descuentos) -->
+  <script src="/js/bm.js?v=3.7.0"></script>
+  
+  <!-- 6. PERFORMANCE (contiene loadAdminPilotList, initPerformanceForm, savePerformance) -->
   <script src="/js/performance.js?v=3.3.1"></script>
   
-  <!-- 6. AUTH (depende de views - showView YA ESTÁ DISPONIBLE) -->
+  <!-- 7. AUTH (depende de views - showView YA ESTÁ DISPONIBLE) -->
   <script src="/js/auth.js?v=3.3.1"></script>
   
   <!-- 7. Profile y Settings (dependen de views) -->
@@ -330,6 +339,10 @@
           <i data-lucide="layout-dashboard" class="drawer-nav-icon"></i>
           <span class="drawer-nav-text">Cuadro de Mando</span>
         </button>
+        <button id="drawerBmBtn" class="drawer-nav-btn" onclick="showView('bmMissionsView'); closeMobileDrawer();" data-view="bmMissionsView" style="border-left:3px solid #e74c3c;">
+          <i data-lucide="flame" class="drawer-nav-icon" style="color:#e74c3c;"></i>
+          <span class="drawer-nav-text" style="color:#ff7675;font-weight:700;">Black Market (Misiones)</span>
+        </button>
         <button class="drawer-nav-btn" onclick="showView('performanceForm'); closeMobileDrawer();" data-view="performanceForm">
           <i data-lucide="clipboard-check" class="drawer-nav-icon"></i>
           <span class="drawer-nav-text">Cargar Rendimiento (Tokens)</span>
@@ -367,6 +380,10 @@
           <button id="drawerAdminBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('adminPanel'); closeMobileDrawer();" data-view="adminPanel">
             <i data-lucide="shield-check" class="drawer-nav-icon"></i>
             <span class="drawer-nav-text">Panel de Administración</span>
+          </button>
+          <button id="drawerBmAdminBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('bmPanelView'); closeMobileDrawer();" data-view="bmPanelView">
+            <i data-lucide="tag" class="drawer-nav-icon" style="color:#d4af37;"></i>
+            <span class="drawer-nav-text">Gestión Black Market</span>
           </button>
           <button id="drawerAdminPlanesBtn" class="drawer-nav-btn drawer-btn-admin" onclick="showView('adminPlaneModels'); closeMobileDrawer();" data-view="adminPlaneModels">
             <i data-lucide="plane" class="drawer-nav-icon"></i>

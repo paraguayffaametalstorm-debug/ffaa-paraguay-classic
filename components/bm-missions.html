@@ -1,0 +1,155 @@
+<div id="bmMissionsView" class="view" style="display:none;">
+  <!-- Header Principal Táctico -->
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem;">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="background:rgba(231,76,60,0.2);border:1px solid #e74c3c;color:#ff7675;padding:4px 10px;border-radius:4px;font-size:0.75rem;font-weight:800;letter-spacing:1px;">
+          EVENTO ESPECIAL MILITAR
+        </span>
+        <span id="bmEventStateBadge" class="status-badge" style="background:#2ecc71;color:#fff;">ACTIVO</span>
+      </div>
+      <h2 style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        🔥 Black Market · Misiones Tácticas
+      </h2>
+      <p class="subtitle" id="bmEventSubtitle">
+        Completa las 3 misiones de cada día para acumular hasta 250 puntos y 50% de descuento en el caza exclusivo
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="refreshBmMissions()" class="btn-secondary">🔄 Sincronizar</button>
+      <button onclick="showView('bmDiscountView')" class="btn-primary" style="background:#c0392b;border-color:#e74c3c;">
+        ✈️ Ver Oferta del Caza
+      </button>
+      <button id="bmAdminShortcutBtn" onclick="showView('bmPanelView')" class="btn-secondary" style="display:none;border-color:#d4af37;color:#d4af37;">
+        ⚙️ Gestión BM
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de Navegación Rápida Black Market -->
+  <div class="card" style="margin-bottom:1.5rem;padding:8px 12px;background:rgba(10,14,26,0.85);border:1px solid rgba(231,76,60,0.35);">
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;" class="bm-tab-strip">
+      <button onclick="showView('bmMissionsView')" class="btn-sm btn-primary" style="background:#e74c3c;border-color:#ff7675;">
+        🎯 Misiones Diarias
+      </button>
+      <button onclick="showView('bmProgressView')" class="btn-sm btn-secondary">
+        📊 Mi Progreso & Puntos
+      </button>
+      <button onclick="showView('bmDiscountView')" class="btn-sm btn-secondary">
+        🏷️ Descuentos & Hangar BM
+      </button>
+      <button onclick="showView('bmLeaderboardView')" class="btn-sm btn-secondary">
+        🏆 Tabla de Posiciones
+      </button>
+      <button id="bmPanelNavTab" onclick="showView('bmPanelView')" class="btn-sm btn-secondary" style="display:none;color:#d4af37;border-color:rgba(212,175,55,0.4);">
+        ⚙️ Centro de Control (Admin)
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner de Estado de Evento y Resumen Rápido -->
+  <div id="bmActiveEventBanner" class="card" style="margin-bottom:1.5rem;border-left:5px solid #e74c3c;background:linear-gradient(90deg, rgba(231,76,60,0.12) 0%, rgba(10,14,26,0.6) 100%);">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;align-items:center;">
+      <div>
+        <span style="font-size:0.8rem;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;">Evento Actual:</span>
+        <h3 id="bmBannerEventName" style="color:#ff7675;margin:4px 0;">Operación Tormenta Negra</h3>
+        <p id="bmBannerDates" style="font-size:0.85rem;color:#cbd5e0;margin:0;">Miércoles a Domingo · 5 Días</p>
+      </div>
+      <div>
+        <span style="font-size:0.8rem;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;">Día Operativo:</span>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span id="bmBannerCurrentDayText" style="font-size:1.8rem;font-weight:800;color:#fff;">Día 1</span>
+          <span style="font-size:0.85rem;color:#a0aec0;">de 5 días</span>
+        </div>
+      </div>
+      <div>
+        <span style="font-size:0.8rem;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;">Descuento Alcanzado:</span>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span id="bmBannerDiscountText" style="font-size:1.8rem;font-weight:800;color:#2ecc71;">0%</span>
+          <span id="bmBannerPointsText" style="font-size:0.85rem;color:#d4af37;">(0 / 250 pts)</span>
+        </div>
+      </div>
+      <div>
+        <span style="font-size:0.8rem;color:#a0aec0;text-transform:uppercase;letter-spacing:0.5px;">Tiempo Restante:</span>
+        <div id="bmBannerCountdown" style="font-size:1.2rem;font-weight:700;color:#f39c12;margin-top:4px;">
+          Calculando...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selector Táctico de Días (Día 1 a Día 5) -->
+  <div class="card" style="margin-bottom:1.5rem;text-align:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;gap:8px;">
+      <h3 style="margin:0;font-size:1.1rem;display:flex;align-items:center;gap:6px;">
+        📅 Cronograma de Despliegue Diario
+      </h3>
+      <span style="font-size:0.8rem;color:#a0aec0;">Haz clic en un día para inspeccionar o completar sus misiones</span>
+    </div>
+    
+    <div id="bmDaysSelector" style="display:grid;grid-template-columns:repeat(5, 1fr);gap:8px;max-width:800px;margin:0 auto;">
+      <button type="button" class="btn-secondary bm-day-card active" data-day="1" onclick="selectBmMissionDay(1)" style="padding:12px 6px;text-align:center;border-radius:8px;">
+        <div style="font-size:0.75rem;color:#a0aec0;">MIÉRCOLES</div>
+        <div style="font-size:1.1rem;font-weight:700;margin:4px 0;">DÍA 1</div>
+        <div id="dayBadge1" class="day-status-pill" style="font-size:0.7rem;color:#2ecc71;">0 / 3</div>
+      </button>
+      <button type="button" class="btn-secondary bm-day-card" data-day="2" onclick="selectBmMissionDay(2)" style="padding:12px 6px;text-align:center;border-radius:8px;">
+        <div style="font-size:0.75rem;color:#a0aec0;">JUEVES</div>
+        <div style="font-size:1.1rem;font-weight:700;margin:4px 0;">DÍA 2</div>
+        <div id="dayBadge2" class="day-status-pill" style="font-size:0.7rem;color:#cbd5e0;">0 / 3</div>
+      </button>
+      <button type="button" class="btn-secondary bm-day-card" data-day="3" onclick="selectBmMissionDay(3)" style="padding:12px 6px;text-align:center;border-radius:8px;">
+        <div style="font-size:0.75rem;color:#a0aec0;">VIERNES</div>
+        <div style="font-size:1.1rem;font-weight:700;margin:4px 0;">DÍA 3</div>
+        <div id="dayBadge3" class="day-status-pill" style="font-size:0.7rem;color:#cbd5e0;">0 / 3</div>
+      </button>
+      <button type="button" class="btn-secondary bm-day-card" data-day="4" onclick="selectBmMissionDay(4)" style="padding:12px 6px;text-align:center;border-radius:8px;">
+        <div style="font-size:0.75rem;color:#a0aec0;">SÁBADO</div>
+        <div style="font-size:1.1rem;font-weight:700;margin:4px 0;">DÍA 4</div>
+        <div id="dayBadge4" class="day-status-pill" style="font-size:0.7rem;color:#cbd5e0;">0 / 3</div>
+      </button>
+      <button type="button" class="btn-secondary bm-day-card" data-day="5" onclick="selectBmMissionDay(5)" style="padding:12px 6px;text-align:center;border-radius:8px;">
+        <div style="font-size:0.75rem;color:#a0aec0;">DOMINGO</div>
+        <div style="font-size:1.1rem;font-weight:700;margin:4px 0;">DÍA 5</div>
+        <div id="dayBadge5" class="day-status-pill" style="font-size:0.7rem;color:#cbd5e0;">0 / 3</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Encabezado del Día Seleccionado & Bonus Diario -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px;">
+    <div>
+      <h3 id="bmSelectedDayTitle" style="margin:0;color:#fff;">🎯 Misiones del Día 1</h3>
+      <span id="bmSelectedDaySubtitle" style="font-size:0.85rem;color:#a0aec0;">3 misiones tácticas disponibles (+25 pts cada una)</span>
+    </div>
+    <!-- Bonus de compleción diaria -->
+    <div id="bmDailyBonusCard" class="card" style="padding:8px 14px;background:rgba(212,175,55,0.1);border:1px dashed #d4af37;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.4rem;">🎁</span>
+      <div>
+        <div style="font-size:0.75rem;color:#d4af37;font-weight:700;text-transform:uppercase;">Bonus de Día Completo</div>
+        <div id="bmDailyBonusStatus" style="font-size:0.85rem;color:#fff;font-weight:600;">Completa las 3 misiones para +25 pts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid de Misiones (Dedicación, Habilidad, Trabajo en Equipo) -->
+  <div id="bmMissionsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.2rem;margin-bottom:1.5rem;">
+    <!-- Cargando misiones dinámicamente... -->
+    <div class="card" style="text-align:center;padding:2rem;grid-column:1/-1;">
+      <div class="spinner"></div>
+      <p style="color:#a0aec0;margin-top:10px;">Cargando misiones operativas del Black Market...</p>
+    </div>
+  </div>
+
+  <!-- Resumen de Reglas Oficiales BM -->
+  <div class="card" style="background:rgba(10,14,26,0.6);border:1px solid rgba(255,255,255,0.08);">
+    <h4 style="color:#cbd5e0;margin-bottom:8px;">📋 Reglas y Directivas del Black Market (Metalstorm v3.7.0):</h4>
+    <ul style="margin:0;padding-left:1.2rem;font-size:0.85rem;color:#a0aec0;line-height:1.6;">
+      <li><strong>Duración Oficial:</strong> 5 días continuos (de miércoles a domingo). El evento sustituye al Squadron Event regular.</li>
+      <li><strong>Puntuación Máxima:</strong> 250 puntos acumulables en todo el evento (50 puntos diarios).</li>
+      <li><strong>Descuento Máximo:</strong> 50% de descuento militar en la adquisición de la aeronave exclusiva ofertada.</li>
+      <li><strong>Misiones Diarias:</strong> 3 categorías tácticas: <em>Dedicación</em> (rol específico), <em>Habilidad</em> (trofeos mínimos) y <em>Trabajo en equipo</em> (escuadrilla conjunta).</li>
+      <li><strong>Bonus Diario:</strong> Al completar las 3 misiones del día se adjudica un bonus oficial de 25 puntos de escuadrón.</li>
+    </ul>
+  </div>
+</div>

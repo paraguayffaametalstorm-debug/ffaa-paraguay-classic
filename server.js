@@ -23,6 +23,7 @@ import settingsRoutes from './src/routes/settings.routes.js';
 import eventsRoutes from './src/routes/events.routes.js';
 import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
+import bmRoutes from './src/routes/bm.routes.js';
 
 // Global error handlers to prevent process crash
 process.on('unhandledRejection', (err) => {
@@ -140,6 +141,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/presence', presenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/bm', bmRoutes);
 
 // Compatibility aliases
 app.use('/api/catalog', planesRoutes);
