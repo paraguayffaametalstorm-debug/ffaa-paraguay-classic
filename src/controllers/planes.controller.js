@@ -8,6 +8,7 @@
 import { getSupabase } from '../db/supabase.js';
 import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
+import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
 
 // Catálogo oficial de modelos de aeronaves
 const DEFAULT_PLANE_MODELS = [
@@ -59,16 +60,19 @@ export async function getCatalogModels(req, res) {
       const { data, error } = await supabase
         .from('plane_models')
         .select('*')
+        .neq('is_active', false)
         .order('name');
       
       if (!error && data && data.length > 0) {
         return res.json({ success: true, message: 'Catálogo de modelos recuperado', models: data, data });
       }
     }
-    return res.json({ success: true, message: 'Catálogo base cargado', models: DEFAULT_PLANE_MODELS, data: DEFAULT_PLANE_MODELS });
+    const fallbackModels = INITIAL_PLANE_MODELS.filter(m => m.is_active !== false);
+    return res.json({ success: true, message: 'Catálogo base cargado', models: fallbackModels, data: fallbackModels });
   } catch (error) {
     console.error('❌ [Hangar] Error en getCatalogModels:', error);
-    return res.json({ success: true, message: 'Catálogo de emergencia', models: DEFAULT_PLANE_MODELS, data: DEFAULT_PLANE_MODELS });
+    const fallbackModels = INITIAL_PLANE_MODELS.filter(m => m.is_active !== false);
+    return res.json({ success: true, message: 'Catálogo de emergencia', models: fallbackModels, data: fallbackModels });
   }
 }
 

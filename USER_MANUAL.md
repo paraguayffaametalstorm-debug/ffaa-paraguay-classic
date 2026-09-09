@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.5.0).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.6.0).**
 
 ---
 
@@ -130,6 +130,25 @@ La consola de administración permite supervisar y gestionar a toda la dotación
   - **Reseteo Táctico de Clave:** Generación de clave temporal `MS-XXXX-XXXX` criptosegura.
   - **Ascensos y Descensos de Rango:** Ajuste jerárquico sujeto a cuotas militares.
 
+### 2.8 ✈️ Gestión del Catálogo de Aeronaves (ADMIN y OWNER)
+Los Oficiales `ADMIN` y el Comandante `OWNER` disponen de la consola táctica de **Catálogo de Cazas**:
+- **Acceso:** Desde la barra de navegación superior (**Catálogo Cazas**), el menú lateral táctico (**Catálogo de Cazas**), o desde el Panel de Administración / Centro de Control Owner.
+- **Visualización y Métricas:**
+  - Métricas de flota: Total de modelos, modelos activos en servicio, modelos en reserva/desactivados y cazas de alta gama (Tier 4 y 5).
+  - Tarjetas de aeronaves con estadísticas reales: Velocidad máxima, agilidad de maniobra, blindaje estructural, potencia de fuego, habilidad especial con descripción por nivel y habilidad pasiva.
+- **Agregar Nuevo Modelo:**
+  1. Pulsa el botón **"+ Nueva Aeronave"**.
+  2. Completa los datos: ID único del modelo (ej: `125`), Nombre oficial (ej: `F-15EX Eagle II`), Tipo/Rol militar, Tier (1 al 5).
+  3. Parámetros de combate: Velocidad (km/h), Agilidad, Blindaje, Potencia de Armas.
+  4. Habilidades: Nombre de la Habilidad Especial y Pasiva con sus descripciones de progresión por niveles (Nivel 1 y Nivel 2).
+  5. Pulsa **"Guardar Aeronave"**. El modelo quedará disponible inmediatamente para todos los pilotos del escuadrón.
+- **Editar Modelo:**
+  - En la tarjeta del caza, pulsa el botón **"✏️ Editar"**. Permite recalibrar estadísticas de vuelo, nombres y habilidades sin alterar el historial de los pilotos.
+- **Desactivar Aeronave (Soft-Delete):**
+  - Pulsa **"🚫 Desactivar"**. El avión dejará de aparecer en la lista de compras del hangar de los pilotos regulares, pero se conservará intacto en los hangares y registros de quienes ya lo hayan adquirido.
+- **Reactivar Aeronave:**
+  - Filtrando por "Solo Inactivos", pulsa **"✅ Reactivar"** para devolver la aeronave al servicio activo de inmediato.
+
 ---
 
 ## 3. Escala Oficial del Semáforo Militar
@@ -165,9 +184,9 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.5.0.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.6.0.
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.5.0 · Actualizado: Septiembre 2026*
+*Versión: v3.6.0 · Actualizado: Septiembre 2026*

@@ -1,0 +1,283 @@
+<div id="adminPlaneModels" class="view" style="display:none;">
+  <!-- Header de Vista Táctica -->
+  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.6rem;">✈️</span>
+        <h2 style="margin:0;font-family:var(--font-tactical);letter-spacing:1px;color:var(--gold-rank,#d4af37);">
+          Gestión de Catálogo de Aeronaves
+        </h2>
+      </div>
+      <p class="subtitle" style="margin:4px 0 0 0;color:#a0aec0;font-size:0.9rem;">
+        Control y calibración de flota aérea oficial (ADMIN / OWNER) — v3.6.0
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="showView('adminPanel')" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">
+        <span>🛡️</span> Volver a Comandancia
+      </button>
+      <button onclick="loadAdminPlaneModels(true)" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">
+        <span>🔄</span> Actualizar
+      </button>
+      <button onclick="openCreatePlaneModelModal()" class="btn-primary" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#1b4d3e,#2ecc71);border-color:#2ecc71;">
+        <span>➕</span> Agregar Nueva Aeronave
+      </button>
+    </div>
+  </div>
+
+  <!-- Resumen Métrico Rápido -->
+  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card stat-card" style="border-left:4px solid #3498db;background:rgba(17,24,39,0.85);">
+      <h4 style="color:#a0aec0;font-size:0.85rem;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Total Modelos</h4>
+      <div id="catalogTotalModels" style="font-size:1.8rem;font-weight:700;color:#3498db;">--</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #2ecc71;background:rgba(17,24,39,0.85);">
+      <h4 style="color:#a0aec0;font-size:0.85rem;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Aeronaves Activas</h4>
+      <div id="catalogActiveModels" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">--</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #e74c3c;background:rgba(17,24,39,0.85);">
+      <h4 style="color:#a0aec0;font-size:0.85rem;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Desactivadas (Bajas)</h4>
+      <div id="catalogInactiveModels" style="font-size:1.8rem;font-weight:700;color:#e74c3c;">--</div>
+    </div>
+    <div class="card stat-card" style="border-left:4px solid #d4af37;background:rgba(17,24,39,0.85);">
+      <h4 style="color:#a0aec0;font-size:0.85rem;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Cazas Tier 4 / 5</h4>
+      <div id="catalogHighTierModels" style="font-size:1.8rem;font-weight:700;color:#d4af37;">--</div>
+    </div>
+  </div>
+
+  <!-- Barra de Búsqueda y Filtros Tácticos -->
+  <div class="card tactical-corners" style="margin-bottom:1.5rem;padding:1.2rem;background:rgba(17,24,39,0.9);border:1px solid rgba(212,175,55,0.25);">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end;">
+      <div style="grid-column:span 2;">
+        <label for="catalogSearchInput" style="font-size:0.8rem;color:#cbd5e0;font-family:var(--font-tactical);display:block;margin-bottom:4px;">
+          🔍 BUSCAR MODELO O TIPO DE CAZA
+        </label>
+        <input type="text" id="catalogSearchInput" placeholder="Ej: F-22, Rafale, Sigiloso, Superioridad..." oninput="filterAdminPlaneModels()"
+               style="background:rgba(10,15,25,0.9);border:1px solid #374151;color:#fff;padding:0.65rem 0.85rem;border-radius:4px;width:100%;font-size:0.9rem;" />
+      </div>
+      <div>
+        <label for="catalogTierFilter" style="font-size:0.8rem;color:#cbd5e0;font-family:var(--font-tactical);display:block;margin-bottom:4px;">
+          TIER MILITAR
+        </label>
+        <select id="catalogTierFilter" onchange="filterAdminPlaneModels()"
+                style="background:rgba(10,15,25,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;">
+          <option value="">Todos los Tiers</option>
+          <option value="5">Tier 5 (5ª Gen / Sigilo)</option>
+          <option value="4">Tier 4 (4ª Gen++ Pesados)</option>
+          <option value="3">Tier 3 (Polivalentes)</option>
+          <option value="2">Tier 2 (Especializados)</option>
+          <option value="1">Tier 1 (Ligeros Clásicos)</option>
+        </select>
+      </div>
+      <div>
+        <label for="catalogStatusFilter" style="font-size:0.8rem;color:#cbd5e0;font-family:var(--font-tactical);display:block;margin-bottom:4px;">
+          ESTADO OPERACIONAL
+        </label>
+        <select id="catalogStatusFilter" onchange="filterAdminPlaneModels()"
+                style="background:rgba(10,15,25,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;">
+          <option value="">Todos los Estados</option>
+          <option value="active" selected>Sólo Activos</option>
+          <option value="inactive">Sólo Desactivados</option>
+        </select>
+      </div>
+      <div>
+        <button onclick="resetCatalogFilters()" class="btn-secondary" style="width:100%;padding:0.65rem;">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor Principal del Catálogo: Cuadrícula de Modelos -->
+  <div id="adminPlaneModelsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.2rem;margin-bottom:2rem;">
+    <!-- Renderizado dinámico vía JavaScript -->
+    <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">
+      <span style="font-size:2rem;display:block;margin-bottom:8px;">⏳</span>
+      Cargando catálogo táctico de aeronaves...
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: AGREGAR / EDITAR MODELO DE AERONAVE                   -->
+  <!-- ============================================================ -->
+  <div id="planeModelModal" class="modal">
+    <div class="modal-content tactical-corners" style="max-width:680px;max-height:90vh;overflow-y:auto;background:#0d1520;border:1.5px solid var(--gold-rank,#d4af37);">
+      <div class="modal-header" style="border-bottom:1px solid rgba(212,175,55,0.3);padding-bottom:0.8rem;display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="planeModelModalTitle" style="margin:0;font-family:var(--font-tactical);color:var(--gold-rank,#d4af37);">
+          ✈️ Registrar Nuevo Modelo de Avión
+        </h3>
+        <button onclick="closeModal('planeModelModal')" class="btn-secondary" style="padding:4px 8px;font-size:1rem;">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding-top:1.2rem;">
+        <form id="planeModelForm" onsubmit="handleSavePlaneModel(event)">
+          <input type="hidden" id="modelFormMode" value="create" />
+
+          <!-- Datos Primarios -->
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:1rem;">
+            <div>
+              <label for="modelFormId" style="font-size:0.8rem;color:#cbd5e0;display:block;margin-bottom:4px;font-family:var(--font-tactical);">
+                ID / IDENTIFICADOR *
+              </label>
+              <input type="text" id="modelFormId" required placeholder="Ej: 101, F-5E"
+                     style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-family:var(--font-mono);font-size:0.9rem;" />
+              <small id="modelIdHelp" style="color:#718096;font-size:0.75rem;">Identificador único militar</small>
+            </div>
+            <div>
+              <label for="modelFormName" style="font-size:0.8rem;color:#cbd5e0;display:block;margin-bottom:4px;font-family:var(--font-tactical);">
+                NOMBRE DEL MODELO *
+              </label>
+              <input type="text" id="modelFormName" required placeholder="Ej: F-5E Tiger II, Su-57 Felon"
+                     style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.95rem;font-weight:600;" />
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1rem;">
+            <div>
+              <label for="modelFormType" style="font-size:0.8rem;color:#cbd5e0;display:block;margin-bottom:4px;font-family:var(--font-tactical);">
+                TIPO / ROL OPERATIVO *
+              </label>
+              <input type="text" id="modelFormType" required placeholder="Ej: Caza de Superioridad Aérea"
+                     style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;" />
+            </div>
+            <div>
+              <label for="modelFormTier" style="font-size:0.8rem;color:#cbd5e0;display:block;margin-bottom:4px;font-family:var(--font-tactical);">
+                TIER (1-5)
+              </label>
+              <select id="modelFormTier" style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;">
+                <option value="5">Tier 5 (Élite 5ª Gen)</option>
+                <option value="4">Tier 4 (Avanzado)</option>
+                <option value="3" selected>Tier 3 (Polivalente)</option>
+                <option value="2">Tier 2 (Táctico)</option>
+                <option value="1">Tier 1 (Base / Ligero)</option>
+              </select>
+            </div>
+            <div>
+              <label for="modelFormActive" style="font-size:0.8rem;color:#cbd5e0;display:block;margin-bottom:4px;font-family:var(--font-tactical);">
+                ESTADO
+              </label>
+              <select id="modelFormActive" style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;">
+                <option value="true" selected>✅ Activo</option>
+                <option value="false">🚫 Desactivado</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Estadísticas Reales de Combate -->
+          <div style="background:rgba(10,15,25,0.7);padding:1rem;border-radius:6px;border:1px solid #1f2937;margin-bottom:1.2rem;">
+            <div style="font-size:0.85rem;color:#d4af37;font-weight:600;margin-bottom:8px;font-family:var(--font-tactical);">
+              📊 PARÁMETROS TÉCNICOS & ESTADÍSTICAS REALES
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+              <div>
+                <label for="statVelocidad" style="font-size:0.75rem;color:#a0aec0;display:block;">Velocidad (km/h)</label>
+                <input type="number" id="statVelocidad" placeholder="2200" min="400" max="4000"
+                       style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-family:var(--font-mono);" />
+              </div>
+              <div>
+                <label for="statAgilidad" style="font-size:0.75rem;color:#a0aec0;display:block;">Agilidad (1-100)</label>
+                <input type="number" id="statAgilidad" placeholder="90" min="1" max="100"
+                       style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-family:var(--font-mono);" />
+              </div>
+              <div>
+                <label for="statBlindaje" style="font-size:0.75rem;color:#a0aec0;display:block;">Blindaje (HP)</label>
+                <input type="number" id="statBlindaje" placeholder="1300" min="100" max="5000"
+                       style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-family:var(--font-mono);" />
+              </div>
+              <div>
+                <label for="statArmas" style="font-size:0.75rem;color:#a0aec0;display:block;">Potencia de Fuego</label>
+                <input type="number" id="statArmas" placeholder="1400" min="100" max="5000"
+                       style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-family:var(--font-mono);" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Habilidades Especial y Pasiva -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.2rem;">
+            <div style="background:rgba(10,15,25,0.7);padding:0.9rem;border-radius:6px;border:1px solid #1f2937;">
+              <div style="font-size:0.85rem;color:#60a5fa;font-weight:600;margin-bottom:6px;font-family:var(--font-tactical);">
+                ⚡ HABILIDAD ESPECIAL
+              </div>
+              <div style="margin-bottom:8px;">
+                <label for="modelFormSpecialName" style="font-size:0.75rem;color:#a0aec0;display:block;margin-bottom:2px;">Nombre de Habilidad</label>
+                <input type="text" id="modelFormSpecialName" placeholder="Ej: Giro Cobra Pugachev"
+                       style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-size:0.85rem;" />
+              </div>
+              <div>
+                <label for="modelFormSpecialLevels" style="font-size:0.75rem;color:#a0aec0;display:block;margin-bottom:2px;">
+                  Niveles / Efectos (JSON o texto)
+                </label>
+                <textarea id="modelFormSpecialLevels" rows="2" placeholder='{"1": "Evasión +10%", "2": "Evasión +20%"}'
+                          style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-family:var(--font-mono);font-size:0.8rem;resize:vertical;"></textarea>
+              </div>
+            </div>
+
+            <div style="background:rgba(10,15,25,0.7);padding:0.9rem;border-radius:6px;border:1px solid #1f2937;">
+              <div style="font-size:0.85rem;color:#34d399;font-weight:600;margin-bottom:6px;font-family:var(--font-tactical);">
+                🛡️ HABILIDAD PASIVA
+              </div>
+              <div style="margin-bottom:8px;">
+                <label for="modelFormPassiveName" style="font-size:0.75rem;color:#a0aec0;display:block;margin-bottom:2px;">Nombre de Pasiva</label>
+                <input type="text" id="modelFormPassiveName" placeholder="Ej: Recubrimiento RAM Anti-Radar"
+                       style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-size:0.85rem;" />
+              </div>
+              <div>
+                <label for="modelFormPassiveLevels" style="font-size:0.75rem;color:#a0aec0;display:block;margin-bottom:2px;">
+                  Niveles / Efectos (JSON o texto)
+                </label>
+                <textarea id="modelFormPassiveLevels" rows="2" placeholder='{"1": "Detección radar -15%", "2": "Detección radar -30%"}'
+                          style="background:rgba(17,24,39,0.9);border:1px solid #374151;color:#fff;padding:0.5rem;border-radius:4px;width:100%;font-family:var(--font-mono);font-size:0.8rem;resize:vertical;"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sistemas y Subsistemas Disponibles -->
+          <div style="background:rgba(10,15,25,0.7);padding:0.9rem;border-radius:6px;border:1px solid #1f2937;margin-bottom:1.5rem;">
+            <div style="font-size:0.85rem;color:#cbd5e0;font-weight:600;margin-bottom:6px;font-family:var(--font-tactical);">
+              ⚙️ SUBSISTEMAS DE MEJORA STARFORM 2.0
+            </div>
+            <div style="display:flex;gap:15px;flex-wrap:wrap;align-items:center;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#cbd5e0;">
+                <input type="checkbox" id="sysFuselaje" checked /> Fuselaje (0-8)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#cbd5e0;">
+                <input type="checkbox" id="sysMotor" checked /> Motor (0-8)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#cbd5e0;">
+                <input type="checkbox" id="sysAvionica" checked /> Aviónica (0-8)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:#cbd5e0;">
+                <input type="checkbox" id="sysArmas" checked /> Armas (0-8)
+              </label>
+            </div>
+          </div>
+
+          <!-- Botones de Acción del Modal -->
+          <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid rgba(255,255,255,0.1);padding-top:1rem;">
+            <button type="button" onclick="closeModal('planeModelModal')" class="btn-secondary">
+              Cancelar
+            </button>
+            <button type="submit" id="btnSavePlaneModel" class="btn-primary" style="background:linear-gradient(135deg,#1b4d3e,#2ecc71);border-color:#2ecc71;">
+              💾 Guardar Modelo en Catálogo
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ficha Técnica Completa (Inspección) -->
+  <div id="planeModelDetailModal" class="modal">
+    <div class="modal-content tactical-corners" style="max-width:600px;background:#0d1520;border:1.5px solid #3498db;">
+      <div class="modal-header" style="border-bottom:1px solid rgba(52,152,219,0.3);padding-bottom:0.8rem;display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="planeModelDetailTitle" style="margin:0;font-family:var(--font-tactical);color:#3498db;">
+          📋 Ficha Técnica de Aeronave
+        </h3>
+        <button onclick="closeModal('planeModelDetailModal')" class="btn-secondary" style="padding:4px 8px;">✕</button>
+      </div>
+      <div class="modal-body" id="planeModelDetailBody" style="padding-top:1rem;">
+        <!-- Contenido inyectado dinámicamente -->
+      </div>
+    </div>
+  </div>
+</div>

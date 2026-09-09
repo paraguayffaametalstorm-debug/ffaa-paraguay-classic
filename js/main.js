@@ -143,27 +143,33 @@ function updateUserUI(user) {
     
     // === MOSTRAR/OCULTAR BOTONES DE ADMIN ===
     const adminBtn = document.getElementById('adminBtn');
+    const adminPlanesBtn = document.getElementById('adminPlanesBtn');
     const allPerformancesBtn = document.getElementById('allPerformancesBtn');
     const uploadNormativaBtn = document.getElementById('uploadNormativaBtn');
     const viewAllNormativasBtn = document.getElementById('viewAllNormativasBtn');
     const uploadEventBtn = document.getElementById('uploadEventBtn');
     const mobileAdminNavItem = document.getElementById('mobileAdminNavItem');
     const drawerAdminSection = document.getElementById('drawerAdminSection');
+    const drawerAdminPlanesBtn = document.getElementById('drawerAdminPlanesBtn');
     const drawerOwnerBtn = document.getElementById('drawerOwnerBtn');
     
     if (user.role === 'OWNER' || user.role === 'ADMIN') {
         if (adminBtn) adminBtn.style.display = 'inline-flex';
+        if (adminPlanesBtn) adminPlanesBtn.style.display = 'inline-flex';
         if (allPerformancesBtn) allPerformancesBtn.style.display = 'inline-flex';
         if (uploadNormativaBtn) uploadNormativaBtn.style.display = 'block';
         if (viewAllNormativasBtn) viewAllNormativasBtn.style.display = 'block';
         if (uploadEventBtn) uploadEventBtn.style.display = 'block';
         if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'flex';
         if (drawerAdminSection) drawerAdminSection.style.display = 'block';
+        if (drawerAdminPlanesBtn) drawerAdminPlanesBtn.style.display = 'flex';
     } else {
         if (adminBtn) adminBtn.style.display = 'none';
+        if (adminPlanesBtn) adminPlanesBtn.style.display = 'none';
         if (allPerformancesBtn) allPerformancesBtn.style.display = 'none';
         if (mobileAdminNavItem) mobileAdminNavItem.style.display = 'none';
         if (drawerAdminSection) drawerAdminSection.style.display = 'none';
+        if (drawerAdminPlanesBtn) drawerAdminPlanesBtn.style.display = 'none';
     }
     
     // Centro de Control exclusivo OWNER

@@ -850,3 +850,125 @@ function refreshAdminStats() {
 function showAllNormativas() {
   showView('normativasView');
 }
+
+// ============================================================
+// GESTIÓN DE MODELOS DE AERONAVES (CATÁLOGO ADMIN / OWNER v3.6.0)
+// ============================================================
+
+async function apiGetPlaneModels(includeInactive = true) {
+  try {
+    const url = `${API_BASE}/api/plane-models?include_inactive=${includeInactive}&all=true`;
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Error HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return data.models || data.data || [];
+  } catch (err) {
+    console.error('❌ [API] Error en apiGetPlaneModels:', err);
+    throw err;
+  }
+}
+
+async function apiGetPlaneModelById(id) {
+  try {
+    const res = await fetch(`${API_BASE}/api/plane-models/${encodeURIComponent(id)}`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Error HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return data.model || data.data;
+  } catch (err) {
+    console.error('❌ [API] Error en apiGetPlaneModelById:', err);
+    throw err;
+  }
+}
+
+async function apiCreatePlaneModel(modelData) {
+  try {
+    const res = await fetch(`${API_BASE}/api/plane-models`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(modelData)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al registrar modelo de aeronave');
+    }
+    showToast(`✅ ${data.message || 'Modelo registrado con éxito en catálogo'}`, 'success');
+    return data.model || data.data;
+  } catch (err) {
+    console.error('❌ [API] Error en apiCreatePlaneModel:', err);
+    showToast('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
+async function apiUpdatePlaneModel(id, modelData) {
+  try {
+    const res = await fetch(`${API_BASE}/api/plane-models/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(modelData)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al actualizar modelo de aeronave');
+    }
+    showToast(`✅ ${data.message || 'Modelo actualizado con éxito'}`, 'success');
+    return data.model || data.data;
+  } catch (err) {
+    console.error('❌ [API] Error en apiUpdatePlaneModel:', err);
+    showToast('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
+async function apiDeletePlaneModel(id) {
+  try {
+    const res = await fetch(`${API_BASE}/api/plane-models/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al desactivar modelo de aeronave');
+    }
+    showToast(`✅ ${data.message || 'Modelo desactivado del catálogo'}`, 'success');
+    return data;
+  } catch (err) {
+    console.error('❌ [API] Error en apiDeletePlaneModel:', err);
+    showToast('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
+async function apiRestorePlaneModel(id) {
+  try {
+    const res = await fetch(`${API_BASE}/api/plane-models/${encodeURIComponent(id)}/restore`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al reactivar modelo de aeronave');
+    }
+    showToast(`✅ ${data.message || 'Modelo reactivado en catálogo'}`, 'success');
+    return data;
+  } catch (err) {
+    console.error('❌ [API] Error en apiRestorePlaneModel:', err);
+    showToast('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
+window.apiGetPlaneModels    = apiGetPlaneModels;
+window.apiGetPlaneModelById = apiGetPlaneModelById;
+window.apiCreatePlaneModel  = apiCreatePlaneModel;
+window.apiUpdatePlaneModel  = apiUpdatePlaneModel;
+window.apiDeletePlaneModel  = apiDeletePlaneModel;
+window.apiRestorePlaneModel = apiRestorePlaneModel;

@@ -6,6 +6,32 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.6.0] - 2026-09-08
+
+### ✈️ Sistema de Gestión de Catálogo de Aeronaves (CRUD ADMIN / OWNER)
+- **Controlador Maestro de Catálogo (`src/controllers/plane-models.controller.js`):**
+  - Implementación completa de CRUD sobre modelos de aeronaves militares con fallback en memoria `INITIAL_PLANE_MODELS` y sincronización Supabase (`plane_models`).
+  - Lógica de desactivación suave (**Soft-Delete**) mediante `is_active: false` protegiendo el historial y los hangares existentes de los pilotos.
+  - Endpoint de reactivación (`POST /api/plane-models/:id/restore`).
+  - Registro forense en `audit_logs` para cada operación de creación, actualización, desactivación y reactivación.
+- **Rutas y Seguridad RBAC (`src/routes/plane-models.routes.js`):**
+  - Rutas protegidas mediante `requireAuth` y `requireRole('ADMIN', 'OWNER')`.
+  - Validación de esquemas con Zod (`PlaneModelSchema`, `UpdatePlaneModelSchema`).
+- **Vista de Administración Táctica (`components/admin-plane-models.html`):**
+  - Panel visual de catálogo con métricas KPI (Total Modelos, Activos, Desactivados, Cazas Tier 4/5).
+  - Búsqueda en tiempo real por texto, filtrado por Tier militar (1 al 5) y filtrado por estado operacional.
+  - Tarjetas tácticas con visualización de Tier, velocidad, agilidad, blindaje, potencia de fuego, habilidades especial y pasiva, y estado operativo.
+  - Modal táctico para registrar nuevos cazas y editar parámetros técnicos oficiales.
+  - Modal de inspección de ficha técnica militar.
+- **Cliente API Frontend (`js/api.js`):**
+  - Funciones `apiGetPlaneModels`, `apiGetPlaneModelById`, `apiCreatePlaneModel`, `apiUpdatePlaneModel`, `apiDeletePlaneModel`, `apiRestorePlaneModel`.
+- **Integración SPA (`js/views.js`, `index.html`, `components/header.html`):**
+  - Registro de la vista `adminPlaneModels` en `VIEWS` y `VIEW_ALIASES`.
+  - Botones de acceso rápido en Desktop Navigation Strip, Mobile Side Drawer, Panel de Administración y Centro de Control Owner.
+  - Sincronización automática con el selector de aeronaves del hangar de pilotos (`loadPlaneModels()`).
+
+---
+
 ## 📌 [3.5.0] - 2026-09-08
 
 ### 🚀 Autenticación Militar Dual & Vinculación de Cuentas (v3.5.0)
