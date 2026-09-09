@@ -17,6 +17,11 @@ function handleOAuthCallback() {
       console.log('🔑 Token táctico recibido por callback OAuth');
       localStorage.setItem('authToken', token);
 
+      const mustChange = urlParams.get('must_change_password');
+      if (mustChange === 'true') {
+        sessionStorage.setItem('must_change_password', 'true');
+      }
+
       // Limpiar parámetros de la URL sin recargar
       const cleanUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
@@ -105,10 +110,12 @@ function checkAuthStatus() {
     
     console.log(`✅ Usuario autenticado: ${currentUser.nick} (user_id: ${currentUser.user_id}, tipo: number)`);
     
-    // 🔒 Verificar si debe cambiar contraseña
-    if (currentUser.must_change_password) {
-      console.log('⚠️ Debe cambiar contraseña');
-      showPasswordChangeModal();
+    // 🔒 Verificar si debe cambiar contraseña (por base de datos o por bandera en sesión)
+    const sessionMustChange = sessionStorage.getItem('must_change_password') === 'true';
+    if (currentUser.must_change_password || sessionMustChange) {
+      console.log('⚠️ Debe cambiar contraseña de combate (forzado)');
+      sessionStorage.setItem('must_change_password', 'true');
+      showPasswordChangeModal({ forced: true });
       return;
     }
     
@@ -124,6 +131,7 @@ function checkAuthStatus() {
   .catch(err => {
     console.error('❌ Error verificando autenticación:', err);
     localStorage.removeItem('authToken');
+    sessionStorage.removeItem('must_change_password');
     showLoginModal();
   });
 }
@@ -174,12 +182,14 @@ function login() {
     
     // 🔒 Verificar si debe cambiar contraseña
     if (currentUser.must_change_password) {
-      console.log('⚠️ Debe cambiar contraseña');
-      showPasswordChangeModal();
+      console.log('⚠️ Debe cambiar contraseña (forzado)');
+      sessionStorage.setItem('must_change_password', 'true');
+      showPasswordChangeModal({ forced: true });
       return;
     }
     
     // ✅ Flujo normal (contraseña ya cambiada)
+    sessionStorage.removeItem('must_change_password');
     updateUserUI(currentUser);
     closeModal('loginModal');
     showToast(`✅ Bienvenido, ${currentUser.nick || currentUser.email}`, 'success');
@@ -211,6 +221,7 @@ function logout() {
   
   localStorage.removeItem('authToken');
   localStorage.removeItem('tempToken');
+  sessionStorage.removeItem('must_change_password');
   currentUser = null;
   
   if (typeof sessionTimeout !== 'undefined' && sessionTimeout) {
@@ -289,90 +300,296 @@ function showLoginModal() {
   });
 }
 
-// ========== MODAL DE CAMBIO DE CONTRASEÑA OBLIGATORIO ==========
-function showPasswordChangeModal() {
-  // Cerrar cualquier otro modal abierto
+// ========== MODAL DE CAMBIO DE CONTRASEÑA (SISTEMA MILITAR TÁCTICO) ==========
+
+/**
+ * Muestra el modal táctico de cambio de contraseña.
+ * Puede ser en modo forzado (primer login o flag must_change_password) o voluntario.
+ * @param {Object} options - { forced: boolean }
+ */
+async function showPasswordChangeModal(options = { forced: false }) {
+  // Determinar si es forzado por opciones, por currentUser o por sessionStorage
+  const isForced = Boolean(
+    options?.forced || 
+    currentUser?.must_change_password || 
+    sessionStorage.getItem('must_change_password') === 'true'
+  );
+
+  // Guardar flag en sessionStorage para persistencia temporal
+  if (isForced) {
+    sessionStorage.setItem('must_change_password', 'true');
+  }
+
+  // Cerrar loginModal si está abierto
   closeModal('loginModal');
-  
-  // Verificar si ya existe el modal, si no, crearlo
-  let modal = document.getElementById('passwordChangeModal');
+
+  // Buscar si el modal ya está en el DOM
+  let modal = document.getElementById('changePasswordModal');
   if (!modal) {
-    const html = `
-      <div id="passwordChangeModal" class="modal show">
-        <div class="modal-content">
-          <h2>🔒 Cambio de Contraseña Obligatorio</h2>
-          <p>Por razones de seguridad, debes cambiar tu contraseña temporal antes de continuar.</p>
-          <input type="password" id="newPassword" placeholder="Nueva contraseña (mínimo 8 caracteres)" />
-          <input type="password" id="confirmPassword" placeholder="Confirmar contraseña" />
-          <div class="modal-actions">
-            <button onclick="changeTemporaryPassword()" class="btn-primary">Actualizar Contraseña</button>
-          </div>
-          <div id="passwordChangeError" class="error-message" style="display:none;"></div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', html);
-    modal = document.getElementById('passwordChangeModal');
+    try {
+      console.log('📥 Cargando dinámicamente /components/change-password-modal.html...');
+      const response = await fetch('/components/change-password-modal.html');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const html = await response.text();
+      
+      const container = document.getElementById('modalsContainer') || document.body;
+      container.insertAdjacentHTML('beforeend', html);
+      modal = document.getElementById('changePasswordModal');
+    } catch (err) {
+      console.error('❌ Error cargando change-password-modal:', err);
+      showToast('❌ Error cargando módulo de cambio de contraseña', 'error');
+      return;
+    }
+  }
+
+  if (!modal) {
+    console.error('❌ Modal changePasswordModal no se encontró tras inserción');
+    return;
+  }
+
+  // Guardar estado en dataset del modal
+  modal.dataset.forced = isForced ? 'true' : 'false';
+
+  // Configurar elementos según modo forzado vs voluntario
+  const currentGroup = document.getElementById('changeModalCurrentGroup');
+  const forcedNotice = document.getElementById('changePasswordForcedNotice');
+  const subtitle = document.getElementById('changePasswordSubtitle');
+  const title = document.getElementById('changePasswordModalTitle');
+  const cancelBtn = document.getElementById('btnChangePasswordCancel');
+  const closeBtn = document.getElementById('changePasswordCloseBtn');
+  const alertSuccess = document.getElementById('changePasswordAlertSuccess');
+  const alertError = document.getElementById('changePasswordAlertError');
+
+  if (currentGroup) currentGroup.style.display = isForced ? 'none' : 'block';
+  if (forcedNotice) forcedNotice.style.display = isForced ? 'flex' : 'none';
+  if (subtitle) {
+    subtitle.textContent = isForced 
+      ? 'PROTOCOLO C4ISR · ACTUALIZACIÓN OBLIGATORIA' 
+      : 'SEGURIDAD MILITAR · CAMBIO DE CLAVE';
+  }
+  if (title) {
+    title.textContent = isForced
+      ? 'ACTUALIZACIÓN OBLIGATORIA DE CLAVE'
+      : 'ACTUALIZACIÓN DE CLAVE TÁCTICA';
+  }
+  if (cancelBtn) {
+    cancelBtn.textContent = isForced ? 'Cerrar Sesión' : 'Cancelar';
+  }
+  if (closeBtn) {
+    closeBtn.style.display = isForced ? 'none' : 'inline-block';
+  }
+
+  // Limpiar campos y alertas
+  const currentPassInput = document.getElementById('modalCurrentPassword');
+  const newPassInput = document.getElementById('modalNewPassword');
+  const confirmPassInput = document.getElementById('modalConfirmPassword');
+
+  if (currentPassInput) currentPassInput.value = '';
+  if (newPassInput) newPassInput.value = '';
+  if (confirmPassInput) confirmPassInput.value = '';
+
+  if (alertSuccess) alertSuccess.style.display = 'none';
+  if (alertError) alertError.style.display = 'none';
+
+  validateModalPasswordComplexity();
+
+  // Mostrar modal
+  showModal('changePasswordModal');
+}
+
+/**
+ * Valida dinámicamente la complejidad de la clave en el modal
+ */
+function validateModalPasswordComplexity() {
+  const newPass = document.getElementById('modalNewPassword')?.value || '';
+  const confirmPass = document.getElementById('modalConfirmPassword')?.value || '';
+
+  const hasLength = newPass.length >= 8;
+  const hasUpper = /[A-Z]/.test(newPass);
+  const hasLower = /[a-z]/.test(newPass);
+  const hasNumber = /[0-9]/.test(newPass);
+
+  const updateReq = (id, valid) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.color = valid ? '#4ADE80' : '#64748B';
+    el.style.fontWeight = valid ? '600' : 'normal';
+  };
+
+  updateReq('reqLength', hasLength);
+  updateReq('reqUpper', hasUpper);
+  updateReq('reqLower', hasLower);
+  updateReq('reqNumber', hasNumber);
+
+  const matchEl = document.getElementById('reqMatch');
+  if (matchEl) {
+    if (confirmPass.length > 0) {
+      matchEl.style.display = 'block';
+      if (newPass === confirmPass) {
+        matchEl.textContent = '✅ Las contraseñas coinciden';
+        matchEl.style.color = '#4ADE80';
+      } else {
+        matchEl.textContent = '❌ Las contraseñas no coinciden';
+        matchEl.style.color = '#F87171';
+      }
+    } else {
+      matchEl.style.display = 'none';
+    }
+  }
+
+  return hasLength && hasUpper && hasLower && hasNumber && (newPass === confirmPass);
+}
+
+/**
+ * Cierre controlado del modal de contraseña
+ */
+function handleClosePasswordModal() {
+  const modal = document.getElementById('changePasswordModal');
+  const isForced = modal?.dataset.forced === 'true' || 
+                   sessionStorage.getItem('must_change_password') === 'true' ||
+                   Boolean(currentUser?.must_change_password);
+
+  if (isForced) {
+    if (confirm('⚠️ Por seguridad militar, debes cambiar tu clave antes de operar. ¿Deseas cerrar sesión?')) {
+      closeModal('changePasswordModal');
+      logout();
+    }
   } else {
-    modal.classList.add('show');
+    closeModal('changePasswordModal');
   }
 }
 
-async function changeTemporaryPassword() {
-  const newPassword = document.getElementById('newPassword').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
-  const errorDiv = document.getElementById('passwordChangeError');
+/**
+ * Enviar actualización de contraseña desde el modal
+ */
+async function submitPasswordChangeModal(event) {
+  if (event) event.preventDefault();
 
-  if (!newPassword || newPassword.length < 8) {
-    showError('La contraseña debe tener al menos 8 caracteres');
-    return;
-  }
+  const modal = document.getElementById('changePasswordModal');
+  const isForced = modal?.dataset.forced === 'true' || 
+                   sessionStorage.getItem('must_change_password') === 'true' ||
+                   Boolean(currentUser?.must_change_password);
 
-  if (newPassword !== confirmPassword) {
-    showError('Las contraseñas no coinciden');
-    return;
-  }
+  const currentPass = document.getElementById('modalCurrentPassword')?.value || '';
+  const newPass = document.getElementById('modalNewPassword')?.value || '';
+  const confirmPass = document.getElementById('modalConfirmPassword')?.value || '';
 
-  function showError(msg) {
-    if (errorDiv) {
-      errorDiv.textContent = msg;
-      errorDiv.style.display = 'block';
-    } else {
-      alert(msg);
+  const alertError = document.getElementById('changePasswordAlertError');
+  const alertSuccess = document.getElementById('changePasswordAlertSuccess');
+  const errorMsg = document.getElementById('changePasswordErrorMsg');
+  const successMsg = document.getElementById('changePasswordSuccessMsg');
+  const submitBtn = document.getElementById('btnChangePasswordSubmit');
+  const spinner = document.getElementById('btnChangePasswordSpinner');
+  const btnText = document.getElementById('btnChangePasswordText');
+
+  const showError = (msg) => {
+    if (alertError && errorMsg) {
+      errorMsg.textContent = msg;
+      alertError.style.display = 'block';
     }
+    if (alertSuccess) alertSuccess.style.display = 'none';
+    showToast('❌ ' + msg, 'error');
+  };
+
+  if (!isForced && !currentPass) {
+    showError('Debes ingresar tu contraseña actual de combate.');
+    return;
   }
+
+  if (!newPass || newPass.length < 8) {
+    showError('La nueva contraseña debe contener al menos 8 caracteres.');
+    return;
+  }
+
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  if (!passwordRegex.test(newPass)) {
+    showError('La nueva clave debe contener al menos 1 mayúscula, 1 minúscula y 1 número.');
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    showError('Las nuevas contraseñas no coinciden.');
+    return;
+  }
+
+  // Activar estado de carga en el botón
+  if (submitBtn) submitBtn.disabled = true;
+  if (spinner) spinner.style.display = 'inline-block';
+  if (btnText) btnText.textContent = 'Actualizando...';
 
   try {
     const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Sesión táctica no detectada. Vuelve a iniciar sesión.');
+    }
+
+    const payload = {
+      newPassword: newPass,
+      isForced: Boolean(isForced)
+    };
+    if (!isForced) {
+      payload.currentPassword = currentPass;
+    }
+
     const response = await fetch(`${API_BASE}/api/auth/change-password`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ newPassword })
+      body: JSON.stringify(payload)
     });
 
-    if (response.ok) {
-      // Cerrar modal
-      const modal = document.getElementById('passwordChangeModal');
-      if (modal) modal.classList.remove('show');
+    const data = await response.json();
 
-      // Actualizar el usuario en memoria (ya no debe cambiar contraseña)
+    if (!response.ok || data.success === false) {
+      throw new Error(data.message || data.error || 'No se pudo actualizar la contraseña');
+    }
+
+    // Actualizar token en localStorage para sincronizar token_version
+    const newToken = data.token || data.data?.token;
+    if (newToken) {
+      localStorage.setItem('authToken', newToken);
+    }
+
+    // Actualizar estado del usuario
+    sessionStorage.removeItem('must_change_password');
+    if (currentUser) {
       currentUser.must_change_password = false;
+      currentUser.token_version = (data.token_version || data.data?.token_version) || ((currentUser.token_version || 0) + 1);
+      if (data.user || data.data?.user) {
+        currentUser = { ...currentUser, ...(data.user || data.data?.user) };
+      }
+    }
 
-      // Continuar con el flujo normal
+    // Mostrar éxito en el modal
+    if (alertError) alertError.style.display = 'none';
+    if (alertSuccess && successMsg) {
+      successMsg.textContent = data.message || 'Contraseña táctica actualizada exitosamente.';
+      alertSuccess.style.display = 'block';
+    }
+
+    showToast('✅ Contraseña táctica actualizada con éxito', 'success');
+
+    // Cerrar modal y continuar al dashboard
+    setTimeout(() => {
+      closeModal('changePasswordModal');
       updateUserUI(currentUser);
-      showToast('✅ Contraseña actualizada correctamente', 'success');
       markUserOnline();
       showView('appView');
-    } else {
-      const error = await response.json();
-      showError(error.error || 'No se pudo cambiar la contraseña');
-    }
+
+      const helpFab = document.getElementById('helpFab');
+      if (helpFab) helpFab.style.display = '';
+      if (typeof initHelpSystem === 'function') initHelpSystem();
+    }, 1000);
+
   } catch (err) {
-    console.error('Error:', err);
-    showError('Error al cambiar la contraseña');
+    console.error('❌ Error en submitPasswordChangeModal:', err);
+    showError(err.message || 'Error de conexión con el servidor militar');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+    if (spinner) spinner.style.display = 'none';
+    if (btnText) btnText.textContent = 'Actualizar Credencial';
   }
 }
 
@@ -772,6 +989,10 @@ async function resetUserPassword(userId) {
 }
 
 // Exportar funciones para uso global
+window.showPasswordChangeModal = showPasswordChangeModal;
+window.submitPasswordChangeModal = submitPasswordChangeModal;
+window.handleClosePasswordModal = handleClosePasswordModal;
+window.validateModalPasswordComplexity = validateModalPasswordComplexity;
 window.changePasswordFromProfile = changePasswordFromProfile;
 window.handleChangePassword = handleChangePassword;
 window.resetUserPassword = resetUserPassword;

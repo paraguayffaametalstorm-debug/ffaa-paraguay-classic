@@ -158,7 +158,12 @@ export const verifyMe = async (req, res) => {
         }
 
         const { password_hash, password, encrypted_password, ...safeUser } = user;
-        res.json({ user: safeUser });
+        res.json({ 
+            user: {
+                ...safeUser,
+                must_change_password: Boolean(safeUser.must_change_password)
+            }
+        });
     } catch (error) {
         console.error('❌ Error en verifyMe:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -240,13 +245,14 @@ export const changePassword = async (req, res) => {
         const userId = req.user?.user_id || req.user?.id;
         const supabase = getSupabase();
 
-        // Validar nueva contraseña (mínimo 8 caracteres)
-        if (!newPassword || newPassword.length < 8) {
+        // Validar nueva contraseña reglamentaria (mínimo 8 caracteres, mayúscula, minúscula y número)
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!newPassword || !passwordRegex.test(newPassword)) {
             return res.status(400).json({
                 success: false,
-                message: 'La nueva clave táctica debe contener al menos 8 caracteres',
+                message: 'La nueva contraseña debe tener al menos 8 caracteres e incluir 1 mayúscula, 1 minúscula y 1 número.',
                 data: null,
-                error: 'La nueva contraseña debe tener al menos 8 caracteres'
+                error: 'Requisitos de seguridad mínimos no alcanzados: 8 caracteres, 1 mayúscula, 1 minúscula y 1 número'
             });
         }
         if (!supabase) {
@@ -350,14 +356,23 @@ export const changePassword = async (req, res) => {
             { expiresIn: ENV.JWT_EXPIRES_IN || '7d' }
         );
 
+        const updatedUser = {
+            ...user,
+            must_change_password: false,
+            token_version: newTokenVersion
+        };
+        delete updatedUser.password_hash;
+
         return res.json({
             success: true,
             message: 'Contraseña táctica actualizada correctamente. Sesiones previas invalidadas.',
             data: {
                 token: newToken,
-                token_version: newTokenVersion
+                token_version: newTokenVersion,
+                user: updatedUser
             },
             token: newToken,
+            user: updatedUser,
             error: null
         });
 
@@ -893,7 +908,8 @@ export const googleCallback = (req, res, next) => {
                     .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
             }
 
-            return res.redirect(`/?auth_token=${encodeURIComponent(token)}`);
+            const mustChangeParam = user.must_change_password ? '&must_change_password=true' : '';
+            return res.redirect(`/?auth_token=${encodeURIComponent(token)}${mustChangeParam}`);
         } catch (tokenErr) {
             console.error('❌ [Google Callback Token Error]:', tokenErr);
             return res.redirect('/?auth_error=' + encodeURIComponent('Error interno procesando sesión militar'));
