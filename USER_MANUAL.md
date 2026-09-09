@@ -6,27 +6,34 @@
 
 ## 1. Acceso a la Plataforma, Login Dual y Credenciales
 
-### 1.1 Métodos de Inicio de Sesión (Login Dual)
-La plataforma cuenta con modalidades seguras y flexibles de autenticación militar:
+### 1.1 Inicio de Sesión con Google (OAuth 2.0)
+La plataforma permite autenticación táctica federada de alta seguridad mediante Google:
+1. En la pantalla de bienvenida o en el modal de inicio de sesión, pulsa el botón táctico **"Iniciar sesión con Google"**.
+2. Serás redirigido a la pantalla oficial de selección de cuentas de Google.
+3. Autoriza el acceso con tu cuenta de Google habitual.
+4. **Si tu cuenta ya está vinculada:** El sistema te autenticará instantáneamente, emitiendo tu token JWT militar y dirigiéndote al Dashboard de combate.
+5. **Si es tu primer acceso con esa cuenta:** El sistema activará de forma automática el flujo de **Vinculación de Cuenta**.
 
-#### Opción A: Inicio de Sesión Táctica con Google (OAuth 2.0)
-1. En la pantalla de bienvenida o modal de acceso, pulsa el botón **"Iniciar sesión con Google"**.
-2. Selecciona tu cuenta de Google.
-3. **Primer Acceso (Vinculación de Cuenta):**
-   - Si tu cuenta de Google aún no ha sido vinculada, el sistema te redirigirá automáticamente a la pantalla táctica **"Vincular Cuenta Google"** (`/link-account`).
-   - Introduce tu **Indicativo de Combate (Callsign)** (ej: `VIPER`) y tu **Contraseña militar actual**.
-   - Presiona **"Vincular y Continuar"**. A partir de ese momento, tu cuenta de Google quedará asociada permanentemente a tu expediente del escuadrón y podrás ingresar con un solo clic.
-4. **Accesos Posteriores:**
-   - Al pulsar "Iniciar sesión con Google", ingresarás directamente sin necesidad de volver a ingresar contraseña.
+### 1.2 Vinculación de Cuenta de Combate (Terminal `/link-account`)
+Para asociar una cuenta de Google a tu expediente existente en el escuadrón `[PRY]`:
+1. Tras seleccionar tu cuenta en Google por primera vez, el sistema te redirigirá a la terminal táctica **"Vincular Cuenta Google"** (`https://paraguay-ffaa-metalstorm.fly.dev/link-account`).
+2. En el formulario militar de vinculación:
+   - El campo **"Correo de Google"** mostrará de forma protegida tu dirección de Gmail detectada.
+   - En el campo **"Indicativo Militar (Callsign)"**, ingresa tu nick de combate registrado en el escuadrón (por ejemplo: `VIPER`).
+   - En el campo **"Contraseña Militar Actual"**, escribe la contraseña que usas habitualmente en la plataforma.
+3. Pulsa **"Vincular y Continuar"**.
+4. **Validación C4ISR:** El servidor verificará tus credenciales institucionales. Al comprobarse la autenticidad, asociará tu `google_id` y tu correo de Gmail de manera permanente a tu expediente (`google_linked: true`).
+5. A partir de ese momento, podrás ingresar con **un solo clic** mediante el botón de Google o mediante el login tradicional dual.
 
-#### Opción B: Inicio de Sesión Tradicional Dual
+### 1.3 Inicio de Sesión Tradicional Dual
+Si prefieres ingresar con correo y contraseña:
 1. En el campo **"Correo Institucional / Gmail"**, ingresa cualquiera de tus correos reconocidos:
    - Tu correo institucional `@ffaa.py` (ej: `viper@ffaa.py`).
    - O tu dirección real de **Gmail** previamente vinculada.
 2. Ingresa tu contraseña militar en el campo inferior.
 3. Pulsa el botón **"Iniciar Sesión Táctica"**.
 
-### 1.2 Primer Acceso y Reclutas
+### 1.4 Primer Acceso y Reclutas
 1. Abre el enlace oficial de combate: [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/).
 2. Ingresa tus credenciales oficiales proporcionadas por tu Oficial de Mando:
    - **Correo Institucional:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).
@@ -36,7 +43,7 @@ La plataforma cuenta con modalidades seguras y flexibles de autenticación milit
    - No utilices secuencias débiles o predecibles.
 4. Al guardar tu nueva clave, el sistema registrará tu sesión segura e ingresarás directamente al **Cuadro de Mando Operacional (Dashboard)**.
 
-### 1.3 Recuperación Autónoma de Contraseña (15 Minutos)
+### 1.5 Recuperación Autónoma de Contraseña (15 Minutos)
 Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo mediante canal seguro:
 1. En el modal de inicio de sesión, pulsa en el enlace **"¿Olvidaste tu clave?"**.
 2. Ingresa tu correo electrónico registrado (puedes utilizar tu correo institucional `@ffaa.py` o tu Gmail vinculado).
@@ -45,7 +52,7 @@ Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo med
 5. Abre el enlace (te llevará a `/reset-password?token=...`), introduce tu nueva contraseña (mínimo 8 caracteres), confírmala y presiona **"Actualizar Contraseña"**.
 6. **Seguridad Anti-Sesión Fantasma:** Al completarse el restablecimiento, todas las sesiones activas previas quedarán invalidadas inmediatamente.
 
-### 1.4 Asistencia de Mando y Reseteo Administrativo
+### 1.6 Asistencia de Mando y Reseteo Administrativo
 1. Si no tienes acceso a tu correo electrónico, contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o Discord.
 2. El oficial ingresará al panel administrativo y ejecutará el comando de reseteo (`Reset Pass`).
 3. El sistema generará una contraseña temporal única `MS-XXXX-XXXX` que el oficial te entregará por canal privado.
@@ -74,8 +81,17 @@ Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo med
 
 > ⚠️ **Corrección de Datos:** Si te equivocas en el registro, simplemente vuelve a enviar el formulario para el mismo evento. El sistema actualizará tu registro anterior sin duplicados.
 
+#### Selector Táctico de Pilotos para ADMIN y OWNER (Modo Oficial)
+Cuando un oficial con rango **`ADMIN`** o **`OWNER`** accede al formulario de rendimiento:
+- El sistema consulta automáticamente el endpoint `/api/performances/pilots` y despliega el menú desplegable **"Combatiente Asignado"** (`#performanceTarget`).
+- Muestra la dotación completa de combatientes activos (`status = 'ACTIVE'`) del escuadrón ordenados alfabéticamente por su Callsign.
+- **Alerta de Modo Oficial:** Al elegir a otro piloto, la interfaz despliega un banner táctico de alta visibilidad:
+  `⚠️ Modo Oficial Activo: Estás cargando datos para [CALLSIGN]`.
+- **Aislamiento y Trazabilidad:** Esto permite a los mandos registrar o ajustar las marcas de pilotos ausentes sin perder la trazabilidad de la auditoría.
+- **Acceso Regular:** Para pilotos `MIEMBRO` o `VETERANO`, el selector permanece restringido a su propia identidad para garantizar la privacidad y prevenir registros cruzados no autorizados.
+
 ### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0
-El módulo de Hangar te permite registrar tus cazas de combate (F-22 Raptor, Su-57 Felon, F-35 Lightning, Eurofighter Typhoon, Rafale, Gripen, etc.) y gestionar sus especificaciones:
+El módulo de Hangar te permite registrar tus cazas de combate seleccionando entre el **catálogo oficial de 23 aeronaves de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, etc.) y gestionar sus especificaciones:
 - **Nivel de Aeronave:** Rango de 1 a 20.
 - **Módulos Pasivos y Habilidades Especiales:** Selección de configuraciones según el catálogo oficial.
 - **Sistemas Mecánicos Upgrades 2.0 (Niveles 0 a 8):**
@@ -101,6 +117,18 @@ El módulo de Hangar te permite registrar tus cazas de combate (F-22 Raptor, Su-
 
 ### 2.6 📥 Centro de Exportación de Datos (Admin & Owner)
 - Disponible para oficiales en el menú superior. Permite descargar reportes completos de actividad en formato CSV sanitizado contra inyecciones de fórmulas, listo para análisis en Excel o Google Sheets.
+
+### 2.7 🛡️ Panel de Administración Militar (Oficiales ADMIN y OWNER)
+La consola de administración permite supervisar y gestionar a toda la dotación militar del escuadrón:
+- **Métricas C4ISR en Tiempo Real:** Cada piloto cuenta con:
+  - **Promedio de Tokens (`avg_tokens`):** Promedio acumulado de todas las semanas evaluadas.
+  - **Semanas Evaluadas (`weeks_evaluated`):** Total de eventos en los que el combatiente ha reportado tokens.
+  - **Estado Semáforo Militar (`perf_status`):** Distintivo en tiempo real (`VERDE`, `NARANJA`, `ROJO`, `NEGRO` o `PENDIENTE`) calculado conforme al Artículo 26 del Reglamento.
+- **Filtros Operativos:** Filtrado instantáneo por Rango (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`) y por Estado del Semáforo.
+- **Acciones Rápidas:**
+  - **Activar / Desactivar Piloto:** Cambiar el estado operativo entre `ACTIVE` e `INACTIVE`.
+  - **Reseteo Táctico de Clave:** Generación de clave temporal `MS-XXXX-XXXX` criptosegura.
+  - **Ascensos y Descensos de Rango:** Ajuste jerárquico sujeto a cuotas militares.
 
 ---
 
@@ -137,7 +165,7 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.3.2.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.5.0.
 
 ---
 

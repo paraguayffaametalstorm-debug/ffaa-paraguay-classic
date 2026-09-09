@@ -48,11 +48,12 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Events** | `/api/events` | `GET` | Autenticado | Historial de eventos y ventana de tiempo |
 | **Events** | `/api/events/open` o `/active` | `GET` | Autenticado | Datos del evento activo actual |
 | **Performances**| `/api/performances` | `POST` | Autenticado | Registrar tokens y evaluar estado militar |
+| **Performances**| `/api/performances/pilots` | `GET` | Autenticado | Selector táctico de pilotos para ADMIN/OWNER |
 | **Performances**| `/api/performances/history` | `GET` | Autenticado | Historial personal de eventos y tokens |
 | **Performances**| `/api/performances/stats` | `GET` | Autenticado | Estadísticas calculadas del piloto |
 | **Performances**| `/api/performances/all` | `GET` | `ADMIN` / `OWNER` | Lista global de rendimientos |
 | **Performances**| `/api/performances/export` | `GET` | `ADMIN` / `OWNER` | Descargar reporte CSV sanitizado |
-| **Planes** | `/api/planes/catalog/plane-models` | `GET` | Público | Catálogo oficial de cazas militares |
+| **Planes** | `/api/planes/catalog/plane-models` | `GET` | Público | Catálogo oficial de 23 cazas militares |
 | **Planes** | `/api/planes/catalog/plane-mods` | `GET` | Público | Catálogo oficial de modificaciones |
 | **Planes** | `/api/planes` o `/my-planes` | `GET` | Autenticado | Cazas registrados en el hangar personal |
 | **Planes** | `/api/planes/:id/stats` | `GET` | Autenticado | Métricas de combate de la aeronave |
@@ -112,6 +113,18 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
     }
   }
   ```
+
+### `GET /api/auth/google`
+Inicia el flujo de autenticación federada mediante **Google OAuth 2.0 (Passport.js)**.
+- **Acceso:** Público.
+- **Comportamiento:** Redirige al usuario a la pantalla de consentimiento de Google solicitando los scopes `profile` y `email`.
+
+### `GET /api/auth/google/callback`
+Punto de retorno (callback) del flujo Google OAuth 2.0.
+- **Acceso:** Público (invocado por los servidores de Google tras la autorización del usuario).
+- **Comportamiento Operativo:**
+  - Si el correo o `google_id` ya está vinculado a un piloto activo: emite el token JWT militar y redirige a la aplicación (`/?token=...`).
+  - Si el correo de Google aún no está vinculado a ningún piloto: redirige automáticamente a la terminal táctica `/link-account.html?email={googleEmail}` para asociar su Callsign y clave militar.
 
 ### `GET /api/auth/google/status`
 Verifica si el servicio de Google OAuth 2.0 está configurado y activo, y opcionalmente el estado de vinculación de un correo.
@@ -266,6 +279,43 @@ Registra el desempeño del piloto en el evento activo.
   }
   ```
 
+### `GET /api/performances/pilots`
+Obtiene la lista autorizada de pilotos para el **Selector Táctico de Pilotos** en el formulario de registro (`#performanceTarget`).
+- **Acceso:** Autenticado (`requireAuth`).
+- **Aislamiento RBAC:**
+  - **Para oficiales `ADMIN` y `OWNER`:** Devuelve la dotación completa de pilotos con `status = 'ACTIVE'` ordenados alfabéticamente por Callsign (`nick`), permitiendo la carga delegada en nombre de cualquier combatiente activo.
+  - **Para pilotos regulares `MIEMBRO` y `VETERANO`:** Devuelve únicamente su propio registro individual para preservar la privacidad y evitar cargas no autorizadas.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Lista de pilotos obtenida exitosamente",
+    "pilots": [
+      {
+        "id": 14,
+        "user_id": 14,
+        "nick": "Viper_PY",
+        "email": "viper@ffaa.py",
+        "role": "OWNER",
+        "status": "ACTIVE",
+        "perf_status": "VERDE",
+        "avg_tokens": 192
+      },
+      {
+        "id": 22,
+        "user_id": 22,
+        "nick": "Condor_01",
+        "email": "condor@ffaa.py",
+        "role": "ADMIN",
+        "status": "ACTIVE",
+        "perf_status": "VERDE",
+        "avg_tokens": 185
+      }
+    ],
+    "count": 2
+  }
+  ```
+
 ### `GET /api/performances/export`
 - **Permisos:** Requiere rol `ADMIN` o `OWNER`.
 - **Headers de Respuesta:**
@@ -278,6 +328,8 @@ Registra el desempeño del piloto en el evento activo.
 ---
 
 ## 4. Hangar Militar & Upgrades 2.0 (`/api/planes`)
+
+El módulo gestiona la flota de **23 aeronaves de combate** y subsistemas de mejora mecánica.
 
 ### `PUT /api/planes/:id/system`
 Aplica una mejora tecnológica de subsistema a un caza registrado según Starform Upgrades 2.0.
@@ -296,6 +348,36 @@ Aplica una mejora tecnológica de subsistema a un caza registrado según Starfor
 ---
 
 ## 5. Administración Militar (`/api/admin`)
+
+### `GET /api/admin/users` o `/api/admin/members`
+Lista exhaustiva de combatientes con métricas dinámicas para el panel de administración.
+- **Permisos:** Requiere rol `ADMIN` o `OWNER`.
+- **Cálculo C4ISR en Tiempo Real:** Calcula dinámicamente:
+  - `avg_tokens`: Promedio de tokens acumulado de todas las misiones registradas.
+  - `weeks_evaluated`: Cantidad de semanas operativas evaluadas.
+  - `perf_status`: Semáforo militar calculado según la normativa institucional (Art. 26: VERDE $\ge 175$, NARANJA $\ge 130$, ROJO $\ge 100$, NEGRO $< 100$, o PENDIENTE).
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Lista de pilotos obtenida con éxito",
+    "data": [
+      {
+        "id": 14,
+        "user_id": 14,
+        "nick": "Viper_PY",
+        "email": "viper@ffaa.py",
+        "role": "OWNER",
+        "status": "ACTIVE",
+        "last_activity": "2026-09-08T15:30:00Z",
+        "avg_tokens": 192,
+        "weeks_evaluated": 14,
+        "perf_status": "VERDE"
+      }
+    ],
+    "total": 1
+  }
+  ```
 
 ### `PUT /api/admin/users/:id/role`
 Modifica el rango militar de un piloto aplicando **cuotas institucionales estrictas**.
