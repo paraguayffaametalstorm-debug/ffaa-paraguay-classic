@@ -152,28 +152,36 @@ async function loadAdminPilotList() {
     if (adminSelectorContainer) adminSelectorContainer.style.display = 'block';
 
     try {
-        // Obtener miembros desde backend (conectado a Supabase)
+        // Obtener lista de pilotos desde el endpoint dedicado /api/performances/pilots
         let members = [];
-        const res = await fetch('/api/admin/members', {
+        const res = await fetch('/api/performances/pilots', {
             headers: getAuthHeaders()
         });
 
         if (res.ok) {
             const data = await res.json();
-            members = data.members || data.users || data.data || [];
+            members = data.pilots || data.data?.pilots || data.members || data.users || [];
         } else {
-            // Fallback a /api/events/active-members
-            const resFallback = await fetch('/api/events/active-members', {
+            // Fallback secundario a /api/admin/members o /api/events/active-members
+            const resFallback = await fetch('/api/admin/members', {
                 headers: getAuthHeaders()
             });
             if (resFallback.ok) {
                 const dataFallback = await resFallback.json();
-                members = dataFallback.members || dataFallback.activeMembers || dataFallback.users || [];
+                members = dataFallback.pilots || dataFallback.members || dataFallback.users || dataFallback.data || [];
+            } else {
+                const resEvents = await fetch('/api/events/active-members', {
+                    headers: getAuthHeaders()
+                });
+                if (resEvents.ok) {
+                    const dataEvents = await resEvents.json();
+                    members = dataEvents.pilots || dataEvents.members || dataEvents.activeMembers || [];
+                }
             }
         }
 
         if (!members || members.length === 0) {
-            console.warn('⚠️ No se encontraron miembros en la base de datos');
+            console.warn('⚠️ No se encontraron pilotos activos en la base de datos');
             return;
         }
 

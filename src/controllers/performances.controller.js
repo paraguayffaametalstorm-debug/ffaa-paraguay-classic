@@ -269,3 +269,104 @@ export async function exportPerformancesCSV(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Obtiene la lista de pilotos para el selector de rendimiento
+ * - ADMIN y OWNER: devuelve TODOS los pilotos con status = 'ACTIVE'
+ * - MIEMBRO: devuelve solo su propio nick/perfil
+ * Retorna: { success, message, pilots, count, data }
+ */
+export async function getPilotsList(req, res, next) {
+  try {
+    const caller = req.user;
+    if (!caller) {
+      return res.status(401).json({
+        success: false,
+        message: 'No autenticado',
+        error: 'Usuario no autenticado'
+      });
+    }
+
+    const callerRole = (caller.role || 'MIEMBRO').toUpperCase();
+    const isAdminOrOwner = callerRole === 'ADMIN' || callerRole === 'OWNER';
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      console.warn('⚠️ [getPilotsList] Base de datos Supabase no disponible');
+      return res.status(500).json({
+        success: false,
+        message: 'Cliente de base de datos no disponible',
+        error: 'Database client unavailable',
+        pilots: [],
+        count: 0
+      });
+    }
+
+    let pilots = [];
+
+    if (isAdminOrOwner) {
+      console.log(`📋 [getPilotsList] Solicitud de escuadra autorizada para ${callerRole} (${caller.nick || caller.email})`);
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, user_id, nick, email, role, status, perf_status, avg_tokens')
+        .order('nick', { ascending: true });
+
+      if (error) {
+        console.error('❌ [getPilotsList] Error al consultar usuarios en Supabase:', error.message);
+        throw error;
+      }
+
+      pilots = (data || [])
+        .filter(u => {
+          const st = (u.status || '').toUpperCase();
+          return st === 'ACTIVE' || st === 'ACTIVO' || !st;
+        })
+        .map(u => ({
+          id: u.id || u.user_id,
+          user_id: u.user_id || u.id,
+          nick: u.nick || u.email?.split('@')[0] || 'Sin Nick',
+          email: u.email || '',
+          role: (u.role || 'MIEMBRO').toUpperCase(),
+          status: (u.status || 'ACTIVE').toUpperCase(),
+          perf_status: (u.perf_status || 'VERDE').toUpperCase(),
+          avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
+        }));
+
+      console.log(`✅ [getPilotsList] ${pilots.length} pilotos activos cargados para el selector militar`);
+    } else {
+      console.log(`👤 [getPilotsList] Solicitud restringida a piloto individual para MIEMBRO (${caller.nick || caller.email})`);
+
+      pilots = [{
+        id: caller.id || caller.user_id,
+        user_id: caller.user_id || caller.id,
+        nick: caller.nick || caller.email?.split('@')[0] || 'Piloto',
+        email: caller.email || '',
+        role: callerRole,
+        status: (caller.status || 'ACTIVE').toUpperCase(),
+        perf_status: (caller.perf_status || 'VERDE').toUpperCase(),
+        avg_tokens: typeof caller.avg_tokens === 'number' ? caller.avg_tokens : 0
+      }];
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Lista de pilotos obtenida exitosamente',
+      pilots,
+      count: pilots.length,
+      data: {
+        pilots,
+        count: pilots.length
+      }
+    });
+  } catch (err) {
+    console.error('❌ [getPilotsList] Error inesperado:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener la lista de pilotos',
+      error: err.message,
+      pilots: [],
+      count: 0
+    });
+  }
+}
