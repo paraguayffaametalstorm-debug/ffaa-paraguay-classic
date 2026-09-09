@@ -10,15 +10,37 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ### 🚀 Autenticación Militar Dual & Vinculación de Cuentas (v3.5.0)
 - **Login Dual (Institucional + Gmail):** El login tradicional ahora permite iniciar sesión usando el correo institucional (`@ffaa.py`) o el Gmail real vinculado, contrastando contra `email` y `email_institucional`.
-- **Flujo de Vinculación de Cuentas Google (`/link-account`):** Cuando un piloto autentica con una cuenta de Google no registrada previamente, es redirigido automáticamente a la terminal de vinculación (`/link-account?email=...`) para asociar su indicativo de combate (Callsign) y contraseña existente con su cuenta de Google de forma permanente.
-- **Restablecimiento Criptográfico de Contraseñas (Tokens de 15 Minutos):** Reemplazo del reseteo anterior por un flujo criptoseguro con tokens de un solo uso generados con `crypto.randomBytes(32)` y expiración a los 15 minutos. Almacenamiento seguro en la tabla `password_resets`.
-- **Plantilla de Correo C4ISR Militar:** Módulo de correo con diseño táctico militar (#0038A8, #D52B1E, #0B132B) mediante `nodemailer` (`src/utils/email.js`) y función exportada `generateResetEmailHTML()`.
-- **Endpoints Tácticos de API:**
+- **Autenticación Federada Google OAuth 2.0 (Passport.js):** Rutas `/api/auth/google`, `/api/auth/google/callback` y `/api/auth/google/status` con soporte para selección de cuenta Google e intercambio de credenciales.
+- **Flujo de Vinculación de Cuentas Google (`/link-account`):** Cuando un piloto autentica con una cuenta de Google no registrada previamente, es redirigido automáticamente a la terminal de vinculación (`/link-account?email=...`) para asociar su indicativo de combate (Callsign) y contraseña existente con su cuenta de Google de forma permanente (`google_linked: true`).
+- **Restablecimiento Criptográfico de Contraseñas (Tokens de 15 Minutos):** Flujo criptoseguro con tokens de un solo uso generados con `crypto.randomBytes(32)` y expiración estricta a los 15 minutos en la tabla `password_resets`.
+- **Plantilla de Correo C4ISR Militar:** Módulo de correo táctico (#0038A8, #D52B1E, #0B132B) mediante `nodemailer` (`src/utils/email.js`) y función exportada `generateResetEmailHTML()`.
+- **Endpoints Tácticos de Autenticación:**
   - `POST /api/auth/link-account`: Vincula un Gmail real con el combatiente tras validar indicativo y clave actual.
   - `POST /api/auth/forgot-password`: Genera token de 15 min y despacha correo militar seguro (búsqueda dual en correo institucional y Gmail).
   - `POST /api/auth/reset-password`: Valida token, vigencia, actualiza contraseña con bcrypt e incrementa `token_version` para invalidar sesiones activas.
   - `GET /api/auth/google/status`: Provee estado de disponibilidad del servicio OAuth y estado de vinculación de correo.
-- **Interfaz Frontend:** Creación de página táctica `link-account.html`, actualización de `reset-password.html` y modal `components/forgot-password-modal.html`, junto con las funciones cliente `requestPasswordReset`, `confirmPasswordReset` y `checkGoogleStatus` en `js/auth.js`.
+
+### 🎖️ Selector Táctico de Pilotos para ADMIN / OWNER (Modo Oficial)
+- **Endpoint Táctico `/api/performances/pilots`:** Endpoint con control de acceso por rangos (RBAC):
+  - Para oficiales `ADMIN` y `OWNER`: Devuelve la lista completa de combatientes activos (`status = 'ACTIVE'`) ordenados alfabéticamente por indicativo (`nick`), junto con sus métricas acumuladas.
+  - Para combatientes regulares `MIEMBRO` y `VETERANO`: Devuelve exclusivamente su propio registro individual protegiendo la privacidad y evitando cargas delegadas no autorizadas.
+- **Selector en Interfaz `#performanceTarget`:** Integración en `components/performance-form.html` permitiendo a los oficiales registrar tokens en nombre de camaradas ausentes.
+- **Banner de Alerta C4ISR:** Despliegue de advertencia en tiempo real en la interfaz: `⚠️ Modo Oficial Activo: Estás cargando datos para [CALLSIGN]`, con registro de auditoría de la operación.
+
+### 📊 Panel de Administración Militar & Métricas C4ISR
+- **Cálculo en Tiempo Real de Rendimiento:** Enriquecimiento del controlador `admin.controller.js` (`getUsers` y `getMembers`) con cálculo dinámico de:
+  - `avg_tokens`: Promedio de tokens acumulado a través de todas las semanas operativas.
+  - `weeks_evaluated`: Conteo total de eventos en los que el combatiente ha reportado tokens.
+  - `perf_status`: Estado oficial del semáforo militar (`VERDE`, `NARANJA`, `ROJO`, `NEGRO`, `PENDIENTE`) calculado según las directivas del Artículo 26.
+- **Filtros Dinámicos en Panel de Oficiales:** Selector y filtros por jerarquía de rango y estado del semáforo en `components/admin-panel.html`.
+
+### ✈️ Hangar Militar & Flota de Combate
+- **Catálogo de 23 Aeronaves Operativas:** Catálogo completo en base de datos y memoria que abarca cazas de 3ª, 4ª y 5ª generación (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, etc.).
+- **Sistemas Mecánicos Starform Upgrades 2.0:** Gestión de Fuselaje, Motor, Aviónica y Armas en niveles de 0 a 8 con validación matemática de piezas y componentes avanzados.
+
+### 🔧 Correcciones de Frontend & Estabilidad
+- **Corrección de `squadStatus` en Expediente Militar (`js/profile.js`):** Solucionado error `ReferenceError: squadStatus is not defined` en `loadPersonalProfile` al inicializar la variable con `const squadStatus = (profile.status || currentUser.status || 'ACTIVE').toUpperCase();`.
+- **Service Worker v3.5.0:** Actualización de caché y precarga de terminales tácticas (`link-account.html`, `reset-password.html`, `components/forgot-password-modal.html`).
 
 ---
 

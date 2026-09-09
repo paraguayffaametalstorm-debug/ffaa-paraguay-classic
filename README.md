@@ -20,13 +20,14 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 - **Autenticación Militar Híbrida Dual (v3.5.0):** Inicio de sesión flexible admitiendo tanto el correo institucional del escuadrón (`@ffaa.py`) como cuentas de Gmail vinculadas (Google OAuth 2.0 y tradicional), con sistema de vinculación guiado (`/link-account`).
 - **Restablecimiento Criptográfico de Contraseñas:** Envío de tokens temporales de un solo uso válidos por 15 minutos (`/reset-password`) con formato militar C4ISR vía Nodemailer.
 - **Cuadro de Mando Operacional (Dashboard C4ISR):** Telemetría en tiempo real, seguimiento de la meta semanal del escuadrón (175 tokens promedio), panel de miembros en riesgo, gráfico de tendencia histórica y clasificación Top 5 de pilotos.
-- **Registro Táctico de Rendimiento:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla).
-- **Hangar Militar & Starform Upgrades 2.0:** Catálogo de cazas (F-22, Su-57, F-35, Typhoon, Rafale, Gripen, etc.), módulos pasivos/especiales, gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos (piezas y componentes avanzados).
+- **Registro Táctico de Rendimiento & Selector de Pilotos:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla), incluyendo selector táctico de combatientes (`#performanceTarget`) exclusivo para oficiales `ADMIN` y `OWNER` con banner de modo oficial.
+- **Panel de Administración Militar Avanzado:** Gestión de combatientes con cálculo en tiempo real de `avg_tokens`, `weeks_evaluated` y distintivos de semáforo militar `perf_status` conforme a las normativas del escuadrón.
+- **Hangar Militar & Starform Upgrades 2.0:** Flota operacional completa de 23 cazas de combate (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Rafale, Gripen, etc.), módulos pasivos/especiales, gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos (piezas y componentes avanzados).
 - **Control de Mando RBAC & Cuotas Institucionales:** Restricción jerárquica estricta (1 Comandante en Jefe `OWNER`, máximo 3 Oficiales `ADMIN` y máximo 8 `VETERANO`).
 - **Seguridad Criptográfica & Anti-Sesión Fantasma:** Contraseñas temporales aleatorias de alta entropía (`MS-XXXX-XXXX`), invalidación instantánea de JWT mediante `token_version` y hashing con `bcryptjs`.
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
-- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.3.2 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.5.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
 
 ---
 
@@ -81,7 +82,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 ├── README.md                     # Documentación principal del sistema
 ├── reset-password.html           # Terminal de restablecimiento de contraseña militar
 ├── server.js                     # Servidor Express, middlewares y montaje de rutas
-├── sw.js                         # Service Worker v3.3.2 (Cache-First estáticos)
+├── sw.js                         # Service Worker v3.5.0 (Cache-First estáticos)
 ├── USER_MANUAL.md                # Manual operativo para pilotos y oficiales
 │
 ├── components/                   # Vistas y componentes HTML inyectados en runtime
@@ -191,16 +192,21 @@ El servidor táctico responderá en `http://localhost:3000`.
 | `PORT` | Opcional | `3000` | Puerto de escucha del servidor HTTP |
 | `NODE_ENV` | Opcional | `production` | Entorno de ejecución (`development` o `production`) |
 | `JWT_SECRET` | **Sí** | *(super_secreto)* | Clave criptográfica para firma de tokens JWT (mínimo 32 caracteres) |
-| `JWT_EXPIRES_IN` | Opcional | `7d` | Tiempo de validez del token de acceso |
+| `JWT_EXPIRES_IN` | Opcional | `7d` | Tiempo de validez del token de acceso militar |
 | `SUPABASE_URL` | **Sí** | - | URL del proyecto Supabase (`https://xxx.supabase.co`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Sí** | - | Clave de servicio para operaciones de backend con privilegios |
 | `SUPABASE_ANON_KEY` | Opcional | - | Clave anónima para consultas de diagnóstico del cliente |
-| `ALLOWED_ORIGINS` | Opcional | *(localhost, fly.dev)* | Orígenes autorizados para CORS separados por comas |
-| `EMAIL_SERVICE` | Opcional | `gmail` | Proveedor SMTP para despacho de correos tácticos |
-| `EMAIL_USER` | Opcional | - | Cuenta emisora de correos tácticos C4ISR |
+| `GOOGLE_CLIENT_ID` | Opcional | - | Client ID de Google Cloud Console para OAuth 2.0 |
+| `GOOGLE_CLIENT_SECRET` | Opcional | - | Client Secret de Google Cloud Console para OAuth 2.0 |
+| `GOOGLE_CALLBACK_URL` | Opcional | *(auto)* | URL de retorno autorizada (`/api/auth/google/callback`) |
+| `FRONTEND_URL` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | URL pública base del frontend militar |
+| `EMAIL_HOST` | Opcional | - | Servidor SMTP para despacho de correos tácticos |
+| `EMAIL_PORT` | Opcional | `587` | Puerto del servidor SMTP (ej: 587 o 465) |
+| `EMAIL_SECURE` | Opcional | `false` | Conexión SSL/TLS directa (`true` para puerto 465) |
+| `EMAIL_USER` | Opcional | - | Cuenta emisora o usuario SMTP |
 | `EMAIL_PASS` | Opcional | - | Contraseña de aplicación o credencial SMTP |
-| `EMAIL_FROM` | Opcional | `PARAGUAY-FFAA <no-reply@ffaa.mil.py>` | Remitente en cabeceras de correos tácticos |
-| `APP_URL` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | URL base para enlaces de restablecimiento de contraseña |
+| `EMAIL_FROM` | Opcional | `"PARAGUAY-FFAA \| METALSTORM" <soporte@paraguay-ffaa.com>` | Remitente en cabeceras de correos tácticos |
+| `ALLOWED_ORIGINS` | Opcional | *(localhost, fly.dev)* | Orígenes autorizados para CORS separados por comas |
 
 ---
 
