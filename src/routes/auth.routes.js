@@ -21,6 +21,7 @@ router.get('/verify', requireAuth, verifyMe);
 router.get('/me', requireAuth, verifyMe);
 router.post('/register', register);
 router.post('/change-password', requireAuth, changePassword);
+router.put('/change-password', requireAuth, changePassword);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
 router.post('/link-account', authLimiter, linkAccount);

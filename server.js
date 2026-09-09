@@ -119,7 +119,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Global API rate limiter
-app.use('/api/', apiLimiter);
+app.use('/api', apiLimiter);
 
 // Passport OAuth Initialization
 configurePassport();
@@ -144,10 +144,11 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/bm', bmRoutes);
 
 // Compatibility aliases
+app.use('/auth', authRoutes);
 app.use('/api/catalog', planesRoutes);
 
 // Explicit 404 handler for unmatched API routes - guarantees JSON, NEVER HTML
-app.use('/api', (req, res) => {
+app.use(['/api', '/auth'], (req, res) => {
   res.status(404).json({
     success: false,
     error: `Ruta de API no encontrada: ${req.method} ${req.originalUrl}`,
