@@ -608,11 +608,15 @@ function loadPerformanceForm() {
 }
 
 function loadActiveMembers() {
-  fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() })
+  fetch(`${API_BASE}/api/performances/pilots`, { headers: getAuthHeaders() })
   .then(async res => {
     if (!res.ok) {
-      const fallback = await fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() });
-      if (!fallback.ok) throw new Error(`HTTP ${fallback.status}`);
+      const fallback = await fetch(`${API_BASE}/api/admin/members`, { headers: getAuthHeaders() });
+      if (!fallback.ok) {
+        const fallbackEvents = await fetch(`${API_BASE}/api/events/active-members`, { headers: getAuthHeaders() });
+        if (!fallbackEvents.ok) throw new Error(`HTTP ${fallbackEvents.status}`);
+        return fallbackEvents.json();
+      }
       return fallback.json();
     }
     const ct = res.headers.get('content-type') || '';
@@ -625,7 +629,7 @@ function loadActiveMembers() {
     const sel = document.getElementById('performanceTarget') || document.getElementById('targetPilotSelect');
     if (!sel) return;
     sel.innerHTML = '<option value="self">— Mi propio rendimiento —</option>';
-    const members = data.members || data.activeMembers || data.users || data.data || (Array.isArray(data) ? data : []);
+    const members = data.pilots || data.data?.pilots || data.members || data.activeMembers || data.users || data.data || (Array.isArray(data) ? data : []);
     
     // Filtrar solo activos y ordenar alfabéticamente
     const activeMembers = members

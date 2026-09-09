@@ -4,7 +4,8 @@ import {
   getMyHistory,
   getStats,
   getAllPerformances,
-  exportPerformancesCSV
+  exportPerformancesCSV,
+  getPilotsList
 } from '../controllers/performances.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 
@@ -13,6 +14,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.post('/', savePerformance);
+router.get('/pilots', getPilotsList);
 router.get('/history', getMyHistory);
 router.get('/my-history', getMyHistory);
 router.get('/stats', getStats);
