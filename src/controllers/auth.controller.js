@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { ENV } from '../config/env.js';
 import { getSupabase } from '../db/supabase.js';
 import { logSecurityEvent } from '../utils/audit.js';
-import { generateTemporaryPassword } from '../utils/security.js';
+import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
 import { sendPasswordResetEmail } from '../utils/email.js';
 import passport, { isGoogleConfigured } from '../config/passport.js';
 
@@ -97,10 +97,21 @@ export const login = async (req, res) => {
             return res.status(403).json({ error: '⚠️ Tu cuenta ha sido desactivada. Contacta a un administrador.' });
         }
 
+        // 3.1 Garantizar user_id entero reglamentario (autorreparación de registros previos sin user_id)
+        let numericUserId = user.user_id != null ? Number(user.user_id) : null;
+        if (!Number.isInteger(numericUserId)) {
+            numericUserId = await getNextUserId(supabase);
+            await supabase
+                .from('users')
+                .update({ user_id: numericUserId, updated_at: new Date().toISOString() })
+                .eq('id', user.id);
+            user.user_id = numericUserId;
+        }
+
         // 4. Generar JWT con token_version
         const token = jwt.sign(
             { 
-                user_id: user.user_id || user.id,
+                user_id: Number(user.user_id),
                 email: user.email,
                 role: user.role,
                 token_version: user.token_version || 0 
@@ -111,7 +122,7 @@ export const login = async (req, res) => {
 
         await logSecurityEvent({
             supabase,
-            userId: user.id || user.user_id,
+            userId: user.user_id,
             nick: user.nick,
             event: 'LOGIN_SUCCESS',
             ip: req.ip,
@@ -124,7 +135,7 @@ export const login = async (req, res) => {
             await supabase
                 .from('users')
                 .update({ last_activity: new Date().toISOString() })
-                .or(`id.eq.${user.id},user_id.eq.${user.user_id || user.id}`);
+                .or(`id.eq.${user.id},user_id.eq.${user.user_id}`);
         } catch (err) {
             console.warn('⚠️ [Auth] Error actualizando last_activity:', err.message);
         }
@@ -134,7 +145,7 @@ export const login = async (req, res) => {
         
         const userResponse = {
             ...safeUser,
-            user_id: user.user_id || user.id,
+            user_id: Number(user.user_id),
             must_change_password: Boolean(user.must_change_password)
         };
 
@@ -157,10 +168,22 @@ export const verifyMe = async (req, res) => {
             return res.status(401).json({ error: 'No autenticado' });
         }
 
+        const supabase = getSupabase();
+        let numericUserId = user.user_id != null ? Number(user.user_id) : null;
+        if (!Number.isInteger(numericUserId) && supabase && user.id) {
+            numericUserId = await getNextUserId(supabase);
+            await supabase
+                .from('users')
+                .update({ user_id: numericUserId, updated_at: new Date().toISOString() })
+                .eq('id', user.id);
+            user.user_id = numericUserId;
+        }
+
         const { password_hash, password, encrypted_password, ...safeUser } = user;
         res.json({ 
             user: {
                 ...safeUser,
+                user_id: Number(user.user_id),
                 must_change_password: Boolean(safeUser.must_change_password)
             }
         });
@@ -195,11 +218,15 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
+        // ✅ Consultar el último user_id usado antes de insertar
+        const nextUserId = await getNextUserId(supabase);
+
         // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA
         const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
         const newUser = {
+            user_id: nextUserId,
             email: email.trim().toLowerCase(),
             nick: nick.trim(),
             role: role || 'MIEMBRO',
@@ -229,6 +256,10 @@ export const register = async (req, res) => {
             success: true,
             message: 'Usuario creado correctamente. Contraseña temporal generada.',
             temporaryPassword: tempPassword,
+            data: {
+                ...safeUser,
+                temporaryPassword: tempPassword
+            },
             user: safeUser
         });
 
