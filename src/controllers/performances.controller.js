@@ -2,6 +2,45 @@ import { getSupabase } from '../db/supabase.js';
 import { PerformanceSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 
+// ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
+function buildUserQuery(supabase, userId, userNick, selectFields = '*') {
+    let query = supabase.from('users').select(selectFields);
+    
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+    const isNumeric = /^\d+$/.test(String(userId));
+    
+    if (isUUID) {
+        query = query.eq('id', userId);
+    } else if (isNumeric) {
+        query = query.eq('user_id', Number(userId));
+    } else if (userNick) {
+        query = query.eq('nick', userNick);
+    } else {
+        query = query.eq('id', userId);
+    }
+    
+    return query;
+}
+
+function buildPerfQuery(supabase, userId, userNick) {
+    let query = supabase.from('performances').select('*').order('created_at', { ascending: false });
+    
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+    const isNumeric = /^\d+$/.test(String(userId));
+    
+    if (isUUID) {
+        query = query.eq('user_id', userId);
+    } else if (isNumeric) {
+        query = query.eq('user_id', Number(userId));
+    } else if (userNick) {
+        query = query.eq('nick', userNick);
+    } else {
+        query = query.eq('user_id', userId);
+    }
+    
+    return query;
+}
+
 export function calculateStatus(tokens, daysConnected) {
   const t = Number(tokens) || 0;
   const d = Number(daysConnected) || 0;
@@ -18,7 +57,6 @@ export async function savePerformance(req, res, next) {
     const isAdminOrOwner = callerRole === 'ADMIN' || callerRole === 'OWNER';
     const callerId = req.user.user_id || req.user.id;
 
-    // Solo ADMIN u OWNER pueden registrar para terceros
     const targetUserId = (isAdminOrOwner && data.user_id && data.user_id !== 'self')
       ? data.user_id
       : callerId;
@@ -30,16 +68,10 @@ export async function savePerformance(req, res, next) {
 
     let targetUser = req.user;
 
-    // Buscar datos del usuario objetivo en Supabase
     if (String(targetUserId) !== String(callerId)) {
-      const isNum = typeof targetUserId === 'number' || /^\d+$/.test(String(targetUserId));
-      let query = supabase.from('users').select('id, user_id, nick, email, role');
-      if (isNum) {
-        query = query.or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`);
-      } else {
-        query = query.eq('id', targetUserId);
-      }
-      const { data: dbUser, error: dbUserErr } = await query.limit(1);
+      // ✅ CONSULTA TIPADA
+      let userQuery = buildUserQuery(supabase, targetUserId, null, 'id, user_id, nick, email, role');
+      const { data: dbUser, error: dbUserErr } = await userQuery.limit(1);
 
       if (!dbUserErr && dbUser && dbUser.length > 0) {
         targetUser = dbUser[0];
@@ -61,7 +93,6 @@ export async function savePerformance(req, res, next) {
       created_at: new Date().toISOString()
     };
 
-    // Verificar si ya existe registro para este usuario y evento
     const { data: existingPerfs } = await supabase
       .from('performances')
       .select('id')
@@ -95,7 +126,7 @@ export async function savePerformance(req, res, next) {
       savedPerf = inserted;
     }
 
-    // Recalcular avg_tokens del usuario
+    // Recalcular avg_tokens del usuario (CONSULTA TIPADA)
     const { data: userPerfs } = await supabase
       .from('performances')
       .select('tokens')
@@ -103,7 +134,7 @@ export async function savePerformance(req, res, next) {
 
     if (userPerfs && userPerfs.length > 0) {
       const newAvg = Math.round(userPerfs.reduce((s, p) => s + (Number(p.tokens) || 0), 0) / userPerfs.length);
-      const isRecNum = typeof record.user_id === 'number' || /^\d+$/.test(String(record.user_id));
+      
       let updateQuery = supabase
         .from('users')
         .update({
@@ -113,8 +144,13 @@ export async function savePerformance(req, res, next) {
           last_activity: new Date().toISOString()
         });
 
-      if (isRecNum) {
-        updateQuery = updateQuery.or(`id.eq.${record.user_id},user_id.eq.${record.user_id}`);
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(record.user_id));
+      const isNumeric = /^\d+$/.test(String(record.user_id));
+
+      if (isUUID) {
+        updateQuery = updateQuery.eq('id', record.user_id);
+      } else if (isNumeric) {
+        updateQuery = updateQuery.eq('user_id', Number(record.user_id));
       } else {
         updateQuery = updateQuery.eq('id', record.user_id);
       }
@@ -144,18 +180,10 @@ export async function getMyHistory(req, res, next) {
     const userId = req.user.user_id || req.user.id;
     const userNick = req.user.nick;
 
-    let query = supabase
-      .from('performances')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (userId) {
-      query = query.or(`user_id.eq.${userId},nick.eq.${userNick}`);
-    } else if (userNick) {
-      query = query.eq('nick', userNick);
-    }
-
+    // ✅ CONSULTA TIPADA
+    let query = buildPerfQuery(supabase, userId, userNick);
     const { data, error } = await query;
+
     if (error) throw error;
 
     res.json({ history: data || [], performances: data || [] });
@@ -176,10 +204,10 @@ export async function getStats(req, res, next) {
 
     const userId = req.user.user_id || req.user.id;
     const { data: users } = await supabase.from('users').select('*');
-    const { data: myPerfs } = await supabase
-      .from('performances')
-      .select('*')
-      .or(`user_id.eq.${userId},nick.eq.${req.user.nick}`);
+    
+    // ✅ CONSULTA TIPADA para performances
+    let perfQuery = buildPerfQuery(supabase, userId, req.user.nick);
+    const { data: myPerfs } = await perfQuery;
 
     const userList = users || [];
     const actives = userList.filter(u => {
@@ -191,7 +219,11 @@ export async function getStats(req, res, next) {
       ? Math.round(userList.reduce((acc, u) => acc + (Number(u.avg_tokens) || 0), 0) / userList.length)
       : 0;
 
-    const myUser = userList.find(u => (u.user_id && String(u.user_id) === String(userId)) || (u.id && String(u.id) === String(userId))) || req.user;
+    const myUser = userList.find(u => {
+      const uId = String(u.user_id || u.id);
+      const targetId = String(userId);
+      return uId === targetId;
+    }) || req.user;
 
     res.json({
       userStats: {
@@ -274,7 +306,6 @@ export async function exportPerformancesCSV(req, res, next) {
  * Obtiene la lista de pilotos para el selector de rendimiento
  * - ADMIN y OWNER: devuelve TODOS los pilotos con status = 'ACTIVE'
  * - MIEMBRO: devuelve solo su propio nick/perfil
- * Retorna: { success, message, pilots, count, data }
  */
 export async function getPilotsList(req, res, next) {
   try {

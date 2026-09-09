@@ -8,9 +8,28 @@
 import { getSupabase } from '../db/supabase.js';
 import { ProfileUpdateSchema } from '../utils/schemas.js';
 
+// ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
+function buildUserQuery(supabase, userId, userEmail, userNick, selectFields) {
+    let query = supabase.from('users').select(selectFields);
+    
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+    const isNumeric = /^\d+$/.test(String(userId));
+    
+    if (isUUID) {
+        query = query.eq('id', userId);
+    } else if (isNumeric) {
+        query = query.eq('user_id', Number(userId));
+    } else if (userEmail) {
+        query = query.eq('email', userEmail);
+    } else {
+        query = query.eq('id', userId);
+    }
+    
+    return query;
+}
+
 /**
  * Obtener expediente completo del piloto autenticado
- * Selecciona campos explícitos (incluyendo email_institucional) y calcula el último evento operativo
  */
 export async function getProfile(req, res, next) {
   try {
@@ -22,41 +41,14 @@ export async function getProfile(req, res, next) {
     console.log(`🎖️ [Perfil] Solicitando expediente para combatiente: ID=${userId}, Nick=${userNick || 'Desconocido'}`);
 
     if (supabase) {
-      // Detección de identificador UUID vs entero para compatibilidad con PostgreSQL
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
-      const isNumeric = /^\d+$/.test(String(userId));
-
-      let query = supabase
-        .from('users')
-        .select(`
-          id,
-          user_id,
-          nick,
-          email,
-          email_institucional,
-          role,
-          status,
-          full_name,
-          email_personal,
-          phone,
-          notifications_enabled,
-          avg_tokens,
-          weeks_evaluated,
-          perf_status,
-          google_linked,
-          created_at,
-          updated_at
-        `);
-
-      if (isUUID) {
-        query = query.or(`id.eq.${userId},email.eq.${userEmail}`);
-      } else if (isNumeric) {
-        query = query.or(`id.eq.${userId},user_id.eq.${userId}`);
-      } else if (userEmail) {
-        query = query.eq('email', userEmail);
-      } else {
-        query = query.eq('id', userId);
-      }
+      // ✅ CONSULTA TIPADA
+      let query = buildUserQuery(
+        supabase, 
+        userId, 
+        userEmail, 
+        userNick,
+        `id, user_id, nick, email, email_institucional, role, status, full_name, email_personal, phone, notifications_enabled, avg_tokens, weeks_evaluated, perf_status, google_linked, created_at, updated_at`
+      );
 
       const { data, error } = await query.limit(1).single();
 
@@ -65,17 +57,22 @@ export async function getProfile(req, res, next) {
       }
 
       if (!error && data) {
-        // Cálculo dinámico de la última operación (last_event) desde el registro de performances
         let lastEvent = 'SQUADRON-ACTIVO';
         try {
+          // ✅ CONSULTA TIPADA para performances
           let perfQuery = supabase
             .from('performances')
             .select('event_id, created_at')
             .order('created_at', { ascending: false })
             .limit(1);
 
-          if (isUUID || isNumeric) {
-            perfQuery = perfQuery.or(`user_id.eq.${userId},nick.eq.${data.nick || userNick}`);
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
+          const isNumeric = /^\d+$/.test(String(userId));
+
+          if (isUUID) {
+            perfQuery = perfQuery.eq('user_id', userId);
+          } else if (isNumeric) {
+            perfQuery = perfQuery.eq('user_id', Number(userId));
           } else {
             perfQuery = perfQuery.eq('nick', data.nick || userNick);
           }
@@ -89,7 +86,6 @@ export async function getProfile(req, res, next) {
           console.warn('⚠️ [Perfil] No se pudo obtener la última operación militar:', e.message);
         }
 
-        // Limpieza de campos sensibles y fallback para email institucional
         const { password_hash, password, encrypted_password, ...safe } = data;
         const institutionalEmail = safe.email_institucional || safe.email || `${(safe.nick || 'piloto').toLowerCase()}@ffaa.py`;
 
@@ -113,7 +109,6 @@ export async function getProfile(req, res, next) {
       }
     }
 
-    // Fallback de contingencia si la base de datos no está disponible
     console.warn('⚠️ [Perfil] Utilizando datos de sesión local como fallback');
     const { password_hash, password, encrypted_password, ...safe } = req.user;
     const fallbackProfile = {
@@ -172,15 +167,16 @@ export async function updateProfile(req, res, next) {
     if (data.email_personal !== undefined) updateFields.email_personal = data.email_personal;
     if (data.notifications_enabled !== undefined) updateFields.notifications_enabled = data.notifications_enabled;
 
+    // ✅ CONSULTA TIPADA para UPDATE
+    let updateQuery = supabase.from('users').update(updateFields);
+
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
     const isNumeric = /^\d+$/.test(String(userId));
-
-    let updateQuery = supabase.from('users').update(updateFields);
 
     if (isUUID) {
       updateQuery = updateQuery.eq('id', userId);
     } else if (isNumeric) {
-      updateQuery = updateQuery.or(`id.eq.${userId},user_id.eq.${userId}`);
+      updateQuery = updateQuery.eq('user_id', Number(userId));
     } else {
       updateQuery = updateQuery.eq('id', userId);
     }

@@ -24,22 +24,18 @@ router.use(requireAuth);
 router.use(requireRole('ADMIN', 'OWNER'));
 
 // ========== 1. GESTIÓN DE USUARIOS / MIEMBROS ==========
-// Listar usuarios
 router.get('/users', getUsers);
 router.get('/members', getMembers);
 router.get('/members/active', getActiveMembers);
 
-// Registrar nuevo piloto
 router.post('/members', addMember);
 router.post('/users', addMember);
 
-// Cambiar estado (ACTIVE / INACTIVE)
 router.put('/users/:id/status', updateUserStatus);
 router.patch('/users/:id/status', updateUserStatus);
 router.put('/members/:id/status', updateUserStatus);
 router.patch('/members/:id/status', updateUserStatus);
 
-// Cambiar rol (MIEMBRO / VETERANO / ADMIN / OWNER con validación de límites)
 router.put('/users/:id/role', updateUserRole);
 router.patch('/users/:id/role', updateUserRole);
 router.put('/members/:id/role', updateUserRole);
@@ -69,7 +65,7 @@ router.get('/events', async (req, res) => {
 });
 router.post('/events/activate-bm', activateBlackMarket);
 
-// ========== 3. RESETEAR CONTRASEÑA DE USUARIO ==========
+// ========== 3. RESETEAR CONTRASEÑA DE USUARIO (CORREGIDO) ==========
 router.post('/users/:userId/reset-password', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -79,11 +75,23 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         let user = null;
         if (supabase) {
             try {
-                const { data, error: userError } = await supabase
+                // ✅ CONSULTA TIPADA: determinar si es UUID o INTEGER
+                let userQuery = supabase
                     .from('users')
-                    .select('id, user_id, nick, email, token_version')
-                    .or(`id.eq.${targetId},user_id.eq.${targetId}`)
-                    .limit(1);
+                    .select('id, user_id, nick, email, token_version');
+
+                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetId));
+                const isNumeric = /^\d+$/.test(String(targetId));
+
+                if (isUUID) {
+                    userQuery = userQuery.eq('id', targetId);
+                } else if (isNumeric) {
+                    userQuery = userQuery.eq('user_id', Number(targetId));
+                } else {
+                    userQuery = userQuery.eq('id', targetId);
+                }
+
+                const { data, error: userError } = await userQuery.limit(1);
 
                 if (!userError && data && data.length > 0) {
                     user = data[0];
@@ -97,7 +105,6 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
 
-        // ✅ GENERAR CONTRASEÑA TEMPORAL ALEATORIA
         const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
@@ -118,7 +125,6 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             }
         }
 
-        // Registrar evento de auditoría
         await logSecurityEvent({
             supabase,
             userId: user.id || user.user_id,
@@ -132,7 +138,6 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             }
         });
 
-        // ✅ La contraseña se muestra UNA SOLA VEZ
         res.json({
             success: true,
             message: `Contraseña de ${user.nick} reseteada. Entrégasela por WhatsApp/Discord — no volverá a mostrarse.`,
