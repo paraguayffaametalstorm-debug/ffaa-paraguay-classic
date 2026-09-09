@@ -7,7 +7,7 @@ import {
   BulkUploadSchema
 } from '../utils/schemas.js';
 import { logAuditChange } from '../utils/audit.js';
-import { generateTemporaryPassword } from '../utils/security.js';
+import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
 
 // ============================================================
 // 1. LISTAR USUARIOS / MIEMBROS
@@ -387,10 +387,14 @@ export async function addMember(req, res, next) {
       }
     }
 
+    // ✅ Obtener el siguiente user_id entero incremental antes de insertar
+    const nextUserId = await getNextUserId(supabase);
+
     // ✅ Generar contraseña temporal segura con formato táctico MS-XXXX-XXXX
     const tempPassword = generateTemporaryPassword();
     const defaultHash = await bcrypt.hash(tempPassword, 10);
     const newMember = {
+      user_id: nextUserId,
       email: data.email.toLowerCase().trim(),
       password_hash: defaultHash,
       nick: data.nick.trim(),
@@ -460,6 +464,9 @@ export async function bulkUploadEvent(req, res, next) {
     let processed = 0;
     const createdUsers = [];
 
+    // ✅ Obtener el último user_id antes del bucle para asignar correlativos a los nuevos usuarios
+    let nextUserId = await getNextUserId(supabase);
+
     for (const item of bulkList) {
       const { data: foundUsers } = await supabase
         .from('users')
@@ -470,14 +477,16 @@ export async function bulkUploadEvent(req, res, next) {
       let targetUser = foundUsers && foundUsers.length > 0 ? foundUsers[0] : null;
 
       if (!targetUser) {
+        const currentUserId = nextUserId++;
         const cleanNick = item.nick.toLowerCase().replace(/[^a-z0-9]/g, '');
         // ✅ Generar contraseña táctica temporal segura (Formato MS-XXXX-XXXX)
         const tempPassword = generateTemporaryPassword();
         const defaultHash = await bcrypt.hash(tempPassword, 10);
 
-        const { data: newUser } = await supabase
+        const { data: newUser, error: insertError } = await supabase
           .from('users')
           .insert({
+            user_id: currentUserId,
             email: `${cleanNick}@ffaa.py`,
             password_hash: defaultHash,
             nick: item.nick,
@@ -493,11 +502,17 @@ export async function bulkUploadEvent(req, res, next) {
           })
           .select()
           .single();
+
+        if (insertError) {
+          throw insertError;
+        }
+
         targetUser = newUser;
 
         // Rastrear piloto creado con su contraseña temporal
         createdUsers.push({
-          id: targetUser?.id || targetUser?.user_id,
+          id: targetUser?.id,
+          user_id: targetUser?.user_id || currentUserId,
           nick: item.nick,
           email: `${cleanNick}@ffaa.py`,
           temporaryPassword: tempPassword,
