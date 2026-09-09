@@ -32,13 +32,16 @@ export async function savePerformance(req, res, next) {
 
     // Buscar datos del usuario objetivo en Supabase
     if (String(targetUserId) !== String(callerId)) {
-      const { data: dbUser } = await supabase
-        .from('users')
-        .select('id, user_id, nick, email, role')
-        .or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`)
-        .limit(1);
+      const isNum = typeof targetUserId === 'number' || /^\d+$/.test(String(targetUserId));
+      let query = supabase.from('users').select('id, user_id, nick, email, role');
+      if (isNum) {
+        query = query.or(`id.eq.${targetUserId},user_id.eq.${targetUserId}`);
+      } else {
+        query = query.eq('id', targetUserId);
+      }
+      const { data: dbUser, error: dbUserErr } = await query.limit(1);
 
-      if (dbUser && dbUser.length > 0) {
+      if (!dbUserErr && dbUser && dbUser.length > 0) {
         targetUser = dbUser[0];
       }
     }
@@ -100,18 +103,28 @@ export async function savePerformance(req, res, next) {
 
     if (userPerfs && userPerfs.length > 0) {
       const newAvg = Math.round(userPerfs.reduce((s, p) => s + (Number(p.tokens) || 0), 0) / userPerfs.length);
-      await supabase
+      const isRecNum = typeof record.user_id === 'number' || /^\d+$/.test(String(record.user_id));
+      let updateQuery = supabase
         .from('users')
         .update({
           avg_tokens: newAvg,
           weeks_evaluated: userPerfs.length,
-          perf_status: status
-        })
-        .or(`id.eq.${record.user_id},user_id.eq.${record.user_id}`);
+          perf_status: status,
+          last_activity: new Date().toISOString()
+        });
+
+      if (isRecNum) {
+        updateQuery = updateQuery.or(`id.eq.${record.user_id},user_id.eq.${record.user_id}`);
+      } else {
+        updateQuery = updateQuery.eq('id', record.user_id);
+      }
+      await updateQuery;
     }
 
     res.status(isUpdate ? 200 : 201).json({
-      message: 'Rendimiento registrado exitosamente',
+      success: true,
+      message: `Rendimiento ${isUpdate ? 'actualizado' : 'registrado'} exitosamente`,
+      data: savedPerf || record,
       action: isUpdate ? 'sobrescrito' : 'creado',
       status,
       performance: savedPerf || record
