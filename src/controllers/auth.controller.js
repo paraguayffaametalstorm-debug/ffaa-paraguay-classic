@@ -233,24 +233,32 @@ export const register = async (req, res) => {
     }
 };
 
-// ========== CAMBIO DE CONTRASEÑA ==========
+// ========== CAMBIO DE CONTRASEÑA (SISTEMA MILITAR TÁCTICO) ==========
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword, isForced } = req.body;
-        const userId = req.user.user_id || req.user.id;
+        const userId = req.user?.user_id || req.user?.id;
         const supabase = getSupabase();
 
         // Validar nueva contraseña (mínimo 8 caracteres)
         if (!newPassword || newPassword.length < 8) {
             return res.status(400).json({
+                success: false,
+                message: 'La nueva clave táctica debe contener al menos 8 caracteres',
+                data: null,
                 error: 'La nueva contraseña debe tener al menos 8 caracteres'
             });
         }
         if (!supabase) {
-            return res.status(500).json({ error: 'Base de datos no disponible' });
+            return res.status(500).json({
+                success: false,
+                message: 'Servicio de base de datos táctico no disponible',
+                data: null,
+                error: 'Base de datos no disponible'
+            });
         }
 
-        // 1. Obtener usuario completo
+        // 1. Obtener usuario militar completo
         const { data: userData, error: userError } = await supabase
             .from('users')
             .select('password_hash, must_change_password, token_version, nick, id, user_id, role, email')
@@ -258,7 +266,12 @@ export const changePassword = async (req, res) => {
             .limit(1);
 
         if (userError || !userData || userData.length === 0) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
+            return res.status(404).json({
+                success: false,
+                message: 'Combatiente no localizado en el registro militar',
+                data: null,
+                error: 'Usuario no encontrado'
+            });
         }
 
         const user = userData[0];
@@ -268,6 +281,9 @@ export const changePassword = async (req, res) => {
         if (!isForcedChange) {
             if (!currentPassword) {
                 return res.status(400).json({ 
+                    success: false,
+                    message: 'Debes indicar tu contraseña actual de combate',
+                    data: null,
                     error: 'Debes indicar tu contraseña actual',
                     code: 'CURRENT_PASSWORD_REQUIRED'
                 });
@@ -283,15 +299,20 @@ export const changePassword = async (req, res) => {
                     userAgent: req.headers['user-agent'],
                     metadata: { reason: 'wrong_current_password' }
                 });
-                return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+                return res.status(401).json({
+                    success: false,
+                    message: 'Contraseña actual incorrecta. Acceso denegado.',
+                    data: null,
+                    error: 'Contraseña actual incorrecta'
+                });
             }
         }
 
-        // 3. Hashear nueva contraseña
+        // 3. Hashear nueva contraseña con bcrypt
         const newHash = await bcrypt.hash(newPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        // 4. Actualizar en Supabase
+        // 4. Actualizar en Supabase e invalidar sesiones previas incrementando token_version
         const { error: updateError } = await supabase
             .from('users')
             .update({
@@ -329,15 +350,25 @@ export const changePassword = async (req, res) => {
             { expiresIn: ENV.JWT_EXPIRES_IN || '7d' }
         );
 
-        res.json({
+        return res.json({
             success: true,
-            message: 'Contraseña actualizada correctamente',
-            token: newToken
+            message: 'Contraseña táctica actualizada correctamente. Sesiones previas invalidadas.',
+            data: {
+                token: newToken,
+                token_version: newTokenVersion
+            },
+            token: newToken,
+            error: null
         });
 
     } catch (error) {
         console.error('❌ Error en changePassword:', error);
-        res.status(500).json({ error: error.message || 'Error interno del servidor' });
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor al actualizar contraseña',
+            data: null,
+            error: error.message || 'Error interno del servidor'
+        });
     }
 };
 
