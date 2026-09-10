@@ -1640,6 +1640,11 @@ async function openAircraftDeepModal(planeId) {
   if (typeof refreshLucideIcons === 'function') {
     setTimeout(refreshLucideIcons, 30);
   }
+
+  // Tarea 7: Cargar recomendación táctica por defecto en el modal profundo
+  if (typeof loadPlaneRecommendation === 'function') {
+    loadPlaneRecommendation('agresivo');
+  }
 }
 window.openAircraftDeepModal = openAircraftDeepModal;
 
@@ -1647,6 +1652,343 @@ function closeAircraftDeepModal() {
   closeModal('aircraftDeepModal');
 }
 window.closeAircraftDeepModal = closeAircraftDeepModal;
+
+// ==========================================================================
+// TAREA 7: RECOMENDACIÓN TÁCTICA DE BUILD (IA / Reglas Militares)
+// ==========================================================================
+async function loadPlaneRecommendation(playstyle) {
+  const container = document.getElementById('deepRecommendationContent');
+  const planeId = window.currentPlaneId || (typeof currentPlaneId !== 'undefined' ? currentPlaneId : null);
+  
+  // Actualizar botones de navegación
+  const navBtns = document.querySelectorAll('#recStylesNav .rec-style-btn');
+  navBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('id') === `recBtn${playstyle.charAt(0).toUpperCase() + playstyle.slice(1)}`);
+  });
+
+  if (!container) return;
+
+  container.innerHTML = '<div style="color:var(--steel-gray);font-size:0.85rem;"><i data-lucide="loader-2" class="spin"></i> Analizando doctrina táctica...</div>';
+  if (typeof refreshLucideIcons === 'function') setTimeout(refreshLucideIcons, 30);
+
+  const localDefaults = {
+    agresivo: {
+      nombre: 'Dogfight Agresivo & Asalto',
+      fuselaje: 4, motor: 8, avionica: 2, armas: 7,
+      mods: ['Giro Temerario', 'Armas Aniquiladoras'],
+      desc: 'Enfocado en empuje de postcombustión, aceleración y letalidad balística/misiles para combate cerrado.'
+    },
+    defensivo: {
+      nombre: 'Interceptador Blindado / Tanque',
+      fuselaje: 8, motor: 4, avionica: 6, armas: 3,
+      mods: ['Resistencia a Explosiones', 'Bengalas Disruptivas'],
+      desc: 'Maximiza el blindaje e integridad de fuselaje con contramedidas defensivas para resistencia en zona caliente.'
+    },
+    apoyo: {
+      nombre: 'Guerra Electrónica & Escolta',
+      fuselaje: 5, motor: 5, avionica: 8, armas: 4,
+      mods: ['Maniobrabilidad Ideal', 'Guiado Mejorado'],
+      desc: 'Prioriza adquisición de radar, tiempo de enganche rápido, defensa ECM y soporte táctico de escuadrón.'
+    }
+  };
+
+  const styleKey = (playstyle || 'agresivo').toLowerCase();
+  let recData = null;
+
+  if (planeId) {
+    try {
+      const res = await fetch(`${API_BASE}/api/planes/${planeId}/recommendation?playstyle=${styleKey}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) recData = json;
+      }
+    } catch (e) {
+      console.warn('Fallback a reglas locales de recomendación:', e);
+    }
+  }
+
+  const baseRec = localDefaults[styleKey] || localDefaults.agresivo;
+  const build = recData?.build || baseRec;
+  const totalPiezas = recData?.cost?.piezas || (
+    [build.fuselaje, build.motor, build.avionica, build.armas].reduce((acc, lvl) => {
+      const UPGRADE_COSTS = { 1:100, 2:250, 3:500, 4:800, 5:1200, 6:1800, 7:2500, 8:3500 };
+      let sum = 0;
+      for (let i = 1; i <= lvl; i++) sum += (UPGRADE_COSTS[i] || 0);
+      return acc + sum;
+    }, 0)
+  );
+  const totalAvanzadas = recData?.cost?.avanzadas || (
+    [build.fuselaje, build.motor, build.avionica, build.armas].reduce((acc, lvl) => {
+      const ADV_COSTS = { 1:0, 2:0, 3:10, 4:25, 5:50, 6:100, 7:200, 8:350 };
+      let sum = 0;
+      for (let i = 1; i <= lvl; i++) sum += (ADV_COSTS[i] || 0);
+      return acc + sum;
+    }, 0)
+  );
+
+  const modLabels = recData?.modsDetail?.map(m => m.name) || baseRec.mods;
+
+  container.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-weight:700;color:var(--gold-rank);font-size:0.95rem;">${baseRec.nombre}</div>
+        <div style="font-size:0.8rem;color:#cbd5e1;margin-top:2px;">${baseRec.desc}</div>
+      </div>
+      <button type="button" class="btn-sm btn-primary" onclick="applyPresetToPlanner(${build.fuselaje}, ${build.motor}, ${build.avionica}, ${build.armas})" style="font-size:0.75rem;padding:4px 10px;">
+        🚀 Cargar en Planificador
+      </button>
+    </div>
+
+    <div class="rec-build-grid">
+      <div class="rec-build-item">
+        <span style="font-size:0.8rem;color:var(--steel-gray);">🛡️ Fuselaje</span>
+        <span style="font-weight:700;color:#38bdf8;font-family:var(--font-mono);">Nv. ${build.fuselaje}/8</span>
+      </div>
+      <div class="rec-build-item">
+        <span style="font-size:0.8rem;color:var(--steel-gray);">⚙️ Motor</span>
+        <span style="font-weight:700;color:#fbbf24;font-family:var(--font-mono);">Nv. ${build.motor}/8</span>
+      </div>
+      <div class="rec-build-item">
+        <span style="font-size:0.8rem;color:var(--steel-gray);">📡 Aviónica</span>
+        <span style="font-weight:700;color:#c084fc;font-family:var(--font-mono);">Nv. ${build.avionica}/8</span>
+      </div>
+      <div class="rec-build-item">
+        <span style="font-size:0.8rem;color:var(--steel-gray);">🎯 Armas</span>
+        <span style="font-weight:700;color:#f87171;font-family:var(--font-mono);">Nv. ${build.armas}/8</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:0.8rem;color:var(--steel-gray);border-top:1px solid rgba(255,255,255,0.06);padding-top:6px;flex-wrap:wrap;gap:6px;">
+      <div><strong>🔩 Mods sugeridos:</strong> <span style="color:#f1f5f9;">${modLabels.join(' · ')}</span></div>
+      <div><strong>Costo est.:</strong> <span style="color:#f1f5f9;">${totalPiezas.toLocaleString()} piezas</span> · <span style="color:#38bdf8;">${totalAvanzadas.toLocaleString()} avanzadas</span></div>
+    </div>
+  `;
+}
+window.loadPlaneRecommendation = loadPlaneRecommendation;
+
+// ==========================================================================
+// TAREA 8: PLANIFICADOR DE UPGRADES 2.0
+// ==========================================================================
+let currentPlannerPlane = null;
+const UPGRADE_PLANNER_COSTS = {
+  1: { piezas: 100, avanzadas: 0 },
+  2: { piezas: 250, avanzadas: 0 },
+  3: { piezas: 500, avanzadas: 10 },
+  4: { piezas: 800, avanzadas: 25 },
+  5: { piezas: 1200, avanzadas: 50 },
+  6: { piezas: 1800, avanzadas: 100 },
+  7: { piezas: 2500, avanzadas: 200 },
+  8: { piezas: 3500, avanzadas: 350 }
+};
+
+function openUpgradePlanner(planeId, presetBuild = null) {
+  const pId = planeId || window.currentPlaneId || (typeof currentPlaneId !== 'undefined' ? currentPlaneId : null);
+  const plane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
+    ? allUserPlanes.find(p => String(p.id) === String(pId))
+    : (typeof hangarFilteredPlanes !== 'undefined' && Array.isArray(hangarFilteredPlanes))
+      ? hangarFilteredPlanes.find(p => String(p.id) === String(pId))
+      : null;
+
+  currentPlannerPlane = plane || {
+    id: pId,
+    nivel: 6,
+    nivel_fuselaje: 0,
+    nivel_motor: 0,
+    nivel_avionica: 0,
+    nivel_armas: 0
+  };
+
+  const nameEl = document.getElementById('plannerPlaneName');
+  const metaEl = document.getElementById('plannerPlaneMeta');
+  if (nameEl) nameEl.textContent = currentPlannerPlane.model_name || currentPlannerPlane.name || `Aeronave #${currentPlannerPlane.id}`;
+  if (metaEl) metaEl.textContent = `Nivel ${currentPlannerPlane.nivel || 1} · ${currentPlannerPlane.type || 'Caza de Combate'}`;
+
+  const fInput = document.getElementById('plannerFuselaje');
+  const mInput = document.getElementById('plannerMotor');
+  const aInput = document.getElementById('plannerAvionica');
+  const wInput = document.getElementById('plannerArmas');
+
+  if (presetBuild) {
+    if (fInput) fInput.value = presetBuild.fuselaje || 0;
+    if (mInput) mInput.value = presetBuild.motor || 0;
+    if (aInput) aInput.value = presetBuild.avionica || 0;
+    if (wInput) wInput.value = presetBuild.armas || 0;
+  } else {
+    const saved = localStorage.getItem('planner_build_' + currentPlannerPlane.id);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (fInput) fInput.value = parsed.fuselaje ?? (currentPlannerPlane.nivel_fuselaje || 0);
+        if (mInput) mInput.value = parsed.motor ?? (currentPlannerPlane.nivel_motor || 0);
+        if (aInput) aInput.value = parsed.avionica ?? (currentPlannerPlane.nivel_avionica || 0);
+        if (wInput) wInput.value = parsed.armas ?? (currentPlannerPlane.nivel_armas || 0);
+      } catch (e) {
+        resetPlannerToCurrent();
+      }
+    } else {
+      resetPlannerToCurrent();
+    }
+  }
+
+  onPlannerSliderChange();
+  showModal('upgradePlannerModal');
+}
+window.openUpgradePlanner = openUpgradePlanner;
+
+function resetPlannerToCurrent() {
+  if (!currentPlannerPlane) return;
+  const fInput = document.getElementById('plannerFuselaje');
+  const mInput = document.getElementById('plannerMotor');
+  const aInput = document.getElementById('plannerAvionica');
+  const wInput = document.getElementById('plannerArmas');
+
+  if (fInput) fInput.value = currentPlannerPlane.nivel_fuselaje || 0;
+  if (mInput) mInput.value = currentPlannerPlane.nivel_motor || 0;
+  if (aInput) aInput.value = currentPlannerPlane.nivel_avionica || 0;
+  if (wInput) wInput.value = currentPlannerPlane.nivel_armas || 0;
+  onPlannerSliderChange();
+}
+window.resetPlannerToCurrent = resetPlannerToCurrent;
+
+function applyPresetToPlanner(fuselaje, motor, avionica, armas) {
+  openUpgradePlanner(window.currentPlaneId, { fuselaje, motor, avionica, armas });
+}
+window.applyPresetToPlanner = applyPresetToPlanner;
+
+function onPlannerSliderChange() {
+  const fInput = document.getElementById('plannerFuselaje');
+  const mInput = document.getElementById('plannerMotor');
+  const aInput = document.getElementById('plannerAvionica');
+  const wInput = document.getElementById('plannerArmas');
+
+  const fVal = parseInt(fInput?.value || 0, 10);
+  const mVal = parseInt(mInput?.value || 0, 10);
+  const aVal = parseInt(aInput?.value || 0, 10);
+  const wVal = parseInt(wInput?.value || 0, 10);
+
+  const fBadge = document.getElementById('plannerFuselajeVal');
+  const mBadge = document.getElementById('plannerMotorVal');
+  const aBadge = document.getElementById('plannerAvionicaVal');
+  const wBadge = document.getElementById('plannerArmasVal');
+
+  if (fBadge) fBadge.textContent = `${fVal}/8`;
+  if (mBadge) mBadge.textContent = `${mVal}/8`;
+  if (aBadge) aBadge.textContent = `${aVal}/8`;
+  if (wBadge) wBadge.textContent = `${wVal}/8`;
+
+  // Cálculo de costos acumulados
+  let totalPiezas = 0;
+  let totalAvanzadas = 0;
+
+  [fVal, mVal, aVal, wVal].forEach(lvl => {
+    for (let i = 1; i <= lvl; i++) {
+      if (UPGRADE_PLANNER_COSTS[i]) {
+        totalPiezas += UPGRADE_PLANNER_COSTS[i].piezas;
+        totalAvanzadas += UPGRADE_PLANNER_COSTS[i].avanzadas;
+      }
+    }
+  });
+
+  const piezasEl = document.getElementById('plannerTotalPiezas');
+  const avanzadasEl = document.getElementById('plannerTotalAvanzadas');
+  if (piezasEl) piezasEl.textContent = totalPiezas.toLocaleString();
+  if (avanzadasEl) avanzadasEl.textContent = totalAvanzadas.toLocaleString();
+
+  // Cálculo de stats previstos vs actuales
+  const planeLevel = currentPlannerPlane?.nivel || 6;
+  const levelFactor = planeLevel / 20;
+
+  const baseSpeed = Math.round(2800 * (0.6 + 0.4 * levelFactor));
+  const baseAgility = Math.round(42 * (0.6 + 0.4 * levelFactor));
+  const baseArmor = Math.round(3200 * (0.5 + 0.5 * levelFactor));
+  const baseFirepower = Math.round(1600 * (0.5 + 0.5 * levelFactor));
+
+  const currF = currentPlannerPlane?.nivel_fuselaje || 0;
+  const currM = currentPlannerPlane?.nivel_motor || 0;
+  const currW = currentPlannerPlane?.nivel_armas || 0;
+
+  const currSpeed = Math.round(baseSpeed * (1 + currM * 0.025));
+  const currAgility = Math.round(baseAgility * (1 + currF * 0.015));
+  const currArmor = Math.round(baseArmor * (1 + currF * 0.03));
+  const currFirepower = Math.round(baseFirepower * (1 + currW * 0.035));
+
+  const planSpeed = Math.round(baseSpeed * (1 + mVal * 0.025));
+  const planAgility = Math.round(baseAgility * (1 + fVal * 0.015));
+  const planArmor = Math.round(baseArmor * (1 + fVal * 0.03));
+  const planFirepower = Math.round(baseFirepower * (1 + wVal * 0.035));
+
+  const speedEl = document.getElementById('plannerSpeed');
+  const agilityEl = document.getElementById('plannerAgility');
+  const armorEl = document.getElementById('plannerArmor');
+  const firepowerEl = document.getElementById('plannerFirepower');
+
+  if (speedEl) speedEl.textContent = `${planSpeed.toLocaleString()} km/h`;
+  if (agilityEl) agilityEl.textContent = `${planAgility} °/s`;
+  if (armorEl) armorEl.textContent = `${planArmor.toLocaleString()} HP`;
+  if (firepowerEl) firepowerEl.textContent = `${planFirepower.toLocaleString()} DPS`;
+
+  const diffSpeed = planSpeed - currSpeed;
+  const diffAgility = planAgility - currAgility;
+  const diffArmor = planArmor - currArmor;
+  const diffFirepower = planFirepower - currFirepower;
+
+  const speedDiffEl = document.getElementById('plannerSpeedDiff');
+  const agilityDiffEl = document.getElementById('plannerAgilityDiff');
+  const armorDiffEl = document.getElementById('plannerArmorDiff');
+  const firepowerDiffEl = document.getElementById('plannerFirepowerDiff');
+
+  if (speedDiffEl) {
+    speedDiffEl.textContent = `${diffSpeed >= 0 ? '+' : ''}${diffSpeed} km/h`;
+    speedDiffEl.style.color = diffSpeed >= 0 ? 'var(--green-tactical)' : 'var(--red-danger)';
+  }
+  if (agilityDiffEl) {
+    agilityDiffEl.textContent = `${diffAgility >= 0 ? '+' : ''}${diffAgility} °/s`;
+    agilityDiffEl.style.color = diffAgility >= 0 ? 'var(--green-tactical)' : 'var(--red-danger)';
+  }
+  if (armorDiffEl) {
+    armorDiffEl.textContent = `${diffArmor >= 0 ? '+' : ''}${diffArmor} HP`;
+    armorDiffEl.style.color = diffArmor >= 0 ? 'var(--green-tactical)' : 'var(--red-danger)';
+  }
+  if (firepowerDiffEl) {
+    firepowerDiffEl.textContent = `${diffFirepower >= 0 ? '+' : ''}${diffFirepower} DPS`;
+    firepowerDiffEl.style.color = diffFirepower >= 0 ? 'var(--green-tactical)' : 'var(--red-danger)';
+  }
+}
+window.onPlannerSliderChange = onPlannerSliderChange;
+
+function saveBuild() {
+  if (!currentPlannerPlane) {
+    if (typeof showToast === 'function') showToast('No hay aeronave seleccionada', 'error');
+    return;
+  }
+
+  const fVal = parseInt(document.getElementById('plannerFuselaje')?.value || 0, 10);
+  const mVal = parseInt(document.getElementById('plannerMotor')?.value || 0, 10);
+  const aVal = parseInt(document.getElementById('plannerAvionica')?.value || 0, 10);
+  const wVal = parseInt(document.getElementById('plannerArmas')?.value || 0, 10);
+
+  const plannedBuild = {
+    plane_id: currentPlannerPlane.id,
+    fuselaje: fVal,
+    motor: mVal,
+    avionica: aVal,
+    armas: wVal,
+    updated_at: new Date().toISOString()
+  };
+
+  localStorage.setItem('planner_build_' + currentPlannerPlane.id, JSON.stringify(plannedBuild));
+
+  if (typeof showToast === 'function') {
+    showToast(`Build táctica guardada (F:${fVal} M:${mVal} A:${aVal} W:${wVal})`, 'success');
+  } else {
+    alert('Build táctica planificada guardada con éxito.');
+  }
+
+  closeModal('upgradePlannerModal');
+}
+window.saveBuild = saveBuild;
 
 function exportPlane(planeId) {
   const plane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))

@@ -9,7 +9,8 @@ import {
   exportPlanesCSV,
   getPlaneStats,
   getPlaneDetails,
-  updatePlaneSystem
+  updatePlaneSystem,
+  getRecommendedBuild
 } from '../controllers/planes.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
 
@@ -27,6 +28,8 @@ router.get('/', getMyPlanes);
 router.get('/my-planes', getMyPlanes);
 router.get('/:id/stats', getPlaneStats);
 router.get('/:id/details', getPlaneDetails);
+router.get('/:id/recommendation', getRecommendedBuild);
+router.get('/:id/recommended-build', getRecommendedBuild);
 router.put('/:id/system', updatePlaneSystem);
 router.post('/', addPlane);
 router.put('/:id', updatePlane);

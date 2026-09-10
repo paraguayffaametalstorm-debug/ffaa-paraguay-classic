@@ -8,10 +8,29 @@ export async function logSecurityEvent({ supabase, userId, nick, event, ip, user
             return;
         }
 
+        // Convertir userId (INTEGER) a UUID
+        let userUUID = null;
+        if (userId) {
+            if (typeof userId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+                userUUID = userId;
+            } else {
+                try {
+                    const { data } = await supabase
+                        .from('users')
+                        .select('id')
+                        .eq('user_id', userId)
+                        .single();
+                    userUUID = data?.id || null;
+                } catch (e) {
+                    // Si falla, dejar null
+                }
+            }
+        }
+
         const { error } = await supabase
             .from('security_events')
             .insert({
-                user_id: userId || null,
+                user_id: userUUID,  // ← UUID en lugar de INTEGER
                 nick: nick || null,
                 event_type: event,
                 ip: ip || null,
@@ -34,8 +53,27 @@ export async function logAuditChange({ supabase, actorId, actorNick, targetId, t
     try {
         if (!supabase) return;
 
+        // Convertir actorId (INTEGER) a UUID
+        let actorUUID = null;
+        if (actorId) {
+            if (typeof actorId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId)) {
+                actorUUID = actorId;
+            } else {
+                try {
+                    const { data } = await supabase
+                        .from('users')
+                        .select('id')
+                        .eq('user_id', actorId)
+                        .single();
+                    actorUUID = data?.id || null;
+                } catch (e) {
+                    // Si falla, dejar null
+                }
+            }
+        }
+
         const auditEntry = {
-            actor_id: actorId || null,
+            actor_id: actorUUID,  // ← UUID
             actor_nick: actorNick || null,
             target_id: targetId || null,
             target_nick: targetNick || null,

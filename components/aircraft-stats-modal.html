@@ -138,8 +138,28 @@
 
       <!-- Sistemas Upgrades 2.0 -->
       <section class="deep-section">
-        <h3>🔧 Sistemas Upgrades 2.0 (Nv 6+)</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3>🔧 Sistemas Upgrades 2.0 (Nv 6+)</h3>
+          <button type="button" class="btn-sm btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="font-size:0.75rem;padding:3px 8px;border-color:var(--blue-telemetry);color:var(--blue-telemetry);">
+            🔧 Abrir Planificador
+          </button>
+        </div>
         <div class="deep-systems-grid" id="deepSystemsGrid"></div>
+      </section>
+
+      <!-- Recomendación IA Táctica de Build (Tarea 7) -->
+      <section class="deep-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+          <h3>🤖 Recomendación Táctica de Build</h3>
+          <div class="recommendation-styles-nav" id="recStylesNav">
+            <button type="button" class="rec-style-btn active" id="recBtnAgresivo" onclick="loadPlaneRecommendation('agresivo')">⚡ Agresivo</button>
+            <button type="button" class="rec-style-btn" id="recBtnDefensivo" onclick="loadPlaneRecommendation('defensivo')">🛡️ Defensivo</button>
+            <button type="button" class="rec-style-btn" id="recBtnApoyo" onclick="loadPlaneRecommendation('apoyo')">📡 Apoyo</button>
+          </div>
+        </div>
+        <div class="deep-recommendation-box" id="deepRecommendationContent">
+          <div style="color:var(--steel-gray);font-size:0.85rem;">Selecciona un estilo de combate para calcular la build táctica óptima.</div>
+        </div>
       </section>
 
       <!-- Mods -->
@@ -149,10 +169,109 @@
       </section>
     </div>
 
-    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid rgba(212,175,55,0.25);">
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid rgba(212,175,55,0.25);flex-wrap:wrap;">
+      <button class="btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="border-color:var(--blue-telemetry);color:var(--blue-telemetry);">🔧 Planificador</button>
       <button class="btn-secondary" onclick="editPlane(window.currentPlaneId || currentPlaneId)">✏️ Editar</button>
       <button class="btn-danger" onclick="deletePlane(window.currentPlaneId || currentPlaneId)">🗑️ Eliminar</button>
       <button class="btn-primary" onclick="exportPlane(window.currentPlaneId || currentPlaneId)">📊 Exportar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     PLANIFICADOR DE UPGRADES 2.0 (Tarea 8)
+     ========================================================================== -->
+<div id="upgradePlannerModal" class="modal">
+  <div class="modal-content planner-modal-content" style="max-width:680px;">
+    <div class="modal-header">
+      <h2>🔧 Planificador de Upgrades 2.0</h2>
+      <button class="modal-close" onclick="closeModal('upgradePlannerModal')" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <div class="modal-body" style="max-height:calc(85vh - 150px);overflow-y:auto;padding-right:4px;">
+      <div id="plannerPlaneInfo" style="margin-bottom:14px;padding:10px;background:rgba(15,23,42,0.6);border:1px solid var(--border-tactical);border-radius:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div>
+          <strong id="plannerPlaneName" style="color:var(--gold-rank);font-size:1rem;">Aeronave</strong>
+          <div id="plannerPlaneMeta" style="font-size:0.8rem;color:var(--steel-gray);">Nivel — · —</div>
+        </div>
+        <button type="button" class="btn-sm btn-secondary" onclick="resetPlannerToCurrent()" style="font-size:0.75rem;">↺ Restablecer a Actual</button>
+      </div>
+
+      <div class="planner-grid">
+        <div class="planner-system">
+          <div class="planner-system-label">
+            <label for="plannerFuselaje">🛡️ Fuselaje</label>
+            <span class="planner-val-badge" id="plannerFuselajeVal">0</span>
+          </div>
+          <input type="range" min="0" max="8" value="0" id="plannerFuselaje" oninput="onPlannerSliderChange()">
+        </div>
+        <div class="planner-system">
+          <div class="planner-system-label">
+            <label for="plannerMotor">⚙️ Motor</label>
+            <span class="planner-val-badge" id="plannerMotorVal">0</span>
+          </div>
+          <input type="range" min="0" max="8" value="0" id="plannerMotor" oninput="onPlannerSliderChange()">
+        </div>
+        <div class="planner-system">
+          <div class="planner-system-label">
+            <label for="plannerAvionica">📡 Aviónica</label>
+            <span class="planner-val-badge" id="plannerAvionicaVal">0</span>
+          </div>
+          <input type="range" min="0" max="8" value="0" id="plannerAvionica" oninput="onPlannerSliderChange()">
+        </div>
+        <div class="planner-system">
+          <div class="planner-system-label">
+            <label for="plannerArmas">🎯 Armas</label>
+            <span class="planner-val-badge" id="plannerArmasVal">0</span>
+          </div>
+          <input type="range" min="0" max="8" value="0" id="plannerArmas" oninput="onPlannerSliderChange()">
+        </div>
+      </div>
+      
+      <div class="planner-cost">
+        <h3>💰 Costo de Inversión</h3>
+        <div class="planner-cost-cards">
+          <div class="planner-cost-card">
+            <div class="cost-label">🔩 Piezas Normales</div>
+            <div class="cost-val" id="plannerTotalPiezas">0</div>
+          </div>
+          <div class="planner-cost-card">
+            <div class="cost-label">💎 Piezas Avanzadas</div>
+            <div class="cost-val" id="plannerTotalAvanzadas">0</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="planner-stats">
+        <h3>📈 Vista Previa de Stats (Actual vs Planificada)</h3>
+        <div class="planner-stats-grid">
+          <div class="planner-stat-card">
+            <div class="stat-title">⚡ Velocidad</div>
+            <div class="stat-number" id="plannerSpeed">0</div>
+            <div class="stat-diff" id="plannerSpeedDiff">+0</div>
+          </div>
+          <div class="planner-stat-card">
+            <div class="stat-title">🔄 Agilidad</div>
+            <div class="stat-number" id="plannerAgility">0</div>
+            <div class="stat-diff" id="plannerAgilityDiff">+0</div>
+          </div>
+          <div class="planner-stat-card">
+            <div class="stat-title">🛡️ Blindaje</div>
+            <div class="stat-number" id="plannerArmor">0</div>
+            <div class="stat-diff" id="plannerArmorDiff">+0</div>
+          </div>
+          <div class="planner-stat-card">
+            <div class="stat-title">💥 Potencia</div>
+            <div class="stat-number" id="plannerFirepower">0</div>
+            <div class="stat-diff" id="plannerFirepowerDiff">+0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid rgba(212,175,55,0.25);">
+      <button type="button" class="btn-secondary" onclick="closeModal('upgradePlannerModal')">Cerrar</button>
+      <button type="button" class="btn-primary" onclick="saveBuild()">💾 Guardar Build</button>
     </div>
   </div>
 </div>
