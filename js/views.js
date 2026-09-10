@@ -1070,6 +1070,36 @@ function displayPlanes(planes) {
       upgradesBadgeHtml = `<span style="color:#64748b;font-size:0.75rem;font-style:italic;" title="Desbloquea en Nivel 6">🔒 Bloqueado (Nv 6+)</span>`;
     }
 
+    const especialHtml = plane.especial_nombre ? `
+      <div class="skill-card" style="margin:2px 0;padding:8px;min-width:140px;text-align:left;">
+        <div class="skill-header" style="gap:5px;margin-bottom:4px;font-size:0.75rem;">
+          <span class="skill-icon">🎯</span>
+          <span class="skill-title">Habilidad Especial</span>
+        </div>
+        <div class="skill-body">
+          <div class="skill-name" style="font-size:0.85rem;">${plane.especial_nombre}</div>
+          <div class="skill-level" style="font-size:0.75rem;margin-top:2px;">
+            Nivel ${plane.especial_nivel_num || '-'}: ${plane.especial_efecto || 'Sin efecto'}
+          </div>
+        </div>
+      </div>
+    ` : '<span style="color:#666">—</span>';
+
+    const pasivaHtml = plane.pasiva_nombre ? `
+      <div class="skill-card" style="margin:2px 0;padding:8px;min-width:140px;text-align:left;">
+        <div class="skill-header" style="gap:5px;margin-bottom:4px;font-size:0.75rem;">
+          <span class="skill-icon">🛡️</span>
+          <span class="skill-title">Habilidad Pasiva</span>
+        </div>
+        <div class="skill-body">
+          <div class="skill-name" style="font-size:0.85rem;">${plane.pasiva_nombre}</div>
+          <div class="skill-level" style="font-size:0.75rem;margin-top:2px;">
+            Nivel ${plane.pasiva_nivel_num || '-'}: ${plane.pasiva_efecto || 'Sin efecto'}
+          </div>
+        </div>
+      </div>
+    ` : '<span style="color:#666">—</span>';
+
     return `
 <tr>
 <td data-label="Aeronave"><strong>${plane.model_name || plane.name || plane.avion_id || '-'}</strong></td>
@@ -1080,8 +1110,8 @@ Nv. ${plane.nivel}
 </span>
 </td>
 <td data-label="Upgrades 2.0">${upgradesBadgeHtml}</td>
-<td data-label="Especial">${plane.especial_nombre || '<span style="color:#666">—</span>'}</td>
-<td data-label="Pasiva">${plane.pasiva_nombre || '<span style="color:#666">—</span>'}</td>
+<td data-label="Especial">${especialHtml}</td>
+<td data-label="Pasiva">${pasivaHtml}</td>
 <td data-label="Mod 1">${plane.mod1_nombre || plane.mod1_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Mod 2">${plane.mod2_nombre || plane.mod2_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
@@ -1318,8 +1348,10 @@ async function openAircraftStats(planeId) {
   document.getElementById('statsModelName').textContent     = '—';
   document.getElementById('statsLevel').textContent         = '—';
   document.getElementById('statsType').textContent          = '—';
-  document.getElementById('statsSpecial').textContent       = '—';
-  document.getElementById('statsPassive').textContent       = '—';
+  if (document.getElementById('statsSpecialValue')) document.getElementById('statsSpecialValue').textContent = '—';
+  if (document.getElementById('statsPassiveValue')) document.getElementById('statsPassiveValue').textContent = '—';
+  if (document.getElementById('statsSpecial')) document.getElementById('statsSpecial').textContent = '—';
+  if (document.getElementById('statsPassive')) document.getElementById('statsPassive').textContent = '—';
   document.getElementById('statsTableBody').innerHTML =
     '<tr><td colspan="5" class="loading">⏳ Consultando estadísticas reales...</td></tr>';
   document.getElementById('statsModsGrid').innerHTML =
@@ -1341,9 +1373,35 @@ async function openAircraftStats(planeId) {
     document.getElementById('statsModelName').textContent    = plane.model_name;
     document.getElementById('statsLevel').textContent        = `Nivel ${plane.nivel}`;
     document.getElementById('statsType').textContent         = plane.type || '—';
-    document.getElementById('statsSpecial').textContent      = plane.especial || '—';
-    document.getElementById('statsPassive').textContent      = plane.pasiva  || '—';
     document.getElementById('currentLevel').textContent      = plane.nivel;
+
+    const localPlane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
+      ? allUserPlanes.find(p => String(p.id) === String(planeId))
+      : null;
+
+    const espNombre = localPlane?.especial_nombre || plane.especial_nombre || plane.especial;
+    const espLvl = localPlane?.especial_nivel_num || plane.especial_nivel_num;
+    const espEfct = localPlane?.especial_efecto || plane.especial_efecto;
+
+    const pasNombre = localPlane?.pasiva_nombre || plane.pasiva_nombre || plane.pasiva;
+    const pasLvl = localPlane?.pasiva_nivel_num || plane.pasiva_nivel_num;
+    const pasEfct = localPlane?.pasiva_efecto || plane.pasiva_efecto;
+
+    const specialFormatted = espNombre
+      ? `${espNombre}${espLvl ? ` (N${espLvl}: ${espEfct || 'Sin efecto'})` : ''}`
+      : 'Sin habilidad';
+    const passiveFormatted = pasNombre
+      ? `${pasNombre}${pasLvl ? ` (N${pasLvl}: ${pasEfct || 'Sin efecto'})` : ''}`
+      : 'Sin habilidad';
+
+    const specialValEl = document.getElementById('statsSpecialValue');
+    if (specialValEl) specialValEl.textContent = specialFormatted;
+    const passiveValEl = document.getElementById('statsPassiveValue');
+    if (passiveValEl) passiveValEl.textContent = passiveFormatted;
+    const specialLegacyEl = document.getElementById('statsSpecial');
+    if (specialLegacyEl) specialLegacyEl.textContent = plane.especial || espNombre || '—';
+    const passiveLegacyEl = document.getElementById('statsPassive');
+    if (passiveLegacyEl) passiveLegacyEl.textContent = plane.pasiva || pasNombre || '—';
 
     const upgradesGrid = document.getElementById('statsUpgradesGrid');
     if (upgradesGrid) {

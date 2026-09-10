@@ -1,3 +1,38 @@
+<style>
+.stats-section {
+    background: rgba(11, 19, 43, 0.6);
+    border: 1px solid #3A506B;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+.stats-section h4 {
+    margin: 0 0 8px 0;
+    color: #d4af37;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+.skill-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.skill-row:last-child {
+    margin-bottom: 0;
+}
+.skill-label {
+    color: #a0aec0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 75px;
+}
+.skill-value {
+    color: #fff;
+    font-size: 0.9rem;
+}
+</style>
+
 <div id="aircraftStatsModal" class="modal">
   <div class="modal-content" style="max-width:700px;">
     <div class="modal-header">
@@ -9,9 +44,26 @@
         <div><strong>Modelo:</strong> <span id="statsModelName">—</span></div>
         <div><strong>Nivel:</strong> <span id="statsLevel" style="color:#d4af37;">—</span></div>
         <div><strong>Tipo:</strong> <span id="statsType">—</span></div>
-        <div><strong>Especial:</strong> <span id="statsSpecial">—</span></div>
-        <div><strong>Pasiva:</strong> <span id="statsPassive">—</span></div>
         <div style="display:none;" id="currentLevel">1</div>
+      </div>
+
+      <!-- Habilidades -->
+      <div class="stats-section">
+        <h4>🎯 Habilidades</h4>
+        
+        <div class="skill-row">
+            <span class="skill-label">Especial:</span>
+            <span class="skill-value" id="statsSpecialValue">
+                <span id="statsSpecial">—</span>
+            </span>
+        </div>
+        
+        <div class="skill-row">
+            <span class="skill-label">Pasiva:</span>
+            <span class="skill-value" id="statsPassiveValue">
+                <span id="statsPassive">—</span>
+            </span>
+        </div>
       </div>
 
       <div style="margin-bottom:16px;">
