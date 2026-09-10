@@ -5,6 +5,21 @@
  * ============================================================================
  */
 
+/**
+ * Sanitiza texto para prevenir inyecciones XSS en el DOM
+ * @param {string} text - Texto a escapar
+ * @returns {string} Texto seguro para inserción HTML
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}
+
 // Estado reactivo global del Black Market
 const bmState = {
   activeEvent: null,

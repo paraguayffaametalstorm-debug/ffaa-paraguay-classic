@@ -3,6 +3,17 @@ PARAGUAY-FFAA | METALSTORM v2.0 - Utilidades
 Funciones helper y notificaciones
 */
 
+// ========== SANITIZACIÓN HTML ==========
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+if (typeof window !== 'undefined') {
+  window.escapeHtml = escapeHtml;
+}
+
 // ========== MODAL FUNCTIONS ==========
 function showModal(modalId) {
   const modal = document.getElementById(modalId);
