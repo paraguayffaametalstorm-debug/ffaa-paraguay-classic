@@ -57,21 +57,25 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 | **Cambio de Contraseña** | ✅ Funcional | Lógica tipada UUID/INTEGER |
 | **Registro de Rendimiento** | ✅ Funcional | Guarda `role` histórico |
 | **Black Market** | ✅ Funcional | Misiones, progreso, descuentos |
-| **Catálogo de Aviones** | ✅ Normalizado | Estructura 1NF |
+| **Catálogo de Aviones** | ✅ Normalizado | 39 modelos |
 | **Hangar de Pilotos** | ✅ Normalizado | UNIQUE + FK + CHECK |
+| **Carrusel Circular** | ✅ Funcional | Navegación infinita |
+| **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre + ID |
+| **IA de Recomendación** | ✅ Funcional | 3 estilos de combate |
+| **Upgrade Planner** | ✅ Funcional | Previsualización de builds |
 | **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
 | **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
 
-## 🛠️ Normalización de `planes` (2026-09-10)
+## 🛠️ Sistema de Aviones (2026-09-10)
 
-La tabla `planes` fue normalizada para cumplir con 1NF:
+El sistema de aviones fue normalizado y ampliado:
 
-- ✅ Constraint UNIQUE (user_id, avion_id)
-- ✅ FK planes.user_id → users.user_id
-- ✅ Columnas separadas: especial_nivel_num, especial_efecto
-- ✅ Columnas separadas: pasiva_nivel_num, pasiva_efecto
-- ✅ Constraints CHECK para validar niveles
-- ✅ Nombres limpios (sin paréntesis)
+- ✅ 39 modelos en el catálogo
+- ✅ 10 mods disponibles
+- ✅ 4 sistemas mejorables (Fuselaje, Motor, Aviónica, Armas)
+- ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles)
+- ✅ IA de Recomendación (3 estilos)
+- ✅ Upgrade Planner (previsualización)
 
 ---
 

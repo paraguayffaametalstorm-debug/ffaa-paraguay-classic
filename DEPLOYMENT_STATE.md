@@ -65,67 +65,177 @@ CREATE TABLE users (
 
 ---
 
-## 🛠️ NORMALIZACIÓN DE `planes` (2026-09-10)
+## ✈️ SISTEMA DE AVIONES (2026-09-10)
 
-### Cambios aplicados:
+### Estructura de Supabase
 
-#### 1. Constraint UNIQUE (user_id, avion_id)
-```sql
-ALTER TABLE planes 
-ADD CONSTRAINT planes_user_avion_unique 
-UNIQUE (user_id, avion_id);
-```
-Propósito: Evitar que un piloto tenga 2 aviones iguales en su hangar.
+#### Tabla `plane_models` (Catálogo Maestro)
 
-#### 2. FK planes.user_id → users.user_id
-```sql
-ALTER TABLE planes 
-ADD CONSTRAINT planes_user_id_fkey 
-FOREIGN KEY (user_id) REFERENCES users(user_id) 
-ON DELETE CASCADE;
-```
-Propósito: Asegurar integridad referencial con users.
-
-#### 3. Nuevas columnas para habilidades
-```sql
-ALTER TABLE planes 
-ADD COLUMN especial_nivel_num INTEGER,
-ADD COLUMN especial_efecto TEXT,
-ADD COLUMN pasiva_nivel_num INTEGER,
-ADD COLUMN pasiva_efecto TEXT;
-```
-Propósito: Separar nombre, nivel y efecto (1NF).
-
-#### 4. Constraints CHECK
-```sql
-ALTER TABLE planes 
-ADD CONSTRAINT especial_nivel_num_check 
-CHECK (especial_nivel_num IS NULL OR (especial_nivel_num >= 1 AND especial_nivel_num <= 3));
-
-ALTER TABLE planes 
-ADD CONSTRAINT pasiva_nivel_num_check 
-CHECK (pasiva_nivel_num IS NULL OR (pasiva_nivel_num >= 1 AND pasiva_nivel_num <= 5));
-```
-Propósito: Validar rangos de niveles.
-
-#### 5. Limpieza de nombres
-- `especial_nombre`: De "Pulso ARC (N1: 25s)" a "Pulso ARC"
-- `pasiva_nombre`: De "Fuego Implacable (N1: 0.4s)" a "Fuego Implacable"
-
-### Estructura final de planes (habilidades):
 | Columna | Tipo | Propósito |
-|---|---|---|
-| `especial_nombre` | TEXT | Nombre de la habilidad especial |
-| `especial_nivel_num` | INTEGER | Nivel (1-3) |
-| `especial_efecto` | TEXT | Efecto del nivel (ej: "25s") |
-| `pasiva_nombre` | TEXT | Nombre de la habilidad pasiva |
-| `pasiva_nivel_num` | INTEGER | Nivel (1-5) |
-| `pasiva_efecto` | TEXT | Efecto del nivel (ej: "0.4s") |
+|---------|------|-----------|
+| `id` | TEXT | ID del modelo (101, 102, 201, etc.) |
+| `name` | TEXT | Nombre del avión |
+| `type` | TEXT | Tipo (Ligero, Mediano, Pesado, Interceptor, Ataque) |
+| `special_name` | TEXT | Nombre de la habilidad especial |
+| `special_levels` | JSONB | Array de niveles de la especial (3 niveles) |
+| `passive_name` | TEXT | Nombre de la habilidad pasiva |
+| `passive_levels` | JSONB | Array de niveles de la pasiva (5 niveles) |
+| `is_active` | BOOLEAN | ¿Está activo? |
+| `stats_real` | JSONB | Estadísticas reales |
+| `sistemas_disponibles` | JSONB | Sistemas mejorables |
 
-### Datos migrados:
-- 83/84 aviones con especial migrada
-- 35/37 aviones con pasiva migrada
-- 3 aviones sin nivel (correcto, no tenían (N1: valor) en el nombre)
+**Catálogo oficial:** 39 modelos de combate
+
+#### Tabla `plane_mods` (Catálogo de Modificaciones)
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | TEXT | ID del mod (m1, m2, ..., m10) |
+| `name` | TEXT | Nombre del mod |
+| `type` | TEXT | Tipo (Agilidad, Defensa, Motor, Señuelos, Arma) |
+| `levels` | JSONB | Array de niveles (5 niveles) |
+| `is_active` | BOOLEAN | ¿Está activo? |
+
+**10 mods disponibles (5 tipos, 2 por tipo):**
+
+| Tipo | Mods |
+|------|------|
+| **Agilidad** | Giro Temerario, Maniobrabilidad Ideal |
+| **Defensa** | Resistencia a las Explosiones, Blindaje de Ataque |
+| **Motor** | Quemadores Auxiliares Eficientes, Máxima Propulsión |
+| **Señuelos** | Bengalas Disruptivas, Bengalas Más Rápidas |
+| **Arma** | Armas Aniquiladoras, Guiado Mejorado |
+
+#### Tabla `planes` (Hangar de Pilotos)
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | ID único del registro |
+| `user_id` | INTEGER | FK → users.user_id |
+| `avion_id` | TEXT | FK → plane_models.id |
+| `nivel` | INTEGER | Nivel del avión (1-20) |
+| `especial_nombre` | TEXT | Nombre de la habilidad especial |
+| `especial_nivel_num` | INTEGER | Nivel de la especial (1-3) |
+| `especial_efecto` | TEXT | Efecto de la especial |
+| `pasiva_nombre` | TEXT | Nombre de la habilidad pasiva |
+| `pasiva_nivel_num` | INTEGER | Nivel de la pasiva (1-5) |
+| `pasiva_efecto` | TEXT | Efecto de la pasiva |
+| `mod1_id` | TEXT | FK → plane_mods.id (Slot 1) |
+| `mod1_lvl` | INTEGER | Nivel del mod 1 (1-5) |
+| `mod2_id` | TEXT | FK → plane_mods.id (Slot 2) |
+| `mod2_lvl` | INTEGER | Nivel del mod 2 (1-5) |
+| `nivel_fuselaje` | INTEGER | Nivel del sistema Fuselaje (0-8) |
+| `nivel_motor` | INTEGER | Nivel del sistema Motor (0-8) |
+| `nivel_avionica` | INTEGER | Nivel del sistema Aviónica (0-8) |
+| `nivel_armas` | INTEGER | Nivel del sistema Armas (0-8) |
+| `recursos_piezas` | INTEGER | Piezas disponibles |
+| `recursos_avanzadas` | INTEGER | Componentes avanzados |
+| `created_at` | TIMESTAMP | Fecha de creación |
+| `updated_at` | TIMESTAMP | Fecha de actualización |
+
+#### Tabla `plane_upgrades` (Historial de Mejoras)
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | ID único del registro |
+| `plane_id` | INTEGER | FK → planes.id |
+| `sistema` | TEXT | Sistema mejorado |
+| `nivel_anterior` | INTEGER | Nivel anterior |
+| `nivel_nuevo` | INTEGER | Nivel nuevo |
+| `recursos_usados` | INTEGER | Recursos usados |
+| `created_at` | TIMESTAMP | Fecha de la mejora |
+
+### Constraints
+
+| Constraint | Tipo | Columnas |
+|------------|------|----------|
+| `planes_pkey` | PRIMARY KEY | `id` |
+| `planes_user_avion_unique` | UNIQUE | `user_id, avion_id` |
+| `planes_avion_id_fkey` | FOREIGN KEY | `avion_id` → `plane_models.id` |
+| `planes_mod1_id_fkey` | FOREIGN KEY | `mod1_id` → `plane_mods.id` |
+| `planes_mod2_id_fkey` | FOREIGN KEY | `mod2_id` → `plane_mods.id` |
+| `planes_user_id_fkey` | FOREIGN KEY | `user_id` → `users.user_id` |
+| `especial_nivel_num_check` | CHECK | `especial_nivel_num` (1-3) |
+| `pasiva_nivel_num_check` | CHECK | `pasiva_nivel_num` (1-5) |
+
+### Sistema de Upgrades 2.0
+
+**Niveles:** 0-8 por sistema (Fuselaje, Motor, Aviónica, Armas)  
+**Desbloqueo:** Nivel de Aeronave 6+  
+**Costos oficiales (UPGRADE_COSTS):**
+
+| Nivel Objetivo | Piezas Requeridas | Componentes Avanzados |
+|:---:|:---:|:---:|
+| 1 | 100 | 0 |
+| 2 | 250 | 0 |
+| 3 | 500 | 10 |
+| 4 | 800 | 25 |
+| 5 | 1,200 | 50 |
+| 6 | 1,800 | 100 |
+| 7 | 2,500 | 200 |
+| 8 | 3,500 | 350 |
+
+### Flujo Completo del Sistema de Aviones
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│              FLUJO COMPLETO DEL SISTEMA DE AVIONES                      │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: Carrusel Circular Infinito                                      │
+│ Endpoint: GET /api/planes                                               │
+│ ✅ Tarjeta central prominente (escala 1.0)                               │
+│ ✅ Tarjetas laterales difuminadas (escala 0.85)                          │
+│ ✅ Navegación: flechas ◀ ▶, swipe, teclado                              │
+│ ✅ Contador: "3 de 23"                                                  │
+│ ✅ Indicadores: puntos en la parte inferior                             │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: Click en Tarjeta Central                                        │
+│ Endpoint: GET /api/planes/:id/stats                                     │
+│ ✅ Abre el modal de datos profundos                                     │
+│ ✅ Muestra el NOMBRE del avión (no el ID)                               │
+│ ✅ Muestra el ID como badge (🏷️ 502)                                    │
+│ ✅ Muestra las estadísticas                                             │
+│ ✅ Muestra las habilidades                                              │
+│ ✅ Muestra los sistemas Upgrades 2.0                                    │
+│ ✅ Muestra los mods                                                     │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 3: IA de Recomendación (Tarea 7)                                   │
+│ Endpoint: GET /api/planes/:id/recommendation?playstyle=agresivo         │
+│ ✅ 3 estilos: Agresivo, Defensivo, Apoyo                                │
+│ ✅ Recomendación de sistemas (Fuselaje, Motor, Aviónica, Armas)         │
+│ ✅ Recomendación de mods                                                │
+│ ✅ Cálculo del costo total                                              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 4: Upgrade Planner (Tarea 8)                                       │
+│ Endpoint: GET /api/planes/:id/details                                   │
+│ ✅ 4 sliders (Fuselaje, Motor, Aviónica, Armas)                         │
+│ ✅ Cálculo de costos (piezas + avanzadas)                               │
+│ ✅ Vista previa de stats (velocidad, agilidad, blindaje, potencia)      │
+│ ✅ Comparación de builds (actual vs planificada)                        │
+│ ✅ Guardar build (opcional)                                             │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Fixes Aplicados (2026-09-10)
+
+| # | Fix | Archivo | Estado |
+|---|-----|---------|--------|
+| 1 | Funciones que leen nombre pero no nivel | `planes.controller.js` | ✅ RESUELTO |
+| 2 | Auditoría (UUID) | `audit.js` | ✅ RESUELTO |
+| 3 | Columna `actor_id` en `audit_logs` | `audit.js` | ✅ RESUELTO |
+| 4 | IA de recomendación | `planes.controller.js` | ✅ IMPLEMENTADO |
+| 5 | Upgrade Planner | `aircraft-stats-modal.html` | ✅ IMPLEMENTADO |
 
 ---
 
