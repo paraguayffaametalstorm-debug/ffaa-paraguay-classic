@@ -2659,26 +2659,6 @@ async function generateCredentialViaCanvasFallback(nick) {
   document.body.removeChild(link);
   showToast('✅ Credencial descargada', 'success');
 }
-  `;
-
-  // Cerrar al hacer clic fuera del contenido del modal
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeTemporaryPasswordModal();
-    }
-  });
-
-  // Cerrar con la tecla ESC
-  const handleEsc = (e) => {
-    if (e.key === 'Escape' || e.key === 'Esc') {
-      closeTemporaryPasswordModal();
-    }
-  };
-  window._tempPasswordModalEscHandler = handleEsc;
-  document.addEventListener('keydown', handleEsc);
-
-  document.body.appendChild(modal);
-}
 
 function closeTemporaryPasswordModal() {
   if (window._tempPasswordModalEscHandler) {
