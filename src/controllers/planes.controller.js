@@ -10,7 +10,7 @@ import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
 
-// Catálogo oficial de modelos de aeronaves
+// Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
   { id: 1, name: 'F-22 Raptor', type: 'Caza de Superioridad Aérea', tier: 5 },
   { id: 2, name: 'Su-57 Felon', type: 'Caza Polivalente Sigiloso', tier: 5 },
@@ -25,6 +25,70 @@ const DEFAULT_PLANE_MODELS = [
   { id: 11, name: 'JAS 39 Gripen', type: 'Caza Ligero Polivalente', tier: 3 },
   { id: 12, name: 'A-10C Thunderbolt II', type: 'Avión de Ataque a Tierra (CAS)', tier: 3 }
 ];
+
+/**
+ * Recuperar y combinar catálogo de modelos de combate (Supabase + INITIAL_PLANE_MODELS de 39 modelos)
+ */
+async function getFullCatalogModels(supabase) {
+  let dbModels = [];
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('plane_models')
+        .select('*')
+        .order('name');
+      if (!error && data && data.length > 0) {
+        dbModels = data;
+      }
+    } catch (e) {
+      console.warn('⚠️ [Hangar] No se pudo leer plane_models en Supabase:', e.message);
+    }
+  }
+
+  // Mapa combinado priorizando Supabase > INITIAL_PLANE_MODELS (39 modelos) > DEFAULT_PLANE_MODELS
+  const map = new Map();
+  DEFAULT_PLANE_MODELS.forEach(m => map.set(String(m.id), { ...m, id: String(m.id) }));
+  INITIAL_PLANE_MODELS.forEach(m => map.set(String(m.id), m));
+  dbModels.forEach(m => map.set(String(m.id), m));
+
+  return Array.from(map.values());
+}
+
+/**
+ * Búsqueda inteligente y robusta de modelo por ID, alias o nombre
+ */
+function findModel(catalog, avionId) {
+  if (avionId === undefined || avionId === null) return null;
+  const strId = String(avionId).trim();
+  const lowerStr = strId.toLowerCase();
+
+  // Alias especial o búsqueda directa para Su-22
+  if (strId === '502' || lowerStr.includes('502')) {
+    const su22 = catalog.find(m => m.name && m.name.toLowerCase().includes('su-22'));
+    if (su22) return su22;
+  }
+
+  // 1. Por ID exacto
+  let found = catalog.find(m => String(m.id) === strId);
+  if (found) return found;
+
+  // 2. Por nombre exacto
+  found = catalog.find(m => m.name && m.name.toLowerCase() === lowerStr);
+  if (found) return found;
+
+  // 3. Por coincidencia parcial
+  const cleanStr = lowerStr.replace(/[^a-z0-9]/g, '');
+  if (cleanStr.length > 1) {
+    found = catalog.find(m => {
+      if (!m.name) return false;
+      const cleanName = m.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return cleanName === cleanStr || cleanName.includes(cleanStr) || cleanStr.includes(cleanName);
+    });
+    if (found) return found;
+  }
+
+  return null;
+}
 
 // Catálogo oficial de modificaciones tácticas
 const DEFAULT_PLANE_MODS = [
@@ -137,21 +201,31 @@ export async function getMyPlanes(req, res, next) {
       if (!error && data) {
         console.log(`✅ [Hangar] Flota recuperada con éxito: ${data.length} aeronaves encontradas`);
 
+        const catalog = await getFullCatalogModels(supabase);
         const planes = data.map(p => {
           const nf = p.nivel_fuselaje || 0;
           const nm = p.nivel_motor || 0;
           const na = p.nivel_avionica || 0;
           const nw = p.nivel_armas || 0;
           const nivelSistemas = Math.floor((nf + nm + na + nw) / 4);
-          const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(p.avion_id));
+          const model = findModel(catalog, p.avion_id);
+
+          const resolvedName = model?.name 
+            || (p.model_name && !/^\d+$/.test(String(p.model_name).trim()) ? p.model_name : null)
+            || (p.name && !/^\d+$/.test(String(p.name).trim()) ? p.name : null)
+            || p.model_name 
+            || p.name 
+            || p.avion_id;
+
+          const resolvedType = model?.type || p.type || 'Caza de Combate';
 
           return {
             id: p.id,
             user_id: p.user_id,
             avion_id: p.avion_id,
-            model_name: model?.name || p.avion_id,
-            name: model?.name || p.avion_id,
-            type: model?.type || 'Caza de Combate',
+            model_name: resolvedName,
+            name: resolvedName,
+            type: resolvedType,
             nivel: p.nivel,
             especial_nombre: p.especial_nombre || null,
             especial_nivel_num: p.especial_nivel_num || null,
@@ -215,9 +289,13 @@ export async function addPlane(req, res, next) {
   try {
     const data = PlaneSchema.parse(req.body);
     const userId = req.user.user_id || req.user.id;
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(data.avion_id));
+    const supabase = getSupabase();
+    const catalog = await getFullCatalogModels(supabase);
+    const model = findModel(catalog, data.avion_id);
+    const resolvedName = model?.name || (data.name && !/^\d+$/.test(data.name) ? data.name : null) || data.avion_id;
+    const resolvedType = model?.type || data.type || 'Caza de Combate';
 
-    console.log(`➕ [Hangar] Registrando nueva aeronave (${data.avion_id}) para usuario ID: ${userId}`);
+    console.log(`➕ [Hangar] Registrando nueva aeronave (${resolvedName} [${data.avion_id}]) para usuario ID: ${userId}`);
 
     const nf = data.nivel_fuselaje || 0;
     const nm = data.nivel_motor || 0;
@@ -247,7 +325,6 @@ export async function addPlane(req, res, next) {
       created_at: new Date().toISOString()
     };
 
-    const supabase = getSupabase();
     if (!supabase) {
       return res.status(500).json({
         success: false,
@@ -269,9 +346,9 @@ export async function addPlane(req, res, next) {
 
     const planeData = {
       ...(createdPlane || planePayload),
-      model_name: model?.name || data.avion_id,
-      name: model?.name || data.avion_id,
-      type: model?.type || 'Caza de Combate',
+      model_name: resolvedName,
+      name: resolvedName,
+      type: resolvedType,
       sistemas_desbloqueados: (data.nivel || 1) >= 6
     };
 
@@ -351,12 +428,16 @@ export async function updatePlane(req, res, next) {
 
     if (updateErr) throw updateErr;
 
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(data.avion_id));
+    const catalog = await getFullCatalogModels(supabase);
+    const model = findModel(catalog, data.avion_id);
+    const resolvedName = model?.name || (data.name && !/^\d+$/.test(data.name) ? data.name : null) || data.avion_id;
+    const resolvedType = model?.type || data.type || 'Caza de Combate';
+
     const resultPlane = {
       ...(updated || updatePayload),
-      model_name: model?.name || data.avion_id,
-      name: model?.name || data.avion_id,
-      type: model?.type || 'Caza de Combate'
+      model_name: resolvedName,
+      name: resolvedName,
+      type: resolvedType
     };
 
     return res.json({
@@ -488,9 +569,10 @@ export async function getPlaneDetails(req, res, next) {
       return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(plane.avion_id));
-    const modelName = model?.name || plane.avion_id;
-    const modelType = model?.type || 'Caza de Combate';
+    const catalog = await getFullCatalogModels(supabase);
+    const model = findModel(catalog, plane.avion_id);
+    const modelName = model?.name || (plane.name && !/^\d+$/.test(plane.name) ? plane.name : null) || plane.avion_id;
+    const modelType = model?.type || plane.type || 'Caza de Combate';
 
     const isUnlocked = (plane.nivel || 1) >= 6;
     const nf = plane.nivel_fuselaje || 0;
@@ -630,18 +712,21 @@ export async function exportPlanesCSV(req, res, next) {
       'Habilidad_Especial', 'Habilidad_Pasiva', 'Mod1', 'Mod1_Nivel', 'Mod2', 'Mod2_Nivel'
     ];
 
+    const catalog = await getFullCatalogModels(supabase);
     const rows = userPlanes.map(p => {
       const nf = p.nivel_fuselaje || 0;
       const nm = p.nivel_motor || 0;
       const na = p.nivel_avionica || 0;
       const nw = p.nivel_armas || 0;
       const avg = ((nf + nm + na + nw) / 4).toFixed(1);
-      const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(p.avion_id));
+      const model = findModel(catalog, p.avion_id);
+      const planeName = model?.name || (p.name && !/^\d+$/.test(p.name) ? p.name : null) || p.avion_id;
+      const planeType = model?.type || p.type || 'Caza de Combate';
 
       return [
         p.id,
-        model?.name || p.avion_id,
-        model?.type || 'Caza de Combate',
+        planeName,
+        planeType,
         p.nivel,
         nf,
         nm,
@@ -691,9 +776,10 @@ export async function getPlaneStats(req, res, next) {
       return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
-    const model = DEFAULT_PLANE_MODELS.find(m => String(m.id) === String(plane.avion_id));
-    const modelName = model?.name || plane.avion_id;
-    const modelType = model?.type || 'Caza de Combate';
+    const catalog = await getFullCatalogModels(supabase);
+    const model = findModel(catalog, plane.avion_id);
+    const modelName = model?.name || (plane.name && !/^\d+$/.test(plane.name) ? plane.name : null) || plane.avion_id;
+    const modelType = model?.type || plane.type || 'Caza de Combate';
 
     const labels = ['Velocidad', 'Maniobrabilidad', 'Blindaje', 'Potencia de Fuego', 'Rango de Radar', 'Defensa ECM'];
     const stat_keys = ['speed', 'agility', 'armor', 'firepower', 'radar', 'ecm'];
