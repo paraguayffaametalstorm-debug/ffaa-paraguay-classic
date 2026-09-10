@@ -220,6 +220,122 @@ El servidor táctico responderá en `http://localhost:3000`.
 
 ---
 
+## 🔐 Flujo de Registro y Cambio de Contraseña
+
+El sistema cuenta con un flujo seguro y robusto para la incorporación de nuevos combatientes y el cambio forzado de contraseñas temporales:
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│              FLUJO DE REGISTRO Y CAMBIO DE CONTRASEÑA                   │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: ADMIN crea un nuevo usuario                                    │
+│                                                                         │
+│   Endpoint: POST /api/admin/members                                     │
+│   Datos: { email, nick, role }                                         │
+│                                                                         │
+│   ✅ user_id: INTEGER (auto-incremental)                               │
+│   ✅ password_hash: bcrypt(MS-XXXX-XXXX)                               │
+│   ✅ must_change_password: true                                        │
+│   ✅ token_version: 1                                                  │
+│                                                                         │
+│   Respuesta: { temporaryPassword: "MS-XXXX-XXXX" }                     │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: Usuario recibe contraseña temporal                             │
+│                                                                         │
+│   "MS-MJWT-SU3U" (ejemplo real)                                        │
+│                                                                         │
+│   📝 El ADMIN debe entregar la contraseña por canal seguro              │
+│      (WhatsApp, Discord, etc.)                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 3: Usuario hace login con contraseña temporal                     │
+│                                                                         │
+│   Endpoint: POST /api/auth/login                                        │
+│   Datos: { email, password: "MS-XXXX-XXXX" }                          │
+│                                                                         │
+│   ✅ Busca por email O email_institucional                             │
+│   ✅ Verifica bcrypt(password_hash)                                    │
+│   ✅ Responde con token JWT y must_change_password: true              │
+│                                                                         │
+│   Respuesta: { token, user: { must_change_password: true } }          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 4: Modal de cambio forzado aparece                                │
+│                                                                         │
+│   🔴 NOTA: El modal NO muestra botones visibles                        │
+│   ✅ Pero funciona presionando ENTER en el campo de contraseña         │
+│                                                                         │
+│   ⚠️ Este es un bug de UI que no afecta la funcionalidad               │
+│   💡 Fix pendiente: Agregar botón "Actualizar Credencial"              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 5: Usuario cambia contraseña (FORZADO)                            │
+│                                                                         │
+│   Endpoint: POST /api/auth/change-password                             │
+│   Headers: Authorization: Bearer <TOKEN>                              │
+│   Datos: { newPassword: "Dni32355353", isForced: true }               │
+│                                                                         │
+│   ✅ Busca usuario con LÓGICA TIPADA:                                   │
+│      - Si id es UUID → eq('id', user.id)                              │
+│      - Si user_id es INTEGER → eq('user_id', Number(user.user_id))   │
+│      - Si email disponible → eq('email', user.email)                  │
+│                                                                         │
+│   ✅ Actualiza:                                                         │
+│      - password_hash = bcrypt(newPassword)                            │
+│      - must_change_password = false                                   │
+│      - token_version = token_version + 1                              │
+│      - updated_at = NOW()                                             │
+│                                                                         │
+│   ✅ Usa .select() después de .update() para confirmar                 │
+│                                                                         │
+│   Respuesta: { success: true, token_version: 2 }                      │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 6: Verificación en Supabase                                       │
+│                                                                         │
+│   SELECT must_change_password, token_version FROM users                │
+│   WHERE email = 'testpilot@ffaa.py'                                   │
+│                                                                         │
+│   ✅ must_change_password: false                                       │
+│   ✅ token_version: 2                                                  │
+│   ✅ password_hash: Hash de "Dni32355353"                             │
+│   ✅ updated_at: Fecha/hora actual                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 7: Usuario login con nueva contraseña                             │
+│                                                                         │
+│   Endpoint: POST /api/auth/login                                        │
+│   Datos: { email, password: "Dni32355353" }                           │
+│                                                                         │
+│   ✅ 200 OK con token                                                  │
+│   ✅ must_change_password: false                                       │
+│   ✅ token_version: 2                                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Reglas Críticas de Base de Datos y Negocio
+- **`user_id`:** Es numérico `INTEGER` (ej: `1000`), nunca UUID.
+- **`id`:** Identificador interno `UUID` en Supabase (ej: `3658df3a-3d15-4669-a595-dca33ec86fd3`), nunca INTEGER.
+- **`token_version`:** Mecanismo criptográfico que incrementa (`+1`) con cada cambio de contraseña para invalidar sesiones previas en tiempo real.
+- **Lógica Tipada en Backend:** Las consultas a Supabase distinguen automáticamente entre tipos UUID y enteros evitando errores de casting en PostgreSQL.
+
+---
+
 ## 🔥 Sistema de Eventos Black Market (BM) - v3.7.0
 
 El **Black Market** es un evento táctico especial de 5 días de duración (miércoles a domingo) que reemplaza periódicamente al Squadron Event regular en MetalStorm:
@@ -273,6 +389,9 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 
 ## 📚 Documentación Técnica Detallada
 
+- 🚀 **[Estado Congelado del Despliegue (Deployment State)](./DEPLOYMENT_STATE.md)**
+- 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./CURRENT_STATE.md)**
+- 🔧 **[Historial de Fixes Aplicados y Lógica Tipada](./FIXES_APPLIED.md)**
 - 📡 **[Referencia Completa de la API RESTful](./API_REFERENCE.md)**
 - 🏛️ **[Arquitectura de Sistemas y Seguridad C4ISR](./ARCHITECTURE.md)**
 - 🚀 **[Guía de Despliegue en Producción (Fly.io / Docker)](./DEPLOYMENT_GUIDE.md)**

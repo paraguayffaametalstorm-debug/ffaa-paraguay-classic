@@ -6,7 +6,8 @@
     "dev": "node server.js",
     "start": "node server.js",
     "build": "echo 'Build complete'",
-    "lint": "node --check server.js"
+    "lint": "node --check server.js",
+    "predeploy": "cp CURRENT_STATE.md BACKUP_CURRENT_STATE_$(date +%Y%m%d).md"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

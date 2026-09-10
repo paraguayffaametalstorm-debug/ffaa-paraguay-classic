@@ -209,16 +209,78 @@ Restablece la contraseña militar del usuario empleando el token de 15 minutos r
   ```
 
 ### `POST /api/auth/change-password`
-- **Headers:** `Authorization: Bearer <TOKEN>`
-- **Request Body:**
+Permite a los combatientes actualizar su contraseña militar, tanto en el flujo forzado de primer acceso (o tras un reseteo administrativo) como de manera voluntaria desde el expediente de perfil.
+
+- **Acceso:** Autenticado (`requireAuth`). Requiere cabecera:
+  ```http
+  Authorization: Bearer <JWT_TOKEN>
+  Content-Type: application/json
+  ```
+- **Requisitos de Complejidad Reglamentaria:**
+  - Expresión regular: `/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/`
+  - Mínimo 8 caracteres.
+  - Al menos una letra mayúscula (`A-Z`).
+  - Al menos una letra minúscula (`a-z`).
+  - Al menos un dígito numérico (`0-9`).
+
+- **Request Body (Cambio Forzado por Primer Acceso o Reseteo):**
   ```json
   {
-    "currentPassword": "PasswordTemporal123",
-    "newPassword": "MiNuevoPassword2026!",
+    "newPassword": "Dni32355353",
+    "isForced": true
+  }
+  ```
+  *(Nota: En modo forzado o cuando el usuario tiene `must_change_password: true`, no se exige el campo `currentPassword`).*
+
+- **Request Body (Cambio Voluntario desde Perfil):**
+  ```json
+  {
+    "currentPassword": "PasswordActual123!",
+    "newPassword": "NuevaPasswordReglamentaria2026!",
     "isForced": false
   }
   ```
-- **Comportamiento Crítico:** Si `isForced` es true o el usuario tiene `must_change_password: true`, no se requiere la contraseña actual. El servidor incrementa `token_version` e invalida todos los tokens previos.
+
+- **Lógica de Resolución Tipada en Base de Datos (Supabase):**
+  El endpoint evalúa de forma polimórfica los identificadores del usuario para evitar incompatibilidades de tipo entre `UUID` y `INTEGER`:
+  1. Si `user.id` es un UUID válido (regex `^[0-9a-f]{8}-[0-9a-f]{4}...$`) $\rightarrow$ `.eq('id', user.id)`
+  2. Si `user.user_id` es un número entero $\rightarrow$ `.eq('user_id', Number(user.user_id))`
+  3. Si existe `user.email` $\rightarrow$ `.eq('email', user.email)`
+  4. Fallback por defecto $\rightarrow$ `.eq('id', user.id)`
+
+- **Procesamiento y Efectos Colaterales:**
+  1. Genera un nuevo hash con `bcrypt.hash(newPassword, 10)`.
+  2. Incrementa `token_version` en `+1` (ej: de `1` a `2`).
+  3. Establece `must_change_password = false`.
+  4. Actualiza la columna `updated_at = NOW()`.
+  5. Ejecuta `.select('id, email, nick, user_id, role, token_version, must_change_password')` para confirmar la mutación en Supabase.
+  6. Registra un evento de seguridad de auditoría militar (`PASSWORD_CHANGED`).
+  7. Firma y retorna un nuevo token JWT que contiene el nuevo `token_version`.
+
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Contraseña de combate actualizada correctamente. Credencial de sesión renovada.",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_version": 2,
+    "user": {
+      "id": "3658df3a-3d15-4669-a595-dca33ec86fd3",
+      "user_id": 1000,
+      "email": "testpilot@ffaa.py",
+      "nick": "TestPilot",
+      "role": "MIEMBRO",
+      "must_change_password": false,
+      "token_version": 2
+    }
+  }
+  ```
+
+- **Códigos de Error Posibles:**
+  - `400 Bad Request`: La contraseña no alcanza los requisitos mínimos de complejidad o falta la contraseña actual en cambio voluntario (`CURRENT_PASSWORD_REQUIRED`).
+  - `401 Unauthorized`: Token de autorización faltante o expirado, o la contraseña actual proporcionada no coincide con el hash almacenado.
+  - `404 Not Found`: Combatiente no localizado en el registro militar de Supabase.
+  - `500 Internal Server Error`: Falla de conectividad o error interno del servicio de base de datos.
 
 ---
 

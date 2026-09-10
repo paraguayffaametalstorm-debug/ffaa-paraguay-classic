@@ -33,15 +33,20 @@ Si prefieres ingresar con correo y contraseña:
 2. Ingresa tu contraseña militar en el campo inferior.
 3. Pulsa el botón **"Iniciar Sesión Táctica"**.
 
-### 1.4 Primer Acceso y Reclutas
+### 1.4 Primer Acceso y Reclutas (Flujo de Contraseña Temporal y Cambio Forzado)
 1. Abre el enlace oficial de combate: [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/).
 2. Ingresa tus credenciales oficiales proporcionadas por tu Oficial de Mando:
-   - **Correo Institucional:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).
-   - **Contraseña Temporal:** Formato militar criptoseguro de alta entropía `MS-XXXX-XXXX` (ejemplo: `MS-8K3P-Q7W2`).
-3. **Cambio Obligatorio:** Al autenticarte por primera vez con una clave temporal, el sistema desplegará de inmediato el modal de cambio forzado:
-   - Tu nueva contraseña personal debe tener **al menos 8 caracteres**.
-   - No utilices secuencias débiles o predecibles.
-4. Al guardar tu nueva clave, el sistema registrará tu sesión segura e ingresarás directamente al **Cuadro de Mando Operacional (Dashboard)**.
+   - **Correo Institucional / Identificador:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).
+   - **Contraseña Temporal:** Formato militar criptoseguro de alta entropía `MS-XXXX-XXXX` (ejemplo real entregado por el ADMIN: `MS-MJWT-SU3U`).
+3. **Cambio Obligatorio de Contraseña:** Al autenticarte por primera vez con una clave temporal, el sistema detecta `must_change_password: true` y desplegará de inmediato el modal táctico de **Actualización de Clave Táctica**:
+   - Tu nueva contraseña debe cumplir con los requisitos reglamentarios militares: **mínimo 8 caracteres, al menos 1 letra mayúscula (A-Z), 1 letra minúscula (a-z) y 1 número (0-9)**.
+   - El formulario valida en tiempo real la fortaleza de la clave ingresada.
+4. **⚠️ NOTA OPERATIVA SOBRE EL MODAL (Pulsar ENTER para Confirmar):**
+   - **Aviso:** El modal de cambio de contraseña forzado puede no mostrar los botones de pie de página de forma visible en ciertas resoluciones o navegadores.
+   - **Instrucción:** Esta incidencia visual no afecta la funcionalidad del sistema. Una vez completados los campos de **"Nueva Clave Militar Cifrada"** y **"Confirmar Nueva Clave"**, simplemente **presiona la tecla `ENTER`** en el teclado para procesar y registrar el cambio de contraseña de inmediato.
+   - *(Fix de interfaz pendiente: Integración de botón persistente "Actualizar Credencial" en el pie del modal).*
+5. **Confirmación y Acceso Operacional:** Al procesarse la nueva clave, el servidor actualiza tu registro en la base de datos Supabase (`must_change_password = false`, `token_version` incrementa a `2`), emite tu credencial de sesión definitiva e ingresarás directamente al **Cuadro de Mando Operacional (Dashboard)**.
+6. A partir de ese instante, tu clave temporal queda revocada y tus próximos inicios de sesión deberán realizarse con tu nueva contraseña personal.
 
 ### 1.5 Recuperación Autónoma de Contraseña (15 Minutos)
 Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo mediante canal seguro:
