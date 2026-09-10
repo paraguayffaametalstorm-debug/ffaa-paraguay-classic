@@ -103,6 +103,40 @@ fc657f0 refactor: implement helper functions for typed queries
 
 ---
 
+### 🔹 Fix #6: Normalización de la tabla `planes` (2026-09-10)
+
+**Fecha:** 2026-09-10  
+**Archivos:** Base de datos Supabase  
+**Problema:** La tabla `planes` no cumplía con 1NF:
+- `especial_nombre` contenía nombre + nivel + efecto
+- `especial_nivel` era TEXT (no INTEGER)
+- `pasiva_nombre` contenía nombre + nivel + efecto
+- `pasiva_nivel` era TEXT (no INTEGER)
+- Faltaba constraint UNIQUE (user_id, avion_id)
+- Faltaba FK planes.user_id → users.user_id
+
+**Solución:**
+1. Agregar constraint UNIQUE (user_id, avion_id)
+2. Agregar FK planes.user_id → users.user_id
+3. Crear columnas `especial_nivel_num` (INTEGER) y `especial_efecto` (TEXT)
+4. Crear columnas `pasiva_nivel_num` (INTEGER) y `pasiva_efecto` (TEXT)
+5. Migrar datos con regex
+6. Agregar constraints CHECK
+7. Limpiar nombres (quitar paréntesis)
+
+**Resultado:**
+- ✅ 121 aviones normalizados
+- ✅ 83/84 especiales migradas
+- ✅ 35/37 pasivas migradas
+- ✅ 3 aviones sin nivel (correcto)
+- ✅ Estructura 1NF
+
+**Estado:** ✅ RESUELTO Y PROBADO
+
+**Commits:** N/A (cambios directos en Supabase)
+
+---
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |
@@ -112,4 +146,5 @@ fc657f0 refactor: implement helper functions for typed queries
 | `src/controllers/admin.controller.js` | Modificación de rangos militares y estado de cuenta | 🟢 ESTABLE |
 | `src/controllers/profile.controller.js` | Persistencia de datos personales y teléfono de alertas | 🟢 ESTABLE |
 | `src/controllers/performances.controller.js` | Historial de tokens y sincronización de semáforo | 🟢 ESTABLE |
+| `planes (Supabase)` | Normalización 1NF (UNIQUE, FK, CHECKs, habilidades) | 🟢 ESTABLE |
 | `components/change-password-modal.html` | Modal de actualización táctica (Workaround: ENTER) | 🟡 FIX UI PENDIENTE |

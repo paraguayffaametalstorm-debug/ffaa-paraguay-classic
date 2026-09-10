@@ -49,17 +49,29 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 
 ---
 
-## 🚦 Estado de Módulos del Sistema
+## 🛡️ Estado de Módulos (Actualizado 2026-09-10)
 
-| Módulo | Versión | Estado | Observaciones |
-|---|---|:---:|---|
-| **Auth & Login Dual** | v3.5.0 | 🟢 Activo | Soporte dual `@ffaa.py` y Gmail vinculado. |
-| **Cambio de Clave Táctico** | v3.7.0 | 🟢 Activo | Lógica tipada confirmada con `.select()`. |
-| **Dashboard C4ISR** | v3.6.0 | 🟢 Activo | Telemetría, Top 5, meta 175 tokens. |
-| **Registro de Rendimiento** | v3.6.0 | 🟢 Activo | Selector de pilotos (`#performanceTarget`) activo para Oficiales. |
-| **Black Market (BM)** | v3.7.0 | 🟢 Activo | Eventos de 5 días, cálculo de descuentos y misiones diarias. |
-| **Hangar Upgrades 2.0** | v3.4.0 | 🟢 Activo | 23 cazas, niveles 0-8 en 4 subsistemas mecánicos. |
-| **Service Worker PWA** | v3.7.0 | 🟢 Activo | Cache-first táctico y modo standalone. |
+| Módulo | Estado | Detalle |
+|--------|--------|---------|
+| **Autenticación Dual** | ✅ Funcional | Login con email o Gmail |
+| **Cambio de Contraseña** | ✅ Funcional | Lógica tipada UUID/INTEGER |
+| **Registro de Rendimiento** | ✅ Funcional | Guarda `role` histórico |
+| **Black Market** | ✅ Funcional | Misiones, progreso, descuentos |
+| **Catálogo de Aviones** | ✅ Normalizado | Estructura 1NF |
+| **Hangar de Pilotos** | ✅ Normalizado | UNIQUE + FK + CHECK |
+| **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
+| **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
+
+## 🛠️ Normalización de `planes` (2026-09-10)
+
+La tabla `planes` fue normalizada para cumplir con 1NF:
+
+- ✅ Constraint UNIQUE (user_id, avion_id)
+- ✅ FK planes.user_id → users.user_id
+- ✅ Columnas separadas: especial_nivel_num, especial_efecto
+- ✅ Columnas separadas: pasiva_nivel_num, pasiva_efecto
+- ✅ Constraints CHECK para validar niveles
+- ✅ Nombres limpios (sin paréntesis)
 
 ---
 
