@@ -336,6 +336,48 @@ El sistema cuenta con un flujo seguro y robusto para la incorporación de nuevos
 
 ---
 
+## ✈️ Estructura de `planes` (Hangar de Pilotos)
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | ID único del registro |
+| `user_id` | INTEGER | FK → users.user_id |
+| `avion_id` | TEXT | FK → plane_models.id |
+| `nivel` | INTEGER | Nivel del avión (1-20) |
+| `especial_nombre` | TEXT | Nombre de la habilidad especial |
+| `especial_nivel_num` | INTEGER | Nivel de la especial (1-3) |
+| `especial_efecto` | TEXT | Efecto de la especial |
+| `pasiva_nombre` | TEXT | Nombre de la habilidad pasiva |
+| `pasiva_nivel_num` | INTEGER | Nivel de la pasiva (1-5) |
+| `pasiva_efecto` | TEXT | Efecto de la pasiva |
+| `mod1_id` | TEXT | FK → plane_mods.id (Slot 1) |
+| `mod1_lvl` | INTEGER | Nivel del mod 1 (1-5) |
+| `mod2_id` | TEXT | FK → plane_mods.id (Slot 2) |
+| `mod2_lvl` | INTEGER | Nivel del mod 2 (1-5) |
+| `nivel_fuselaje` | INTEGER | Nivel del sistema Fuselaje (0-8) |
+| `nivel_motor` | INTEGER | Nivel del sistema Motor (0-8) |
+| `nivel_avionica` | INTEGER | Nivel del sistema Aviónica (0-8) |
+| `nivel_armas` | INTEGER | Nivel del sistema Armas (0-8) |
+| `recursos_piezas` | INTEGER | Piezas disponibles |
+| `recursos_avanzadas` | INTEGER | Componentes avanzados |
+| `created_at` | TIMESTAMP | Fecha de creación |
+| `updated_at` | TIMESTAMP | Fecha de actualización |
+
+### Constraints
+
+| Constraint | Tipo | Columnas |
+|------------|------|----------|
+| `planes_pkey` | PRIMARY KEY | `id` |
+| `planes_user_avion_unique` | UNIQUE | `user_id, avion_id` |
+| `planes_avion_id_fkey` | FOREIGN KEY | `avion_id` → `plane_models.id` |
+| `planes_mod1_id_fkey` | FOREIGN KEY | `mod1_id` → `plane_mods.id` |
+| `planes_mod2_id_fkey` | FOREIGN KEY | `mod2_id` → `plane_mods.id` |
+| `planes_user_id_fkey` | FOREIGN KEY | `user_id` → `users.user_id` |
+| `especial_nivel_num_check` | CHECK | `especial_nivel_num` (1-3) |
+| `pasiva_nivel_num_check` | CHECK | `pasiva_nivel_num` (1-5) |
+
+---
+
 ## 🔥 Sistema de Eventos Black Market (BM) - v3.7.0
 
 El **Black Market** es un evento táctico especial de 5 días de duración (miércoles a domingo) que reemplaza periódicamente al Squadron Event regular en MetalStorm:

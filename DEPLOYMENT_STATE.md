@@ -65,6 +65,70 @@ CREATE TABLE users (
 
 ---
 
+## 🛠️ NORMALIZACIÓN DE `planes` (2026-09-10)
+
+### Cambios aplicados:
+
+#### 1. Constraint UNIQUE (user_id, avion_id)
+```sql
+ALTER TABLE planes 
+ADD CONSTRAINT planes_user_avion_unique 
+UNIQUE (user_id, avion_id);
+```
+Propósito: Evitar que un piloto tenga 2 aviones iguales en su hangar.
+
+#### 2. FK planes.user_id → users.user_id
+```sql
+ALTER TABLE planes 
+ADD CONSTRAINT planes_user_id_fkey 
+FOREIGN KEY (user_id) REFERENCES users(user_id) 
+ON DELETE CASCADE;
+```
+Propósito: Asegurar integridad referencial con users.
+
+#### 3. Nuevas columnas para habilidades
+```sql
+ALTER TABLE planes 
+ADD COLUMN especial_nivel_num INTEGER,
+ADD COLUMN especial_efecto TEXT,
+ADD COLUMN pasiva_nivel_num INTEGER,
+ADD COLUMN pasiva_efecto TEXT;
+```
+Propósito: Separar nombre, nivel y efecto (1NF).
+
+#### 4. Constraints CHECK
+```sql
+ALTER TABLE planes 
+ADD CONSTRAINT especial_nivel_num_check 
+CHECK (especial_nivel_num IS NULL OR (especial_nivel_num >= 1 AND especial_nivel_num <= 3));
+
+ALTER TABLE planes 
+ADD CONSTRAINT pasiva_nivel_num_check 
+CHECK (pasiva_nivel_num IS NULL OR (pasiva_nivel_num >= 1 AND pasiva_nivel_num <= 5));
+```
+Propósito: Validar rangos de niveles.
+
+#### 5. Limpieza de nombres
+- `especial_nombre`: De "Pulso ARC (N1: 25s)" a "Pulso ARC"
+- `pasiva_nombre`: De "Fuego Implacable (N1: 0.4s)" a "Fuego Implacable"
+
+### Estructura final de planes (habilidades):
+| Columna | Tipo | Propósito |
+|---|---|---|
+| `especial_nombre` | TEXT | Nombre de la habilidad especial |
+| `especial_nivel_num` | INTEGER | Nivel (1-3) |
+| `especial_efecto` | TEXT | Efecto del nivel (ej: "25s") |
+| `pasiva_nombre` | TEXT | Nombre de la habilidad pasiva |
+| `pasiva_nivel_num` | INTEGER | Nivel (1-5) |
+| `pasiva_efecto` | TEXT | Efecto del nivel (ej: "0.4s") |
+
+### Datos migrados:
+- 83/84 aviones con especial migrada
+- 35/37 aviones con pasiva migrada
+- 3 aviones sin nivel (correcto, no tenían (N1: valor) en el nombre)
+
+---
+
 ## 🔄 2. Flujo Completo de Registro y Cambio de Contraseña
 
 ```text
