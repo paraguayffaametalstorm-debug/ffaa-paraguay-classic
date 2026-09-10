@@ -2096,7 +2096,7 @@ function renderAdminMembersTable(members) {
               ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
               : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
             }
-            <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
+            <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}', '${escapeHTML(m.email || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
           </div>
         </td>
       </tr>
@@ -2189,7 +2189,7 @@ async function changeUserStatus(userId, newStatus, nick) {
   }
 }
 
-async function resetPilotPassword(userId, nick) {
+async function resetPilotPassword(userId, nick, email) {
   if (!confirm(`¿Deseas resetear la contraseña de ${nick}?`)) return;
   try {
     const res = await fetch(`${API_BASE}/api/admin/users/${userId}/reset-password`, {
@@ -2199,8 +2199,9 @@ async function resetPilotPassword(userId, nick) {
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.error || 'Error al resetear');
     const tempPass = data.temporaryPassword || data.data?.temporaryPassword;
+    const pilotEmail = email || data.email || data.data?.email || '';
     if (tempPass) {
-      showTemporaryPasswordModal(nick, tempPass);
+      showTemporaryPasswordModal(nick, tempPass, { email: pilotEmail });
     } else {
       alert(`✅ Contraseña de ${nick} reseteada.\n\nClave temporal: ${data.temporaryPassword}\n\nIndícasela al piloto para que inicie sesión.`);
     }
@@ -2237,7 +2238,7 @@ async function addNewMember() {
 
     const tempPass = data.temporaryPassword || data.data?.temporaryPassword;
     if (tempPass) {
-      showTemporaryPasswordModal(nick, tempPass);
+      showTemporaryPasswordModal(nick, tempPass, { email, role });
     } else {
       showToast(`✅ Piloto ${nick} registrado con éxito`, 'success');
     }
@@ -2251,9 +2252,35 @@ async function addNewMember() {
   }
 }
 
-function showTemporaryPasswordModal(nick, tempPass) {
+function showTemporaryPasswordModal(nick, tempPass, options = {}) {
   // Cerrar y limpiar modal previo si estuviera presente
   closeTemporaryPasswordModal();
+
+  let email = '';
+  let role = 'MIEMBRO';
+  let creationDate = '';
+
+  if (typeof options === 'string') {
+    email = options;
+  } else if (options && typeof options === 'object') {
+    email = options.email || '';
+    role = options.role || 'MIEMBRO';
+    creationDate = options.date || '';
+  }
+
+  if (!email) {
+    email = document.getElementById('newMemberEmail')?.value?.trim() || 'piloto@ffaa.py';
+  }
+
+  if (!creationDate) {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const mins = String(now.getMinutes()).padStart(2, '0');
+    creationDate = `${day}/${month}/${year} ${hours}:${mins}`;
+  }
 
   const modal = document.createElement('div');
   modal.id = 'tempPasswordModal';
@@ -2269,75 +2296,369 @@ function showTemporaryPasswordModal(nick, tempPass) {
   modal.style.left = '0';
   modal.style.width = '100vw';
   modal.style.height = '100vh';
-  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.78)';
-  modal.style.backdropFilter = 'blur(4px)';
+  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.82)';
+  modal.style.backdropFilter = 'blur(6px)';
   modal.style.zIndex = '9999';
+  modal.style.padding = '1rem';
+  modal.style.boxSizing = 'border-box';
+  modal.style.overflowY = 'auto';
 
   modal.innerHTML = `
-    <div class="modal-content tactical-corners" style="max-width: 460px; width: 92%; border-top: 4px solid #0038A8; background: #0B132B; border: 1px solid #2A3A5C; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85); padding: 1.5rem; border-radius: 4px; position: relative; color: #E2E8F0; box-sizing: border-box;">
+    <div class="modal-dialog tactical-corners" style="max-width: 580px; width: 100%; margin: auto; background: #070D1E; border: 1px solid #1E293B; border-radius: 6px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); overflow: hidden; position: relative;">
       
-      <!-- Modal Header -->
-      <div class="modal-header" style="border-bottom: 1px solid #2A3A5C; padding-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.1rem;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.5rem; line-height: 1;">🔑</span>
-          <div>
-            <h3 id="tempPasswordModalTitle" style="margin: 0; font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; color: #D4AF37; font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">
+      <!-- Barra superior de control del Modal (excluida de la imagen capturada) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 16px; background: #081024; border-bottom: 1px solid #1E293B;">
+        <div style="display:flex; align-items:center; gap: 8px; font-family:'Rajdhani',sans-serif; font-size: 0.85rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22C55E; box-shadow:0 0 6px #22C55E;"></span>
+          EMISIÓN OFICIAL DE CREDENCIALES · C4ISR
+        </div>
+        <button type="button" onclick="closeTemporaryPasswordModal()" aria-label="Cerrar modal" style="color: #94A3B8; background: none; border: none; font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
+      </div>
+
+      <!-- TARJETA DE CREDENCIAL TÁCTICA (Elemento capturado para la descarga JPG) -->
+      <div id="tacticalCredentialCard" class="credential-modal-content" style="background: #0B132B; padding: 1.6rem 1.7rem; border: 2px solid #0038A8; border-top: 4px solid #D52B1E; border-bottom: 4px solid #0038A8; position: relative; color: #E2E8F0; font-family: 'Rajdhani', sans-serif; box-sizing: border-box;">
+        
+        <!-- Marca de agua / Clasificación militar -->
+        <div style="position:absolute; top: 10px; right: 14px; font-family:'JetBrains Mono',monospace; font-size: 0.65rem; color: rgba(148,163,184,0.45); letter-spacing: 1.2px; text-transform: uppercase;">
+          CONFIDENCIAL // C4ISR
+        </div>
+
+        <!-- Encabezado con Logo del Escuadrón, Título y Subtítulo -->
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 1.15rem; border-bottom: 1px solid #2A3A5C; padding-bottom: 0.85rem;">
+          <img src="/logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" crossorigin="anonymous" style="width: 54px; height: 54px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 0 8px rgba(0,56,168,0.6));" />
+          <div style="flex: 1; min-width: 0;">
+            <h3 id="tempPasswordModalTitle" style="margin: 0; font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; color: #D4AF37; font-size: 1.35rem; font-weight: 700; text-transform: uppercase; line-height: 1.2;">
               CREDENCIALES DE COMBATE
             </h3>
-            <span style="font-size: 0.75rem; color: #94A3B8; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace;">
+            <div style="font-size: 0.78rem; color: #94A3B8; letter-spacing: 0.6px; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">
               ALTA DE PILOTO · PROTOCOLO C4ISR
+            </div>
+          </div>
+          <div style="text-align: right; font-family: 'JetBrains Mono', monospace; flex-shrink: 0;">
+            <span style="display: inline-block; padding: 2px 7px; background: rgba(0,56,168,0.3); border: 1px solid #0038A8; color: #60A5FA; font-size: 0.68rem; border-radius: 4px; font-weight: 600;">
+              ESTADO: ALTA
             </span>
           </div>
         </div>
-        <button type="button" onclick="closeTemporaryPasswordModal()" aria-label="Cerrar modal" style="color: #94A3B8; background: none; border: none; font-size: 1.6rem; cursor: pointer; line-height: 1; padding: 0 4px;">&times;</button>
-      </div>
 
-      <!-- Modal Body -->
-      <div class="modal-body">
-        <!-- Identificación del Piloto -->
-        <div style="margin-bottom: 1rem; background: rgba(15, 23, 42, 0.6); padding: 8px 12px; border-radius: 4px; border-left: 3px solid #38BDF8;">
-          <span style="display: block; font-size: 0.7rem; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.8px; font-family: 'Rajdhani', sans-serif; font-weight: 600;">
-            Piloto Registrado:
-          </span>
-          <div style="font-size: 1.15rem; font-weight: 700; color: #38BDF8; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px;">
-            ${escapeHTML(nick || '')}
+        <!-- Datos del Piloto: Nick y Email Institucional -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
+          <!-- Nick del Piloto -->
+          <div style="background: rgba(15, 23, 42, 0.75); padding: 8px 12px; border-radius: 4px; border: 1px solid #1E293B; border-left: 3px solid #38BDF8;">
+            <span style="display: block; font-size: 0.68rem; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 2px;">
+              Piloto / Indicativo:
+            </span>
+            <div id="credentialNick" style="font-size: 1.2rem; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; word-break: break-word;">
+              ${escapeHTML(nick || 'Piloto')}
+            </div>
+          </div>
+
+          <!-- Email Institucional -->
+          <div style="background: rgba(15, 23, 42, 0.75); padding: 8px 12px; border-radius: 4px; border: 1px solid #1E293B; border-left: 3px solid #60A5FA;">
+            <span style="display: block; font-size: 0.68rem; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 2px;">
+              Correo Institucional:
+            </span>
+            <div id="credentialEmail" style="font-size: 0.88rem; font-weight: 600; color: #CBD5E1; font-family: 'JetBrains Mono', monospace; word-break: break-all;">
+              ${escapeHTML(email || 'piloto@ffaa.py')}
+            </div>
           </div>
         </div>
 
-        <!-- Contraseña Temporal Destacada -->
-        <div style="margin-bottom: 1.15rem; background: rgba(10, 15, 25, 0.95); border: 1.5px solid #2A3A5C; border-radius: 6px; padding: 1.1rem 0.8rem; text-align: center;">
-          <div style="font-size: 0.7rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; font-family: 'Rajdhani', sans-serif; margin-bottom: 6px; font-weight: 600;">
-            Contraseña Temporal de Acceso
+        <!-- Contraseña Temporal y Fecha de Alta -->
+        <div style="margin-bottom: 1rem; background: rgba(7, 13, 30, 0.95); border: 1.5px solid #2A3A5C; border-top: 2px solid #D4AF37; border-radius: 6px; padding: 0.9rem 0.8rem; text-align: center; position: relative;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 8px; margin-bottom: 4px;">
+            <span style="font-size: 0.7rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+              Contraseña Temporal de Acceso
+            </span>
+            <span id="credentialDate" style="font-size: 0.7rem; color: #94A3B8; font-family: 'JetBrains Mono', monospace;">
+              📅 ${escapeHTML(creationDate)}
+            </span>
           </div>
-          <div id="tempPasswordDisplay" style="font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; color: #D4AF37; letter-spacing: 2px; user-select: all; padding: 0.25rem 0; word-break: break-all;">
+          <div id="tempPasswordDisplay" style="font-family: 'JetBrains Mono', monospace; font-size: 1.75rem; font-weight: 700; color: #D4AF37; letter-spacing: 3px; user-select: all; padding: 0.2rem 0; word-break: break-all; text-shadow: 0 0 10px rgba(212,175,55,0.35);">
             ${escapeHTML(tempPass || '')}
           </div>
           <input type="hidden" id="rawTempPassword" value="${escapeHTML(tempPass || '')}" />
-          <div style="font-size: 0.72rem; color: #64748B; margin-top: 4px; font-family: 'JetBrains Mono', monospace;">
-            (Haz clic sobre la clave para seleccionarla)
+          <div style="font-size: 0.7rem; color: #64748B; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">
+            (Válida para el primer inicio de sesión · Sustitución obligatoria)
           </div>
         </div>
 
         <!-- Advertencia de Seguridad -->
-        <div style="display: flex; align-items: flex-start; gap: 10px; background: rgba(213, 43, 30, 0.15); border: 1px solid #D52B1E; border-radius: 4px; padding: 10px 12px; margin-bottom: 1.25rem; font-size: 0.82rem; line-height: 1.45; color: #FFAAA6;">
-          <span style="color: #D52B1E; font-size: 1.1rem; line-height: 1; flex-shrink: 0;">⚠️</span>
+        <div style="display: flex; align-items: flex-start; gap: 10px; background: rgba(213, 43, 30, 0.14); border: 1px solid #D52B1E; border-left: 4px solid #D52B1E; border-radius: 4px; padding: 8px 12px; font-size: 0.76rem; line-height: 1.4; color: #FFAAA6;">
+          <span style="color: #D52B1E; font-size: 1.05rem; line-height: 1; flex-shrink: 0;">⚠️</span>
           <div>
-            <strong style="color: #FF7B72; display: block; margin-bottom: 2px; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px; font-size: 0.85rem;">ADVERTENCIA DE SEGURIDAD:</strong>
+            <strong style="color: #FF7B72; display: block; margin-bottom: 1px; letter-spacing: 0.5px; font-size: 0.78rem;">ADVERTENCIA DE SEGURIDAD:</strong>
             <span style="color: #E2E8F0;">Clave de un solo uso, caduca tras el primer inicio de sesión. Indícasela al combatiente para que configure su clave definitiva.</span>
           </div>
         </div>
 
-        <!-- Acciones -->
-        <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #2A3A5C; padding-top: 1rem;">
-          <button type="button" id="btnCopyTempPassword" onclick="copyTemporaryPassword()" class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.65rem 1.2rem; font-size: 0.88rem; border: 1px solid #0038A8; color: #60A5FA; background: rgba(0, 56, 168, 0.2); font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
-            📋 Copiar clave
-          </button>
-          <button type="button" onclick="closeTemporaryPasswordModal()" class="btn-primary" style="padding: 0.65rem 1.4rem; font-size: 0.88rem; background: #0038A8; border: 1px solid #0038A8; color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px;">
-            Entendido
-          </button>
+        <!-- Pie de credencial -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; padding-top: 0.55rem; border-top: 1px solid rgba(42,58,92,0.6); font-size: 0.66rem; color: #64748B; font-family: 'JetBrains Mono', monospace;">
+          <span>PARAGUAY-FFAA · METALSTORM</span>
+          <span>ESTRICTAMENTE CONFIDENCIAL</span>
         </div>
       </div>
+
+      <!-- Botones de Acción del Modal -->
+      <div class="modal-footer" style="padding: 0.9rem 1.25rem; background: #070D1E; border-top: 1px solid #1E293B; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; align-items: center;">
+        <button type="button" id="btnCopyTempPassword" onclick="copyTemporaryPassword()" class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.65rem 1rem; font-size: 0.88rem; border: 1px solid #0038A8; color: #60A5FA; background: rgba(0, 56, 168, 0.2); font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+          📋 Copiar clave
+        </button>
+        <button type="button" id="downloadCredentialBtn" onclick="downloadCredentialImage()" class="btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0.65rem 1.25rem; font-size: 0.88rem; background: #1B4D3E; border: 1.5px solid #2ECC71; color: #FFFFFF; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px; transition: all 0.2s;">
+          📥 Descargar Credencial
+        </button>
+        <button type="button" onclick="closeTemporaryPasswordModal()" class="btn-secondary" style="padding: 0.65rem 1.1rem; font-size: 0.88rem; background: rgba(148,163,184,0.1); border: 1px solid #334155; color: #E2E8F0; font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; border-radius: 4px;">
+          Entendido
+        </button>
+      </div>
     </div>
+  `;
+
+  // Cerrar al hacer clic fuera del contenido del modal
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeTemporaryPasswordModal();
+    }
+  });
+
+  // Cerrar con la tecla ESC
+  const handleEsc = (e) => {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      closeTemporaryPasswordModal();
+    }
+  };
+  window._tempPasswordModalEscHandler = handleEsc;
+  document.addEventListener('keydown', handleEsc);
+
+  document.body.appendChild(modal);
+}
+
+async function downloadCredentialImage() {
+  const modal = document.querySelector('.credential-modal-content');
+  if (!modal) {
+    console.warn('⚠️ No se encontró el contenedor .credential-modal-content');
+    return;
+  }
+
+  const nickText = document.getElementById('credentialNick')?.textContent || 'Piloto';
+  const cleanNick = nickText.trim().replace(/[/\\?%*:|"<>]/g, '_') || 'Piloto';
+  const downloadBtn = document.getElementById('downloadCredentialBtn');
+  const origHtml = downloadBtn ? downloadBtn.innerHTML : '';
+
+  if (downloadBtn) {
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '⏳ Generando JPG...';
+  }
+
+  try {
+    if (typeof html2canvas === 'function') {
+      const canvas = await html2canvas(modal, {
+        backgroundColor: '#0B132B',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+      });
+
+      // Convertir a JPG
+      const link = document.createElement('a');
+      link.download = `${cleanNick}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('✅ Credencial descargada', 'success');
+    } else {
+      // Fallback robusto nativo Canvas 2D
+      await generateCredentialViaCanvasFallback(cleanNick);
+    }
+  } catch (error) {
+    console.error('❌ Error generando credencial con html2canvas, intentando fallback:', error);
+    try {
+      await generateCredentialViaCanvasFallback(cleanNick);
+    } catch (fbErr) {
+      console.error('❌ Fallback también falló:', fbErr);
+      showToast('❌ Error generando credencial', 'error');
+    }
+  } finally {
+    if (downloadBtn) {
+      downloadBtn.disabled = false;
+      downloadBtn.innerHTML = origHtml;
+    }
+  }
+}
+
+async function generateCredentialViaCanvasFallback(nick) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 500;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available');
+
+  // Fondo #0B132B
+  ctx.fillStyle = '#0B132B';
+  ctx.fillRect(0, 0, 800, 500);
+
+  // Bordes: #0038A8 y #D52B1E
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#0038A8';
+  ctx.strokeRect(2, 2, 796, 496);
+
+  // Borde superior rojo Paraguay (#D52B1E)
+  ctx.fillStyle = '#D52B1E';
+  ctx.fillRect(0, 0, 800, 6);
+
+  // Borde inferior azul armada (#0038A8)
+  ctx.fillStyle = '#0038A8';
+  ctx.fillRect(0, 494, 800, 6);
+
+  // Corner tactical brackets en oro (#D4AF37)
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 2;
+  // Top-left
+  ctx.beginPath(); ctx.moveTo(14, 28); ctx.lineTo(14, 14); ctx.lineTo(28, 14); ctx.stroke();
+  // Top-right
+  ctx.beginPath(); ctx.moveTo(786, 28); ctx.lineTo(786, 14); ctx.lineTo(772, 14); ctx.stroke();
+  // Bottom-left
+  ctx.beginPath(); ctx.moveTo(14, 472); ctx.lineTo(14, 486); ctx.lineTo(28, 486); ctx.stroke();
+  // Bottom-right
+  ctx.beginPath(); ctx.moveTo(786, 472); ctx.lineTo(786, 486); ctx.lineTo(772, 486); ctx.stroke();
+
+  // Intentar cargar y dibujar el logo del escuadrón
+  try {
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    await new Promise((resolve) => {
+      logoImg.onload = () => {
+        ctx.drawImage(logoImg, 35, 25, 60, 60);
+        resolve();
+      };
+      logoImg.onerror = () => resolve();
+      logoImg.src = '/logo-escuadron.png';
+      setTimeout(resolve, 800);
+    });
+  } catch (e) {
+    // Si falla se continúa sin logo gráfico
+  }
+
+  // Título y subtítulo
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = 'bold 26px "Rajdhani", sans-serif';
+  ctx.fillText('CREDENCIALES DE COMBATE', 110, 52);
+
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '13px "JetBrains Mono", monospace';
+  ctx.fillText('ALTA DE PILOTO · PROTOCOLO C4ISR', 110, 74);
+
+  // Marca clasificada
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.4)';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('CONFIDENCIAL // PROTOCOLO C4ISR', 765, 36);
+  ctx.textAlign = 'left';
+
+  // Línea divisoria
+  ctx.strokeStyle = '#2A3A5C';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(35, 96); ctx.lineTo(765, 96); ctx.stroke();
+
+  // Datos
+  const email = document.getElementById('credentialEmail')?.textContent || 'piloto@ffaa.py';
+  const pass = document.getElementById('rawTempPassword')?.value || document.getElementById('tempPasswordDisplay')?.textContent || '';
+  const date = document.getElementById('credentialDate')?.textContent?.replace('📅', '').trim() || new Date().toLocaleDateString('es-ES');
+
+  // Caja Nick (Izquierda)
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.fillRect(35, 112, 355, 70);
+  ctx.strokeStyle = '#1E293B';
+  ctx.strokeRect(35, 112, 355, 70);
+  ctx.fillStyle = '#38BDF8';
+  ctx.fillRect(35, 112, 4, 70);
+
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '11px "Rajdhani", sans-serif';
+  ctx.fillText('PILOTO / INDICATIVO:', 48, 132);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 22px "Rajdhani", sans-serif';
+  ctx.fillText(nick, 48, 162);
+
+  // Caja Email (Derecha)
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+  ctx.fillRect(410, 112, 355, 70);
+  ctx.strokeStyle = '#1E293B';
+  ctx.strokeRect(410, 112, 355, 70);
+  ctx.fillStyle = '#60A5FA';
+  ctx.fillRect(410, 112, 4, 70);
+
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '11px "Rajdhani", sans-serif';
+  ctx.fillText('CORREO INSTITUCIONAL:', 423, 132);
+  ctx.fillStyle = '#CBD5E1';
+  ctx.font = '14px "JetBrains Mono", monospace';
+  ctx.fillText(email, 423, 160);
+
+  // Caja Contraseña Temporal
+  ctx.fillStyle = '#070D1E';
+  ctx.fillRect(35, 196, 730, 105);
+  ctx.strokeStyle = '#2A3A5C';
+  ctx.strokeRect(35, 196, 730, 105);
+  ctx.fillStyle = '#D4AF37';
+  ctx.fillRect(35, 196, 730, 2);
+
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = '11px "Rajdhani", sans-serif';
+  ctx.fillText('CONTRASEÑA TEMPORAL DE ACCESO', 50, 218);
+  ctx.textAlign = 'right';
+  ctx.fillText('FECHA DE ALTA: ' + date, 745, 218);
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#D4AF37';
+  ctx.font = 'bold 30px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(pass, 400, 262);
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#64748B';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('(Válida para el primer inicio de sesión · Sustitución obligatoria)', 400, 286);
+  ctx.textAlign = 'left';
+
+  // Caja Advertencia de Seguridad
+  ctx.fillStyle = 'rgba(213, 43, 30, 0.16)';
+  ctx.fillRect(35, 315, 730, 80);
+  ctx.strokeStyle = '#D52B1E';
+  ctx.strokeRect(35, 315, 730, 80);
+  ctx.fillStyle = '#D52B1E';
+  ctx.fillRect(35, 315, 4, 80);
+
+  ctx.fillStyle = '#FF7B72';
+  ctx.font = 'bold 13px "Rajdhani", sans-serif';
+  ctx.fillText('⚠️ ADVERTENCIA DE SEGURIDAD:', 50, 338);
+
+  ctx.fillStyle = '#E2E8F0';
+  ctx.font = '12px "Inter", sans-serif';
+  ctx.fillText('Clave de un solo uso, caduca tras el primer inicio de sesión.', 50, 360);
+  ctx.fillText('Indícasela al combatiente para que configure su clave definitiva al ingresar al sistema.', 50, 380);
+
+  // Pie
+  ctx.fillStyle = '#64748B';
+  ctx.font = '11px "JetBrains Mono", monospace';
+  ctx.fillText('PARAGUAY-FFAA · METALSTORM', 35, 440);
+  ctx.textAlign = 'right';
+  ctx.fillText('SISTEMA DE MANDO Y CONTROL C4ISR', 765, 440);
+  ctx.textAlign = 'left';
+
+  // Descarga
+  const link = document.createElement('a');
+  link.download = `${nick}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('✅ Credencial descargada', 'success');
+}
   `;
 
   // Cerrar al hacer clic fuera del contenido del modal
@@ -2728,6 +3049,7 @@ window.addNewMember = addNewMember;
 window.showTemporaryPasswordModal = showTemporaryPasswordModal;
 window.closeTemporaryPasswordModal = closeTemporaryPasswordModal;
 window.copyTemporaryPassword = copyTemporaryPassword;
+window.downloadCredentialImage = downloadCredentialImage;
 window.fallbackCopyPassword = fallbackCopyPassword;
 window.showUploadEventModal = showUploadEventModal;
 window.uploadEventBulk = uploadEventBulk;
