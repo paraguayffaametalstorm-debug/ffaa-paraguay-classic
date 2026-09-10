@@ -59,7 +59,7 @@ function showSessionWarning() {
 
 function startCountdown() {
     let seconds = 60;
-    const countdownEl = document.getElementById('countdownTimer');
+    const countdownEl = document.getElementById('sessionTimeoutCountdown');
     
     if (countdownEl) {
         countdownEl.textContent = seconds;
