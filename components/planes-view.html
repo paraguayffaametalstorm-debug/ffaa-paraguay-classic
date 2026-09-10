@@ -75,80 +75,119 @@
     </div>
   </div>
 
-  <!-- Filters Card -->
-  <div class="card tactical-card tactical-corners" style="margin-bottom:1.5rem;padding:1.2rem;">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;">
-      <div>
-        <label for="planeSearch" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Buscar Aeronave</label>
-        <input type="text" id="planeSearch" placeholder="Nombre o modelo..." oninput="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;" />
-      </div>
-      <div>
-        <label for="planeTypeFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Tipo / Rol</label>
-        <select id="planeTypeFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
-          <option value="">Todos los Roles</option>
-        </select>
-      </div>
-      <div>
-        <label for="minLevelFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Nivel Mínimo</label>
-        <select id="minLevelFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
-          <option value="">-</option>
-        </select>
-      </div>
-      <div>
-        <label for="maxLevelFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Nivel Máximo</label>
-        <select id="maxLevelFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
-          <option value="">-</option>
-        </select>
-      </div>
-      <div>
-        <label for="upgradesFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Upgrades 2.0</label>
-        <select id="upgradesFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
-          <option value="">Todos</option>
-          <option value="unlocked">Desbloqueados (Nv 6+)</option>
-          <option value="upgraded">Con Mejoras (Sistemas > 0)</option>
-          <option value="locked">Bloqueados (&lt; Nv 6)</option>
-        </select>
-      </div>
-      <div>
-        <label for="specialSkillFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Hab. Especial</label>
-        <select id="specialSkillFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
-          <option value="">Todas</option>
-          <option value="with">Con Especial</option>
-          <option value="without">Sin Especial</option>
-        </select>
-      </div>
-      <div>
-        <button onclick="resetPlaneFilters()" class="btn-secondary" style="width:100%;padding:8px;">
-          <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Limpiar
-        </button>
-      </div>
+  <!-- =====================================================================
+       CARRUSEL CIRCULAR INFINITO DE AERONAVES (MANDO C4ISR)
+       ===================================================================== -->
+  <div class="hangar-carousel-container" id="hangarCarouselContainer">
+    <div class="hangar-filters">
+      <input type="text" placeholder="🔍 Buscar aeronave..." id="hangarSearch" oninput="filterPlanesFromCarousel()">
+      <select id="hangarTypeFilter" onchange="filterPlanesFromCarousel()">
+        <option value="">Todos los tipos</option>
+        <option value="Ligero">Ligero</option>
+        <option value="Mediano">Mediano</option>
+        <option value="Pesado">Pesado</option>
+        <option value="Interceptor">Interceptor</option>
+        <option value="Ataque">Ataque</option>
+        <option value="Caza de Combate">Caza de Combate</option>
+        <option value="Caza de Superioridad Aérea">Caza de Superioridad Aérea</option>
+        <option value="Caza Polivalente">Caza Polivalente</option>
+      </select>
+      <button onclick="toggleHangarViewMode()" class="btn-secondary btn-sm" id="btnToggleHangarView" style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <i data-lucide="list" style="width:14px;height:14px;"></i> <span id="toggleHangarViewText">Ver Modo Tabla</span>
+      </button>
     </div>
+
+    <div class="hangar-carousel">
+      <button class="carousel-arrow carousel-arrow-left" onclick="scrollCarousel(-1)" aria-label="Aeronave anterior">◀</button>
+      <div class="carousel-viewport" id="carouselViewport">
+        <div class="carousel-track" id="carouselTrack"></div>
+      </div>
+      <button class="carousel-arrow carousel-arrow-right" onclick="scrollCarousel(1)" aria-label="Siguiente aeronave">▶</button>
+    </div>
+
+    <div class="carousel-indicators" id="carouselIndicators"></div>
+    <div class="carousel-counter" id="carouselCounter">0 de 0</div>
   </div>
 
-  <!-- Planes Table -->
-  <div class="card tactical-card tactical-corners" style="overflow-x:auto;">
-    <table class="data-table" style="width:100%;font-size:0.9rem;">
-      <thead>
-        <tr>
-          <th>Aeronave</th>
-          <th>Tipo / Rol</th>
-          <th>Nivel</th>
-          <th>Sistemas Upgrades 2.0 (Nv 6+)</th>
-          <th>Especial (Nv 8+)</th>
-          <th>Pasiva (Nv 12+)</th>
-          <th>Mod 1 (16+)</th>
-          <th>Mod 2 (20)</th>
-          <th style="text-align:center;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="planesTableBody">
-        <tr>
-          <td colspan="9" class="text-center" style="padding:2rem;color:var(--steel-gray);">
-            Cargando telemetría de flota...
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- =====================================================================
+       VISTA ALTERNATIVA EN TABLA (MODO TÁCTICO DETALLADO)
+       ===================================================================== -->
+  <div id="hangarTableView" style="display:none;">
+    <!-- Filters Card -->
+    <div class="card tactical-card tactical-corners" style="margin-bottom:1.5rem;padding:1.2rem;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;">
+        <div>
+          <label for="planeSearch" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Buscar Aeronave</label>
+          <input type="text" id="planeSearch" placeholder="Nombre o modelo..." oninput="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;" />
+        </div>
+        <div>
+          <label for="planeTypeFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Tipo / Rol</label>
+          <select id="planeTypeFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+            <option value="">Todos los Roles</option>
+          </select>
+        </div>
+        <div>
+          <label for="minLevelFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Nivel Mínimo</label>
+          <select id="minLevelFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+            <option value="">-</option>
+          </select>
+        </div>
+        <div>
+          <label for="maxLevelFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Nivel Máximo</label>
+          <select id="maxLevelFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+            <option value="">-</option>
+          </select>
+        </div>
+        <div>
+          <label for="upgradesFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Upgrades 2.0</label>
+          <select id="upgradesFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+            <option value="">Todos</option>
+            <option value="unlocked">Desbloqueados (Nv 6+)</option>
+            <option value="upgraded">Con Mejoras (Sistemas > 0)</option>
+            <option value="locked">Bloqueados (&lt; Nv 6)</option>
+          </select>
+        </div>
+        <div>
+          <label for="specialSkillFilter" style="font-size:0.78rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;">Hab. Especial</label>
+          <select id="specialSkillFilter" onchange="filterPlanes()" style="background:var(--bg-panel);border:1px solid var(--border-tactical);color:#fff;border-radius:4px;padding:8px 10px;width:100%;font-size:0.85rem;">
+            <option value="">Todas</option>
+            <option value="with">Con Especial</option>
+            <option value="without">Sin Especial</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="resetPlaneFilters()" class="btn-secondary" style="width:100%;padding:8px;">
+            <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Planes Table -->
+    <div class="card tactical-card tactical-corners" style="overflow-x:auto;">
+      <table class="data-table" style="width:100%;font-size:0.9rem;">
+        <thead>
+          <tr>
+            <th>Aeronave</th>
+            <th>Tipo / Rol</th>
+            <th>Nivel</th>
+            <th>Sistemas Upgrades 2.0 (Nv 6+)</th>
+            <th>Especial (Nv 8+)</th>
+            <th>Pasiva (Nv 12+)</th>
+            <th>Mod 1 (16+)</th>
+            <th>Mod 2 (20)</th>
+            <th style="text-align:center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="planesTableBody">
+          <tr>
+            <td colspan="9" class="text-center" style="padding:2rem;color:var(--steel-gray);">
+              Cargando telemetría de flota...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 

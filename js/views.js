@@ -1011,12 +1011,21 @@ function populatePlaneFilters(planes) {
   const types = [...new Set(planes.map(p => p.type).filter(Boolean))];
   const typeFilter = document.getElementById('planeTypeFilter');
   if (typeFilter) {
-    typeFilter.innerHTML = '<option value="">Todos</option>';
+    typeFilter.innerHTML = '<option value="">Todos los Roles</option>';
     types.forEach(t => {
       const opt = document.createElement('option');
       opt.value = t; opt.textContent = t;
       typeFilter.appendChild(opt);
     });
+  }
+  const hangarTypeFilter = document.getElementById('hangarTypeFilter');
+  if (hangarTypeFilter) {
+    const existingVal = hangarTypeFilter.value;
+    const baseRoles = ['Ligero', 'Mediano', 'Pesado', 'Interceptor', 'Ataque', 'Caza de Combate', 'Caza de Superioridad Aérea', 'Caza Polivalente'];
+    const merged = [...new Set([...baseRoles, ...types])];
+    hangarTypeFilter.innerHTML = '<option value="">Todos los tipos</option>' +
+      merged.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    if (existingVal) hangarTypeFilter.value = existingVal;
   }
   const levels = [...new Set(planes.map(p => p.nivel))].sort((a, b) => a - b);
   ['minLevelFilter', 'maxLevelFilter'].forEach(id => {
@@ -1031,10 +1040,587 @@ function populatePlaneFilters(planes) {
   });
 }
 
+// ============================================================================
+// HANGAR CIRCULAR INFINITE CAROUSEL & ADVANCED DEEP MODAL (v3.8.0)
+// ============================================================================
+let hangarCarouselIndex = 0;
+let hangarFilteredPlanes = [];
+let currentPlaneId = null;
+window.currentPlaneId = null;
+let hangarViewMode = 'carousel';
+
+function toggleHangarViewMode() {
+  const container = document.getElementById('hangarCarouselContainer');
+  const table = document.getElementById('hangarTableView');
+  const btnText = document.getElementById('toggleHangarViewText');
+
+  if (hangarViewMode === 'carousel') {
+    hangarViewMode = 'table';
+    if (container) container.style.display = 'none';
+    if (table) table.style.display = 'block';
+    if (btnText) btnText.textContent = 'Ver Modo Carrusel';
+  } else {
+    hangarViewMode = 'carousel';
+    if (container) container.style.display = 'block';
+    if (table) table.style.display = 'none';
+    if (btnText) btnText.textContent = 'Ver Modo Tabla';
+    renderPlanesCarousel();
+  }
+}
+window.toggleHangarViewMode = toggleHangarViewMode;
+
+function scrollCarousel(direction) {
+  if (!hangarFilteredPlanes || hangarFilteredPlanes.length === 0) return;
+  const total = hangarFilteredPlanes.length;
+  hangarCarouselIndex = (hangarCarouselIndex + direction + total) % total;
+  updateCarouselView();
+}
+window.scrollCarousel = scrollCarousel;
+
+function selectCarouselPlane(index) {
+  if (!hangarFilteredPlanes || hangarFilteredPlanes.length === 0) return;
+  hangarCarouselIndex = Math.max(0, Math.min(index, hangarFilteredPlanes.length - 1));
+  updateCarouselView();
+}
+window.selectCarouselPlane = selectCarouselPlane;
+
+function handleCarouselCardClick(cardIndex, planeId) {
+  if (cardIndex === hangarCarouselIndex) {
+    openAircraftDeepModal(planeId);
+  } else {
+    selectCarouselPlane(cardIndex);
+  }
+}
+window.handleCarouselCardClick = handleCarouselCardClick;
+
+function filterPlanesFromCarousel() {
+  const query = (document.getElementById('hangarSearch')?.value || '').trim().toLowerCase();
+  const typeFilter = (document.getElementById('hangarTypeFilter')?.value || '').trim().toLowerCase();
+
+  const all = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
+    ? allUserPlanes
+    : [];
+
+  hangarFilteredPlanes = all.filter(p => {
+    const name = (p.model_name || p.name || p.avion_id || '').toLowerCase();
+    const type = (p.type || '').toLowerCase();
+    const esp = (p.especial_nombre || '').toLowerCase();
+    const pas = (p.pasiva_nombre || '').toLowerCase();
+    const id = String(p.id);
+
+    const matchesQuery = !query || name.includes(query) || type.includes(query) || esp.includes(query) || pas.includes(query) || id.includes(query);
+    const matchesType = !typeFilter || type.includes(typeFilter);
+
+    return matchesQuery && matchesType;
+  });
+
+  hangarCarouselIndex = 0;
+  updateCarouselView();
+}
+window.filterPlanesFromCarousel = filterPlanesFromCarousel;
+
+function initCarouselTouchListeners() {
+  const viewport = document.getElementById('carouselViewport');
+  if (!viewport || viewport._touchBound) return;
+  viewport._touchBound = true;
+
+  let startX = 0;
+  let startY = 0;
+
+  viewport.addEventListener('touchstart', (e) => {
+    if (!e.changedTouches || e.changedTouches.length === 0) return;
+    startX = e.changedTouches[0].screenX;
+    startY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  viewport.addEventListener('touchend', (e) => {
+    if (!e.changedTouches || e.changedTouches.length === 0) return;
+    const endX = e.changedTouches[0].screenX;
+    const endY = e.changedTouches[0].screenY;
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        scrollCarousel(1);
+      } else {
+        scrollCarousel(-1);
+      }
+    }
+  }, { passive: true });
+}
+
+function initCarouselKeyboardListeners() {
+  if (window._carouselKeyBound) return;
+  window._carouselKeyBound = true;
+
+  window.addEventListener('keydown', (e) => {
+    const planesView = document.getElementById('planesView');
+    if (!planesView || planesView.style.display === 'none') return;
+    if (document.querySelector('.modal.show') || document.getElementById('aircraftDeepModal')?.classList.contains('show')) return;
+
+    if (e.key === 'ArrowLeft') {
+      scrollCarousel(-1);
+    } else if (e.key === 'ArrowRight') {
+      scrollCarousel(1);
+    }
+  });
+}
+
+function renderPlanesCarousel(planes) {
+  if (planes) {
+    hangarFilteredPlanes = planes;
+  } else if (!hangarFilteredPlanes || hangarFilteredPlanes.length === 0) {
+    hangarFilteredPlanes = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
+      ? allUserPlanes
+      : [];
+  }
+
+  if (hangarCarouselIndex >= hangarFilteredPlanes.length) {
+    hangarCarouselIndex = Math.max(0, hangarFilteredPlanes.length - 1);
+  }
+
+  initCarouselTouchListeners();
+  initCarouselKeyboardListeners();
+  updateCarouselView();
+}
+window.renderPlanesCarousel = renderPlanesCarousel;
+
+function updateCarouselView() {
+  const track = document.getElementById('carouselTrack');
+  const counterEl = document.getElementById('carouselCounter');
+  const indicatorsEl = document.getElementById('carouselIndicators');
+
+  if (!hangarFilteredPlanes || hangarFilteredPlanes.length === 0) {
+    if (counterEl) counterEl.textContent = '0 de 0';
+    if (indicatorsEl) indicatorsEl.innerHTML = '';
+    if (track) {
+      track.innerHTML = `
+        <div style="text-align:center;padding:3rem 1rem;color:var(--steel-gray);width:100%;">
+          <i data-lucide="plane" style="width:42px;height:42px;opacity:0.35;margin:0 auto 12px auto;display:block;"></i>
+          <h4 style="color:#fff;margin-bottom:6px;font-family:var(--font-tactical);font-size:1.2rem;">Sin Aeronaves Registradas</h4>
+          <p style="font-size:0.85rem;margin-bottom:16px;">No hay aeronaves que coincidan con la búsqueda.</p>
+          <button onclick="showAddPlaneModal()" class="btn-primary btn-sm">➕ Registrar Nueva Aeronave</button>
+        </div>
+      `;
+      if (typeof refreshLucideIcons === 'function') setTimeout(refreshLucideIcons, 30);
+    }
+    return;
+  }
+
+  const N = hangarFilteredPlanes.length;
+  const c = hangarCarouselIndex;
+
+  if (counterEl) {
+    counterEl.textContent = `${c + 1} de ${N}`;
+  }
+
+  if (indicatorsEl) {
+    indicatorsEl.innerHTML = hangarFilteredPlanes.map((p, i) => `
+      <div class="carousel-dot ${i === c ? 'active' : ''}" onclick="selectCarouselPlane(${i})" title="${escapeHtml(p.model_name || p.name || p.avion_id || 'Avión')} (${i + 1}/${N})"></div>
+    `).join('');
+  }
+
+  if (track) {
+    track.innerHTML = hangarFilteredPlanes.map((plane, index) => {
+      let diff = (index - c) % N;
+      if (diff > N / 2) diff -= N;
+      if (diff < -N / 2) diff += N;
+
+      let positionClass = 'is-hidden';
+      if (diff === 0) positionClass = 'is-center';
+      else if (diff === -1 || (N === 2 && diff === 1 && c === 1)) positionClass = 'is-prev';
+      else if (diff === 1) positionClass = 'is-next';
+
+      const planeName = escapeHtml(plane.model_name || plane.name || plane.avion_id || 'Aeronave Desconocida');
+      const planeType = escapeHtml(plane.type || 'Caza de Combate');
+      const planeLevel = plane.nivel || 1;
+
+      // Special Skill
+      const espName = escapeHtml(plane.especial_nombre || '');
+      const espLvl = plane.especial_nivel_num || '';
+      const espEffect = escapeHtml(plane.especial_efecto || '');
+      const specialHtml = espName ? `
+        <div class="card-skill-box">
+          <div class="card-skill-title special">🎯 Habilidad Especial · Nv. ${espLvl || 1}</div>
+          <div class="card-skill-name">${espName}</div>
+          <div class="card-skill-effect">${espEffect || 'Efecto táctico activo'}</div>
+        </div>
+      ` : `
+        <div class="card-skill-box" style="opacity:0.6;">
+          <div class="card-skill-title">🎯 Habilidad Especial</div>
+          <div class="card-skill-effect" style="font-style:italic;">🔒 Requiere Nivel 8+</div>
+        </div>
+      `;
+
+      // Passive Skill
+      const pasName = escapeHtml(plane.pasiva_nombre || '');
+      const pasLvl = plane.pasiva_nivel_num || '';
+      const pasEffect = escapeHtml(plane.pasiva_efecto || '');
+      const passiveHtml = pasName ? `
+        <div class="card-skill-box">
+          <div class="card-skill-title passive">🛡️ Habilidad Pasiva · Nv. ${pasLvl || 1}</div>
+          <div class="card-skill-name">${pasName}</div>
+          <div class="card-skill-effect">${pasEffect || 'Efecto pasivo activo'}</div>
+        </div>
+      ` : `
+        <div class="card-skill-box" style="opacity:0.6;">
+          <div class="card-skill-title">🛡️ Habilidad Pasiva</div>
+          <div class="card-skill-effect" style="font-style:italic;">🔒 Requiere Nivel 12+</div>
+        </div>
+      `;
+
+      // Mods
+      const mod1 = plane.mod1_nombre || plane.mod1_id;
+      const mod2 = plane.mod2_nombre || plane.mod2_id;
+      const modsHtml = (mod1 || mod2) ? `
+        <div class="card-mods-section">
+          <div class="card-mods-title">Mods Equipados</div>
+          <div class="card-mods-badges">
+            ${mod1 ? `<span class="plane-badge-type" style="background:rgba(212,175,55,0.12);border-color:rgba(212,175,55,0.35);color:var(--gold-rank);font-size:0.75rem;">🔩 ${escapeHtml(mod1)}${plane.mod1_lvl ? ` Nv.${plane.mod1_lvl}` : ''}</span>` : ''}
+            ${mod2 ? `<span class="plane-badge-type" style="background:rgba(212,175,55,0.12);border-color:rgba(212,175,55,0.35);color:var(--gold-rank);font-size:0.75rem;">🔩 ${escapeHtml(mod2)}${plane.mod2_lvl ? ` Nv.${plane.mod2_lvl}` : ''}</span>` : ''}
+          </div>
+        </div>
+      ` : `
+        <div class="card-mods-section" style="opacity:0.6;">
+          <div class="card-mods-title">Mods</div>
+          <span style="font-size:0.75rem;color:var(--steel-dark);font-style:italic;">Sin modificaciones instaladas</span>
+        </div>
+      `;
+
+      return `
+        <div class="carousel-card ${positionClass}" onclick="handleCarouselCardClick(${index}, ${plane.id})" data-index="${index}" title="${diff === 0 ? 'Click para ver datos profundos' : 'Click para centrar esta aeronave'}">
+          <div>
+            <!-- Header: Plane Name Prominent, ID, Level, Type -->
+            <div class="card-plane-header">
+              <h3 class="card-plane-name">${planeName}</h3>
+              <div class="card-plane-meta">
+                <span class="plane-badge-id">🏷️ ${plane.id}</span>
+                <span class="plane-badge-level">Nv. ${planeLevel}</span>
+                <span class="plane-badge-type">${planeType}</span>
+              </div>
+            </div>
+
+            <!-- Skills Section -->
+            <div class="card-skills-section">
+              ${specialHtml}
+              ${passiveHtml}
+            </div>
+
+            <!-- Mods Section -->
+            ${modsHtml}
+          </div>
+
+          <!-- Card Action Buttons -->
+          <div class="card-actions">
+            <button class="btn-secondary" onclick="event.stopPropagation(); openAircraftDeepModal(${plane.id})" title="Ver Telemetría y Datos Profundos">
+              <i data-lucide="gauge" style="width:13px;height:13px;"></i> Stats
+            </button>
+            <button class="btn-secondary" onclick="event.stopPropagation(); editPlane(${plane.id})" title="Editar Aeronave">
+              <i data-lucide="edit-3" style="width:13px;height:13px;"></i> Editar
+            </button>
+            <button class="btn-danger" onclick="event.stopPropagation(); deletePlane(${plane.id})" title="Eliminar Aeronave">
+              <i data-lucide="trash-2" style="width:13px;height:13px;"></i> Eliminar
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (typeof refreshLucideIcons === 'function') {
+      setTimeout(refreshLucideIcons, 30);
+    }
+  }
+}
+
+// ============================================================================
+// MODAL DE DATOS PROFUNDOS DE AERONAVE (C4ISR TELEMETRÍA)
+// ============================================================================
+async function openAircraftDeepModal(planeId) {
+  window.currentPlaneId = planeId;
+  currentPlaneId = planeId;
+
+  // Find plane in dataset
+  const plane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
+    ? allUserPlanes.find(p => String(p.id) === String(planeId))
+    : (hangarFilteredPlanes || []).find(p => String(p.id) === String(planeId));
+
+  const planeName = plane?.model_name || plane?.name || plane?.avion_id || `Aeronave #${planeId}`;
+  const planeType = plane?.type || 'Caza de Combate';
+  const planeLevel = plane?.nivel || 1;
+
+  // Header
+  const nameEl = document.getElementById('deepPlaneName');
+  if (nameEl) nameEl.textContent = planeName;
+  const idEl = document.getElementById('deepPlaneId');
+  if (idEl) idEl.textContent = `🏷️ ${planeId}`;
+  const typeEl = document.getElementById('deepPlaneType');
+  if (typeEl) typeEl.textContent = planeType;
+  const lvlEl = document.getElementById('deepPlaneLevel');
+  if (lvlEl) lvlEl.textContent = `Nv. ${planeLevel}`;
+
+  // Skills
+  const specialEl = document.getElementById('deepSpecialSkill');
+  if (specialEl) {
+    if (plane?.especial_nombre) {
+      specialEl.innerHTML = `
+        <div class="card-skill-title special" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
+          🎯 ${escapeHtml(plane.especial_nombre)} · Nivel ${plane.especial_nivel_num || 1}
+        </div>
+        <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
+          ${escapeHtml(plane.especial_efecto || 'Efecto táctico activo en combate.')}
+        </div>
+      `;
+    } else {
+      specialEl.innerHTML = `
+        <div style="color:var(--steel-dark);font-style:italic;font-size:0.85rem;">
+          🔒 Sin habilidad especial equipada (Desbloquea en Nivel 8+)
+        </div>
+      `;
+    }
+  }
+
+  const passiveEl = document.getElementById('deepPassiveSkill');
+  if (passiveEl) {
+    if (plane?.pasiva_nombre) {
+      passiveEl.innerHTML = `
+        <div class="card-skill-title passive" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
+          🛡️ ${escapeHtml(plane.pasiva_nombre)} · Nivel ${plane.pasiva_nivel_num || 1}
+        </div>
+        <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
+          ${escapeHtml(plane.pasiva_efecto || 'Efecto pasivo permanente en combate.')}
+        </div>
+      `;
+    } else {
+      passiveEl.innerHTML = `
+        <div style="color:var(--steel-dark);font-style:italic;font-size:0.85rem;">
+          🔒 Sin habilidad pasiva equipada (Desbloquea en Nivel 12+)
+        </div>
+      `;
+    }
+  }
+
+  // Upgrades 2.0 (Sistemas Fuselaje, Motor, Aviónica, Armas - Barras 0-8)
+  const systemsEl = document.getElementById('deepSystemsGrid');
+  if (systemsEl) {
+    const isUnlocked = planeLevel >= 6 || plane?.sistemas_desbloqueados;
+    const systems = [
+      { name: 'Fuselaje', icon: '🛡️', lvl: plane?.nivel_fuselaje || 0, color: '#38bdf8', bonus: `+${((plane?.nivel_fuselaje || 0) * 3)}% Blindaje` },
+      { name: 'Motor', icon: '⚙️', lvl: plane?.nivel_motor || 0, color: '#fbbf24', bonus: `+${((plane?.nivel_motor || 0) * 2.5)}% Velocidad` },
+      { name: 'Aviónica', icon: '📡', lvl: plane?.nivel_avionica || 0, color: '#c084fc', bonus: `+${((plane?.nivel_avionica || 0) * 3)}% Radar/ECM` },
+      { name: 'Armas', icon: '🎯', lvl: plane?.nivel_armas || 0, color: '#f87171', bonus: `+${((plane?.nivel_armas || 0) * 3.5)}% Potencia` }
+    ];
+
+    systemsEl.innerHTML = systems.map(sys => {
+      let blocksHtml = '';
+      for (let b = 1; b <= 8; b++) {
+        const isFilled = isUnlocked && b <= sys.lvl;
+        blocksHtml += `<div class="deep-system-block" style="${isFilled ? `background:${sys.color};box-shadow:0 0 6px ${sys.color}80;` : ''}"></div>`;
+      }
+      return `
+        <div class="deep-system-item">
+          <div class="deep-system-header">
+            <span class="deep-system-name">${sys.icon} ${sys.name}</span>
+            <span class="deep-system-level" style="color:${sys.color};">${isUnlocked ? `Nv. ${sys.lvl}/8` : '🔒 Bloqueado'}</span>
+          </div>
+          <div class="deep-system-blocks">${blocksHtml}</div>
+          <div style="font-size:0.72rem;color:var(--steel-gray);margin-top:6px;display:flex;justify-content:space-between;">
+            <span>${isUnlocked ? sys.bonus : 'Requiere Nivel 6+'}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Mods Equipados
+  const modsEl = document.getElementById('deepModsGrid');
+  if (modsEl) {
+    const slot1Unlocked = planeLevel >= 16;
+    const slot2Unlocked = planeLevel >= 20;
+    const mod1Name = plane?.mod1_nombre || plane?.mod1_id;
+    const mod2Name = plane?.mod2_nombre || plane?.mod2_id;
+
+    modsEl.innerHTML = `
+      <div class="deep-mod-box">
+        <div class="deep-mod-slot">Ranura 1 (Desbloquea Nv. 16)</div>
+        ${!slot1Unlocked ? `
+          <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel 16)</div>
+        ` : mod1Name ? `
+          <div style="font-weight:700;color:var(--gold-rank);font-size:0.95rem;">🔩 ${escapeHtml(mod1Name)}</div>
+          <div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">
+            ${plane?.mod1_type ? `Categoría: ${escapeHtml(plane.mod1_type)} · ` : ''}Nivel ${plane?.mod1_lvl || 1}
+          </div>
+        ` : `
+          <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
+        `}
+      </div>
+      <div class="deep-mod-box">
+        <div class="deep-mod-slot">Ranura 2 (Desbloquea Nv. 20)</div>
+        ${!slot2Unlocked ? `
+          <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel 20)</div>
+        ` : mod2Name ? `
+          <div style="font-weight:700;color:var(--gold-rank);font-size:0.95rem;">🔩 ${escapeHtml(mod2Name)}</div>
+          <div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">
+            ${plane?.mod2_type ? `Categoría: ${escapeHtml(plane.mod2_type)} · ` : ''}Nivel ${plane?.mod2_lvl || 1}
+          </div>
+        ` : `
+          <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
+        `}
+      </div>
+    `;
+  }
+
+  // Open modal
+  showModal('aircraftDeepModal');
+
+  // Stats Grid: Velocidad, Ángulo de Giro, Puntos de Vida, Postquemador, Aceleración, Vel. Maniobra
+  const statsGridEl = document.getElementById('deepStatsGrid');
+  if (statsGridEl) {
+    statsGridEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:12px;color:var(--steel-gray);"><i data-lucide="loader-2" class="spin"></i> Calculando telemetría balística...</div>';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/planes/${planeId}/stats`, {
+      headers: getAuthHeaders()
+    });
+    let statsData = null;
+    if (res.ok) {
+      statsData = await res.json();
+    }
+
+    const levelFactor = planeLevel / 20;
+    const bonusMotor = 1 + ((plane?.nivel_motor || 0) * 0.025);
+    const bonusFuselaje = 1 + ((plane?.nivel_fuselaje || 0) * 0.03);
+
+    const rawSpeed = statsData?.current_raw?.speed || Math.round(2800 * (0.6 + 0.4 * levelFactor) * bonusMotor);
+    const rawAgility = statsData?.current_raw?.agility || Math.round(42 * (0.6 + 0.4 * levelFactor) * (1 + (plane?.nivel_fuselaje || 0) * 0.015));
+    const rawArmor = statsData?.current_raw?.armor || Math.round(3200 * (0.5 + 0.5 * levelFactor) * bonusFuselaje);
+    const afterburnerVal = Math.round(15 + (plane?.nivel_motor || 0) * 4.2 + levelFactor * 16);
+    const accelVal = (18 + levelFactor * 12 + (plane?.nivel_motor || 0) * 1.5).toFixed(1);
+    const maneuverSpeedVal = Math.round(rawSpeed * 0.44 + (plane?.nivel_fuselaje || 0) * 18);
+
+    const statsList = [
+      { label: 'Velocidad', val: `${rawSpeed.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((rawSpeed / 2800) * 100)), color: '#60a5fa' },
+      { label: 'Ángulo de Giro', val: `${rawAgility}`, unit: '°/s', pct: Math.min(100, Math.round((rawAgility / 42) * 100)), color: '#4ade80' },
+      { label: 'Puntos de Vida', val: `${rawArmor.toLocaleString()}`, unit: 'HP', pct: Math.min(100, Math.round((rawArmor / 3200) * 100)), color: '#f59e0b' },
+      { label: 'Postquemador', val: `+${afterburnerVal}`, unit: '% Empuje', pct: Math.min(100, Math.round((afterburnerVal / 50) * 100)), color: '#fb923c' },
+      { label: 'Aceleración', val: `${accelVal}`, unit: 'm/s²', pct: Math.min(100, Math.round((parseFloat(accelVal) / 35) * 100)), color: '#c084fc' },
+      { label: 'Vel. Maniobra', val: `${maneuverSpeedVal.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((maneuverSpeedVal / 1400) * 100)), color: '#38bdf8' }
+    ];
+
+    if (statsGridEl) {
+      statsGridEl.innerHTML = statsList.map(s => `
+        <div class="deep-stat-card">
+          <div class="deep-stat-header">
+            <span class="deep-stat-label">${s.label}</span>
+            <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
+          </div>
+          <div class="deep-stat-bar-track">
+            <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    console.warn('Error fetching detailed stats, showing fallback:', err);
+    const levelFactor = planeLevel / 20;
+    const speed = Math.round(2400 * (0.6 + 0.4 * levelFactor));
+    const statsList = [
+      { label: 'Velocidad', val: `${speed}`, unit: 'km/h', pct: Math.round((speed / 2800) * 100), color: '#60a5fa' },
+      { label: 'Ángulo de Giro', val: `${Math.round(36 * (0.6 + 0.4 * levelFactor))}`, unit: '°/s', pct: 75, color: '#4ade80' },
+      { label: 'Puntos de Vida', val: `${Math.round(2800 * (0.6 + 0.4 * levelFactor))}`, unit: 'HP', pct: 70, color: '#f59e0b' },
+      { label: 'Postquemador', val: `+${Math.round(20 * levelFactor)}`, unit: '% Empuje', pct: 60, color: '#fb923c' },
+      { label: 'Aceleración', val: `${(20 + levelFactor * 10).toFixed(1)}`, unit: 'm/s²', pct: 65, color: '#c084fc' },
+      { label: 'Vel. Maniobra', val: `${Math.round(980 * levelFactor + 300)}`, unit: 'km/h', pct: 72, color: '#38bdf8' }
+    ];
+    if (statsGridEl) {
+      statsGridEl.innerHTML = statsList.map(s => `
+        <div class="deep-stat-card">
+          <div class="deep-stat-header">
+            <span class="deep-stat-label">${s.label}</span>
+            <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
+          </div>
+          <div class="deep-stat-bar-track">
+            <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+
+  if (typeof refreshLucideIcons === 'function') {
+    setTimeout(refreshLucideIcons, 30);
+  }
+}
+window.openAircraftDeepModal = openAircraftDeepModal;
+
+function closeAircraftDeepModal() {
+  closeModal('aircraftDeepModal');
+}
+window.closeAircraftDeepModal = closeAircraftDeepModal;
+
+function exportPlane(planeId) {
+  const plane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
+    ? allUserPlanes.find(p => String(p.id) === String(planeId))
+    : (hangarFilteredPlanes || []).find(p => String(p.id) === String(planeId));
+
+  if (!plane) {
+    showToast('Aeronave no encontrada para exportar', 'warning');
+    return;
+  }
+
+  const planeName = plane.model_name || plane.name || plane.avion_id || `Aeronave_${plane.id}`;
+  const dossier = `================================================================================
+PARAGUAY FFAA [PRY] | METALSTORM - FICHA TÉCNICA DE COMBATE
+CENTRO DE MANDO C4ISR - DIVISIÓN DE FLOTA Y TELEMETRÍA
+================================================================================
+AERONAVE:            ${planeName}
+IDENTIFICADOR (ID):  #${plane.id}
+TIPO / ROL TÁCTICO:  ${plane.type || 'Caza de Combate'}
+NIVEL OPERATIVO:     Nv. ${plane.nivel}
+ESTADO DE MANDO:     ACTIVO EN SERVICIO
+FECHA DE EMISIÓN:    ${new Date().toLocaleString('es-PY')}
+================================================================================
+HABILIDADES DE COMBATE:
+- HABILIDAD ESPECIAL: ${plane.especial_nombre || 'Sin equipar'} (Nv. ${plane.especial_nivel_num || '-'})
+  Efecto: ${plane.especial_efecto || 'N/A'}
+
+- HABILIDAD PASIVA:   ${plane.pasiva_nombre || 'Sin equipar'} (Nv. ${plane.pasiva_nivel_num || '-'})
+  Efecto: ${plane.pasiva_efecto || 'N/A'}
+================================================================================
+SISTEMAS UPGRADES 2.0 (Nv 6+):
+- 🛡️ Fuselaje:       Nv. ${plane.nivel_fuselaje || 0} / 8
+- ⚙️ Motor:          Nv. ${plane.nivel_motor || 0} / 8
+- 📡 Aviónica:       Nv. ${plane.nivel_avionica || 0} / 8
+- 🎯 Armas:          Nv. ${plane.nivel_armas || 0} / 8
+================================================================================
+MODIFICACIONES EQUIPADAS:
+- MOD 1 (Nv 16+):    ${plane.mod1_nombre || plane.mod1_id || 'Sin mod'} ${plane.mod1_lvl ? `(Nv. ${plane.mod1_lvl})` : ''}
+- MOD 2 (Nv 20):     ${plane.mod2_nombre || plane.mod2_id || 'Sin mod'} ${plane.mod2_lvl ? `(Nv. ${plane.mod2_lvl})` : ''}
+================================================================================
+PRY ESCUADRÓN FFAA - OPERACIONES AÉREAS C4ISR
+================================================================================`;
+
+  const blob = new Blob([dossier], { type: 'text/plain;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Ficha_Tecnica_${planeName.replace(/\s+/g, '_')}_ID${plane.id}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ Ficha técnica de ${planeName} exportada con éxito`, 'success');
+}
+window.exportPlane = exportPlane;
+
 function displayPlanes(planes) {
+  // Render Infinite Circular Carousel
+  renderPlanesCarousel(planes);
+
   const tbody = document.getElementById('planesTableBody');
   if (!tbody) return;
-  if (planes.length === 0) {
+  if (!planes || planes.length === 0) {
     tbody.innerHTML = `
 <tr>
 <td colspan="9" class="text-center">
@@ -1116,7 +1702,7 @@ Nv. ${plane.nivel}
 <td data-label="Mod 2">${plane.mod2_nombre || plane.mod2_id || '<span style="color:#666">—</span>'}</td>
 <td data-label="Acciones" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center;">
 <button onclick="openPlaneUpgrades(${plane.id})" class="btn-primary" style="padding:4px 8px; font-size:0.75rem; background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#38bdf8;" title="Gestionar Upgrades 2.0"><i data-lucide="wrench" style="width:13px;height:13px;"></i> Upgrades</button>
-<button onclick="openAircraftStats(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-color:var(--blue-telemetry); color:var(--blue-telemetry);" title="Ver Telemetría"><i data-lucide="gauge" style="width:13px;height:13px;"></i> Radar</button>
+<button onclick="openAircraftDeepModal(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-color:var(--blue-telemetry); color:var(--blue-telemetry);" title="Ver Telemetría y Datos Profundos"><i data-lucide="gauge" style="width:13px;height:13px;"></i> Stats</button>
 <button onclick="editPlane(${plane.id})" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem;" title="Editar"><i data-lucide="edit-3" style="width:13px;height:13px;"></i></button>
 <button onclick="deletePlane(${plane.id})" class="btn-danger" style="padding:4px 8px; font-size:0.75rem;" title="Eliminar"><i data-lucide="trash-2" style="width:13px;height:13px;"></i></button>
 </td>
@@ -1343,221 +1929,10 @@ window.applySystemUpgrade = applySystemUpgrade;
 let _statsRadarChart = null;
 
 async function openAircraftStats(planeId) {
-  showModal('aircraftStatsModal');
-  document.getElementById('statsAircraftName').textContent  = 'Cargando...';
-  document.getElementById('statsModelName').textContent     = '—';
-  document.getElementById('statsLevel').textContent         = '—';
-  document.getElementById('statsType').textContent          = '—';
-  if (document.getElementById('statsSpecialValue')) document.getElementById('statsSpecialValue').textContent = '—';
-  if (document.getElementById('statsPassiveValue')) document.getElementById('statsPassiveValue').textContent = '—';
-  if (document.getElementById('statsSpecial')) document.getElementById('statsSpecial').textContent = '—';
-  if (document.getElementById('statsPassive')) document.getElementById('statsPassive').textContent = '—';
-  document.getElementById('statsTableBody').innerHTML =
-    '<tr><td colspan="5" class="loading">⏳ Consultando estadísticas reales...</td></tr>';
-  document.getElementById('statsModsGrid').innerHTML =
-    '<span style="color:#666;font-style:italic;">Cargando...</span>';
-  if (_statsRadarChart) { _statsRadarChart.destroy(); _statsRadarChart = null; }
-
-  try {
-    const res = await fetch(`${API_BASE}/api/planes/${planeId}/stats`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.error || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
-    const { plane, labels, stat_keys, units, base, current, base_raw, current_raw } = data;
-
-    document.getElementById('statsAircraftName').textContent = plane.model_name;
-    document.getElementById('statsModelName').textContent    = plane.model_name;
-    document.getElementById('statsLevel').textContent        = `Nivel ${plane.nivel}`;
-    document.getElementById('statsType').textContent         = plane.type || '—';
-    document.getElementById('currentLevel').textContent      = plane.nivel;
-
-    const localPlane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
-      ? allUserPlanes.find(p => String(p.id) === String(planeId))
-      : null;
-
-    const espNombre = localPlane?.especial_nombre || plane.especial_nombre || plane.especial;
-    const espLvl = localPlane?.especial_nivel_num || plane.especial_nivel_num;
-    const espEfct = localPlane?.especial_efecto || plane.especial_efecto;
-
-    const pasNombre = localPlane?.pasiva_nombre || plane.pasiva_nombre || plane.pasiva;
-    const pasLvl = localPlane?.pasiva_nivel_num || plane.pasiva_nivel_num;
-    const pasEfct = localPlane?.pasiva_efecto || plane.pasiva_efecto;
-
-    const specialFormatted = espNombre
-      ? `${espNombre}${espLvl ? ` (N${espLvl}: ${espEfct || 'Sin efecto'})` : ''}`
-      : 'Sin habilidad';
-    const passiveFormatted = pasNombre
-      ? `${pasNombre}${pasLvl ? ` (N${pasLvl}: ${pasEfct || 'Sin efecto'})` : ''}`
-      : 'Sin habilidad';
-
-    const specialValEl = document.getElementById('statsSpecialValue');
-    if (specialValEl) specialValEl.textContent = specialFormatted;
-    const passiveValEl = document.getElementById('statsPassiveValue');
-    if (passiveValEl) passiveValEl.textContent = passiveFormatted;
-    const specialLegacyEl = document.getElementById('statsSpecial');
-    if (specialLegacyEl) specialLegacyEl.textContent = plane.especial || espNombre || '—';
-    const passiveLegacyEl = document.getElementById('statsPassive');
-    if (passiveLegacyEl) passiveLegacyEl.textContent = plane.pasiva || pasNombre || '—';
-
-    const upgradesGrid = document.getElementById('statsUpgradesGrid');
-    if (upgradesGrid) {
-      if (plane.sistemas_desbloqueados || plane.nivel >= 6) {
-        upgradesGrid.innerHTML = `
-          <span class="mod-badge" style="border-color:rgba(56,189,248,0.4);color:#38bdf8;">
-            <strong style="color:#dde6f5;">🛡️ Fuselaje:</strong> Nv. ${plane.nivel_fuselaje || 0}/8
-          </span>
-          <span class="mod-badge" style="border-color:rgba(251,191,36,0.4);color:#fbbf24;">
-            <strong style="color:#dde6f5;">⚙️ Motor:</strong> Nv. ${plane.nivel_motor || 0}/8
-          </span>
-          <span class="mod-badge" style="border-color:rgba(168,85,247,0.4);color:#c084fc;">
-            <strong style="color:#dde6f5;">📡 Aviónica:</strong> Nv. ${plane.nivel_avionica || 0}/8
-          </span>
-          <span class="mod-badge" style="border-color:rgba(239,68,68,0.4);color:#f87171;">
-            <strong style="color:#dde6f5;">🎯 Armas:</strong> Nv. ${plane.nivel_armas || 0}/8
-          </span>
-        `;
-      } else {
-        upgradesGrid.innerHTML = '<span style="color:#64748b;font-style:italic;font-size:0.8rem;">🔒 Sistemas Upgrades 2.0 bloqueados (Requiere Nivel 6+)</span>';
-      }
-    }
-
-    const modsGrid = document.getElementById('statsModsGrid');
-    const mods = [];
-    if (plane.mod1) mods.push({ label: 'MOD 1', name: plane.mod1, type: plane.mod1_type, lvl: plane.mod1_lvl });
-    if (plane.mod2) mods.push({ label: 'MOD 2', name: plane.mod2, type: plane.mod2_type, lvl: plane.mod2_lvl });
-    const MOD_TYPE_COLOR = {
-      'Agilidad': '#3498db', 'Defensa': '#2ecc71', 'Motor': '#e67e22',
-      'Señuelos': '#9b59b6', 'Arma': '#e74c3c'
-    };
-    modsGrid.innerHTML = mods.length
-      ? mods.map(m => {
-          const color = MOD_TYPE_COLOR[m.type] || '#8899bb';
-          return `<span class="mod-badge" style="border-color:${color}40;color:${color};">
-<strong style="color:#dde6f5;">${m.label}:</strong> ${m.name}
-${m.type ? `<em style="font-size:0.75rem;opacity:0.7;"> · ${m.type}</em>` : ''}
-${m.lvl ? ` <span style="color:#d4af37;">Nv.${m.lvl}</span>` : ''}
-</span>`;
-        }).join('')
-      : '<span style="color:#556688;font-style:italic;">Sin modificaciones equipadas</span>';
-
-    const tbody = document.getElementById('statsTableBody');
-    tbody.innerHTML = stat_keys.map((key, i) => {
-      const label   = labels[i];
-      const unit    = units[key] || '';
-      const curVal  = current_raw[key];
-      const baseVal = base_raw[key];
-      const pct     = Math.round((current[key] / base[key]) * 100);
-      const barClr  = pct >= 80 ? '#2ecc71' : pct >= 50 ? '#f39c12' : '#e74c3c';
-      return `
-<tr>
-<td><strong>${label}</strong></td>
-<td class="highlight">${curVal.toLocaleString()} <span style="font-size:0.75rem;color:#667799;">${unit}</span></td>
-<td style="color:#8899bb;">${baseVal.toLocaleString()} <span style="font-size:0.75rem;">${unit}</span></td>
-<td>
-<div class="progress-cell">
-<div class="mini-bar">
-<div class="mini-bar-fill" style="width:${pct}%;background:${barClr};"></div>
-</div>
-<span style="font-size:0.78rem;color:#8899bb;">${pct}%</span>
-</div>
-</td>
-</tr>`;
-    }).join('');
-
-    const ctx = document.getElementById('aircraftRadarChart').getContext('2d');
-    _statsRadarChart = new Chart(ctx, {
-      type: 'radar',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: `Nivel ${plane.nivel}`,
-            data:  stat_keys.map(k => current[k]),
-            backgroundColor:    'rgba(52, 152, 219, 0.20)',
-            borderColor:        '#3498db',
-            borderWidth:        2.5,
-            pointBackgroundColor: '#3498db',
-            pointBorderColor:    '#0a1432',
-            pointBorderWidth:    2,
-            pointRadius:         5,
-            pointHoverRadius:    7,
-          },
-          {
-            label: 'Nivel 20 (máx)',
-            data:  stat_keys.map(k => base[k]),
-            backgroundColor:    'rgba(212, 175, 55, 0.09)',
-            borderColor:        '#d4af37',
-            borderWidth:        2,
-            borderDash:         [6, 4],
-            pointBackgroundColor: '#d4af37',
-            pointBorderColor:    '#0a1432',
-            pointBorderWidth:    2,
-            pointRadius:         4,
-            pointHoverRadius:    6,
-          }
-        ]
-      },
-      options: {
-        responsive: false,
-        animation: { duration: 700, easing: 'easeInOutQuart' },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(5, 15, 40, 0.95)',
-            titleColor:      '#d4af37',
-            bodyColor:       '#dde6f5',
-            borderColor:     'rgba(212,175,55,0.25)',
-            borderWidth:     1,
-            padding:         10,
-            callbacks: {
-              title: items => items[0].label,
-              label: item => {
-                const key     = stat_keys[item.dataIndex];
-                const unit    = units[key] || '';
-                const rawMap  = item.datasetIndex === 0 ? current_raw : base_raw;
-                const rawVal  = rawMap[key];
-                const norm    = item.raw;
-                return ` ${item.dataset.label}: ${rawVal.toLocaleString()} ${unit}  (${norm}/100)`;
-              }
-            }
-          }
-        },
-        scales: {
-          r: {
-            min: 0,
-            max: 100,
-            ticks: {
-              stepSize:        25,
-              color:           '#445566',
-              backdropColor:   'transparent',
-              font:            { size: 9 }
-            },
-            grid:        { color: 'rgba(68,85,102,0.4)' },
-            angleLines:  { color: 'rgba(68,85,102,0.4)' },
-            pointLabels: {
-              color: ctx => {
-                const key = stat_keys[ctx.index];
-                const pct = current[key] / base[key];
-                return pct >= 0.8 ? '#2ecc71' : pct >= 0.5 ? '#f39c12' : '#dde6f5';
-              },
-              font: { size: 11, weight: '600' }
-            }
-          }
-        }
-      }
-    });
-  } catch (err) {
-    console.error('Error stats aeronave:', err);
-    document.getElementById('statsAircraftName').textContent = 'Error';
-    document.getElementById('statsTableBody').innerHTML =
-      `<tr><td colspan="5" class="loading" style="color:#e74c3c;">❌ ${err.message}</td></tr>`;
-    showToast('❌ Error al cargar estadísticas: ' + err.message, 'error');
-  }
+  // Redirigir al nuevo modal con datos profundos de aeronave (v3.8.0)
+  return openAircraftDeepModal(planeId);
 }
+window.openAircraftStats = openAircraftStats;
 
 function resetPlaneFilters() {
   ['planeSearch'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
