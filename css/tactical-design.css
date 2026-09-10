@@ -1032,3 +1032,193 @@ i[data-lucide] {
   margin-bottom: 4px;
 }
 
+/* ── RECOMENDACIÓN TÁCTICA IA (Tarea 7) ─────────────────────────────────── */
+.recommendation-styles-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.rec-style-btn {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-tactical);
+  color: var(--steel-gray);
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-family: var(--font-tactical);
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rec-style-btn:hover {
+  border-color: var(--blue-telemetry);
+  color: var(--white-tactical);
+}
+
+.rec-style-btn.active {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: var(--blue-telemetry);
+  color: #93c5fd;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.25);
+}
+
+.deep-recommendation-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.rec-build-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.rec-build-item {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ── PLANIFICADOR DE UPGRADES 2.0 (Tarea 8) ───────────────────────────────── */
+.planner-modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-tactical);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.planner-system {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.planner-system-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--white-tactical);
+}
+
+.planner-val-badge {
+  background: rgba(96, 165, 250, 0.2);
+  color: var(--blue-telemetry);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.planner-system input[type="range"] {
+  width: 100%;
+  accent-color: var(--blue-telemetry);
+  cursor: pointer;
+}
+
+.planner-cost {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.planner-cost h3,
+.planner-stats h3 {
+  margin: 0 0 10px 0;
+  font-size: 0.92rem;
+  color: var(--gold-rank);
+}
+
+.planner-cost-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.planner-cost-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cost-label {
+  font-size: 0.85rem;
+  color: var(--steel-gray);
+}
+
+.cost-val {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.planner-stats {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.planner-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.planner-stat-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 10px;
+  text-align: center;
+}
+
+.stat-title {
+  font-size: 0.78rem;
+  color: var(--steel-gray);
+  margin-bottom: 4px;
+}
+
+.stat-number {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--white-tactical);
+}
+
+.stat-diff {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  margin-top: 2px;
+  color: var(--green-tactical);
+}
+
+

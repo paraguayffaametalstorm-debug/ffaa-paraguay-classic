@@ -588,7 +588,11 @@ export async function getPlaneDetails(req, res, next) {
       type: modelType,
       nivel: plane.nivel,
       especial_nombre: plane.especial_nombre,
+      especial_nivel_num: plane.especial_nivel_num,
+      especial_efecto: plane.especial_efecto,
       pasiva_nombre: plane.pasiva_nombre,
+      pasiva_nivel_num: plane.pasiva_nivel_num,
+      pasiva_efecto: plane.pasiva_efecto,
       mod1_id: plane.mod1_id,
       mod1_lvl: plane.mod1_lvl,
       mod2_id: plane.mod2_id,
@@ -709,7 +713,9 @@ export async function exportPlanesCSV(req, res, next) {
     const headers = [
       'ID', 'Modelo', 'Tipo', 'Nivel', 
       'Fuselaje_Nv', 'Motor_Nv', 'Avionica_Nv', 'Armas_Nv', 'Promedio_Sistemas',
-      'Habilidad_Especial', 'Habilidad_Pasiva', 'Mod1', 'Mod1_Nivel', 'Mod2', 'Mod2_Nivel'
+      'Habilidad_Especial', 'Especial_Nivel', 'Especial_Efecto',
+      'Habilidad_Pasiva', 'Pasiva_Nivel', 'Pasiva_Efecto',
+      'Mod1', 'Mod1_Nivel', 'Mod2', 'Mod2_Nivel'
     ];
 
     const catalog = await getFullCatalogModels(supabase);
@@ -734,7 +740,11 @@ export async function exportPlanesCSV(req, res, next) {
         nw,
         avg,
         p.especial_nombre || '',
+        p.especial_nivel_num || '',
+        p.especial_efecto || '',
         p.pasiva_nombre || '',
+        p.pasiva_nivel_num || '',
+        p.pasiva_efecto || '',
         p.mod1_id || '',
         p.mod1_lvl || '',
         p.mod2_id || '',
@@ -830,7 +840,11 @@ export async function getPlaneStats(req, res, next) {
         type: modelType,
         nivel: plane.nivel,
         especial: plane.especial_nombre,
+        especial_nivel_num: plane.especial_nivel_num,
+        especial_efecto: plane.especial_efecto,
         pasiva: plane.pasiva_nombre,
+        pasiva_nivel_num: plane.pasiva_nivel_num,
+        pasiva_efecto: plane.pasiva_efecto,
         mod1: mod1Obj ? mod1Obj.name : plane.mod1_id,
         mod1_type: mod1Obj?.type || null,
         mod1_lvl: plane.mod1_lvl,
@@ -855,5 +869,92 @@ export async function getPlaneStats(req, res, next) {
   } catch (err) {
     console.error('❌ [Hangar] Error calculando estadísticas de aeronave:', err);
     return res.status(500).json({ success: false, message: 'Error interno en estadísticas', error: err.message });
+  }
+}
+
+/**
+ * Recomendar build militar táctica según estilo de juego (Tarea 7)
+ */
+export async function getRecommendedBuild(req, res) {
+  try {
+    const rawId = req.params.planeId || req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
+    const { playstyle } = req.query; // 'agresivo', 'defensivo', 'apoyo'
+    const supabase = getSupabase();
+    
+    // Obtener datos del avión
+    let plane = null;
+    if (supabase) {
+      const { data } = await supabase
+        .from('planes')
+        .select('*')
+        .eq('id', planeId)
+        .single();
+      plane = data;
+    }
+    
+    // Lógica de recomendación
+    const recommendations = {
+      agresivo: {
+        fuselaje: 4,
+        motor: 8,
+        avionica: 2,
+        armas: 7,
+        mods: ['m1', 'm9'] // Giro Temerario, Armas Aniquiladoras
+      },
+      defensivo: {
+        fuselaje: 8,
+        motor: 4,
+        avionica: 6,
+        armas: 3,
+        mods: ['m3', 'm7'] // Resistencia a Explosiones, Bengalas Disruptivas
+      },
+      apoyo: {
+        fuselaje: 5,
+        motor: 5,
+        avionica: 8,
+        armas: 4,
+        mods: ['m2', 'm10'] // Maniobrabilidad Ideal, Guiado Mejorado
+      }
+    };
+    
+    const build = recommendations[playstyle] || recommendations.agresivo;
+    
+    // Calcular costos
+    const UPGRADE_COSTS = {
+      1: { piezas: 100, avanzadas: 0 },
+      2: { piezas: 250, avanzadas: 0 },
+      3: { piezas: 500, avanzadas: 10 },
+      4: { piezas: 800, avanzadas: 25 },
+      5: { piezas: 1200, avanzadas: 50 },
+      6: { piezas: 1800, avanzadas: 100 },
+      7: { piezas: 2500, avanzadas: 200 },
+      8: { piezas: 3500, avanzadas: 350 }
+    };
+    
+    let totalPiezas = 0;
+    let totalAvanzadas = 0;
+    
+    ['fuselaje', 'motor', 'avionica', 'armas'].forEach(sistema => {
+      const nivel = build[sistema];
+      for (let i = 1; i <= nivel; i++) {
+        totalPiezas += UPGRADE_COSTS[i].piezas;
+        totalAvanzadas += UPGRADE_COSTS[i].avanzadas;
+      }
+    });
+    
+    return res.json({
+      success: true,
+      playstyle: playstyle || 'agresivo',
+      plane,
+      build,
+      cost: {
+        piezas: totalPiezas,
+        avanzadas: totalAvanzadas
+      }
+    });
+  } catch (err) {
+    console.error('❌ Error en getRecommendedBuild:', err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 }
