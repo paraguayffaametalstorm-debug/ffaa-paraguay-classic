@@ -137,6 +137,40 @@ fc657f0 refactor: implement helper functions for typed queries
 
 ---
 
+### 🔹 Fix #7: Sistema de Aviones - Correcciones y Mejoras (2026-09-10)
+
+**Fecha:** 2026-09-10  
+**Archivos:** `planes.controller.js`, `audit.js`, `aircraft-stats-modal.html`, `views.js`  
+
+**Problemas corregidos:**
+1. **Funciones que leen nombre pero no nivel:** Las funciones `getPlaneDetails`, `exportPlanesCSV`, y `getPlaneStats` solo leían `especial_nombre` y `pasiva_nombre`, pero no `especial_nivel_num`, `especial_efecto`, `pasiva_nivel_num`, `pasiva_efecto`.
+2. **Auditoría (UUID):** El sistema intentaba insertar `userId: 1` (INTEGER) en una columna UUID.
+3. **Columna `actor_id` en `audit_logs`:** La tabla no tenía la columna.
+4. **Falta de IA de recomendación.**
+5. **Falta de Upgrade Planner.**
+
+**Solución:**
+1. Agregar las columnas nuevas en las funciones afectadas.
+2. Convertir `userId` (INTEGER) a UUID en `logSecurityEvent`.
+3. Convertir `actorId` (INTEGER) a UUID en `logAuditChange`.
+4. Implementar `getRecommendedBuild` en el backend y `loadPlaneRecommendation` en el frontend.
+5. Implementar `openUpgradePlanner` y `saveBuild` en el frontend.
+
+**Resultado:**
+- ✅ 39 modelos en el catálogo
+- ✅ 10 mods disponibles
+- ✅ 4 sistemas mejorables
+- ✅ IA de Recomendación (3 estilos)
+- ✅ Upgrade Planner (previsualización)
+- ✅ Sin errores de auditoría
+- ✅ CSV con datos completos
+
+**Estado:** ✅ RESUELTO Y PROBADO
+
+**Commits:** 6dceffc (feat(ui): add tactical build recommendations and planner)
+
+---
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |
@@ -146,5 +180,8 @@ fc657f0 refactor: implement helper functions for typed queries
 | `src/controllers/admin.controller.js` | Modificación de rangos militares y estado de cuenta | 🟢 ESTABLE |
 | `src/controllers/profile.controller.js` | Persistencia de datos personales y teléfono de alertas | 🟢 ESTABLE |
 | `src/controllers/performances.controller.js` | Historial de tokens y sincronización de semáforo | 🟢 ESTABLE |
+| `src/controllers/planes.controller.js` | Lectura de habilidades, CSV completo e IA de builds tácticas | 🟢 ESTABLE |
+| `src/utils/audit.js` | Resolución de UUIDs en eventos de seguridad y auditoría | 🟢 ESTABLE |
+| `components/aircraft-stats-modal.html` | Modal de datos profundos y markup de Upgrade Planner 2.0 | 🟢 ESTABLE |
 | `planes (Supabase)` | Normalización 1NF (UNIQUE, FK, CHECKs, habilidades) | 🟢 ESTABLE |
 | `components/change-password-modal.html` | Modal de actualización táctica (Workaround: ENTER) | 🟡 FIX UI PENDIENTE |

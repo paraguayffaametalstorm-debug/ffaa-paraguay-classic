@@ -336,7 +336,64 @@ El sistema cuenta con un flujo seguro y robusto para la incorporación de nuevos
 
 ---
 
-## ✈️ Estructura de `planes` (Hangar de Pilotos)
+## ✈️ Sistema de Aviones (Hangar Militar)
+
+### Catálogo de Aeronaves
+
+El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, etc.) con las siguientes características:
+
+- **Tipo:** Ligero, Mediano, Pesado, Interceptor, Ataque
+- **Estadísticas:** Velocidad, Agilidad, Blindaje, Potencia de Armas
+- **Habilidades Especiales:** 3 niveles
+- **Habilidades Pasivas:** 5 niveles
+- **Sistemas Mejorables:** Fuselaje, Motor, Aviónica, Armas (0-8)
+
+### Sistema de Mods
+
+**10 mods disponibles (5 tipos, 2 por tipo):**
+
+| Tipo | Mods |
+|------|------|
+| **Agilidad** | Giro Temerario, Maniobrabilidad Ideal |
+| **Defensa** | Resistencia a las Explosiones, Blindaje de Ataque |
+| **Motor** | Quemadores Auxiliares Eficientes, Máxima Propulsión |
+| **Señuelos** | Bengalas Disruptivas, Bengalas Más Rápidas |
+| **Arma** | Armas Aniquiladoras, Guiado Mejorado |
+
+### Upgrades 2.0
+
+**4 sistemas mejorables (0-8):**
+
+| Sistema | Propósito |
+|---------|-----------|
+| **Fuselaje** | Resistencia estructural, blindaje e integridad |
+| **Motor** | Empuje, aceleración, postcombustión y velocidad punta |
+| **Aviónica** | Adquisición de radar, tiempo de enganche y ECM |
+| **Armas** | Cadencia de fuego, tiempo de recarga y daño balístico |
+
+**Desbloqueo:** Nivel de Aeronave 6+
+
+**Costos:**
+
+| Nivel | Piezas | Avanzadas |
+|-------|--------|-----------|
+| 1 | 100 | 0 |
+| 2 | 250 | 0 |
+| 3 | 500 | 10 |
+| 4 | 800 | 25 |
+| 5 | 1,200 | 50 |
+| 6 | 1,800 | 100 |
+| 7 | 2,500 | 200 |
+| 8 | 3,500 | 350 |
+
+### Interfaz de Usuario
+
+- **Carrusel Circular Infinito:** Navegación táctica con tarjeta central prominente
+- **Modal de Datos Profundos:** Estadísticas, habilidades, sistemas y mods
+- **IA de Recomendación:** 3 estilos de combate (Agresivo, Defensivo, Apoyo)
+- **Upgrade Planner:** Previsualización de builds antes de gastar recursos
+
+### Estructura de `planes`
 
 | Columna | Tipo | Propósito |
 |---------|------|-----------|
