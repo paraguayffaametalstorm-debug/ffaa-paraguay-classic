@@ -100,3 +100,60 @@
     </div>
   </div>
 </div>
+
+<!-- ==========================================================================
+     MODAL DE DATOS PROFUNDOS DE AERONAVE (v3.8.0 - C4ISR TELEMETRÍA AVANZADA)
+     ========================================================================== -->
+<div id="aircraftDeepModal" class="modal">
+  <div class="modal-content aircraft-deep-modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="deepPlaneName">Aeronave Militar</h2>
+        <div class="deep-plane-meta">
+          <span class="deep-plane-id" id="deepPlaneId">🏷️ —</span>
+          <span class="deep-plane-type" id="deepPlaneType">Caza de Combate</span>
+          <span class="deep-plane-level" id="deepPlaneLevel">Nv. 1</span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeAircraftDeepModal()" aria-label="Cerrar modal">✕</button>
+    </div>
+
+    <div class="modal-body" style="max-height:calc(85vh - 160px);overflow-y:auto;padding-right:4px;">
+      <!-- Estadísticas -->
+      <section class="deep-section">
+        <h3>📊 Estadísticas</h3>
+        <div class="deep-stats-grid" id="deepStatsGrid"></div>
+      </section>
+
+      <!-- Habilidades -->
+      <section class="deep-section">
+        <h3>🎯 Habilidad Especial</h3>
+        <div class="deep-skill" id="deepSpecialSkill"></div>
+      </section>
+
+      <section class="deep-section">
+        <h3>🛡️ Habilidad Pasiva</h3>
+        <div class="deep-skill" id="deepPassiveSkill"></div>
+      </section>
+
+      <!-- Sistemas Upgrades 2.0 -->
+      <section class="deep-section">
+        <h3>🔧 Sistemas Upgrades 2.0 (Nv 6+)</h3>
+        <div class="deep-systems-grid" id="deepSystemsGrid"></div>
+      </section>
+
+      <!-- Mods -->
+      <section class="deep-section">
+        <h3>🔩 Mods Equipados</h3>
+        <div class="deep-mods-grid" id="deepModsGrid"></div>
+      </section>
+    </div>
+
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid rgba(212,175,55,0.25);">
+      <button class="btn-secondary" onclick="editPlane(window.currentPlaneId || currentPlaneId)">✏️ Editar</button>
+      <button class="btn-danger" onclick="deletePlane(window.currentPlaneId || currentPlaneId)">🗑️ Eliminar</button>
+      <button class="btn-primary" onclick="exportPlane(window.currentPlaneId || currentPlaneId)">📊 Exportar</button>
+    </div>
+  </div>
+</div>
+
