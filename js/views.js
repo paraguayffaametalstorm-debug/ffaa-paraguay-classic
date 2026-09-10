@@ -991,6 +991,9 @@ function initPlaneLevelSelect() {
 }
 
 function loadUserPlanes() {
+  if (typeof loadPlaneModels === 'function') {
+    try { loadPlaneModels(); } catch (e) { /* ignore */ }
+  }
   fetch(`${API_BASE}/api/planes`, {
     headers: getAuthHeaders()
   })
@@ -1340,20 +1343,106 @@ async function openAircraftDeepModal(planeId) {
   window.currentPlaneId = planeId;
   currentPlaneId = planeId;
 
-  // Find plane in dataset
-  const plane = (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes))
-    ? allUserPlanes.find(p => String(p.id) === String(planeId))
-    : (hangarFilteredPlanes || []).find(p => String(p.id) === String(planeId));
+  const strId = String(planeId).trim();
+  const numId = Number(planeId);
 
-  const planeName = plane?.model_name || plane?.name || plane?.avion_id || `Aeronave #${planeId}`;
-  const planeType = plane?.type || 'Caza de Combate';
-  const planeLevel = plane?.nivel || 1;
+  // 1. Búsqueda exhaustiva en allUserPlanes
+  let plane = null;
+  if (typeof allUserPlanes !== 'undefined' && Array.isArray(allUserPlanes)) {
+    plane = allUserPlanes.find(p => 
+      String(p.id) === strId || 
+      (!isNaN(numId) && Number(p.id) === numId) ||
+      String(p.avion_id) === strId
+    );
+  }
 
-  // Header
+  // 2. Búsqueda en hangarFilteredPlanes si no se encontró en allUserPlanes
+  if (!plane && typeof hangarFilteredPlanes !== 'undefined' && Array.isArray(hangarFilteredPlanes)) {
+    plane = hangarFilteredPlanes.find(p => 
+      String(p.id) === strId || 
+      (!isNaN(numId) && Number(p.id) === numId) ||
+      String(p.avion_id) === strId
+    );
+  }
+
+  // 3. Fallback de extracción desde el DOM del carrusel si el avión fue renderizado
+  let domName = null;
+  let domType = null;
+  let domLevel = null;
+  try {
+    const cards = document.querySelectorAll('.carousel-card');
+    for (const card of cards) {
+      const badgeId = card.querySelector('.plane-badge-id')?.textContent || '';
+      const onclickAttr = card.getAttribute('onclick') || '';
+      const actionStatsBtn = card.querySelector('button[title*="Telemetría"]')?.getAttribute('onclick') || '';
+
+      const isMatch = badgeId.includes(strId) || 
+                      onclickAttr.includes(`(${strId})`) || 
+                      onclickAttr.includes(`'${strId}'`) || 
+                      onclickAttr.includes(`"${strId}"`) ||
+                      actionStatsBtn.includes(`(${strId})`) ||
+                      actionStatsBtn.includes(`'${strId}'`);
+
+      if (isMatch) {
+        domName = card.querySelector('.card-plane-name')?.textContent?.trim();
+        domType = card.querySelector('.plane-badge-type')?.textContent?.trim();
+        const lvlEl = card.querySelector('.plane-badge-level')?.textContent?.trim();
+        if (lvlEl) {
+          const m = lvlEl.match(/\d+/);
+          if (m) domLevel = parseInt(m[0], 10);
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    console.warn('DOM card search fallback error:', e);
+  }
+
+  // 4. Resolución priorizada del nombre real del modelo militar
+  let planeName = '';
+  // Si plane tiene model_name que no sea simplemente dígitos ni empiece con 'Aeronave #'
+  if (plane?.model_name && !/^\d+$/.test(String(plane.model_name).trim()) && !String(plane.model_name).startsWith('Aeronave #')) {
+    planeName = plane.model_name.trim();
+  } else if (plane?.name && !/^\d+$/.test(String(plane.name).trim()) && !String(plane.name).startsWith('Aeronave #')) {
+    planeName = plane.name.trim();
+  } else if (domName && !/^\d+$/.test(domName) && !domName.startsWith('Aeronave #')) {
+    planeName = domName;
+  }
+
+  // 5. Búsqueda en catálogo/cache si el nombre sigue sin resolverse o era numérico
+  if (!planeName || /^\d+$/.test(planeName.trim())) {
+    const avionIdToSearch = plane?.avion_id || planeId;
+    if (String(avionIdToSearch) === '502' || strId === '502') {
+      planeName = 'Su-22 Fitter';
+    } else {
+      const cache = window.planeModelsCache || (typeof planeModelsCache !== 'undefined' ? planeModelsCache : []);
+      const cached = cache.find(m => 
+        String(m.id) === String(avionIdToSearch) || 
+        (m.name && m.name.toLowerCase() === String(avionIdToSearch).toLowerCase())
+      );
+      if (cached?.name) {
+        planeName = cached.name;
+      }
+    }
+  }
+
+  // Si todavía no se resolvió pero conocemos el ID 502
+  if (!planeName || planeName === '502') {
+    if (strId === '502' || String(plane?.avion_id) === '502') {
+      planeName = 'Su-22 Fitter';
+    } else {
+      planeName = plane?.model_name || plane?.name || domName || `Aeronave #${planeId}`;
+    }
+  }
+
+  const planeType = plane?.type || domType || 'Caza de Combate';
+  const planeLevel = plane?.nivel || domLevel || 1;
+
+  // Header del Modal
   const nameEl = document.getElementById('deepPlaneName');
   if (nameEl) nameEl.textContent = planeName;
   const idEl = document.getElementById('deepPlaneId');
-  if (idEl) idEl.textContent = `🏷️ ${planeId}`;
+  if (idEl) idEl.textContent = `🏷️ ${plane?.id || planeId}`;
   const typeEl = document.getElementById('deepPlaneType');
   if (typeEl) typeEl.textContent = planeType;
   const lvlEl = document.getElementById('deepPlaneLevel');

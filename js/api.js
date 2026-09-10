@@ -576,6 +576,7 @@ function loadPlaneModels() {
     })
     .then(data => {
       planeModelsCache = Array.isArray(data) ? data : (data.models || []);
+      window.planeModelsCache = planeModelsCache;
       const select = document.getElementById('planeModel');
       if (!select) return;
       select.innerHTML = '<option value="">-- Seleccionar Avión --</option>';
