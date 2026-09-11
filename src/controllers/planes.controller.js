@@ -9,6 +9,7 @@ import { getSupabase } from '../db/supabase.js';
 import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
+import { getUpgradeEffects, calculateSystemBonus } from '../utils/upgradeEffects.js';
 
 // Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
@@ -805,10 +806,22 @@ export async function getPlaneStats(req, res, next) {
     };
 
     const levelFactor = (plane.nivel || 1) / 20;
-    const bonusMotor = 1 + ((plane.nivel_motor || 0) * 0.025);
-    const bonusFuselaje = 1 + ((plane.nivel_fuselaje || 0) * 0.03);
-    const bonusArmas = 1 + ((plane.nivel_armas || 0) * 0.035);
-    const bonusAvionica = 1 + ((plane.nivel_avionica || 0) * 0.03);
+
+    // ✅ CARGAR EFECTOS DE UPGRADES 2.0
+    const effects = await getUpgradeEffects(supabase);
+
+    // ✅ CALCULAR BONUS USANDO LOS EFECTOS OFICIALES
+    // La ruta se lee de la BD (columna ruta_fuselaje, ruta_motor, etc.)
+    // Si no existe, se usa 'A' por defecto
+    const rutaFuselaje = plane.ruta_fuselaje || 'A';
+    const rutaMotor = plane.ruta_motor || 'A';
+    const rutaAvionica = plane.ruta_avionica || 'A';
+    const rutaArmas = plane.ruta_armas || 'A';
+
+    const bonusMotor = calculateSystemBonus(effects, 'motor', plane.nivel_motor, rutaMotor);
+    const bonusFuselaje = calculateSystemBonus(effects, 'fuselaje', plane.nivel_fuselaje, rutaFuselaje);
+    const bonusArmas = calculateSystemBonus(effects, 'armas', plane.nivel_armas, rutaArmas);
+    const bonusAvionica = calculateSystemBonus(effects, 'avionica', plane.nivel_avionica, rutaAvionica);
 
     const current_raw = {
       speed: Math.round(max_raw.speed * (0.6 + 0.4 * levelFactor) * bonusMotor),
