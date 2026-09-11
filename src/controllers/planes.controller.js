@@ -12,6 +12,7 @@ import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
 import { getUpgradeEffects, calculateSystemBonus } from '../utils/upgradeEffects.js';
 import { getModEffects, calculateModBonus, getModDescription } from '../utils/modEffects.js';
 import { getPlaneTraitsWithInfo } from '../utils/traits.js';
+import { getUpgradeNodes, getNode, calculateNodeEffects } from '../utils/upgradeNodes.js';
 
 // Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
@@ -629,10 +630,128 @@ export async function getPlaneDetails(req, res, next) {
     const modelType = model?.type || plane.type || 'Caza de Combate';
 
     const isUnlocked = (plane.nivel || 1) >= 6;
+    const planeLvl = plane.nivel || 1;
     const nf = plane.nivel_fuselaje || 0;
     const nm = plane.nivel_motor || 0;
     const na = plane.nivel_avionica || 0;
     const nw = plane.nivel_armas || 0;
+
+    // Cargar nodos de Upgrades 2.0 (Supabase con fallback y caché en memoria)
+    const allNodes = await getUpgradeNodes(supabase);
+
+    const sistemasDisponibles = model?.sistemas_disponibles || plane?.sistemas_disponibles || {
+      fuselaje: true,
+      motor: true,
+      avionica: true,
+      canones: 'precision',
+      misiles_ir: true
+    };
+
+    // Constructor de sistema con nodos 2.0 (12 nodos, rutas A/B, nodo actual y siguiente)
+    function buildSystemObject(sysKey, nodeSysKey, nombre, descripcion, nivel) {
+      const allSysNodes = (allNodes && allNodes[nodeSysKey]) ? [
+        ...Object.values(allNodes[nodeSysKey].base || {}),
+        ...Object.values(allNodes[nodeSysKey].A || {}),
+        ...Object.values(allNodes[nodeSysKey].B || {})
+      ].sort((a, b) => a.nivel - b.nivel || (a.ruta === 'base' ? -1 : a.ruta.localeCompare(b.ruta))) : [];
+
+      const rutasSys = plane[`rutas_${sysKey}`] || plane[`rutas_${nodeSysKey}`] || {};
+      const currentRoute = nivel <= 4 ? 'base' : (rutasSys[nivel] || plane[`ruta_${sysKey}`] || plane[`ruta_${nodeSysKey}`] || 'A');
+      const currentNode = nivel > 0 ? (allNodes?.[nodeSysKey]?.[currentRoute]?.[nivel] || null) : null;
+
+      const nextLevel = nivel + 1;
+      const nextRoute = nextLevel <= 4 ? 'base' : (rutasSys[nextLevel] || 'A');
+      const nextNode = nextLevel <= 8 ? (allNodes?.[nodeSysKey]?.[nextRoute]?.[nextLevel] || null) : null;
+
+      const rutasDisponibles = {};
+      [5, 6, 7, 8].forEach(lvl => {
+        const nodeA = allNodes?.[nodeSysKey]?.A?.[lvl];
+        const nodeB = allNodes?.[nodeSysKey]?.B?.[lvl];
+        rutasDisponibles[lvl] = [
+          { ruta: 'A', node_name: nodeA?.node_name || '', effects: nodeA?.effects || {}, requirement_level: nodeA?.requirement_level || 12 },
+          { ruta: 'B', node_name: nodeB?.node_name || '', effects: nodeB?.effects || {}, requirement_level: nodeB?.requirement_level || 12 }
+        ];
+      });
+
+      const nodosCompletos = allSysNodes.map(n => ({
+        id: n.id,
+        sistema: n.sistema,
+        nivel: n.nivel,
+        ruta: n.ruta,
+        node_name: n.node_name,
+        effects: n.effects,
+        requirement_level: n.requirement_level,
+        cost_piezas: n.cost_piezas || 0,
+        cost_avanzadas: n.cost_avanzadas || 0,
+        desbloqueado: planeLvl >= (n.requirement_level || 6) && nivel >= n.nivel
+      }));
+
+      return {
+        nombre,
+        descripcion,
+        nivel,
+        max: 8,
+        disponible: isUnlocked,
+        costo_siguiente: UPGRADE_COSTS[nivel + 1] || null,
+        nodo_actual: currentNode ? {
+          nivel,
+          ruta: currentRoute,
+          node_name: currentNode.node_name,
+          effects: currentNode.effects || {}
+        } : null,
+        nodo_siguiente: nextNode ? {
+          nivel: nextLevel,
+          ruta: nextRoute,
+          node_name: nextNode.node_name,
+          effects: nextNode.effects || {},
+          requirement_level: nextNode.requirement_level || 6,
+          desbloqueado: planeLvl >= (nextNode.requirement_level || 6)
+        } : null,
+        rutas_disponibles: rutasDisponibles,
+        nodos_completos: nodosCompletos
+      };
+    }
+
+    // Filtrar y armar los sistemas disponibles del avión
+    const sistemas = {};
+
+    if (sistemasDisponibles.fuselaje !== false) {
+      sistemas.fuselaje = buildSystemObject('fuselaje', 'fuselaje', 'Fuselaje', 'Resistencia estructural, blindaje e integridad', nf);
+    }
+
+    if (sistemasDisponibles.motor !== false) {
+      sistemas.motor = buildSystemObject('motor', 'motor', 'Motor', 'Empuje, aceleración, postcombustión y velocidad punta', nm);
+    }
+
+    if (sistemasDisponibles.avionica !== false) {
+      sistemas.avionica = buildSystemObject('avionica', 'avionica', 'Aviónica', 'Adquisición de radar, tiempo de enganche y ECM', na);
+    }
+
+    // Armas base / compatibilidad general
+    const primaryCannonSys = sistemasDisponibles.canones === 'asalto' ? 'canones_asalto' : 'canones_precision';
+    if (sistemasDisponibles.canones !== null && sistemasDisponibles.armas !== false) {
+      sistemas.armas = buildSystemObject('armas', primaryCannonSys, 'Armas', 'Cadencia de fuego, tiempo de recarga y daño balístico', nw);
+    }
+
+    // Armas específicas según sistemas_disponibles
+    if (sistemasDisponibles.canones === 'precision' || sistemasDisponibles.canones_precision === true || (Array.isArray(sistemasDisponibles.armas) && sistemasDisponibles.armas.includes('canon_precision'))) {
+      sistemas.canones_precision = buildSystemObject('canones_precision', 'canones_precision', 'Cañones de Precisión', 'Balística de alta precisión, daño crítico y disparos a distancia', plane.nivel_canones_precision || nw);
+    }
+    if (sistemasDisponibles.canones === 'asalto' || sistemasDisponibles.canones_asalto === true || (Array.isArray(sistemasDisponibles.armas) && sistemasDisponibles.armas.includes('canon_asalto'))) {
+      sistemas.canones_asalto = buildSystemObject('canones_asalto', 'canones_asalto', 'Cañones de Asalto', 'Fuego de saturación, cadencia masiva y penetración pesada', plane.nivel_canones_asalto || nw);
+    }
+    if (sistemasDisponibles.misiles_ir === true || (Array.isArray(sistemasDisponibles.armas) && (sistemasDisponibles.armas.includes('misiles_ir') || sistemasDisponibles.armas.includes('misiles_corto')))) {
+      sistemas.misiles_ir = buildSystemObject('misiles_ir', 'misiles_ir', 'Misiles IR (Corto Alcance)', 'Misiles térmicos de persecución y combate cercano', plane.nivel_misiles_ir || nw);
+    }
+    if (sistemasDisponibles.cohetes === true || (Array.isArray(sistemasDisponibles.armas) && sistemasDisponibles.armas.includes('cohetes'))) {
+      sistemas.cohetes = buildSystemObject('cohetes', 'cohetes', 'Cohetes de Asalto', 'Salvas de cohetes no guiados de alto impacto', plane.nivel_cohetes || nw);
+    }
+    if (sistemasDisponibles.misiles_manual === true || (Array.isArray(sistemasDisponibles.armas) && (sistemasDisponibles.armas.includes('misiles_manual') || sistemasDisponibles.armas.includes('misiles_guiados')))) {
+      sistemas.misiles_manual = buildSystemObject('misiles_manual', 'misiles_manual', 'Misiles Guiados Manuales', 'Misiles por comando manual para impacto quirúrgico', plane.nivel_misiles_manual || nw);
+    }
+    if (sistemasDisponibles.misiles_radar === true || sistemasDisponibles.misiles_largo === true || (Array.isArray(sistemasDisponibles.armas) && (sistemasDisponibles.armas.includes('misiles_radar') || sistemasDisponibles.armas.includes('misiles_bvr') || sistemasDisponibles.armas.includes('misiles_medio')))) {
+      sistemas.misiles_radar = buildSystemObject('misiles_radar', 'misiles_radar', 'Misiles de Radar (Largo Alcance)', 'Misiles guiados por radar BVR más allá del alcance visual', plane.nivel_misiles_radar || nw);
+    }
 
     const planeDetail = {
       id: plane.id,
@@ -654,40 +773,8 @@ export async function getPlaneDetails(req, res, next) {
       desbloqueado_upgrades: isUnlocked,
       recursos_piezas: plane.recursos_piezas || 0,
       recursos_avanzadas: plane.recursos_avanzadas || 0,
-      sistemas: {
-        fuselaje: {
-          nombre: 'Fuselaje',
-          descripcion: 'Resistencia estructural, blindaje e integridad',
-          nivel: nf,
-          max: 8,
-          disponible: isUnlocked,
-          costo_siguiente: UPGRADE_COSTS[nf + 1] || null
-        },
-        motor: {
-          nombre: 'Motor',
-          descripcion: 'Empuje, aceleración, postcombustión y velocidad punta',
-          nivel: nm,
-          max: 8,
-          disponible: isUnlocked,
-          costo_siguiente: UPGRADE_COSTS[nm + 1] || null
-        },
-        avionica: {
-          nombre: 'Aviónica',
-          descripcion: 'Adquisición de radar, tiempo de enganche y ECM',
-          nivel: na,
-          max: 8,
-          disponible: isUnlocked,
-          costo_siguiente: UPGRADE_COSTS[na + 1] || null
-        },
-        armas: {
-          nombre: 'Armas',
-          descripcion: 'Cadencia de fuego, tiempo de recarga y daño balístico',
-          nivel: nw,
-          max: 8,
-          disponible: isUnlocked,
-          costo_siguiente: UPGRADE_COSTS[nw + 1] || null
-        }
-      },
+      sistemas_disponibles: sistemasDisponibles,
+      sistemas,
       upgrade_costs: UPGRADE_COSTS
     };
 
