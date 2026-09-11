@@ -16,6 +16,98 @@ window.escapeHTML = function(str) {
 };
 const escapeHTML = window.escapeHTML;
 
+/**
+ * Obtener la clase CSS según el tipo de avión
+ * @param {string} tipo - Tipo del avión (Ligero, Mediano, Pesado, Interceptor, Ataque)
+ * @returns {string} - Clase CSS (light, medium, heavy, interceptor, attack)
+ */
+function getTypeClass(tipo) {
+  const map = {
+    'Ligero': 'light',
+    'Mediano': 'medium',
+    'Pesado': 'heavy',
+    'Interceptor': 'interceptor',
+    'Ataque': 'attack',
+    'Light': 'light',
+    'Medium': 'medium',
+    'Heavy': 'heavy',
+    'Attack': 'attack'
+  };
+  if (tipo && map[tipo]) return map[tipo];
+  if (tipo) {
+    const t = String(tipo).toLowerCase();
+    if (t.includes('liger') || t.includes('light')) return 'light';
+    if (t.includes('pesad') || t.includes('heavy')) return 'heavy';
+    if (t.includes('intercept')) return 'interceptor';
+    if (t.includes('ataque') || t.includes('attack')) return 'attack';
+    if (t.includes('median') || t.includes('medium')) return 'medium';
+  }
+  return map[tipo] || 'medium';
+}
+
+/**
+ * Obtener el color HEX según el tipo de avión
+ * @param {string} tipo - Tipo del avión
+ * @returns {string} - Color HEX
+ */
+function getTypeColor(tipo) {
+  const map = {
+    'Ligero': '#9452de',
+    'Mediano': '#d38039',
+    'Pesado': '#c54842',
+    'Interceptor': '#2e92ce',
+    'Ataque': '#2ba694',
+    'Light': '#9452de',
+    'Medium': '#d38039',
+    'Heavy': '#c54842',
+    'Attack': '#2ba694'
+  };
+  if (tipo && map[tipo]) return map[tipo];
+  const cls = getTypeClass(tipo);
+  const colorMap = {
+    'light': '#9452de',
+    'medium': '#d38039',
+    'heavy': '#c54842',
+    'interceptor': '#2e92ce',
+    'attack': '#2ba694'
+  };
+  return colorMap[cls] || '#6B7280';
+}
+
+/**
+ * Obtener el ícono según el tipo de avión
+ * @param {string} tipo - Tipo del avión
+ * @returns {string} - Emoji del tipo
+ */
+function getTypeIcon(tipo) {
+  const map = {
+    'Ligero': '🟣',
+    'Mediano': '🟠',
+    'Pesado': '🔴',
+    'Interceptor': '🔵',
+    'Ataque': '🟢',
+    'Light': '🟣',
+    'Medium': '🟠',
+    'Heavy': '🔴',
+    'Attack': '🟢'
+  };
+  if (tipo && map[tipo]) return map[tipo];
+  const cls = getTypeClass(tipo);
+  const iconMap = {
+    'light': '🟣',
+    'medium': '🟠',
+    'heavy': '🔴',
+    'interceptor': '🔵',
+    'attack': '🟢'
+  };
+  return iconMap[cls] || '⚪';
+}
+
+// Exponer globalmente
+window.getTypeClass = getTypeClass;
+window.getTypeColor = getTypeColor;
+window.getTypeIcon = getTypeIcon;
+
 const VIEWS = {
   DASHBOARD:        'appView',
   PERFORMANCE:      'performanceForm',
@@ -1292,7 +1384,7 @@ function updateCarouselView() {
       `;
 
       return `
-        <div class="carousel-card ${positionClass}" onclick="handleCarouselCardClick(${index}, ${plane.id})" data-index="${index}" title="${diff === 0 ? 'Click para ver datos profundos' : 'Click para centrar esta aeronave'}">
+        <div class="carousel-card ${positionClass} type-${getTypeClass(plane.type)}" onclick="handleCarouselCardClick(${index}, ${plane.id})" data-index="${index}" title="${diff === 0 ? 'Click para ver datos profundos' : 'Click para centrar esta aeronave'}">
           <div>
             <!-- Header: Plane Name Prominent, ID, Level, Type -->
             <div class="card-plane-header">
@@ -1300,7 +1392,7 @@ function updateCarouselView() {
               <div class="card-plane-meta">
                 <span class="plane-badge-id">🏷️ ${plane.id}</span>
                 <span class="plane-badge-level">Nv. ${planeLevel}</span>
-                <span class="plane-badge-type">${planeType}</span>
+                <span class="plane-badge-type type-badge ${getTypeClass(plane.type)}">${getTypeIcon(plane.type)} ${planeType}</span>
               </div>
             </div>
 
@@ -1569,9 +1661,12 @@ async function openAircraftDeepModal(planeId) {
   const idEl = document.getElementById('deepPlaneId');
   if (idEl) idEl.textContent = `🏷️ ${plane?.id || planeId}`;
   const typeEl = document.getElementById('deepPlaneType');
-  if (typeEl) typeEl.textContent = planeType;
+  if (typeEl) {
+    typeEl.className = `deep-plane-type type-badge ${getTypeClass(planeType)}`;
+    typeEl.innerHTML = `${getTypeIcon(planeType)} ${escapeHtml(planeType)}`;
+  }
   const lvlEl = document.getElementById('deepPlaneLevel');
-  if (lvlEl) lvlEl.textContent = `Nv. ${planeLevel}`;
+  if (lvlEl) lvlEl.innerHTML = `Nv. <span>${planeLevel}</span>`;
 
   // Skills
   const specialEl = document.getElementById('deepSpecialSkill');
@@ -1727,6 +1822,13 @@ async function openAircraftDeepModal(planeId) {
       const planeDetails = detailsJson.plane || detailsJson.data;
       if (planeDetails) {
         plane = { ...plane, ...planeDetails };
+        if (plane.type) {
+          const typeEl = document.getElementById('deepPlaneType');
+          if (typeEl) {
+            typeEl.className = `deep-plane-type type-badge ${getTypeClass(plane.type)}`;
+            typeEl.innerHTML = `${getTypeIcon(plane.type)} ${escapeHtml(plane.type)}`;
+          }
+        }
         if (plane.sistemas) {
           renderDeepModalSystems(plane.sistemas);
           // Renderizado directo en contenedores data-system (Tarea 4)
@@ -2289,7 +2391,7 @@ function displayPlanes(planes) {
     return `
 <tr>
 <td data-label="Aeronave"><strong>${plane.model_name || plane.name || plane.avion_id || '-'}</strong></td>
-<td data-label="Tipo">${plane.type || '-'}</td>
+<td data-label="Tipo"><span class="type-badge ${getTypeClass(plane.type)}">${getTypeIcon(plane.type)} ${plane.type || '-'}</span></td>
 <td data-label="Nivel">
 <span class="status-badge" style="background:rgba(212,175,55,0.2); color:#d4af37; border:1px solid #d4af37;">
 Nv. ${plane.nivel}

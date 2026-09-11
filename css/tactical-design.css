@@ -34,6 +34,113 @@
   --hud-glow-blue: 0 0 15px rgba(96, 165, 250, 0.25);
   --hud-glow-gold: 0 0 15px rgba(212, 175, 55, 0.3);
   --hud-scanline: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px);
+
+  /* ============================================================================
+     COLORIMETRÍA OFICIAL DE TIPOS DE AERONAVES (MetalStorm)
+     ============================================================================ */
+  /* Light Fighter */
+  --type-light: #9452de;
+  --type-light-bg: rgba(148, 82, 222, 0.15);
+  --type-light-border: rgba(148, 82, 222, 0.4);
+  
+  /* Medium Fighter */
+  --type-medium: #d38039;
+  --type-medium-bg: rgba(211, 128, 57, 0.15);
+  --type-medium-border: rgba(211, 128, 57, 0.4);
+  
+  /* Heavy Fighter */
+  --type-heavy: #c54842;
+  --type-heavy-bg: rgba(197, 72, 66, 0.15);
+  --type-heavy-border: rgba(197, 72, 66, 0.4);
+  
+  /* Interceptor */
+  --type-interceptor: #2e92ce;
+  --type-interceptor-bg: rgba(46, 146, 206, 0.15);
+  --type-interceptor-border: rgba(46, 146, 206, 0.4);
+  
+  /* Attack */
+  --type-attack: #2ba694;
+  --type-attack-bg: rgba(43, 166, 148, 0.15);
+  --type-attack-border: rgba(43, 166, 148, 0.4);
+}
+
+/* Clases utilitarias para badges de tipo */
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Rajdhani', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.type-badge.light {
+  color: var(--type-light);
+  background: var(--type-light-bg);
+  border: 1px solid var(--type-light-border);
+}
+
+.type-badge.medium {
+  color: var(--type-medium);
+  background: var(--type-medium-bg);
+  border: 1px solid var(--type-medium-border);
+}
+
+.type-badge.heavy {
+  color: var(--type-heavy);
+  background: var(--type-heavy-bg);
+  border: 1px solid var(--type-heavy-border);
+}
+
+.type-badge.interceptor {
+  color: var(--type-interceptor);
+  background: var(--type-interceptor-bg);
+  border: 1px solid var(--type-interceptor-border);
+}
+
+.type-badge.attack {
+  color: var(--type-attack);
+  background: var(--type-attack-bg);
+  border: 1px solid var(--type-attack-border);
+}
+
+/* Indicadores de color en tarjetas del carrusel */
+.plane-card.type-light,
+.carousel-card.type-light {
+  border-top: 3px solid var(--type-light);
+}
+
+.plane-card.type-medium,
+.carousel-card.type-medium {
+  border-top: 3px solid var(--type-medium);
+}
+
+.plane-card.type-heavy,
+.carousel-card.type-heavy {
+  border-top: 3px solid var(--type-heavy);
+}
+
+.plane-card.type-interceptor,
+.carousel-card.type-interceptor {
+  border-top: 3px solid var(--type-interceptor);
+}
+
+.plane-card.type-attack,
+.carousel-card.type-attack {
+  border-top: 3px solid var(--type-attack);
+}
+
+/* Indicador de color en el modal */
+.aircraft-type-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 /* ── BASE RESET & COCKPIT BACKGROUND ────────────────────────────────────── */
