@@ -306,6 +306,214 @@ CREATE TABLE users (
 
 ---
 
+## 🗄️ 1.5. Estructura Completa de Tablas Adicionales de Supabase
+
+Auditoría y relevamiento técnico del esquema de base de datos en Supabase (ejecutado el 2026-09-11). Se identifican y formalizan cuatro (4) tablas operativas existentes que complementan el núcleo del C4ISR táctico, la gestión institucional, la seguridad operativa y la personalización de interfaz:
+
+---
+
+### 📋 Tabla `error_logs`
+
+**Propósito:** Registro centralizado de errores del sistema para diagnóstico y auditoría post-mortem en tiempo de ejecución.
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | PK auto-incremental (`nextval('error_logs_id_seq')`) |
+| `level` | TEXT | Nivel de severidad (`info`, `warn`, `error`, `fatal`) |
+| `route` | TEXT | Ruta/endpoint donde ocurrió la incidencia táctica |
+| `created_at` | TIMESTAMPTZ | Marca temporal del incidente (`default now()`) |
+| `message` | TEXT | Detalle o mensaje de error capturado *(no verificado)* |
+| `stack` | TEXT | Traza de ejecución / stack trace técnico *(no verificado)* |
+| `metadata` | JSONB | Contexto de cabeceras, payload o IP *(no verificado)* |
+
+**Índices:**
+- `error_logs_pkey` (`id`)
+- `idx_error_logs_created_at` (`created_at DESC`)
+- `idx_error_logs_level` (`level`)
+- `idx_error_logs_route` (`route`)
+
+**Relaciones FK:**
+- Sin claves foráneas directas (módulo desacoplado para asegurar captura de fallos sin bloqueos de integridad referencial).
+
+**Notas operativas:**
+- Permite la supervisión continua del estado de salud del servidor y trazabilidad forense tras fallos en peticiones API o excepciones no controladas.
+- Los índices compuestos y ordenados por `created_at DESC` facilitan el filtrado en tiempo real desde consolas de administración militar.
+
+---
+
+### 📋 Tabla `normativas`
+
+**Propósito:** Repositorio de reglamentos, circulares y protocolos oficiales de la comandancia del escuadrón.
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | PK auto-incremental (`nextval('normativas_id_seq')`) |
+| `codigo` | TEXT | Código táctico único de la normativa (ej: `CIRC-001`, `REG-001`, `UNIQUE`) |
+| `titulo` | TEXT | Título oficial del documento *(no verificado / probable)* |
+| `tipo_documento` | TEXT | Tipo documental (`Reglamento`, `Protocolo`, `Circular`) *(no verificado)* |
+| `categoria` | TEXT | Categoría de operación o disciplina (`Operativa`, `Evaluación`, etc.) *(no verificado)* |
+| `ambito_aplicacion` | TEXT | Alcance del reglamento (ej: `Escuadrón General`, `Todos los Pilotos`) *(no verificado)* |
+| `fecha_aprobacion` | DATE / TEXT | Fecha formal de homologación por comandancia *(no verificado)* |
+| `fecha_entrada_vigor` | DATE / TEXT | Entrada en vigor reglamentaria *(no verificado)* |
+| `resumen` | TEXT | Resumen ejecutivo del reglamento *(no verificado)* |
+| `nivel_confidencialidad` | TEXT | Clasificación táctica (`PUBLICO`, `RESTRINGIDO`, `SECRETO`) *(no verificado)* |
+| `archivo_url` | TEXT | URL o ruta de almacenamiento del archivo PDF adjunto *(no verificado)* |
+| `created_at` | TIMESTAMPTZ | Fecha de publicación en plataforma *(no verificado)* |
+
+**Índices:**
+- `normativas_pkey` (`id`)
+- `normativas_codigo_key` (`codigo`, UNIQUE)
+- `idx_normativas_codigo` (`codigo`)
+
+**Relaciones FK:**
+- Sin dependencia foránea estricta; vinculación documental por código referencial de doctrina.
+
+**Notas operativas:**
+- Sirve como repositorio legal y normativo consultado por el componente `normativas-view` y administrado vía `normativas.controller.js`.
+- La unicidad en `codigo` impide colisiones en la nomenclatura militar de circulares y órdenes de escuadrón.
+
+---
+
+### 📋 Tabla `recovery_codes`
+
+**Propósito:** Códigos de recuperación de cuenta y resguardo de identidad (alternativa al restablecimiento convencional por correo electrónico).
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | PK auto-incremental (`nextval('recovery_codes_id_seq')`) |
+| `user_id` | INTEGER | FK al combatiente (`users.user_id`) |
+| `expires_at` | TIMESTAMPTZ | Fecha/hora límite de expiración táctica del código |
+| `used_at` | TIMESTAMPTZ | Fecha/hora de consumo (`NULL` si no ha sido utilizado) |
+| `code_hash` | TEXT | Hash criptográfico seguro del código de emergencia *(no verificado / probable)* |
+| `created_at` | TIMESTAMPTZ | Fecha de generación del código *(no verificado / probable)* |
+
+**Índices:**
+- `recovery_codes_pkey` (`id`)
+- `idx_recovery_codes_user_id` (`user_id`)
+- `idx_recovery_codes_expires_at` (`expires_at`)
+- `idx_recovery_codes_used_at` (`used_at`)
+
+**Relaciones FK:**
+- `user_id` → `users.user_id` (`INTEGER` referencial).
+
+**Notas operativas:**
+- Provee un canal de contingencia militar cuando los pilotos pierden acceso a sus correos o credenciales primarias.
+- El índice `idx_recovery_codes_used_at` permite invalidar instantáneamente códigos consumidos evitando ataques de repetición (anti-replay).
+
+---
+
+### 📋 Tabla `user_settings`
+
+**Propósito:** Preferencias tácticas individuales de combatientes (tema visual militar, idioma y canales de alerta operativa).
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | PK auto-incremental (`nextval('user_settings_id_seq')`) |
+| `user_id` | INTEGER | FK al piloto (`users.user_id`, `UNIQUE`) |
+| `theme` | TEXT | Perfil visual táctico (`'militar'`, `'ops'`, `'clasico'`) *(no verificado / probable)* |
+| `language` | TEXT | Lenguaje de interfaz (`'es'`, `'en'`, `'pt'`) *(no verificado / probable)* |
+| `notif_email` | BOOLEAN | Alertas por correo institucional *(no verificado / probable)* |
+| `notif_whatsapp` | BOOLEAN | Alertas directas vía canal WhatsApp *(no verificado / probable)* |
+| `notif_status` | BOOLEAN | Notificaciones de cambio de estado operativo *(no verificado / probable)* |
+| `notif_reminder` | BOOLEAN | Recordatorios de torneos y misiones *(no verificado / probable)* |
+| `notif_announcements` | BOOLEAN | Anuncios oficiales de comandancia *(no verificado / probable)* |
+| `created_at` | TIMESTAMPTZ | Fecha de creación del registro *(no verificado)* |
+| `updated_at` | TIMESTAMPTZ | Última sincronización de preferencias *(no verificado)* |
+
+**Índices:**
+- `user_settings_pkey` (`id`)
+- `user_settings_user_id_idx` (`user_id`, UNIQUE)
+
+**Relaciones FK:**
+- `user_id` → `users.user_id` (`INTEGER`, relación 1:1 estricta garantizada por el índice único).
+
+**Notas operativas:**
+- Utilizada en producción por `src/controllers/settings.controller.js` con soporte para creación/actualización mediante `upsert`.
+- Garantiza que cada piloto mantenga sus configuraciones operativas sincronizadas en todos los dispositivos de despliegue.
+
+---
+
+### 🗺️ Diagrama de Relaciones de Tablas Adicionales
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│              INTEGRACIÓN DE TABLAS ADICIONALES DE SUPABASE              │
+└─────────────────────────────────────────────────────────────────────────┘
+
+                     ┌───────────────────────────┐
+                     │           users           │
+                     │───────────────────────────│
+                     │ PK id (UUID)              │
+                     │ UQ user_id (INTEGER)      │◄──────────┐
+                     │    email                  │           │
+                     │    nick                   │           │
+                     │    role                   │           │
+                     └─────────────┬─────────────┘           │
+                                   │ 1:1                     │ 1:N
+                                   ▼                         │
+                     ┌───────────────────────────┐           │
+                     │       user_settings       │           │
+                     │───────────────────────────│           │
+                     │ PK id (INTEGER)           │           │
+                     │ FK user_id (INTEGER, UQ) ─┼───────────┘ (FK users.user_id)
+                     │    theme                  │
+                     │    language               │
+                     │    notif_* (BOOLEAN)      │
+                     └───────────────────────────┘
+                                   ▲
+                                   │
+                                   │ (Seguridad / Contingencia)
+                                   │
+                     ┌───────────────────────────┐
+                     │      recovery_codes       │
+                     │───────────────────────────│
+                     │ PK id (INTEGER)           │
+                     │ FK user_id (INTEGER) ─────┼───────────► (FK users.user_id)
+                     │    expires_at (TIMESTAMPTZ)│
+                     │    used_at (TIMESTAMPTZ)  │
+                     └───────────────────────────┘
+
+  ┌────────────────────────────────┐       ┌────────────────────────────────┐
+  │           error_logs           │       │           normativas           │
+  │────────────────────────────────│       │────────────────────────────────│
+  │ PK id (INTEGER)                │       │ PK id (INTEGER)                │
+  │    level (TEXT)                │       │ UQ codigo (TEXT)               │
+  │    route (TEXT)                │       │    titulo                      │
+  │    created_at (TIMESTAMPTZ)    │       │    categoria                   │
+  │    (Auditoría Desacoplada)     │       │    (Doctrina Institucional)    │
+  └────────────────────────────────┘       └────────────────────────────────┘
+```
+
+---
+
+### 📊 Resumen Consolidado de Tablas del Sistema
+
+| Tabla | Categoría | Registros Estimados | Estado |
+|-------|-----------|---------------------|--------|
+| users | Core | ~5 | ✅ Documentada |
+| performances | Core | - | ✅ Documentada |
+| plane_models | Hangar | 42 | ✅ Documentada |
+| plane_mods | Hangar | 10 | ✅ Documentada |
+| mod_effects | Hangar | 50 | ✅ Documentada |
+| planes | Hangar | ~121 | ✅ Documentada |
+| plane_upgrades | Hangar | - | ✅ Documentada |
+| upgrade_effects | Hangar | ~20+ | ✅ Documentada |
+| upgrade_effects_history | Auditoría | - | ✅ Documentada |
+| events | Eventos | - | ✅ Documentada |
+| bm_events | Black Market | - | ✅ Documentada |
+| bm_missions | Black Market | - | ✅ Documentada |
+| bm_progress | Black Market | - | ✅ Documentada |
+| bm_discounts | Black Market | - | ✅ Documentada |
+| security_events | Auditoría | - | ✅ Documentada |
+| audit_logs | Auditoría | - | ✅ Documentada |
+| password_resets | Seguridad | - | ✅ Documentada |
+| error_logs | Diagnóstico | - | 🆕 NUEVA |
+| normativas | Institucional | - | 🆕 NUEVA |
+| recovery_codes | Seguridad | - | 🆕 NUEVA |
+| user_settings | Configuración | - | 🆕 NUEVA |
+
+---
+
 ## 🔄 2. Flujo Completo de Registro y Cambio de Contraseña
 
 ```text
