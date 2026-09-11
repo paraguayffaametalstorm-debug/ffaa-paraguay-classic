@@ -1,61 +1,1120 @@
 <div id="helpView" class="view" style="display:none;">
-  <div class="view-header" style="margin-bottom:1.5rem;">
-    <h2>ℹ️ Manual Operativo & Preguntas Frecuentes</h2>
-    <p class="subtitle">Guía de combate, normativas de escuadrón y funcionamiento del sistema</p>
+  <!-- HEADER PRINCIPAL -->
+  <div class="view-header" style="margin-bottom:1rem;">
+    <h2>📖 Centro de Ayuda & Manual Operativo Táctico</h2>
+    <p class="subtitle">Documentación integral del sistema PARAGUAY-FFAA | METALSTORM v3.7.0</p>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;">
-    <div class="card">
-      <h3 style="color:var(--color-secondary,#d4af37);margin-bottom:1rem;">🎖️ Estados y Criterios Militares</h3>
-      <div style="display:flex;flex-direction:column;gap:12px;font-size:0.9rem;line-height:1.6;">
-        <div style="padding:10px;background:rgba(40,167,69,0.15);border-left:4px solid #28a745;border-radius:4px;">
-          <strong>🟢 VERDE (175+ Tokens):</strong> Cumplimiento óptimo. El piloto está en servicio activo y elegible para ascensos y eventos especiales.
-        </div>
-        <div style="padding:10px;background:rgba(255,152,0,0.15);border-left:4px solid #ff9800;border-radius:4px;">
-          <strong>🟠 NARANJA (130 - 174 Tokens):</strong> Nivel estándar aceptable. Requiere mantener el ritmo para evitar descensos.
-        </div>
-        <div style="padding:10px;background:rgba(220,53,69,0.15);border-left:4px solid #dc3545;border-radius:4px;">
-          <strong>🔴 ROJO (100 - 129 Tokens):</strong> Alerta de bajo rendimiento. 2 semanas consecutivas en rojo implican revisión de membresía.
-        </div>
-        <div style="padding:10px;background:rgba(99,110,114,0.25);border-left:4px solid #636e72;border-radius:4px;">
-          <strong>⚫ NEGRO (&lt; 100 Tokens o 0 días):</strong> Estado crítico por inactividad sin justificación oficial.
-        </div>
-      </div>
+  <!-- BARRA DE BÚSQUEDA Y HERRAMIENTAS -->
+  <div class="help-header-bar">
+    <div class="help-search-box">
+      <span class="help-search-icon">🔍</span>
+      <input 
+        type="text" 
+        id="helpSearchInput" 
+        class="help-search-input" 
+        placeholder="Buscar tema, palabra clave o función..." 
+        oninput="if(typeof filterHelp==='function') filterHelp(this.value);"
+        autocomplete="off"
+      />
+      <span class="help-search-clear" onclick="const i=document.getElementById('helpSearchInput');if(i){i.value='';filterHelp('');i.focus();}" title="Limpiar búsqueda">&times;</span>
+      <div id="helpSearchResultCount" class="help-search-feedback"></div>
     </div>
 
-    <div class="card">
-      <h3 style="color:var(--color-secondary,#d4af37);margin-bottom:1rem;">❓ Preguntas Frecuentes (FAQ)</h3>
-      <div class="faq-accordion">
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>¿Cuándo debo ingresar mi rendimiento semanal?</span>
-            <span>▼</span>
+    <div class="help-toolbar-actions">
+      <button onclick="if(typeof expandAllHelp==='function') expandAllHelp();" class="help-tool-btn" title="Desplegar todas las guías">
+        <span>➕</span> Expandir Todo
+      </button>
+      <button onclick="if(typeof collapseAllHelp==='function') collapseAllHelp();" class="help-tool-btn" title="Plegar todas las guías">
+        <span>➖</span> Colapsar Todo
+      </button>
+      <button onclick="if(typeof startTour==='function') startTour();" class="help-tool-btn" title="Iniciar recorrido guiado">
+        <span>🚀</span> Iniciar Tour
+      </button>
+      <button onclick="if(typeof showModal==='function') showModal('helpModal');" class="help-tool-btn" title="Resumen rápido">
+        <span>❓</span> Ayuda Rápida
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN MÓVIL HORIZONTAL (PILLS) -->
+  <div class="help-mobile-nav">
+    <button class="help-mobile-pill active" onclick="goToHelpSection('help-sec-auth')">🔐 Autenticación</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-performance')">📊 Rendimiento</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-hangar')">✈️ Hangar</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-upgrades')">⚡ Upgrades 2.0</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-bm')">🏴‍☠️ Black Market</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-admin')">🛡️ Administración</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-audit')">👁️ Auditoría</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-pwa')">📲 PWA & Offline</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-troubleshooting')">🛠️ Solución Problemas</button>
+    <button class="help-mobile-pill" onclick="goToHelpSection('help-sec-shortcuts')">⌨️ Atajos</button>
+  </div>
+
+  <!-- CONTENEDOR SPLIT: SIDEBAR + CONTENIDO PRINCIPAL -->
+  <div class="help-view-wrapper">
+    <!-- SIDEBAR DE NAVEGACIÓN TÁCTICA -->
+    <aside class="help-sidebar">
+      <div class="help-sidebar-title">
+        <span>Índice Doctrinal</span>
+        <span class="help-badge-tag">10 MÓDULOS</span>
+      </div>
+      <ul class="help-sidebar-nav">
+        <li>
+          <a class="help-sidebar-link active" data-target="help-sec-auth" onclick="goToHelpSection('help-sec-auth')">
+            <span>🔐</span> 1. Autenticación
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-performance" onclick="goToHelpSection('help-sec-performance')">
+            <span>📊</span> 2. Rendimiento Militar
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-hangar" onclick="goToHelpSection('help-sec-hangar')">
+            <span>✈️</span> 3. Hangar de Aviones
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-upgrades" onclick="goToHelpSection('help-sec-upgrades')">
+            <span>⚡</span> 4. Upgrades 2.0
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-bm" onclick="goToHelpSection('help-sec-bm')">
+            <span>🏴‍☠️</span> 5. Black Market
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-admin" onclick="goToHelpSection('help-sec-admin')">
+            <span>🛡️</span> 6. Administración
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-audit" onclick="goToHelpSection('help-sec-audit')">
+            <span>👁️</span> 7. Auditoría C4ISR
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-pwa" onclick="goToHelpSection('help-sec-pwa')">
+            <span>📲</span> 8. PWA & Modo Offline
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-troubleshooting" onclick="goToHelpSection('help-sec-troubleshooting')">
+            <span>🛠️</span> 9. Solución de Problemas
+          </a>
+        </li>
+        <li>
+          <a class="help-sidebar-link" data-target="help-sec-shortcuts" onclick="goToHelpSection('help-sec-shortcuts')">
+            <span>⌨️</span> 10. Atajos y Funciones
+          </a>
+        </li>
+      </ul>
+
+      <div class="help-sidebar-footer">
+        <div style="font-size:0.75rem;color:#64748b;margin-bottom:8px;">¿Dudas no resueltas?</div>
+        <button onclick="if(typeof contactSupportModal==='function') contactSupportModal();" class="help-tool-btn" style="width:100%;justify-content:center;">
+          <span>📞</span> Soporte Oficial
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL: 10 SECCIONES DOCTRINALES -->
+    <main class="help-main-content">
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 1: GUÍA DE AUTENTICACIÓN -->
+      <!-- ============================================================ -->
+      <section id="help-sec-auth" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>🔐</span> 1. Guía de Autenticación y Credenciales</h3>
+          <span class="help-section-badge">SEGURIDAD MILITAR</span>
+        </div>
+        <p class="help-section-desc">
+          Mecanismos de acceso seguro, protección perimetral de cuentas, vinculación con Google OAuth 2.0 y directivas para recuperación y actualización forzada de contraseñas.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔑</span> Login Dual: Institucional (Indicativo) vs. Google OAuth 2.0
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El sistema dispone de dos métodos de ingreso autorizados:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Acceso Institucional:</strong> Indicativo oficial del piloto (en MAYÚSCULAS, ej. <code>FALCON</code> o <code>VIPER</code>) o número de documento y contraseña militar.</li>
+                <li><strong>Google OAuth 2.0:</strong> Autenticación rápida de un solo toque con tu cuenta de Google. Requiere que tu correo esté previamente vinculado a tu ficha de piloto.</li>
+              </ul>
+              <div class="help-callout gold">
+                <strong>Directiva de Seguridad:</strong> Nunca compartas tus credenciales militares. El sistema bloquea temporalmente las IPs que registren intentos fallidos reiterados.
+              </div>
+            </div>
           </div>
-          <div class="faq-answer">
-            La ventana de registro abre los lunes a las 09:00 (PY) y cierra los jueves a las 08:59 (PY). En eventos Black Market se habilitan plazos especiales anunciados por la oficialidad.
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔗</span> Vinculación de Cuentas (/link-account)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Para habilitar el ingreso con Google OAuth debes vincular tu correo Gmail a tu indicativo:
+              <ol style="margin:8px 0 10px 20px;">
+                <li>Ingresa a la pantalla de vinculación desde el enlace en la cabecera o mediante la ruta <code>/link-account</code>.</li>
+                <li>Inicia sesión con tu cuenta de Google y luego ingresa tu indicativo institucional y contraseña actual para validar identidad.</li>
+                <li>Una vez enlazada, podrás ingresar indistintamente con cualquiera de las dos vías.</li>
+              </ol>
+              <button class="help-action-btn" onclick="window.location.href='/link-account.html';">
+                <span>🔗</span> Ir a Terminal de Vinculación
+              </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>⏱️</span> Recuperación de Contraseña (Vigencia 15 Minutos)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Si extravías tu clave de acceso, puedes solicitar un enlace de restablecimiento seguro:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Haz clic en <em>"¿Olvidaste tu contraseña?"</em> en el modal de inicio de sesión.</li>
+                <li>Ingresa tu correo registrado o indicativo militar.</li>
+                <li>El sistema emitirá un token criptográfico temporal con <strong>estricta validez de 15 minutos</strong>.</li>
+                <li>Si el token expira, deberás solicitar uno nuevo o contactar a un oficial con rango <code>ADMIN</code> o <code>OWNER</code>.</li>
+              </ul>
+              <button class="help-action-btn" onclick="if(typeof showModal==='function') showModal('forgotPasswordModal');">
+                <span>📧</span> Solicitar Recuperación
+              </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔄</span> Cambio de Contraseña Forzado
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Por protocolo militar, se exige cambio forzado de credenciales en dos escenarios:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Primer inicio de sesión tras ser dado de alta por el Estado Mayor.</li>
+                <li>Reinicio administrativo de contraseña por un oficial.</li>
+              </ul>
+              El modal bloqueará la navegación hasta que establezcas una nueva clave segura (mínimo 6 caracteres).
+              <div class="help-callout verde">
+                <strong>Atajo Táctico:</strong> Si en dispositivos móviles compactos la barra inferior cubre el botón de envío, presiona la tecla <span class="help-kbd">ENTER</span> en el campo de confirmación para enviar el formulario automáticamente.
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🛡️</span> Reseteo Administrativo por Oficiales
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Los pilotos imposibilitados de acceder por vía convencional pueden solicitar auxilio a un Oficial de Estado Mayor. Desde el <strong>Panel de Administración</strong>, el oficial puede regenerar una clave temporal y forzar el cambio en el siguiente inicio.
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>¿Cómo desbloqueo modificaciones en el hangar?</span>
-            <span>▼</span>
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 2: GUÍA DE RENDIMIENTO MILITAR -->
+      <!-- ============================================================ -->
+      <section id="help-sec-performance" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>📊</span> 2. Guía de Rendimiento Militar & Escuadrón</h3>
+          <span class="help-section-badge">OPERATIVIDAD</span>
+        </div>
+        <p class="help-section-desc">
+          Registro semanal de actividad, contabilización de tokens de combate, días de combate en grupo, cálculo del semáforo militar y selector táctico de oficiales.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>⏱️</span> Registro Semanal de Tokens y Ventana de Carga
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Cada semana de operaciones cuenta con un ciclo riguroso de auditoría:
+              <div class="help-callout gold">
+                <strong>Ventana Oficial:</strong> Abre todos los <strong>lunes a las 09:00 (Hora Paraguay)</strong> y cierra irrevocablemente los <strong>jueves a las 08:59 (Hora Paraguay)</strong>.
+              </div>
+              <p>Datos obligatorios que todo piloto debe registrar:</p>
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Tokens Semanales:</strong> Cantidad acumulada de tokens de escuadrón ganados durante el ciclo.</li>
+                <li><strong>Días Conectados:</strong> Frecuencia operativa semanal (de 1 a 7 días).</li>
+                <li><strong>Vuelo en Grupo:</strong> Indicador de si participaste en formaciones tácticas con otros pilotos [PRY].</li>
+              </ul>
+              <button class="help-action-btn" onclick="showView('performanceForm');">
+                <span>📝</span> Cargar Rendimiento Semanal
+              </button>
+            </div>
           </div>
-          <div class="faq-answer">
-            Las modificaciones se desbloquean progresivamente: Habilidad Especial (Nv 8+), Pasiva (Nv 12+), Modificación 1 (Nv 16+) y Modificación 2 (Nv 20).
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🚦</span> El Semáforo Militar (VERDE, NARANJA, ROJO, NEGRO)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El estado de operatividad de cada piloto se clasifica según el siguiente baremo estricto:
+              <div class="help-callout verde">
+                <strong>🟢 VERDE (175+ Tokens):</strong> Cumplimiento óptimo y sobresaliente. El piloto se encuentra en servicio activo con plenos honores, elegibilidad inmediata para ascensos y acceso prioritario a eventos Black Market.
+              </div>
+              <div class="help-callout naranja">
+                <strong>🟠 NARANJA (130 - 174 Tokens):</strong> Rendimiento estándar aceptable. Requiere sostener o incrementar el ritmo para evitar caer en zona de apercibimiento.
+              </div>
+              <div class="help-callout rojo">
+                <strong>🔴 ROJO (100 - 129 Tokens):</strong> Alerta de bajo rendimiento. Acumular dos semanas consecutivas en rojo provoca revisión formal del estatus por parte del Estado Mayor.
+              </div>
+              <div class="help-callout negro">
+                <strong>⚫ NEGRO (&lt; 100 Tokens o 0 Días):</strong> Estado crítico por inactividad sin justificación oficial previa. Causal de degradación o baja del escuadrón.
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🎯</span> Selector Táctico de Pilotos (ADMIN / OWNER)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Los oficiales de rango <code>ADMIN</code> y <code>OWNER</code> cuentan con el campo selector <code>#performanceTarget</code> en el formulario de rendimiento.
+              <p>Esta utilidad permite cargar los tokens de pilotos que hayan reportado sus capturas de pantalla de fin de semana a través de los canales de comunicación de radio (WhatsApp/Discord) pero carezcan temporalmente de acceso al sistema.</p>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>📈</span> Historial Personal y Métricas de Escuadrón
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              En la vista de Historial puedes monitorear tu evolución histórica con gráficos de tendencia de tokens, semanas en verde, medallas de constancia y comparación con el promedio global del escuadrón.
+              <button class="help-action-btn" onclick="showView('historial');">
+                <span>📊</span> Ver Mi Historial
+              </button>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="faq-item">
-          <div class="faq-question" onclick="toggleFaq(this)">
-            <span>¿Qué ocurre si no puedo participar un fin de semana?</span>
-            <span>▼</span>
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 3: GUÍA DEL HANGAR DE AVIONES -->
+      <!-- ============================================================ -->
+      <section id="help-sec-hangar" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>✈️</span> 3. Guía del Hangar de Aviones</h3>
+          <span class="help-section-badge">FLOTA AÉREA</span>
+        </div>
+        <p class="help-section-desc">
+          Catálogo táctico de 42 aeronaves de combate, carrusel 3D circular continuo, visor balístico de datos profundos, imágenes en Cloudinary CDN, colorimetría, habilidades especiales, mods y traits.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🎖️</span> Catálogo de 42 Aeronaves & Carrusel 3D Circular
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El hangar militar reúne las 42 aeronaves del arsenal MetalStorm, organizadas en una interfaz de carrusel 3D circular optimizada:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Navegación Circular Infinita:</strong> Desplaza hacia la izquierda o derecha sin topar con bordes vacíos; las aeronaves rotan cíclicamente.</li>
+                <li><strong>Tarjeta Central Prominente:</strong> La aeronave enfocada se eleva con iluminación dorada y foco balístico.</li>
+                <li><strong>Scroll Interno Táctico:</strong> Las tarjetas de 280×420px cuentan con cabecera de imagen fija, cuerpo scrolleable para habilidades y botones anclados al pie.</li>
+              </ul>
+              <button class="help-action-btn" onclick="showView('planes');">
+                <span>✈️</span> Abrir Hangar de Combate
+              </button>
+            </div>
           </div>
-          <div class="faq-answer">
-            Debes notificar previamente a un Oficial o Admin para registrar una exención justificada en el sistema y conservar tu estado militar.
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔬</span> Modal de Datos Profundos & Cloudinary CDN
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Al hacer clic en el botón <em>"Detalles"</em> o en la tarjeta principal, se despliega el <strong>Visor de Telemetría Profunda</strong>:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Renders en Alta Definición:</strong> Alojados y cacheados mediante Cloudinary CDN militar para máxima nitidez visual.</li>
+                <li><strong>Parámetros Balísticos:</strong> Aceleración, velocidad máxima (Mach), tasa de giro instantáneo y sostenido, techo de servicio y vida de fuselaje.</li>
+                <li><strong>Configuración de Armamento:</strong> Calibre de cañón principal, puntos de anclaje para misiles y sistema de contramedidas.</li>
+              </ul>
+            </div>
           </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🎨</span> Colorimetría de Tipos de Aeronave
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Las aeronaves están codificadas según su doctrina de combate:
+              <div class="help-table-responsive">
+                <table class="help-table">
+                  <thead>
+                    <tr>
+                      <th>Tipo / Rol</th>
+                      <th>Color Táctico</th>
+                      <th>Doctrina de Empleo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Caza de Superioridad</strong></td>
+                      <td><span style="color:#60a5fa;">🔵 Azul Zafiro</span></td>
+                      <td>Combate dogfight cerrado, máxima agilidad de viraje.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Interceptor Rápido</strong></td>
+                      <td><span style="color:#f59e0b;">🟠 Ámbar Táctico</span></td>
+                      <td>Ataques BVR a alta velocidad y escape supersónico.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Cazabombardero / Asalto</strong></td>
+                      <td><span style="color:#ef4444;">🔴 Rojo Carmín</span></td>
+                      <td>Alta potencia de fuego, resistencia pesada y cohetes.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Multipropósito (Multi-Role)</strong></td>
+                      <td><span style="color:#10b981;">🟢 Esmeralda</span></td>
+                      <td>Equilibrio doctrinal para cualquier misión.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>⭐</span> Habilidades Especiales, Pasivas, Mods y Traits
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Personalización de combate según el nivel alcanzado con la aeronave:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Habilidad Especial (Desbloqueo Nv 8+):</strong> Activación manual en cabina (ej. Postcombustión Sobrecargada, Bloqueo de Radar Múltiple).</li>
+                <li><strong>Habilidad Pasiva (Desbloqueo Nv 12+):</strong> Ventaja permanente intrínseca (ej. Reducción de Firma Infrarroja, Recarga Rápida).</li>
+                <li><strong>Modificaciones de Combate (10 Mods × 5 Niveles):</strong>
+                  <br>Desbloqueo progresivo: <em>Mod 1 (Nv 16+)</em> y <em>Mod 2 (Nv 20)</em>.
+                  <br>Opciones: Blindaje Reactivo, Radar Doppler, ECM Contramedidas, Refrigeración Líquida, Toberas Vectoriales, Cañones Pesados, etc.</li>
+                <li><strong>Traits Tácticos (12 Rasgos Únicos):</strong> Características intrínsecas de cada fuselaje (ej. "Giro Instantáneo Extremo", "Sigilo Térmico", "Disipación Rápida de Calor").</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 4: GUÍA DE UPGRADES 2.0 -->
+      <!-- ============================================================ -->
+      <section id="help-sec-upgrades" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>⚡</span> 4. Guía del Sistema de Upgrades 2.0</h3>
+          <span class="help-section-badge">I+D MILITAR</span>
+        </div>
+        <p class="help-section-desc">
+          Árbol tecnológico de 108 nodos para cazas Nivel 6+, bifurcaciones de ruta A/B en niveles 5-8, requisitos de piezas avanzadas, Asistente de IA Táctica y Planificador de Mejoras.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔓</span> Requisito de Desbloqueo (Nivel 6+) y Arquitectura Base
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El sistema Upgrades 2.0 se habilita automáticamente cuando una aeronave alcanza el <strong>Nivel 6</strong>.
+              <p>Se compone de <strong>4 Sistemas Base</strong> que alimentan el fuselaje:</p>
+              <div class="help-table-responsive">
+                <table class="help-table">
+                  <thead>
+                    <tr>
+                      <th>Sistema Base</th>
+                      <th>Impacto Balístico</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong>1. Fuselaje (Airframe)</strong></td><td>Incrementa los puntos de estructura, blindaje cinético y tolerancia G.</td></tr>
+                    <tr><td><strong>2. Planta Motriz (Engine)</strong></td><td>Mejora empuje en seco, aceleración postquemador y velocidad terminal.</td></tr>
+                    <tr><td><strong>3. Aviónica (Avionics)</strong></td><td>Optimiza el cono de radar, tiempo de enganche de misiles y resistencia ECM.</td></tr>
+                    <tr><td><strong>4. Armamento (Weapons)</strong></td><td>Aumenta la cadencia de fuego, velocidad de proyectil y disipación de calor.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🚀</span> 5 Sistemas Especializados de Armas
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El árbol integra nodos dedicados para optimizar armamento específico:
+              <ol style="margin:8px 0 10px 20px;">
+                <li><strong>Cañones de Precisión:</strong> Mayor agrupación de proyectiles y alcance efectivo para cazas francotiradores.</li>
+                <li><strong>Cañones de Asalto:</strong> Cadencia extrema y daño destructivo en combates a quemarropa.</li>
+                <li><strong>Misiles Infrarrojos (IR):</strong> Mayor ángulo fuera del eje de mira (off-boresight) y resistencia a bengalas.</li>
+                <li><strong>Cohetes no Guiados:</strong> Daño masivo de área y recarga acelerada para asaltos terrestres y derribos pesados.</li>
+                <li><strong>Misiles Guiados por Radar / Manuales:</strong> Alcance BVR superior, velocidad de intercepción Mach 4+ y enganche múltiple.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔀</span> Árbol de 108 Nodos & Rutas A/B (Niveles 5 a 8)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El árbol completo cuenta con <strong>108 nodos de investigación</strong> interconectados.
+              <p>A partir del <strong>Nivel 5</strong> de cada rama tecnológica, deberás tomar decisiones de especialización:</p>
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Ruta A (Doctrina Cinética):</strong> Enfocada en agilidad de maniobra, velocidad de giro y menor firma térmica.</li>
+                <li><strong>Ruta B (Doctrina de Pegada):</strong> Enfocada en daño bruto de armas, alcance balístico y protección blindada.</li>
+              </ul>
+              <div class="help-callout naranja">
+                <strong>Costos de Recursos:</strong> Los niveles iniciales consumen <em>Piezas Estándar</em>; los niveles superiores (5 a 8) demandan <em>Piezas Avanzadas</em> obtenidas en escuadrones y misiones del Black Market.
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🤖</span> IA Táctica de Recomendación & Upgrade Planner
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              En la pestaña de mejoras de cada aeronave dispones de dos herramientas clave:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>IA de Recomendación (3 Doctrinas):</strong>
+                  <br>• <em>Agresivo / Dogfight:</em> Prioriza giro y cañones de asalto.
+                  <br>• <em>Equilibrado:</em> Balance uniforme de todos los parámetros.
+                  <br>• <em>Defensivo / BVR:</em> Prioriza radar de largo alcance, misiles y blindaje.
+                </li>
+                <li><strong>Upgrade Planner:</strong> Simula el árbol completo antes de aplicar cambios, proyectando el costo total en piezas y la ganancia exacta de DPS y maniobrabilidad.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 5: GUÍA DE BLACK MARKET -->
+      <!-- ============================================================ -->
+      <section id="help-sec-bm" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>🏴‍☠️</span> 5. Guía de Operaciones Black Market</h3>
+          <span class="help-section-badge">EVENTOS ESPECIALES</span>
+        </div>
+        <p class="help-section-desc">
+          Operación de 5 días (miércoles a domingo), 3 misiones tácticas diarias, bonificación por trilogía, descuento acumulable hasta 50%, tabla de clasificación y consola de mando.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>📅</span> Calendario de 5 Días (Miércoles a Domingo)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Los eventos del Mercado Negro se activan con una duración ininterrumpida de 5 jornadas:
+              <div class="help-callout gold">
+                <strong>Horario de Operación:</strong> Inicia los <strong>miércoles a las 09:00 (PY)</strong> y culmina los <strong>domingos a las 23:59 (PY)</strong>.
+              </div>
+              <button class="help-action-btn" onclick="showView('bmMissionsView');">
+                <span>🎯</span> Ver Misiones Activas de BM
+              </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🎯</span> Las 3 Misiones Diarias & Sistema de Puntos
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Cada día se renuevan 3 misiones operativas para toda la flota:
+              <ol style="margin:8px 0 10px 20px;">
+                <li><strong>Misión de Dedicación:</strong> Conexión regular y cumplimiento de tiempo de vuelo en combate.</li>
+                <li><strong>Misión de Habilidad:</strong> Derribos enemigos, precisión de tiro o ratios de victoria aérea.</li>
+                <li><strong>Misión de Trabajo en Equipo:</strong> Vuelo en formación conjunta con otros pilotos del escuadrón [PRY].</li>
+              </ol>
+              <p><strong>Cálculo de Puntos:</strong></p>
+              <ul style="margin:6px 0 10px 20px;">
+                <li><strong>25 Puntos</strong> por cada misión individual completada (75 puntos).</li>
+                <li><strong>+25 Puntos de Bonus Diario</strong> al completar las 3 misiones del mismo día.</li>
+                <li><strong>Máximo diario:</strong> 100 puntos posibles por jornada.</li>
+                <li><strong>Máximo global del evento:</strong> <strong>250 Puntos</strong> acumulables.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🏷️</span> Descuento Progresivo (1 Punto = 0.2% | Máx 50%)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Los puntos de Black Market se traducen en descuento directo para adquisición de aeronaves, planos y suministros bélicos:
+              <div class="help-callout verde">
+                <strong>Fórmula de Descuento:</strong> <code>Descuento (%) = Puntos × 0.2%</code>
+                <br>• Con 100 puntos = <strong>20% de descuento</strong>
+                <br>• Con 200 puntos = <strong>40% de descuento</strong>
+                <br>• Con 250 puntos (tope militar) = <strong>50% de descuento máximo absoluto</strong>.
+              </div>
+              <button class="help-action-btn" onclick="showView('bmDiscountView');">
+                <span>🏷️</span> Consultar Mi Descuento BM
+              </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🏆</span> Leaderboard y Consola de Oficiales
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Monitorea el escalafón competitivo del escuadrón en tiempo real y revisa quiénes lideran la acumulación de puntos:
+              <br>
+              <button class="help-action-btn" onclick="showView('bmLeaderboardView');">
+                <span>🏆</span> Ver Leaderboard de BM
+              </button>
+              <p style="margin-top:10px;">Los oficiales de mando (ADMIN y OWNER) tienen acceso a la <strong>Consola de Oficiales BM</strong> para verificar misiones, habilitar excepciones y coordinar suministros.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 6: GUÍA DE ADMINISTRACIÓN -->
+      <!-- ============================================================ -->
+      <section id="help-sec-admin" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>🛡️</span> 6. Guía de Administración & Estado Mayor</h3>
+          <span class="help-section-badge">ACCESO RESTRINGIDO</span>
+        </div>
+        <p class="help-section-desc">
+          Panel de control exclusivo para rangos ADMIN y OWNER: alta/baja de pilotos, cuotas estrictas de rango militar, reseteo de claves, carga masiva y exportación CSV.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>👑</span> Cuotas Estrictas de la Jerarquía Militar
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Para garantizar el orden de mando y la disciplina interna, el sistema restringe por código las vacantes de oficiales:
+              <div class="help-table-responsive">
+                <table class="help-table">
+                  <thead>
+                    <tr>
+                      <th>Rango</th>
+                      <th>Cuota Máxima</th>
+                      <th>Atribuciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>OWNER</strong></td>
+                      <td><strong>1 Comandante</strong></td>
+                      <td>Comando Supremo, panel C4ISR, gestión de base de datos y auditoría de seguridad.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>ADMIN</strong></td>
+                      <td><strong>Hasta 3 Oficiales</strong></td>
+                      <td>Estado Mayor, gestión de pilotos, carga masiva, asignación de rangos y soporte.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>VETERANO</strong></td>
+                      <td><strong>Hasta 8 Pilotos</strong></td>
+                      <td>Líderes de ala de vuelo, pilotos de élite y mentores de combate.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>PILOTO</strong></td>
+                      <td><strong>Sin límite</strong></td>
+                      <td>Efectivos en servicio activo del escuadrón PARAGUAY FFAA [PRY].</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="help-callout rojo">
+                <strong>Control de Cuotas:</strong> Si una cuota está completa, el sistema denegará cualquier ascenso adicional hasta que una vacante sea liberada.
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>👥</span> Gestión de Pilotos: Activar, Desactivar y Cambiar Rango
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              En el Panel de Administración puedes buscar a cualquier miembro de la fuerza aérea:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Activar / Desactivar:</strong> Suspende preventivamente a pilotos inactivos sin borrar su historial de tokens.</li>
+                <li><strong>Cambio de Rango:</strong> Promueve o degrada según las cuotas disponibles.</li>
+                <li><strong>Reset de Contraseña:</strong> Emite una clave temporal que exige actualización en el siguiente inicio.</li>
+              </ul>
+              <button class="help-action-btn" onclick="showView('admin');">
+                <span>🛡️</span> Ir al Panel de Administración
+              </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>📥</span> Carga Masiva de Tokens & Exportación CSV
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Al finalizar cada ciclo semanal de eventos, los oficiales pueden ingresar los datos por lote o descargar la base completa:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Carga Masiva:</strong> Ingreso ágil de múltiples registros de tokens en una sola sesión.</li>
+                <li><strong>Exportación CSV:</strong> Genera un archivo <code>.csv</code> compatible con Microsoft Excel y Google Sheets con fechas, indicativos, tokens y estados militares.</li>
+              </ul>
+              <button class="help-action-btn" onclick="showView('performanceExportView');">
+                <span>📄</span> Exportar Datos en CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 7: GUÍA DE AUDITORÍA (OWNER) -->
+      <!-- ============================================================ -->
+      <section id="help-sec-audit" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>👁️</span> 7. Guía de Auditoría & Consola C4ISR (OWNER)</h3>
+          <span class="help-section-badge">COMANDO SUPREMO</span>
+        </div>
+        <p class="help-section-desc">
+          Centro de Inteligencia, Vigilancia y Reconocimiento (C4ISR): logs de auditoría criptográfica, eventos perimetrales de seguridad y respaldos de la base de datos Supabase.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🛰️</span> Panel C4ISR del Comandante Supremo
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El panel C4ISR proporciona visibilidad en tiempo real sobre la salud del sistema, accesos remotos y operaciones del escuadrón.
+              <button class="help-action-btn" onclick="showView('ownerPanelView');">
+                <span>👁️</span> Acceder a Consola C4ISR
+              </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🚨</span> Monitor de Eventos de Seguridad & Intentos Fallidos
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Auditoría activa de intentos de intrusión:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Detección de ataques de fuerza bruta sobre indicativos de oficiales.</li>
+                <li>Registro de IPs de origen, agentes de usuario y marcas de tiempo UTC.</li>
+                <li>Posibilidad de revocación de sesiones remotas activas de cualquier piloto.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>💾</span> Logs de Auditoría & Respaldos Supabase
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Cada modificación en el sistema (cambio de rol, edición de tokens, activación de eventos) genera un registro inmutable en la tabla de auditoría militar.
+              <p>El Comandante puede generar volcados de seguridad periódicos para preservar el historial de combate ante cualquier contingencia.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 8: GUÍA DE PWA & MODO OFFLINE -->
+      <!-- ============================================================ -->
+      <section id="help-sec-pwa" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>📲</span> 8. Guía de PWA & Modo Offline</h3>
+          <span class="help-section-badge">DISPOSITIVOS</span>
+        </div>
+        <p class="help-section-desc">
+          Instalación de la Progressive Web App (PWA) en Android, iOS y Desktop, funcionamiento sin conexión con Service Worker y recarga de nuevas versiones.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🤖</span> Instalación en Dispositivos Android (Chrome)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              <ol style="margin:8px 0 10px 20px;">
+                <li>Abre el sistema en <strong>Google Chrome</strong> en tu teléfono o tablet.</li>
+                <li>Toca el aviso emergente inferior <em>"Añadir a pantalla de inicio"</em> o el menú de 3 puntos en la esquina superior derecha.</li>
+                <li>Selecciona <strong>"Instalar aplicación"</strong>.</li>
+                <li>La aplicación se instalará con icono militar en tu lanzador, ejecutándose en pantalla completa sin barra de navegación.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🍏</span> Instalación en Dispositivos Apple iOS (Safari)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              <ol style="margin:8px 0 10px 20px;">
+                <li>Abre el sistema exclusivamente en el navegador <strong>Apple Safari</strong> en tu iPhone o iPad.</li>
+                <li>Presiona el botón <strong>Compartir</strong> (cuadrado con flecha apuntando hacia arriba en la barra inferior).</li>
+                <li>Desplázate hacia abajo y selecciona <strong>"Añadir a pantalla de inicio"</strong>.</li>
+                <li>Confirma el nombre <em>"PARAGUAY FFAA"</em> y toca <strong>"Añadir"</strong>.</li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>💻</span> Instalación en Computadoras Desktop (Chrome / Edge)
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              En PC o Mac utilizando Chrome o Edge:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Observa el icono de instalación (pantalla con flecha descendente) en el extremo derecho de la barra de direcciones.</li>
+                <li>Haz clic en <strong>"Instalar PARAGUAY FFAA"</strong>.</li>
+                <li>Se creará un acceso directo en tu escritorio con ventana dedicada de alto rendimiento.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>📶</span> Modo Offline & Service Worker v3.7.0
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              El <strong>Service Worker v3.7.0</strong> precachea todas las interfaces tácticas, estilos, scripts y componentes:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Puedes consultar el Hangar de Aviones, las Normativas Oficiales y este Manual Táctico incluso si te encuentras sin conexión a Internet o en zonas de baja cobertura.</li>
+                <li>Al restaurarse la conexión militar, el sistema sincronizará automáticamente cualquier envío pendiente.</li>
+                <li>Si se despliega una nueva versión, el sistema mostrará un banner de aviso para actualizar con un solo clic.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 9: SOLUCIÓN DE PROBLEMAS COMUNES -->
+      <!-- ============================================================ -->
+      <section id="help-sec-troubleshooting" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>🛠️</span> 9. Solución de Problemas Comunes</h3>
+          <span class="help-section-badge">DIAGNÓSTICO</span>
+        </div>
+        <p class="help-section-desc">
+          Respuestas inmediatas a los 7 incidentes operativos más frecuentes reportados por los pilotos del escuadrón.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 1. No puedo iniciar sesión con mis credenciales
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Asegúrate de escribir tu indicativo en <strong>LETRAS MAYÚSCULAS</strong> y sin espacios al inicio o final (ej. <code>CONDOR</code>).</li>
+                <li>Verifica que la tecla Bloq Mayús no altere tu contraseña.</li>
+                <li>Si tu cuenta está vinculada a Google, prueba iniciar sesión pulsando el botón rojo de <strong>Google</strong>.</li>
+                <li>Si el problema persiste, solicita un reseteo de clave a un oficial de guardia.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 2. Mi contraseña temporal o enlace de reseteo no funciona
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Los enlaces de recuperación tienen una caducidad estricta de <strong>15 minutos</strong> desde su emisión por razones de seguridad perimetral.
+              <p>Si demoraste en ingresar al enlace, solicita uno nuevo en <em>"¿Olvidaste tu contraseña?"</em> o contacta al Estado Mayor.</p>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 3. El modal de cambio de contraseña no muestra botones en móvil
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              En dispositivos móviles con teclados virtuales grandes, la botonera inferior puede quedar momentáneamente oculta:
+              <div class="help-callout verde">
+                <strong>Solución Táctica:</strong> Escribe tu nueva clave, confírmala en el segundo campo y presiona directamente la tecla <span class="help-kbd">ENTER</span> / <em>Ir</em> de tu teclado virtual. El formulario se enviará de inmediato.
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 4. No veo las imágenes de los aviones en el hangar
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Las imágenes de fuselajes se sirven a través de la red global de Cloudinary:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Comprueba que no tengas bloqueadores de contenido o restricciones de firewall sobre dominios <code>res.cloudinary.com</code>.</li>
+                <li>En PC, presiona <span class="help-kbd">Ctrl</span> + <span class="help-kbd">F5</span> para vaciar la memoria caché local.</li>
+                <li>En móviles, cierra y vuelve a abrir la PWA para refrescar el almacenamiento del Service Worker.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 5. El carrusel no responde al swipe o click
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Utiliza las <strong>flechas laterales doradas</strong> ubicadas en los extremos de la pantalla.</li>
+                <li>En PC, pulsa las teclas de flecha <span class="help-kbd">←</span> y <span class="help-kbd">→</span> del teclado para rotar el carrusel con física 3D.</li>
+                <li>En móviles, asegúrate de deslizar con un movimiento horizontal firme sobre el tercio superior de las tarjetas.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 6. No puedo equipar mods o habilidades en un avión
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Las modificaciones requieren haber subido de nivel la aeronave correspondiente:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>Habilidad Especial: <strong>Nivel 8+</strong></li>
+                <li>Habilidad Pasiva: <strong>Nivel 12+</strong></li>
+                <li>Modificación 1: <strong>Nivel 16+</strong></li>
+                <li>Modificación 2: <strong>Nivel 20 (Máximo)</strong></li>
+              </ul>
+              Si tu aeronave está por debajo del nivel requerido, los slots permanecerán bloqueados reglamentariamente.
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>❓</span> 7. Las misiones de Black Market no registran progreso
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Verifica los dos requisitos indispensables:
+              <ul style="margin:8px 0 10px 20px;">
+                <li>El evento debe encontrarse <strong>activo</strong> (miércoles a domingo). Los lunes y martes el Black Market está en receso logístico.</li>
+                <li>Las misiones de grupo exigen que vueles en escuadrilla con al menos un miembro verificado que porte el tag <code>[PRY]</code>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ -->
+      <!-- SECCIÓN 10: ATAJOS Y FUNCIONES TÁCTICAS -->
+      <!-- ============================================================ -->
+      <section id="help-sec-shortcuts" class="help-section">
+        <div class="help-section-header">
+          <h3 class="help-section-title"><span>⌨️</span> 10. Atajos de Teclado & Funciones Tácticas</h3>
+          <span class="help-section-badge">AGILIDAD OPERATIVA</span>
+        </div>
+        <p class="help-section-desc">
+          Dominio de mandos rápidos por teclado físico, gestos táctiles optimizados para móviles, filtros balísticos y exportación de datos.
+        </p>
+
+        <div class="help-accordion-list">
+          <div class="help-accordion-item open">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>⌨️</span> Atajos de Teclado en Computadoras Desktop
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              <div class="help-table-responsive">
+                <table class="help-table">
+                  <thead>
+                    <tr>
+                      <th>Tecla / Combinación</th>
+                      <th>Contexto</th>
+                      <th>Acción Táctica</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="help-kbd">←</span> / <span class="help-kbd">→</span></td>
+                      <td>Hangar de Aviones</td>
+                      <td>Rotar carrusel hacia la aeronave anterior / siguiente.</td>
+                    </tr>
+                    <tr>
+                      <td><span class="help-kbd">Enter</span></td>
+                      <td>Modales y Formularios</td>
+                      <td>Confirmar envío de credenciales o reporte de tokens.</td>
+                    </tr>
+                    <tr>
+                      <td><span class="help-kbd">Esc</span></td>
+                      <td>Cualquier Vista</td>
+                      <td>Cerrar modal abierto, ventana de ayuda o visor balístico.</td>
+                    </tr>
+                    <tr>
+                      <td><span class="help-kbd">Ctrl</span> + <span class="help-kbd">F</span></td>
+                      <td>Centro de Ayuda</td>
+                      <td>Enfocar automáticamente el buscador interno de doctrinas.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>📱</span> Gestos Táctiles en Teléfonos y Tablets
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Swipe Horizontal Rápido:</strong> En el carrusel del Hangar, desliza a la izquierda o derecha para rotar los cazas.</li>
+                <li><strong>Toque Central:</strong> Pulsa la tarjeta enfocada para desplegar el modal de telemetría sin necesidad de tocar el botón de detalles.</li>
+                <li><strong>Scroll Táctil Interno:</strong> Desliza verticalmente dentro del cuerpo de la tarjeta para explorar mods y pasivas sin desplazar toda la pantalla.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🔍</span> Filtros y Búsqueda en Vivo en el Sistema
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              Todas las tablas principales del sistema cuentan con filtrado instantáneo:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Hangar:</strong> Filtra por tipo de aeronave (Superioridad, Interceptor, Asalto, Bombardero).</li>
+                <li><strong>Leaderboard BM:</strong> Ordena por puntos acumulados o misiones completadas.</li>
+                <li><strong>Panel de Oficiales:</strong> Busca pilotos por indicativo militar, rango o estado en el semáforo.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD DE CONTACTO DE SOPORTE -->
+      <div class="help-support-card">
+        <div class="help-support-info">
+          <h4>🎖️ ¿Requieres Asistencia Inmediata del Estado Mayor?</h4>
+          <p>Comunícate con los Oficiales de Guardia o el Comandante en Jefe a través de los canales oficiales de radio.</p>
+        </div>
+        <div>
+          <button onclick="if(typeof contactSupportModal==='function') contactSupportModal();" class="help-action-btn" style="margin:0;padding:10px 18px;font-size:0.9rem;">
+            <span>📞</span> Contactar Oficiales de Mando
+          </button>
         </div>
       </div>
-    </div>
+
+    </main>
   </div>
 </div>
+
