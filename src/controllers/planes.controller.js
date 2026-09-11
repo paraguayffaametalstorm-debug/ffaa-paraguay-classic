@@ -928,65 +928,66 @@ export async function getPlaneStats(req, res, next) {
     const modelName = model?.name || (plane.name && !/^\d+$/.test(plane.name) ? plane.name : null) || plane.avion_id;
     const modelType = model?.type || plane.type || 'Caza de Combate';
 
+    // Obtener las estadísticas reales del modelo desde Supabase
+    let statsBase = {};
+    let statsAdvanced = {};
+
+    if (supabase && model) {
+      const { data: modelData, error: modelError } = await supabase
+        .from('plane_models')
+        .select('stats_real')
+        .eq('id', model.id)
+        .single();
+
+      const rawStats = (!modelError && modelData?.stats_real) ? modelData.stats_real : (model?.stats_real || null);
+      if (rawStats) {
+        const parsed = typeof rawStats === 'string' ? (() => { try { return JSON.parse(rawStats); } catch (_) { return null; } })() : rawStats;
+        if (parsed) {
+          statsBase = parsed.base_statistics || {};
+          statsAdvanced = parsed.advanced_statistics || {};
+        }
+      }
+    }
+
+    const defaultStats = {
+      health: 100,
+      top_speed_afterburner: 1260,
+      optimal_turning_speed: 648,
+      acceleration_afterburner: 45,
+      optimal_turn_rate: 39.0,
+      afterburner_fuel: 12,
+      flare_count: 3
+    };
+
+    const baseStats = Object.keys(statsBase).length > 0 ? statsBase : defaultStats;
+
     const labels = ['Velocidad', 'Maniobrabilidad', 'Blindaje', 'Potencia de Fuego', 'Rango de Radar', 'Defensa ECM'];
     const stat_keys = ['speed', 'agility', 'armor', 'firepower', 'radar', 'ecm'];
     const units = { speed: 'km/h', agility: '°/s', armor: 'HP', firepower: 'DPS', radar: 'km', ecm: '%' };
 
     const max_raw = {
-      speed: 2800,
-      agility: 42,
-      armor: 3200,
-      firepower: 1600,
-      radar: 180,
-      ecm: 90
+      speed: baseStats.top_speed_afterburner || 1260,
+      agility: baseStats.optimal_turn_rate || 39.0,
+      armor: baseStats.health || 100,
+      firepower: 1600, // TODO: obtener de armas (requiere stats de armas)
+      radar: statsAdvanced.radar_range || 5.7,
+      ecm: 90 // TODO: obtener de avionica
     };
 
-    const levelFactor = (plane.nivel || 1) / 20;
+    // Bonus por nivel de sistema (basados en la Wiki)
+    const bonusFuselaje = 1 + ((plane.nivel_fuselaje || 0) * 0.03);   // +3% HP por nivel
+    const bonusMotor = 1 + ((plane.nivel_motor || 0) * 0.025);       // +2.5% speed por nivel
+    const bonusAvionica = 1 + ((plane.nivel_avionica || 0) * 0.03);  // +3% radar por nivel
+    const bonusArmas = 1 + ((plane.nivel_armas || 0) * 0.035);       // +3.5% daño por nivel
 
-    // ✅ CARGAR EFECTOS DE UPGRADES 2.0
-    const effects = await getUpgradeEffects(supabase);
-
-    // ✅ CALCULAR BONUS USANDO LOS EFECTOS OFICIALES
-    // La ruta se lee de la BD (columna ruta_fuselaje, ruta_motor, etc.)
-    // Si no existe, se usa 'A' por defecto
-    const rutaFuselaje = plane.ruta_fuselaje || 'A';
-    const rutaMotor = plane.ruta_motor || 'A';
-    const rutaAvionica = plane.ruta_avionica || 'A';
-    const rutaArmas = plane.ruta_armas || 'A';
-
-    const bonusMotor = calculateSystemBonus(effects, 'motor', plane.nivel_motor, rutaMotor);
-    const bonusFuselaje = calculateSystemBonus(effects, 'fuselaje', plane.nivel_fuselaje, rutaFuselaje);
-    const bonusArmas = calculateSystemBonus(effects, 'armas', plane.nivel_armas, rutaArmas);
-    const bonusAvionica = calculateSystemBonus(effects, 'avionica', plane.nivel_avionica, rutaAvionica);
-
-    // ✅ CARGAR EFECTOS DE MODS
-    const modEffects = await getModEffects(supabase);
-
-    // ✅ CALCULAR BONUS DE MODS EQUIPADOS (mod1 y mod2)
-    // Solo se aplican los efectos SIEMPRE ACTIVOS a las stats visibles:
-    // m1, m2 -> agility | m3 -> armor | m7 -> ecm | m10 -> radar
-    // Los efectos condicionales (m4, m6, m9) y utilitarios (m5, m8) no modifican las stats base
-    const mod1Agility = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'agility');
-    const mod2Agility = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'agility');
-    const mod1Armor = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'armor');
-    const mod2Armor = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'armor');
-    const mod1Ecm = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'ecm');
-    const mod2Ecm = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'ecm');
-    const mod1Radar = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'radar');
-    const mod2Radar = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'radar');
-
-    const bonusModAgility = mod1Agility * mod2Agility;
-    const bonusModArmor = mod1Armor * mod2Armor;
-    const bonusModEcm = mod1Ecm * mod2Ecm;
-    const bonusModRadar = mod1Radar * mod2Radar;
-
+    // Aplicar a las stats base
     const current_raw = {
-      speed: Math.round(max_raw.speed * (0.6 + 0.4 * levelFactor) * bonusMotor),
-      agility: Math.round(max_raw.agility * (0.6 + 0.4 * levelFactor) * (1 + ((plane.nivel_fuselaje || 0) * 0.015)) * bonusModAgility),
-      armor: Math.round(max_raw.armor * (0.5 + 0.5 * levelFactor) * bonusFuselaje * bonusModArmor),
-      firepower: Math.round(max_raw.firepower * (0.5 + 0.5 * levelFactor) * bonusArmas),
-      radar: Math.round(max_raw.radar * (0.6 + 0.4 * levelFactor) * bonusAvionica * bonusModRadar),
-      ecm: Math.round(Math.min(99, max_raw.ecm * (0.4 + 0.6 * levelFactor) * bonusAvionica * bonusModEcm))
+      speed: Math.round(max_raw.speed * bonusMotor),
+      agility: Math.round(max_raw.agility * (1 + ((plane.nivel_fuselaje || 0) * 0.015))),
+      armor: Math.round(max_raw.armor * bonusFuselaje),
+      firepower: Math.round(max_raw.firepower * bonusArmas),
+      radar: Math.round(max_raw.radar * bonusAvionica),
+      ecm: Math.round(Math.min(99, max_raw.ecm * bonusAvionica))
     };
 
     // ✅ CARGAR TRAITS DEL AVIÓN
@@ -1032,7 +1033,11 @@ export async function getPlaneStats(req, res, next) {
         nivel_avionica: plane.nivel_avionica || 0,
         nivel_armas: plane.nivel_armas || 0,
         sistemas_desbloqueados: (plane.nivel || 1) >= 6,
-        traits: planeTraits
+        traits: planeTraits,
+        stats_real: {
+          base_statistics: baseStats,
+          advanced_statistics: statsAdvanced
+        }
       },
       labels,
       stat_keys,
