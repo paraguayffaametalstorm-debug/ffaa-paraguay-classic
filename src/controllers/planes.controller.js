@@ -66,12 +66,6 @@ function findModel(catalog, avionId) {
   const strId = String(avionId).trim();
   const lowerStr = strId.toLowerCase();
 
-  // Alias especial o búsqueda directa para Su-22
-  if (strId === '502' || lowerStr.includes('502')) {
-    const su22 = catalog.find(m => m.name && m.name.toLowerCase().includes('su-22'));
-    if (su22) return su22;
-  }
-
   // 1. Por ID exacto
   let found = catalog.find(m => String(m.id) === strId);
   if (found) return found;
