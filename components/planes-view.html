@@ -101,6 +101,27 @@
       <button class="carousel-arrow carousel-arrow-left" onclick="scrollCarousel(-1)" aria-label="Aeronave anterior">◀</button>
       <div class="carousel-viewport" id="carouselViewport">
         <div class="carousel-track" id="carouselTrack"></div>
+        <!-- Template de tarjeta de avión con imagen Cloudinary para carrusel táctico -->
+        <template id="planeCardTemplate">
+          <div class="plane-card type-${getTypeClass(plane.type)}">
+            <div class="plane-image-container">
+              <img 
+                src="${plane.image_url || 'logo-escuadron.png'}" 
+                alt="${escapeHtml(plane.model_name)}"
+                class="plane-image"
+                loading="lazy"
+                onerror="this.src='logo-escuadron.png'"
+              >
+            </div>
+            <div class="plane-name">${escapeHtml(plane.model_name)}</div>
+            <div class="plane-type">
+              <span class="type-badge ${getTypeClass(plane.type)}">
+                ${getTypeIcon(plane.type)} ${escapeHtml(plane.type)}
+              </span>
+            </div>
+            <div class="plane-level">Nv. ${plane.nivel}</div>
+          </div>
+        </template>
       </div>
       <button class="carousel-arrow carousel-arrow-right" onclick="scrollCarousel(1)" aria-label="Siguiente aeronave">▶</button>
     </div>

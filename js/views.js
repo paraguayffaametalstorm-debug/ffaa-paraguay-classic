@@ -1384,8 +1384,17 @@ function updateCarouselView() {
       `;
 
       return `
-        <div class="carousel-card ${positionClass} type-${getTypeClass(plane.type)}" onclick="handleCarouselCardClick(${index}, ${plane.id})" data-index="${index}" title="${diff === 0 ? 'Click para ver datos profundos' : 'Click para centrar esta aeronave'}">
+        <div class="carousel-card plane-card ${positionClass} type-${getTypeClass(plane.type)}" onclick="handleCarouselCardClick(${index}, ${plane.id})" data-index="${index}" title="${diff === 0 ? 'Click para ver datos profundos' : 'Click para centrar esta aeronave'}">
           <div>
+            <div class="plane-image-container">
+              <img 
+                src="${plane.image_url || 'logo-escuadron.png'}" 
+                alt="${escapeHtml(plane.model_name || plane.name || 'Aeronave')}"
+                class="plane-image"
+                loading="lazy"
+                onerror="this.src='logo-escuadron.png'"
+              >
+            </div>
             <!-- Header: Plane Name Prominent, ID, Level, Type -->
             <div class="card-plane-header">
               <h3 class="card-plane-name">${planeName}</h3>
@@ -1656,6 +1665,16 @@ async function openAircraftDeepModal(planeId) {
   const planeLevel = plane?.nivel || domLevel || 1;
 
   // Header del Modal
+  // Actualizar imagen del avión
+  const imageEl = document.getElementById('deepPlaneImage');
+  if (imageEl && plane?.image_url) {
+    imageEl.src = plane.image_url;
+    imageEl.alt = plane.model_name || planeName || 'Aircraft';
+  } else if (imageEl) {
+    imageEl.src = 'logo-escuadron.png';
+    imageEl.alt = planeName || 'Aircraft';
+  }
+
   const nameEl = document.getElementById('deepPlaneName');
   if (nameEl) nameEl.textContent = planeName;
   const idEl = document.getElementById('deepPlaneId');
@@ -1822,6 +1841,11 @@ async function openAircraftDeepModal(planeId) {
       const planeDetails = detailsJson.plane || detailsJson.data;
       if (planeDetails) {
         plane = { ...plane, ...planeDetails };
+        const detailImageEl = document.getElementById('deepPlaneImage');
+        if (detailImageEl && plane.image_url) {
+          detailImageEl.src = plane.image_url;
+          detailImageEl.alt = plane.model_name || planeName || 'Aircraft';
+        }
         if (plane.type) {
           const typeEl = document.getElementById('deepPlaneType');
           if (typeEl) {
