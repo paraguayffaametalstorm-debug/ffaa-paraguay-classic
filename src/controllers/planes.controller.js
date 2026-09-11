@@ -494,6 +494,57 @@ export async function updatePlaneSystem(req, res, next) {
       });
     }
 
+    // ✅ VALIDACIÓN DE SISTEMA DISPONIBLE
+    // Verificar que el avión tenga el sistema solicitado según plane_models.sistemas_disponibles
+    const sistemaKeyMap = {
+      fuselaje: 'fuselaje',
+      motor: 'motor',
+      avionica: 'avionica',
+      armas: 'canones'
+    };
+
+    const sistemaKey = sistemaKeyMap[sistema];
+
+    if (sistemaKey) {
+      const { data: modelData, error: modelError } = await supabase
+        .from('plane_models')
+        .select('sistemas_disponibles, name')
+        .eq('id', plane.avion_id)
+        .single();
+
+      if (!modelError && modelData) {
+        const sistemasDisponibles = modelData.sistemas_disponibles || {};
+        const sistemaDisponible = sistemasDisponibles[sistemaKey];
+
+        // Verificar si el sistema está disponible
+        // Caso 1: null o false → No disponible
+        if (sistemaDisponible === null || sistemaDisponible === false || sistemaDisponible === undefined) {
+          console.warn(`⚠️ [Upgrade] Sistema ${sistema} no disponible para ${modelData.name}`);
+          
+          return res.status(400).json({
+            success: false,
+            message: `Esta aeronave (${modelData.name}) no tiene el sistema ${sistema.toUpperCase()} disponible`,
+            error: 'SYSTEM_NOT_AVAILABLE',
+            details: {
+              sistema_solicitado: sistema,
+              sistema_key: sistemaKey,
+              avion_id: plane.avion_id,
+              avion_name: modelData.name,
+              sistemas_disponibles: Object.keys(sistemasDisponibles).filter(
+                k => sistemasDisponibles[k] === true || 
+                     (typeof sistemasDisponibles[k] === 'string')
+              )
+            }
+          });
+        }
+
+        // Log de confirmación
+        console.log(`✅ [Upgrade] Sistema ${sistema} disponible para ${modelData.name}`);
+      } else {
+        console.warn(`⚠️ [Upgrade] No se pudo verificar sistemas_disponibles para avion_id=${plane.avion_id}`);
+      }
+    }
+
     const systemColumnMap = {
       fuselaje: 'nivel_fuselaje',
       motor: 'nivel_motor',
