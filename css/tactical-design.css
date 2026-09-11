@@ -1533,23 +1533,46 @@ i[data-lucide] {
 }
 
 .node-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
   background: var(--bg-card-secondary, rgba(255, 255, 255, 0.03));
   border: 1px solid var(--border-color, var(--border-tactical));
-  border-radius: 6px;
-  padding: 8px;
+  cursor: pointer;
   font-size: 0.8rem;
   transition: all 0.2s ease;
-  margin-bottom: 6px;
 }
 
-.node-item:hover {
-  border-color: var(--blue-telemetry);
-  background: rgba(96, 165, 250, 0.08);
+.node-item:hover:not(.locked) {
+  background: rgba(212, 175, 55, 0.08);
+  border-color: var(--color-primary-gold, #d4af37);
+}
+
+.node-item.active {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: var(--color-primary-gold, #d4af37);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
 }
 
 .node-item.locked {
-  opacity: 0.5;
+  opacity: 0.4;
+  cursor: not-allowed;
   filter: grayscale(0.8);
+}
+
+.node-checkbox {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
+}
+
+.node-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .node-level {
@@ -1560,7 +1583,7 @@ i[data-lucide] {
 
 .node-name {
   font-weight: 500;
-  margin: 4px 0;
+  margin: 2px 0 4px 0;
   color: var(--text-main, #f8fafc);
 }
 

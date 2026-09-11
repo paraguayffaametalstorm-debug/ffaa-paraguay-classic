@@ -1445,20 +1445,40 @@ function updateCarouselView() {
 /**
  * Renderiza un ítem individual de nodo de mejora (Upgrades 2.0)
  */
-function renderNodeItem(nodo, nivelActual) {
-  const desbloqueado = (nivelActual || 0) >= nodo.nivel;
-  const effectsDesc = nodo.descripcion || nodo.effects?.descripcion || (typeof nodo.effects === 'string' ? nodo.effects : '');
+function renderNodeItem(nodo, nivelActual, rutas = {}) {
+  const plane = window.currentPlane;
+  const nivelAvion = plane?.nivel || 1;
   const reqLvl = nodo.requirement_level || 6;
-  const nodeName = nodo.node_name || '';
-  const safeName = typeof escapeHtml === 'function' ? escapeHtml(nodeName) : nodeName;
+  const desbloqueado = nivelAvion >= reqLvl;
+  
+  // Activo si el nivel actual del sistema alcanza este nodo y coincide la ruta seleccionada
+  let activo = false;
+  if ((nivelActual || 0) >= nodo.nivel) {
+    if (nodo.ruta === 'base') {
+      activo = true;
+    } else {
+      const rutaElegida = rutas ? (rutas[nodo.nivel] || rutas[String(nodo.nivel)] || 'A') : 'A';
+      activo = (rutaElegida === nodo.ruta);
+    }
+  }
+
+  const effectsDesc = nodo.descripcion || nodo.effects?.descripcion || (typeof nodo.effects === 'string' ? nodo.effects : '');
+  const safeName = typeof escapeHtml === 'function' ? escapeHtml(nodo.node_name || '') : (nodo.node_name || '');
   const safeDesc = typeof escapeHtml === 'function' ? escapeHtml(effectsDesc) : effectsDesc;
 
   return `
-    <div class="node-item ${desbloqueado ? '' : 'locked'}">
-      <div class="node-level">Nv. ${nodo.nivel}${nodo.ruta && nodo.ruta !== 'base' ? ` (${nodo.ruta})` : ''}</div>
-      <div class="node-name">${safeName}</div>
-      <div class="node-effects">${safeDesc}</div>
-      ${desbloqueado ? '' : `<div class="node-requirement">Requiere Nivel ${reqLvl}</div>`}
+    <div class="node-item ${desbloqueado ? '' : 'locked'} ${activo ? 'active' : ''}"
+         data-sistema="${nodo.sistema}"
+         data-nivel="${nodo.nivel}"
+         data-ruta="${nodo.ruta}"
+         onclick="toggleNode(this)">
+      <span class="node-checkbox">${activo ? '✅' : (desbloqueado ? '⬜' : '🔒')}</span>
+      <div class="node-info">
+        <div class="node-level">Nivel ${nodo.nivel}${nodo.ruta !== 'base' ? ` (${nodo.ruta})` : ''}</div>
+        <div class="node-name">${safeName}</div>
+        <div class="node-effects">${safeDesc}</div>
+        ${desbloqueado ? '' : `<div class="node-requirement">Requiere Nivel ${reqLvl}</div>`}
+      </div>
     </div>
   `;
 }
@@ -1468,7 +1488,7 @@ function renderNodeItem(nodo, nivelActual) {
  */
 function renderSystemNodes(sistemaData) {
   if (!sistemaData) return '<div class="no-nodes" style="color:var(--steel-gray);padding:8px;">Sin datos de sistema</div>';
-  const { nodos_completos, rutas_disponibles, nivel = 0 } = sistemaData;
+  const { nodos_completos, nivel = 0, rutas = {} } = sistemaData;
   
   if (!nodos_completos || nodos_completos.length === 0) {
     return '<div class="no-nodes" style="color:var(--steel-gray);font-style:italic;padding:8px;">Sin nodos disponibles</div>';
@@ -1481,7 +1501,7 @@ function renderSystemNodes(sistemaData) {
   
   let html = '<div class="system-nodes-base">';
   nodosBase.forEach(nodo => {
-    html += renderNodeItem(nodo, nivel);
+    html += renderNodeItem(nodo, nivel, rutas);
   });
   html += '</div>';
   
@@ -1495,22 +1515,23 @@ function renderSystemNodes(sistemaData) {
       misiles_ir: { A: 'Maniobrabilidad Cerrada', B: 'Resistencia a Contramedidas' },
       cohetes: { A: 'Salva Concentrada', B: 'Dispersión de Área' },
       misiles_manual: { A: 'Velocidad Terminal', B: 'Guiado Inercial' },
-      misiles_radar: { A: 'Alcance BVR Extremo', B: 'Discriminación de Chaff' }
+      misiles_radar: { A: 'Alcance BVR Extremo', B: 'Discriminación de Chaff' },
+      armas: { A: 'Balística Pesada', B: 'Cadencia Quirúrgica' }
     };
 
     const sysKey = sistemaData.sistema || '';
-    const labelA = routeTitles[sysKey]?.A || 'A';
-    const labelB = routeTitles[sysKey]?.B || 'B';
+    const labelA = routeTitles[sysKey]?.A ? ` (${routeTitles[sysKey].A})` : '';
+    const labelB = routeTitles[sysKey]?.B ? ` (${routeTitles[sysKey].B})` : '';
 
     html += '<div class="system-bifurcation">';
-    html += `<div class="route-column"><h5>Ruta A (${labelA})</h5>`;
+    html += `<div class="route-column"><h5>Ruta A${labelA}</h5>`;
     nodosA.forEach(nodo => {
-      html += renderNodeItem(nodo, nivel);
+      html += renderNodeItem(nodo, nivel, rutas);
     });
     html += '</div>';
-    html += `<div class="route-column"><h5>Ruta B (${labelB})</h5>`;
+    html += `<div class="route-column"><h5>Ruta B${labelB}</h5>`;
     nodosB.forEach(nodo => {
-      html += renderNodeItem(nodo, nivel);
+      html += renderNodeItem(nodo, nivel, rutas);
     });
     html += '</div></div>';
   }
@@ -1519,7 +1540,7 @@ function renderSystemNodes(sistemaData) {
 }
 
 /**
- * Renderiza el contenedor completo de sistemas con sus encabezados y nodos
+ * Renderiza el contenedor completo de sistemas con sus encabezados y nodos interactivos
  */
 function renderDeepModalSystems(sistemas) {
   const systemsEl = document.getElementById('deepSystemsGrid');
@@ -1538,30 +1559,247 @@ function renderDeepModalSystems(sistemas) {
     misiles_radar: '🛰️'
   };
 
+  const systemTitles = {
+    fuselaje: window.currentPlane?.system_names?.fuselaje || 'Fuselaje',
+    motor: window.currentPlane?.system_names?.motor || 'Motor',
+    avionica: window.currentPlane?.system_names?.avionica || 'Aviónica',
+    canones_precision: window.currentPlane?.system_names?.canones_precision || 'Cañones de Precisión',
+    canones_asalto: window.currentPlane?.system_names?.canones_asalto || 'Cañones de Asalto',
+    misiles_ir: window.currentPlane?.system_names?.misiles_ir || 'Misiles Infrarrojos',
+    misiles_radar: window.currentPlane?.system_names?.misiles_radar || 'Misiles de Radar',
+    misiles_manual: window.currentPlane?.system_names?.misiles_manual || 'Misiles Manuales',
+    cohetes: window.currentPlane?.system_names?.cohetes || 'Cohetes',
+    armas: window.currentPlane?.system_names?.armas || 'Armas'
+  };
+
   systemsEl.innerHTML = Object.entries(sistemas).map(([sistemaKey, sistemaData]) => {
     const icon = iconMap[sistemaKey] || '⚙️';
     const nivel = sistemaData?.nivel || 0;
-    const nombre = sistemaData?.nombre || sistemaKey;
+    const nombre = window.currentPlane?.system_names?.[sistemaKey] || sistemaData?.nombre || systemTitles[sistemaKey] || sistemaKey;
     const safeNombre = typeof escapeHtml === 'function' ? escapeHtml(nombre) : nombre;
     return `
-      <div class="system-detail" data-system="${sistemaKey}">
+      <section class="system-section system-detail" data-system="${sistemaKey}">
         <div class="system-header">
-          <span class="system-icon">${icon}</span>
-          <span class="system-name">${safeNombre}</span>
-          <span class="system-level">Nv. ${nivel}/8</span>
+          <h3>${icon} <span class="system-name-text">${safeNombre}</span> <span class="system-level">Nv. ${nivel}/8</span></h3>
         </div>
         <div class="system-nodes">
           ${renderSystemNodes(sistemaData)}
         </div>
-      </div>
+      </section>
     `;
   }).join('');
+}
+
+/**
+ * Alterna el estado activo de un nodo en el modal de Upgrades 2.0
+ */
+function toggleNode(element) {
+  const sistemaKey = element.dataset.sistema;
+  const nivel = parseInt(element.dataset.nivel, 10);
+  const ruta = element.dataset.ruta;
+  
+  const plane = window.currentPlane;
+  if (!plane || !plane.sistemas) return;
+  
+  // Localizar el objeto de sistema en el avión
+  let sistema = plane.sistemas[sistemaKey];
+  if (!sistema) {
+    const entry = Object.entries(plane.sistemas).find(([k, v]) => k === sistemaKey || v?.sistema === sistemaKey);
+    if (entry) sistema = entry[1];
+  }
+  if (!sistema) return;
+  
+  const nivelAvion = plane.nivel || 1;
+  const nodo = sistema.nodos_completos?.find(n => n.nivel === nivel && n.ruta === ruta);
+  const reqLvl = nodo?.requirement_level || 6;
+  
+  if (nivelAvion < reqLvl) {
+    if (typeof showToast === 'function') {
+      showToast(`⚠️ Requiere Nivel ${reqLvl}`, 'warning');
+    }
+    return;
+  }
+
+  if (!sistema.rutas) sistema.rutas = {};
+  const currentNivel = sistema.nivel || 0;
+  
+  if (ruta === 'base') {
+    // Niveles 1-4: Secuenciales
+    if (currentNivel === nivel) {
+      // Desactivar este nivel
+      sistema.nivel = nivel - 1;
+      Object.keys(sistema.rutas).forEach(k => {
+        if (parseInt(k, 10) > sistema.nivel) delete sistema.rutas[k];
+      });
+    } else if (currentNivel < nivel) {
+      // Activar secuencialmente hasta el nivel solicitado
+      let maxPermitido = currentNivel;
+      for (let l = currentNivel + 1; l <= nivel; l++) {
+        const reqNode = sistema.nodos_completos?.find(n => n.nivel === l && n.ruta === 'base');
+        if (reqNode && nivelAvion < (reqNode.requirement_level || 6)) {
+          if (typeof showToast === 'function') {
+            showToast(`⚠️ Nivel ${l} requiere Nivel ${reqNode.requirement_level}`, 'warning');
+          }
+          break;
+        }
+        maxPermitido = l;
+      }
+      sistema.nivel = maxPermitido;
+    } else {
+      // Click en un nivel activo inferior: desactivar los niveles por encima
+      sistema.nivel = nivel - 1;
+      Object.keys(sistema.rutas).forEach(k => {
+        if (parseInt(k, 10) > sistema.nivel) delete sistema.rutas[k];
+      });
+    }
+  } else {
+    // Niveles 5-8: Bifurcados (Ruta A o B)
+    const rutaActual = sistema.rutas[nivel] || (currentNivel >= nivel ? 'A' : null);
+    
+    if (currentNivel >= nivel && rutaActual === ruta) {
+      // Toggle off: deseleccionar esta ruta y descender a nivel - 1
+      delete sistema.rutas[nivel];
+      sistema.nivel = nivel - 1;
+      Object.keys(sistema.rutas).forEach(k => {
+        if (parseInt(k, 10) > sistema.nivel) delete sistema.rutas[k];
+      });
+    } else {
+      // Activar o cambiar de ruta (A <-> B)
+      let puedeActivar = true;
+      for (let l = 1; l < nivel; l++) {
+        const checkRuta = l <= 4 ? 'base' : (sistema.rutas[l] || 'A');
+        const prevNode = sistema.nodos_completos?.find(n => n.nivel === l && n.ruta === checkRuta);
+        if (prevNode && nivelAvion < (prevNode.requirement_level || 6)) {
+          if (typeof showToast === 'function') {
+            showToast(`⚠️ Nivel ${l} requiere Nivel ${prevNode.requirement_level}`, 'warning');
+          }
+          puedeActivar = false;
+          break;
+        }
+        if (l >= 5 && !sistema.rutas[l]) {
+          sistema.rutas[l] = 'A';
+        }
+      }
+      
+      if (puedeActivar) {
+        sistema.rutas[nivel] = ruta;
+        sistema.nivel = Math.max(sistema.nivel || 0, nivel);
+      }
+    }
+  }
+  
+  // Sincronizar niveles en propiedades directas del avión
+  const sysKey = sistema.sistema || sistemaKey;
+  if (sysKey === 'fuselaje') plane.nivel_fuselaje = sistema.nivel;
+  else if (sysKey === 'motor') plane.nivel_motor = sistema.nivel;
+  else if (sysKey === 'avionica') plane.nivel_avionica = sistema.nivel;
+  else if (sysKey === 'armas' || sysKey === 'canones_precision' || sysKey === 'canones_asalto') {
+    plane.nivel_armas = sistema.nivel;
+  }
+  
+  // Re-renderizar sección del sistema afectado
+  const sistemaEl = document.querySelector(`[data-system="${sistemaKey}"]`) || document.querySelector(`[data-system="${sysKey}"]`);
+  if (sistemaEl) {
+    const nodesSubEl = sistemaEl.querySelector('.system-nodes');
+    if (nodesSubEl) {
+      nodesSubEl.innerHTML = renderSystemNodes(sistema);
+    }
+    const lvlBadge = sistemaEl.querySelector('.system-level');
+    if (lvlBadge) {
+      lvlBadge.textContent = `Nv. ${sistema.nivel}/8`;
+    }
+  }
+  
+  // Actualizar estadísticas en tiempo real
+  updateDeepModalStats(plane);
+}
+
+/**
+ * Actualiza la rejilla de estadísticas en tiempo real reflejando los nodos activos
+ */
+function updateDeepModalStats(plane) {
+  if (!plane) return;
+  const statsGridEl = document.getElementById('deepStatsGrid');
+  if (!statsGridEl) return;
+
+  const planeLevel = plane.nivel || 1;
+  const levelFactor = planeLevel / 20;
+  const bonusMotor = 1 + ((plane.nivel_motor || 0) * 0.025);
+  const bonusFuselaje = 1 + ((plane.nivel_fuselaje || 0) * 0.03);
+
+  const rawSpeed = Math.round(2800 * (0.6 + 0.4 * levelFactor) * bonusMotor);
+  const rawAgility = Math.round(42 * (0.6 + 0.4 * levelFactor) * (1 + (plane.nivel_fuselaje || 0) * 0.015));
+  const rawArmor = Math.round(3200 * (0.5 + 0.5 * levelFactor) * bonusFuselaje);
+  const afterburnerVal = Math.round(15 + (plane.nivel_motor || 0) * 4.2 + levelFactor * 16);
+  const accelVal = (18 + levelFactor * 12 + (plane.nivel_motor || 0) * 1.5).toFixed(1);
+  const maneuverSpeedVal = Math.round(rawSpeed * 0.44 + (plane.nivel_fuselaje || 0) * 18);
+
+  const statsList = [
+    { label: 'Velocidad', val: `${rawSpeed.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((rawSpeed / 2800) * 100)), color: '#60a5fa' },
+    { label: 'Ángulo de Giro', val: `${rawAgility}`, unit: '°/s', pct: Math.min(100, Math.round((rawAgility / 42) * 100)), color: '#4ade80' },
+    { label: 'Puntos de Vida', val: `${rawArmor.toLocaleString()}`, unit: 'HP', pct: Math.min(100, Math.round((rawArmor / 3200) * 100)), color: '#f59e0b' },
+    { label: 'Postquemador', val: `+${afterburnerVal}`, unit: '% Empuje', pct: Math.min(100, Math.round((afterburnerVal / 50) * 100)), color: '#fb923c' },
+    { label: 'Aceleración', val: `${accelVal}`, unit: 'm/s²', pct: Math.min(100, Math.round((parseFloat(accelVal) / 35) * 100)), color: '#c084fc' },
+    { label: 'Vel. Maniobra', val: `${maneuverSpeedVal.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((maneuverSpeedVal / 1400) * 100)), color: '#38bdf8' }
+  ];
+
+  statsGridEl.innerHTML = statsList.map(s => `
+    <div class="deep-stat-card">
+      <div class="deep-stat-header">
+        <span class="deep-stat-label">${s.label}</span>
+        <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
+      </div>
+      <div class="deep-stat-bar-track">
+        <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/**
+ * Guarda los cambios de sistemas y rutas A/B en el backend
+ */
+async function savePlaneSystems() {
+  const plane = window.currentPlane;
+  if (!plane) {
+    if (typeof showToast === 'function') showToast('❌ Aeronave no seleccionada', 'error');
+    return;
+  }
+  
+  const sistemas = {};
+  if (plane.sistemas) {
+    Object.entries(plane.sistemas).forEach(([key, sistema]) => {
+      sistemas[key] = {
+        nivel: sistema.nivel || 0,
+        rutas: sistema.rutas || {}
+      };
+    });
+  }
+  
+  if (typeof apiUpdatePlaneSystems !== 'function') {
+    if (typeof showToast === 'function') showToast('❌ API de actualización no disponible', 'error');
+    return;
+  }
+
+  const response = await apiUpdatePlaneSystems(plane.id, { sistemas });
+  
+  if (response.success) {
+    if (typeof showToast === 'function') showToast('✅ Sistemas actualizados', 'success');
+    if (typeof openAircraftDeepModal === 'function') {
+      openAircraftDeepModal(plane.id);
+    }
+  } else {
+    if (typeof showToast === 'function') showToast('❌ Error: ' + (response.message || 'Error al guardar'), 'error');
+  }
 }
 
 // Exportar globalmente
 window.renderNodeItem = renderNodeItem;
 window.renderSystemNodes = renderSystemNodes;
 window.renderDeepModalSystems = renderDeepModalSystems;
+window.toggleNode = toggleNode;
+window.updateDeepModalStats = updateDeepModalStats;
+window.savePlaneSystems = savePlaneSystems;
 
 // ============================================================================
 // MODAL DE DATOS PROFUNDOS DE AERONAVE (C4ISR TELEMETRÍA)
@@ -1842,6 +2080,21 @@ async function openAircraftDeepModal(planeId) {
       const planeDetails = detailsJson.plane || detailsJson.data;
       if (planeDetails) {
         plane = { ...plane, ...planeDetails };
+        window.currentPlane = plane;
+
+        // Títulos de sistemas específicos por modelo militar (Tarea F)
+        const systemTitles = {
+          fuselaje: plane.system_names?.fuselaje || 'Fuselaje',
+          motor: plane.system_names?.motor || 'Motor',
+          avionica: plane.system_names?.avionica || 'Aviónica',
+          canones_precision: plane.system_names?.canones_precision || 'Cañones de Precisión',
+          canones_asalto: plane.system_names?.canones_asalto || 'Cañones de Asalto',
+          misiles_ir: plane.system_names?.misiles_ir || 'Misiles Infrarrojos',
+          misiles_radar: plane.system_names?.misiles_radar || 'Misiles de Radar',
+          misiles_manual: plane.system_names?.misiles_manual || 'Misiles Manuales',
+          cohetes: plane.system_names?.cohetes || 'Cohetes'
+        };
+
         const detailImageEl = document.getElementById('deepPlaneImage');
         if (detailImageEl && plane.image_url) {
           detailImageEl.src = plane.image_url;
@@ -1856,19 +2109,6 @@ async function openAircraftDeepModal(planeId) {
         }
         if (plane.sistemas) {
           renderDeepModalSystems(plane.sistemas);
-          // Renderizado directo en contenedores data-system (Tarea 4)
-          Object.entries(plane.sistemas).forEach(([sistemaKey, sistemaData]) => {
-            const nodosHTML = renderSystemNodes(sistemaData);
-            const sistemaEl = document.querySelector(`[data-system="${sistemaKey}"]`);
-            if (sistemaEl) {
-              const nodesSubEl = sistemaEl.querySelector('.system-nodes');
-              if (nodesSubEl) {
-                nodesSubEl.innerHTML = nodosHTML;
-              } else {
-                sistemaEl.innerHTML = nodosHTML;
-              }
-            }
-          });
         }
       }
     }

@@ -149,11 +149,16 @@
 
       <!-- Sistemas Upgrades 2.0 -->
       <section class="deep-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
           <h3>🔧 Sistemas Upgrades 2.0 (Nv 6+)</h3>
-          <button type="button" class="btn-sm btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="font-size:0.75rem;padding:3px 8px;border-color:var(--blue-telemetry);color:var(--blue-telemetry);">
-            🔧 Abrir Planificador
-          </button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="btn-sm btn-primary" onclick="savePlaneSystems()" style="font-size:0.75rem;padding:4px 12px;background:var(--color-primary-gold,#d4af37);color:#0a0f1d;font-weight:600;border:none;border-radius:4px;cursor:pointer;">
+              💾 Guardar Cambios
+            </button>
+            <button type="button" class="btn-sm btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="font-size:0.75rem;padding:3px 8px;border-color:var(--blue-telemetry);color:var(--blue-telemetry);">
+              🔧 Abrir Planificador
+            </button>
+          </div>
         </div>
         <div class="deep-systems-grid" id="deepSystemsGrid"></div>
       </section>
@@ -187,6 +192,7 @@
     </div>
 
     <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid rgba(212,175,55,0.25);flex-wrap:wrap;">
+      <button class="btn-primary" onclick="savePlaneSystems()" style="background:var(--color-primary-gold,#d4af37);color:#0a0f1d;font-weight:600;">💾 Guardar Cambios</button>
       <button class="btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="border-color:var(--blue-telemetry);color:var(--blue-telemetry);">🔧 Planificador</button>
       <button class="btn-secondary" onclick="editPlane(window.currentPlaneId || currentPlaneId)">✏️ Editar</button>
       <button class="btn-danger" onclick="deletePlane(window.currentPlaneId || currentPlaneId)">🗑️ Eliminar</button>

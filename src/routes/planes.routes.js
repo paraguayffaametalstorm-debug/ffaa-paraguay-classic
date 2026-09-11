@@ -10,6 +10,7 @@ import {
   getPlaneStats,
   getPlaneDetails,
   updatePlaneSystem,
+  updatePlaneSystems,
   getRecommendedBuild
 } from '../controllers/planes.controller.js';
 import { requireAuth } from '../middlewares/auth.js';
@@ -31,6 +32,7 @@ router.get('/:id/details', getPlaneDetails);
 router.get('/:id/recommendation', getRecommendedBuild);
 router.get('/:id/recommended-build', getRecommendedBuild);
 router.put('/:id/system', updatePlaneSystem);
+router.put('/:id/systems', updatePlaneSystems);
 router.post('/', addPlane);
 router.put('/:id', updatePlane);
 router.delete('/:id', deletePlane);

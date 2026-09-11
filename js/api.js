@@ -300,6 +300,25 @@ async function updatePlaneSystem(planeId, sistema, nivel, piezas = 0, avanzadas 
 window.getPlaneDetails = getPlaneDetails;
 window.updatePlaneSystem = updatePlaneSystem;
 
+async function apiUpdatePlaneSystems(planeId, data) {
+  try {
+    const res = await fetch(`${API_BASE}/api/planes/${encodeURIComponent(planeId)}/systems`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, message: json.message || json.error || 'Error al actualizar sistemas' };
+    }
+    return json;
+  } catch (err) {
+    console.error('Error en apiUpdatePlaneSystems:', err);
+    return { success: false, message: err.message || 'Error de conexión' };
+  }
+}
+window.apiUpdatePlaneSystems = apiUpdatePlaneSystems;
+
 // ========== NORMATIVAS ==========
 async function uploadNormativa() {
   try {
