@@ -360,6 +360,34 @@ El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su
 | **Señuelos** | Bengalas Disruptivas, Bengalas Más Rápidas |
 | **Arma** | Armas Aniquiladoras, Guiado Mejorado |
 
+#### Estructura de `mod_effects` (Supabase)
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER / SERIAL | Identificador primario |
+| `mod_id` | TEXT | Clave del mod (`m1` a `m10`) |
+| `mod_name` | TEXT | Nombre militar de la modificación |
+| `mod_type` | TEXT | Familia táctica (Agilidad, Defensa, Motor, Señuelos, Arma) |
+| `level` | INTEGER | Nivel de la modificación (1-5) |
+| `effects` | JSONB | Objeto de impacto con magnitudes, unidades y condiciones |
+| `created_at` | TIMESTAMP | Fecha de registro |
+| `updated_at` | TIMESTAMP | Última sincronización |
+
+#### Efectos Numéricos de los 10 Mods (Nivel 1 al 5)
+
+| ID | Mod | Familia | Stat Impactada | Condición / Activación | Valores por Nivel (N1 $\to$ N5) |
+|:---:|---|---|:---:|:---:|---|
+| **m1** | Giro Temerario | Agilidad | `agility` | Permanente (Siempre activo) | Giro: +4%, +8%, +12%, +16%, +20% |
+| **m2** | Maniobrabilidad Ideal | Agilidad | `agility` | Permanente (Siempre activo) | Eficiencia de viraje: +3%, +6%, +9%, +12%, +15% |
+| **m3** | Resistencia a Explosiones | Defensa | `armor` | Permanente (Siempre activo) | Resistencia a misiles: +5%, +10%, +15%, +20%, +25% |
+| **m4** | Blindaje de Ataque | Defensa | `armor` | Condicional (Tras derribo) | HP temporal: +5%, +10%, +15%, +20%, +25% por derribo |
+| **m5** | Quemadores Eficientes | Motor | Consumo | Permanente (Motor en AB) | Consumo de combustible: -8%, -16%, -24%, -32%, -40% |
+| **m6** | Máxima Propulsión | Motor | `speed` | Condicional (<50% combustible) | Vel: +3..+15% / Aceleración: +4..+20% |
+| **m7** | Bengalas Disruptivas | Señuelos | `ecm` | Permanente (Siempre activo) | Disrupción ECM contra misiles: +5%, +10%, +15%, +20%, +25% |
+| **m8** | Bengalas Más Rápidas | Señuelos | Cooldown | Permanente (Sistemas) | Tiempo de recarga de contramedidas: -6%, -12%, -18%, -24%, -30% |
+| **m9** | Armas Aniquiladoras | Arma | `firepower` | Condicional (<30% HP rival) | Daño de cañón: +5%, +10%, +15%, +20%, +25% |
+| **m10** | Guiado Mejorado | Arma | `radar` | Permanente (Siempre activo) | Lock speed: +4..+20% / Lock angle: +3..+15% |
+
 ### Upgrades 2.0
 
 **4 sistemas mejorables (0-8):**

@@ -106,6 +106,72 @@ CREATE TABLE users (
 | **Señuelos** | Bengalas Disruptivas, Bengalas Más Rápidas |
 | **Arma** | Armas Aniquiladoras, Guiado Mejorado |
 
+#### Tabla `mod_effects` (Efectos Numéricos de Mods)
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER / SERIAL | ID único del registro |
+| `mod_id` | TEXT | FK o ID del mod (m1..m10) |
+| `mod_name` | TEXT | Nombre oficial del mod |
+| `mod_type` | TEXT | Tipo / Familia (Agilidad, Defensa, Motor, Señuelos, Arma) |
+| `level` | INTEGER | Nivel del mod (1-5) |
+| `effects` | JSONB | Efectos cuantitativos y descriptivos |
+| `created_at` | TIMESTAMP | Fecha de inserción |
+| `updated_at` | TIMESTAMP | Última actualización |
+
+### Sistema de Mods - Efectos Numéricos (10 Mods × 5 Niveles)
+
+| Mod ID | Nombre Oficial | Tipo | Stat Base Afectada | Tipo de Activación | Efecto por Nivel (N1 $\to$ N5) |
+|:---:|---|---|:---:|:---:|---|
+| **m1** | Giro Temerario (Daredevil Turning) | Agilidad | `agility` | ✅ Siempre activo | Giro: +4%, +8%, +12%, +16%, +20% |
+| **m2** | Maniobrabilidad Ideal (Ideal Maneuvering) | Agilidad | `agility` | ✅ Siempre activo | Eficiencia viraje: +3%, +6%, +9%, +12%, +15% |
+| **m3** | Resistencia a las Explosiones (Blast Resistance) | Defensa | `armor` | ✅ Siempre activo | Resistencia misiles: +5%, +10%, +15%, +20%, +25% |
+| **m4** | Blindaje de Ataque / Racha (Streak Armor) | Defensa | `armor` | ⚠️ Condicional (kills) | +5%, +10%, +15%, +20%, +25% HP por derribo |
+| **m5** | Quemadores Auxiliares Eficientes (Efficient Afterburners) | Motor | — | ❌ No altera stats visibles | Consumo postquemador: -8%, -16%, -24%, -32%, -40% |
+| **m6** | Máxima Propulsión (Thrust Booster) | Motor | `speed` | ⚠️ Condicional (<50% comb.) | Vel: +3..+15% / Acel: +4..+20% bajo 50% combustible |
+| **m7** | Bengalas Disruptivas (Disruptive Flares) | Señuelos | `ecm` | ✅ Siempre activo | Bloqueo enemigo / ECM: +5%, +10%, +15%, +20%, +25% |
+| **m8** | Bengalas Más Rápidas (Faster Flares) | Señuelos | — | ❌ No altera stats visibles | Cooldown bengalas: -6%, -12%, -18%, -24%, -30% |
+| **m9** | Armas Aniquiladoras (Finishing Guns) | Arma | `firepower` | ⚠️ Condicional (<30% HP enem.) | Daño: +5%, +10%, +15%, +20%, +25% contra enemigos <30% HP |
+| **m10** | Guiado Mejorado (Improved Targeting) | Arma | `radar` | ✅ Siempre activo | Lock speed: +4..+20% / Lock angle: +3..+15% |
+
+#### Flujo de Aplicación de Mods en Telemetría y Combate
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│              FLUJO DE APLICACIÓN DE MODS (GET /api/planes/:id/stats)    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 1. Consulta y Caché                                                     │
+│    • getModEffects(supabase) consulta la tabla 'mod_effects'.           │
+│    • Caché en memoria TTL 5 min + Fallback con los 10 mods oficiales.    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 2. Extracción de Slots Equipados                                        │
+│    • Slot 1: mod1_id (ej: 'm1') + mod1_lvl (1-5)                        │
+│    • Slot 2: mod2_id (ej: 'm3') + mod2_lvl (1-5)                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 3. Discriminación de Efectos: Pasivos Permanentes vs Condicionales      │
+│    • Siempre Activos (m1, m2, m3, m7, m10):                             │
+│      Multiplican las estadísticas base visibles de la aeronave:         │
+│      - Agility   *= (1 + m1_giro% + m2_eficiencia%)                     │
+│      - Armor     *= (1 + m3_resistencia_misiles%)                       │
+│      - ECM       *= (1 + m7_bloqueo_enemigo%)                           │
+│      - Radar     *= (1 + m10_lock_speed%)                               │
+│    • Condicionales (m4 racha, m6 <50% combustible, m9 remate cañón):    │
+│      Se preservan como metadatos descriptivos en el cliente, NO se      │
+│      suman a las estadísticas en reposo para evitar falsos positivos.   │
+│    • Utilitarios (m5 postquemador, m8 recarga bengalas):                │
+│      Afectan consumo dinámico y temporizadores en simulación táctica.   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
 #### Tabla `planes` (Hangar de Pilotos)
 
 | Columna | Tipo | Propósito |
@@ -236,6 +302,7 @@ CREATE TABLE users (
 | 3 | Columna `actor_id` en `audit_logs` | `audit.js` | ✅ RESUELTO |
 | 4 | IA de recomendación | `planes.controller.js` | ✅ IMPLEMENTADO |
 | 5 | Upgrade Planner | `aircraft-stats-modal.html` | ✅ IMPLEMENTADO |
+| 6 | Efectos de Mods (10 mods x 5 niveles) | `modEffects.js`, `planes.controller.js` | ✅ IMPLEMENTADO |
 
 ---
 
