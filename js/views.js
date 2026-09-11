@@ -1559,6 +1559,25 @@ async function openAircraftDeepModal(planeId) {
     `;
   }
 
+  // Cargar traits
+  const traitsEl = document.getElementById('deepTraitsList');
+  if (traitsEl) {
+    const traits = plane?.traits || [];
+    if (traits.length > 0) {
+      traitsEl.innerHTML = traits.map(t => `
+        <div class="trait-card">
+          <div class="trait-header">
+            <span class="trait-icon">${t.icon || '🎯'}</span>
+            <span class="trait-name">${escapeHtml(t.name || t)}</span>
+          </div>
+          <div class="trait-description">${escapeHtml(t.description || '')}</div>
+        </div>
+      `).join('');
+    } else {
+      traitsEl.innerHTML = '<div style="color:var(--steel-gray);font-style:italic;">Sin traits especiales</div>';
+    }
+  }
+
   // Open modal
   showModal('aircraftDeepModal');
 
@@ -1575,6 +1594,22 @@ async function openAircraftDeepModal(planeId) {
     let statsData = null;
     if (res.ok) {
       statsData = await res.json();
+      if (statsData?.plane?.traits && traitsEl) {
+        const serverTraits = statsData.plane.traits;
+        if (serverTraits.length > 0) {
+          traitsEl.innerHTML = serverTraits.map(t => `
+            <div class="trait-card">
+              <div class="trait-header">
+                <span class="trait-icon">${t.icon || '🎯'}</span>
+                <span class="trait-name">${escapeHtml(t.name || t)}</span>
+              </div>
+              <div class="trait-description">${escapeHtml(t.description || '')}</div>
+            </div>
+          `).join('');
+        } else {
+          traitsEl.innerHTML = '<div style="color:var(--steel-gray);font-style:italic;">Sin traits especiales</div>';
+        }
+      }
     }
 
     const levelFactor = planeLevel / 20;

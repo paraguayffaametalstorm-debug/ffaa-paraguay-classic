@@ -11,6 +11,7 @@ import { buildSanitizedCSV } from '../utils/csv.js';
 import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
 import { getUpgradeEffects, calculateSystemBonus } from '../utils/upgradeEffects.js';
 import { getModEffects, calculateModBonus, getModDescription } from '../utils/modEffects.js';
+import { getPlaneTraitsWithInfo } from '../utils/traits.js';
 
 // Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
@@ -854,6 +855,12 @@ export async function getPlaneStats(req, res, next) {
       ecm: Math.round(Math.min(99, max_raw.ecm * (0.4 + 0.6 * levelFactor) * bonusAvionica * bonusModEcm))
     };
 
+    // ✅ CARGAR TRAITS DEL AVIÓN
+    if (!plane.traits && model?.traits) {
+      plane.traits = model.traits;
+    }
+    const planeTraits = getPlaneTraitsWithInfo(plane);
+
     const base_raw = { ...max_raw };
     const current = {};
     const base = {};
@@ -890,7 +897,8 @@ export async function getPlaneStats(req, res, next) {
         nivel_motor: plane.nivel_motor || 0,
         nivel_avionica: plane.nivel_avionica || 0,
         nivel_armas: plane.nivel_armas || 0,
-        sistemas_desbloqueados: (plane.nivel || 1) >= 6
+        sistemas_desbloqueados: (plane.nivel || 1) >= 6,
+        traits: planeTraits
       },
       labels,
       stat_keys,
