@@ -10,6 +10,7 @@ import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
 import { getUpgradeEffects, calculateSystemBonus } from '../utils/upgradeEffects.js';
+import { getModEffects, calculateModBonus, getModDescription } from '../utils/modEffects.js';
 
 // Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
@@ -823,13 +824,34 @@ export async function getPlaneStats(req, res, next) {
     const bonusArmas = calculateSystemBonus(effects, 'armas', plane.nivel_armas, rutaArmas);
     const bonusAvionica = calculateSystemBonus(effects, 'avionica', plane.nivel_avionica, rutaAvionica);
 
+    // ✅ CARGAR EFECTOS DE MODS
+    const modEffects = await getModEffects(supabase);
+
+    // ✅ CALCULAR BONUS DE MODS EQUIPADOS (mod1 y mod2)
+    // Solo se aplican los efectos SIEMPRE ACTIVOS a las stats visibles:
+    // m1, m2 -> agility | m3 -> armor | m7 -> ecm | m10 -> radar
+    // Los efectos condicionales (m4, m6, m9) y utilitarios (m5, m8) no modifican las stats base
+    const mod1Agility = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'agility');
+    const mod2Agility = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'agility');
+    const mod1Armor = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'armor');
+    const mod2Armor = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'armor');
+    const mod1Ecm = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'ecm');
+    const mod2Ecm = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'ecm');
+    const mod1Radar = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'radar');
+    const mod2Radar = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'radar');
+
+    const bonusModAgility = mod1Agility * mod2Agility;
+    const bonusModArmor = mod1Armor * mod2Armor;
+    const bonusModEcm = mod1Ecm * mod2Ecm;
+    const bonusModRadar = mod1Radar * mod2Radar;
+
     const current_raw = {
       speed: Math.round(max_raw.speed * (0.6 + 0.4 * levelFactor) * bonusMotor),
-      agility: Math.round(max_raw.agility * (0.6 + 0.4 * levelFactor) * (1 + ((plane.nivel_fuselaje || 0) * 0.015))),
-      armor: Math.round(max_raw.armor * (0.5 + 0.5 * levelFactor) * bonusFuselaje),
+      agility: Math.round(max_raw.agility * (0.6 + 0.4 * levelFactor) * (1 + ((plane.nivel_fuselaje || 0) * 0.015)) * bonusModAgility),
+      armor: Math.round(max_raw.armor * (0.5 + 0.5 * levelFactor) * bonusFuselaje * bonusModArmor),
       firepower: Math.round(max_raw.firepower * (0.5 + 0.5 * levelFactor) * bonusArmas),
-      radar: Math.round(max_raw.radar * (0.6 + 0.4 * levelFactor) * bonusAvionica),
-      ecm: Math.round(Math.min(99, max_raw.ecm * (0.4 + 0.6 * levelFactor) * bonusAvionica))
+      radar: Math.round(max_raw.radar * (0.6 + 0.4 * levelFactor) * bonusAvionica * bonusModRadar),
+      ecm: Math.round(Math.min(99, max_raw.ecm * (0.4 + 0.6 * levelFactor) * bonusAvionica * bonusModEcm))
     };
 
     const base_raw = { ...max_raw };
