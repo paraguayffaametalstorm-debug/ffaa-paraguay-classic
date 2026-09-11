@@ -1385,26 +1385,27 @@ function updateCarouselView() {
 
       return `
         <div class="carousel-card plane-card ${positionClass} type-${getTypeClass(plane.type)}" onclick="handleCarouselCardClick(${index}, ${plane.id})" data-index="${index}" title="${diff === 0 ? 'Click para ver datos profundos' : 'Click para centrar esta aeronave'}">
-          <div>
-            <div class="plane-image-container">
-              <img 
-                src="${plane.image_url || 'logo-escuadron.png'}" 
-                alt="${escapeHtml(plane.model_name || plane.name || 'Aeronave')}"
-                class="plane-image"
-                loading="lazy"
-                onerror="this.src='logo-escuadron.png'"
-              >
+          <div class="plane-image-container">
+            <img 
+              src="${plane.image_url || 'logo-escuadron.png'}" 
+              alt="${escapeHtml(plane.model_name || plane.name || 'Aeronave')}"
+              class="plane-image"
+              loading="lazy"
+              onerror="this.src='logo-escuadron.png'"
+            >
+          </div>
+          <!-- Header: Plane Name Prominent, ID, Level, Type -->
+          <div class="card-plane-header">
+            <h3 class="card-plane-name">${planeName}</h3>
+            <div class="card-plane-meta">
+              <span class="plane-badge-id">🏷️ ${plane.id}</span>
+              <span class="plane-badge-level">Nv. ${planeLevel}</span>
+              <span class="plane-badge-type type-badge ${getTypeClass(plane.type)}">${getTypeIcon(plane.type)} ${planeType}</span>
             </div>
-            <!-- Header: Plane Name Prominent, ID, Level, Type -->
-            <div class="card-plane-header">
-              <h3 class="card-plane-name">${planeName}</h3>
-              <div class="card-plane-meta">
-                <span class="plane-badge-id">🏷️ ${plane.id}</span>
-                <span class="plane-badge-level">Nv. ${planeLevel}</span>
-                <span class="plane-badge-type type-badge ${getTypeClass(plane.type)}">${getTypeIcon(plane.type)} ${planeType}</span>
-              </div>
-            </div>
+          </div>
 
+          <!-- Card Body: Skills & Mods with internal scroll -->
+          <div class="card-plane-body">
             <!-- Skills Section -->
             <div class="card-skills-section">
               ${specialHtml}

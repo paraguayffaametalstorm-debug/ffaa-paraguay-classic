@@ -636,14 +636,16 @@ i[data-lucide] {
 }
 
 /* CAROUSEL CARDS */
+.carousel-card.plane-card,
 .carousel-card {
   position: absolute;
-  width: 370px;
-  max-width: calc(100vw - 70px);
+  width: 280px;
+  height: 420px;
+  max-width: calc(100vw - 40px);
   background: rgba(22, 31, 51, 0.96);
   border: 1.5px solid var(--border-tactical);
   border-radius: 12px;
-  padding: 1.4rem;
+  padding: 0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
               opacity 0.45s ease,
@@ -653,8 +655,7 @@ i[data-lucide] {
   will-change: transform, opacity;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 460px;
+  overflow: hidden;
 }
 
 /* CENTER PROMINENT CARD */
@@ -677,7 +678,7 @@ i[data-lucide] {
 /* LATERAL CARDS */
 .carousel-card.is-prev {
   left: 50%;
-  transform: translate(calc(-50% - 330px), 0) scale(0.85);
+  transform: translate(calc(-50% - 250px), 0) scale(0.85);
   opacity: 0.55;
   filter: blur(1.5px);
   z-index: 4;
@@ -686,7 +687,7 @@ i[data-lucide] {
 
 .carousel-card.is-next {
   left: 50%;
-  transform: translate(calc(-50% + 330px), 0) scale(0.85);
+  transform: translate(calc(-50% + 250px), 0) scale(0.85);
   opacity: 0.55;
   filter: blur(1.5px);
   z-index: 4;
@@ -708,58 +709,137 @@ i[data-lucide] {
 }
 
 /* RESPONSIVE BREAKPOINT FOR TABLET & MOBILE */
-@media (max-width: 950px) {
+@media (min-width: 769px) and (max-width: 1024px) {
+  .carousel-card.plane-card,
+  .carousel-card {
+    width: 260px;
+    height: 400px;
+  }
   .carousel-card.is-prev {
-    transform: translate(calc(-50% - 250px), 0) scale(0.82);
+    transform: translate(calc(-50% - 220px), 0) scale(0.82);
   }
   .carousel-card.is-next {
-    transform: translate(calc(-50% + 250px), 0) scale(0.82);
+    transform: translate(calc(-50% + 220px), 0) scale(0.82);
+  }
+  .plane-image-container {
+    height: 130px;
   }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 768px) {
   .carousel-viewport,
   .carousel-track,
   .hangar-carousel {
-    min-height: 480px;
+    min-height: 420px;
+    height: 420px;
   }
+  .carousel-card.plane-card,
   .carousel-card {
-    width: 320px;
-    min-height: 430px;
-    padding: 1.1rem;
+    width: 240px;
+    height: 380px;
   }
   .carousel-card.is-prev {
-    transform: translate(calc(-50% - 150px), 0) scale(0.78);
-    opacity: 0.22;
+    transform: translate(calc(-50% - 130px), 0) scale(0.78);
+    opacity: 0.25;
   }
   .carousel-card.is-next {
-    transform: translate(calc(-50% + 150px), 0) scale(0.78);
-    opacity: 0.22;
+    transform: translate(calc(-50% + 130px), 0) scale(0.78);
+    opacity: 0.25;
   }
   .carousel-arrow {
-    width: 40px;
-    height: 40px;
-    font-size: 1.05rem;
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
   }
-  .carousel-arrow-left { left: 4px; }
-  .carousel-arrow-right { right: 4px; }
+  .carousel-arrow-left { left: 2px; }
+  .carousel-arrow-right { right: 2px; }
+  .plane-image-container {
+    height: 120px;
+  }
+  .card-plane-header {
+    padding: 6px 10px;
+  }
+  .card-plane-name {
+    font-size: 0.95rem;
+  }
+  .card-plane-body {
+    padding: 6px 10px;
+  }
+  .card-actions {
+    padding: 6px 10px;
+  }
+  .card-actions button {
+    font-size: 0.7rem;
+    padding: 5px 6px;
+    min-height: 32px;
+  }
+}
+
+@media (max-width: 360px) {
+  .carousel-viewport,
+  .carousel-track,
+  .hangar-carousel {
+    min-height: 400px;
+    height: 400px;
+  }
+  .carousel-card.plane-card,
+  .carousel-card {
+    width: 220px;
+    height: 370px;
+  }
+  .carousel-card.is-prev {
+    transform: translate(calc(-50% - 110px), 0) scale(0.75);
+    opacity: 0.15;
+  }
+  .carousel-card.is-next {
+    transform: translate(calc(-50% + 110px), 0) scale(0.75);
+    opacity: 0.15;
+  }
+  .plane-image-container {
+    height: 105px;
+  }
 }
 
 /* CARD DETAILS */
 .card-plane-header {
-  margin-bottom: 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .card-plane-name {
   font-family: var(--font-tactical);
-  font-size: 1.55rem;
+  font-size: 1rem;
   font-weight: 700;
   color: #fff;
   letter-spacing: 0.5px;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Contenido restante con scroll interno */
+.card-plane-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.3) rgba(11, 19, 43, 0.6);
+}
+
+.card-plane-body::-webkit-scrollbar {
+  width: 4px;
+}
+.card-plane-body::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 2px;
 }
 
 .card-plane-meta {
@@ -804,79 +884,89 @@ i[data-lucide] {
 .card-skills-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .card-skill-box {
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 
 .card-skill-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  gap: 4px;
+  font-size: 0.7rem;
   font-family: var(--font-tactical);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--steel-gray);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .card-skill-title.special { color: var(--amber-alert); }
 .card-skill-title.passive { color: var(--blue-telemetry); }
 
 .card-skill-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-skill-effect {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #94a3b8;
   margin-top: 2px;
-  line-height: 1.3;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-mods-section {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 
 .card-mods-title {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--steel-gray);
   text-transform: uppercase;
   font-family: var(--font-tactical);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .card-mods-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
 .card-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 10px;
+  gap: 6px;
+  padding: 8px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.95);
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .card-actions button {
   flex: 1;
-  padding: 7px 10px;
-  font-size: 0.8rem;
+  padding: 6px 8px;
+  font-size: 0.75rem;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   white-space: nowrap;
 }
 
@@ -1494,20 +1584,21 @@ i[data-lucide] {
 /* Imagen en tarjetas del carrusel */
 .plane-image-container {
   width: 100%;
-  height: 180px;
+  height: 140px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(11, 19, 43, 0.8), rgba(26, 35, 68, 0.6));
-  border-radius: 8px 8px 0 0;
+  background: linear-gradient(135deg, rgba(11, 19, 43, 0.9), rgba(26, 35, 68, 0.7));
+  border-radius: 10px 10px 0 0;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   position: relative;
 }
 
 .plane-image {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 85%;
+  max-height: 85%;
   object-fit: contain;
   transition: transform 0.3s ease;
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
@@ -1520,15 +1611,15 @@ i[data-lucide] {
 /* Imagen en modal de datos profundos */
 .aircraft-image-container {
   width: 100%;
-  height: 240px;
+  height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, rgba(11, 19, 43, 0.9), rgba(26, 35, 68, 0.7));
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 16px;
-  border: 2px solid rgba(212, 175, 55, 0.3);
+  margin-bottom: 12px;
+  border: 1.5px solid rgba(212, 175, 55, 0.35);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   position: relative;
 }
@@ -1545,14 +1636,36 @@ i[data-lucide] {
   transform: scale(1.03);
 }
 
-/* Responsive para móviles */
+/* Responsive para imágenes y modal de datos profundos */
 @media (max-width: 768px) {
   .plane-image-container {
-    height: 140px;
+    height: 120px;
   }
   
   .aircraft-image-container {
-    height: 180px;
+    height: 140px;
+    margin-bottom: 10px;
+  }
+
+  .aircraft-deep-modal {
+    width: 95% !important;
+    max-width: 95% !important;
+    max-height: 90vh !important;
+    padding: 12px !important;
+  }
+
+  #deepPlaneName {
+    font-size: 1.25rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .aircraft-image-container {
+    height: 120px;
+  }
+
+  #deepPlaneName {
+    font-size: 1.1rem !important;
   }
 }
 
