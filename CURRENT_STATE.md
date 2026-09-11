@@ -63,6 +63,7 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 | **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre + ID |
 | **IA de Recomendación** | ✅ Funcional | 3 estilos de combate |
 | **Upgrade Planner** | ✅ Funcional | Previsualización de builds |
+| **Efectos de Mods** | ✅ Funcional | 10 mods x 5 niveles aplicados a stats |
 | **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
 | **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
 
@@ -71,11 +72,20 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 El sistema de aviones fue normalizado y ampliado:
 
 - ✅ 39 modelos en el catálogo
-- ✅ 10 mods disponibles
+- ✅ 10 mods disponibles con efectos numéricos (m1..m10 en 5 niveles)
 - ✅ 4 sistemas mejorables (Fuselaje, Motor, Aviónica, Armas)
 - ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles)
 - ✅ IA de Recomendación (3 estilos)
 - ✅ Upgrade Planner (previsualización)
+- ✅ Integración de efectos de mods en telemetría de combate (`getPlaneStats`)
+
+### ⚡ Efectos de Mods (10 Mods × 5 Niveles)
+- **Siempre Activos en Stats:**
+  - `m1` (Daredevil Turning) & `m2` (Ideal Maneuvering) $\to$ `agility`
+  - `m3` (Blast Resistance) $\to$ `armor`
+  - `m7` (Disruptive Flares) $\to$ `ecm`
+  - `m10` (Improved Targeting) $\to$ `radar`
+- **Condicionales & Utilitarios:** `m4` (kills), `m5` (postquemador), `m6` (<50% comb.), `m8` (cooldown), `m9` (<30% HP enem.) registrados para telemetría dinámica.
 
 ---
 

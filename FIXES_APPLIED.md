@@ -171,6 +171,37 @@ fc657f0 refactor: implement helper functions for typed queries
 
 ---
 
+### 🔹 Fix #8: Efectos de Mods - Integración Numérica en Estadísticas (2026-09-10)
+
+**Fecha:** 2026-09-10  
+**Archivos:** `src/utils/modEffects.js`, `src/controllers/planes.controller.js`  
+
+**Problemas corregidos:**
+1. **Falta de helper de efectos de mods:** No existía un módulo para consultar y parsear la tabla `mod_effects` (50 registros: 10 mods × 5 niveles) ni proveer fallback en memoria.
+2. **Cálculo de estadísticas estático:** La función `getPlaneStats` no aplicaba los bonus porcentuales aportados por los mods equipados en la aeronave (`mod1_id` con `mod1_lvl` y `mod2_id` con `mod2_lvl`).
+
+**Solución:**
+1. Crear `src/utils/modEffects.js` implementando:
+   - `getModEffects(supabase)`: Carga desde Supabase con caché en memoria (TTL 5 min) y fallback oficial para los 10 mods.
+   - `getFallbackModEffects()`: Definición canónica de los 10 mods por niveles con banderas `siempre_activo`.
+   - `getModLevelEffects(effects, modId, level)`: Extracción directa de parámetros de nivel.
+   - `calculateModBonus(effects, modId, level, statKey)`: Cálculo estricto de multiplicadores para estadísticas visibles.
+   - `getModDescription(effects, modId, level)`: Formato legible del beneficio táctico.
+   - `invalidateModEffectsCache()`: Recarga forzada de caché.
+2. Actualizar `getPlaneStats` en `src/controllers/planes.controller.js`:
+   - Consultar `getModEffects(supabase)`.
+   - Mapear y aplicar bonus siempre activos a `agility` (m1, m2), `armor` (m3), `ecm` (m7) y `radar` (m10).
+   - Discriminar efectos condicionales (`m4`, `m6`, `m9`) y utilitarios (`m5`, `m8`) sin alterar arbitrariamente las estadísticas base.
+
+**Resultado:**
+- ✅ 10 mods reconocidos en sus 5 niveles (50 configuraciones)
+- ✅ Cálculo de agilidad, blindaje, ECM y radar con modificadores en tiempo real
+- ✅ Telemetría de aeronaves 100% calibrada según Upgrades 2.0 y Mods oficiales
+
+**Estado:** ✅ RESUELTO Y VERIFICADO
+
+---
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |
@@ -180,7 +211,9 @@ fc657f0 refactor: implement helper functions for typed queries
 | `src/controllers/admin.controller.js` | Modificación de rangos militares y estado de cuenta | 🟢 ESTABLE |
 | `src/controllers/profile.controller.js` | Persistencia de datos personales y teléfono de alertas | 🟢 ESTABLE |
 | `src/controllers/performances.controller.js` | Historial de tokens y sincronización de semáforo | 🟢 ESTABLE |
-| `src/controllers/planes.controller.js` | Lectura de habilidades, CSV completo e IA de builds tácticas | 🟢 ESTABLE |
+| `src/controllers/planes.controller.js` | Habilidades, Upgrades 2.0, cálculo de mods y recomendaciones | 🟢 ESTABLE |
+| `src/utils/upgradeEffects.js` | Lógica y fallback de bonificaciones por niveles de subsistemas (0-8) | 🟢 ESTABLE |
+| `src/utils/modEffects.js` | Lógica, caché y cálculo de multiplicadores de los 10 mods tácticos | 🟢 ESTABLE |
 | `src/utils/audit.js` | Resolución de UUIDs en eventos de seguridad y auditoría | 🟢 ESTABLE |
 | `components/aircraft-stats-modal.html` | Modal de datos profundos y markup de Upgrade Planner 2.0 | 🟢 ESTABLE |
 | `planes (Supabase)` | Normalización 1NF (UNIQUE, FK, CHECKs, habilidades) | 🟢 ESTABLE |
