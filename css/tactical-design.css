@@ -1487,4 +1487,74 @@ i[data-lucide] {
   font-weight: 600;
 }
 
+/* ============================================================================
+   IMÁGENES DE AVIONES (Cloudinary)
+   ============================================================================ */
+
+/* Imagen en tarjetas del carrusel */
+.plane-image-container {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(11, 19, 43, 0.8), rgba(26, 35, 68, 0.6));
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.plane-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+.plane-card:hover .plane-image {
+  transform: scale(1.05);
+}
+
+/* Imagen en modal de datos profundos */
+.aircraft-image-container {
+  width: 100%;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(11, 19, 43, 0.9), rgba(26, 35, 68, 0.7));
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.aircraft-image {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6));
+  transition: transform 0.3s ease;
+}
+
+.aircraft-image:hover {
+  transform: scale(1.03);
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .plane-image-container {
+    height: 140px;
+  }
+  
+  .aircraft-image-container {
+    height: 180px;
+  }
+}
+
+
 
