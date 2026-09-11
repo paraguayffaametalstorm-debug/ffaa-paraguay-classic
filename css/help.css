@@ -134,3 +134,573 @@
 .faq-item.open .faq-answer {
   display: block;
 }
+
+/* ============================================================
+   CENTRO DE AYUDA TÁCTICO & MANUAL OPERATIVO v3.7.0
+   ============================================================ */
+
+.help-view-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+}
+
+/* SIDEBAR TÁCTICA */
+.help-sidebar {
+  width: 270px;
+  min-width: 270px;
+  position: sticky;
+  top: calc(var(--sat, 0px) + 80px);
+  background: rgba(15, 23, 42, 0.96);
+  border: 1.5px solid var(--border-tactical, #203a43);
+  border-radius: 12px;
+  padding: 1.1rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.3) rgba(11, 19, 43, 0.6);
+  z-index: 10;
+}
+
+.help-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.help-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.3);
+  border-radius: 2px;
+}
+
+.help-sidebar-title {
+  font-family: var(--font-tactical, 'Chakra Petch', sans-serif);
+  font-size: 0.82rem;
+  color: var(--color-secondary, #d4af37);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.help-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.help-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+
+.help-sidebar-link:hover {
+  background: rgba(212, 175, 55, 0.1);
+  color: #ffffff;
+  border-left-color: rgba(212, 175, 55, 0.5);
+  transform: translateX(3px);
+}
+
+.help-sidebar-link.active {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.18), rgba(26, 58, 108, 0.25));
+  color: var(--color-secondary, #d4af37);
+  font-weight: 600;
+  border-left-color: var(--color-secondary, #d4af37);
+}
+
+.help-sidebar-footer {
+  margin-top: 1.2rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* NAVEGACIÓN MÓVIL (PILLS HORIZONTALES) */
+.help-mobile-nav {
+  display: none;
+  overflow-x: auto;
+  white-space: nowrap;
+  gap: 6px;
+  padding: 6px 2px 10px;
+  margin-bottom: 1rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.help-mobile-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.help-mobile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  background: rgba(26, 58, 108, 0.45);
+  border: 1px solid var(--border-tactical, #203a43);
+  color: #cbd5e1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.help-mobile-pill:hover,
+.help-mobile-pill.active {
+  background: var(--color-secondary, #d4af37);
+  color: #0b132b;
+  font-weight: 700;
+  border-color: #fff;
+}
+
+/* CONTENIDO PRINCIPAL */
+.help-main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* BARRA DE HERRAMIENTAS & BÚSQUEDA */
+.help-header-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid var(--border-tactical, #203a43);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.help-search-box {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 440px;
+}
+
+.help-search-input {
+  width: 100%;
+  padding: 9px 36px 9px 36px;
+  background: rgba(11, 19, 43, 0.9);
+  border: 1.5px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.help-search-input:focus {
+  border-color: var(--color-secondary, #d4af37);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.35);
+}
+
+.help-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  color: var(--color-secondary, #d4af37);
+  pointer-events: none;
+}
+
+.help-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.help-search-clear:hover {
+  color: #fff;
+}
+
+.help-search-feedback {
+  font-size: 0.78rem;
+  color: var(--color-secondary, #d4af37);
+  margin-top: 4px;
+  font-family: var(--font-tactical, sans-serif);
+}
+
+.help-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.help-tool-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-family: var(--font-tactical, sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(26, 58, 108, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #e2e8f0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.help-tool-btn:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: var(--color-secondary, #d4af37);
+  color: #ffffff;
+}
+
+/* SECCIONES TÁCTICAS */
+.help-section {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid var(--border-tactical, #203a43);
+  border-radius: 12px;
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  scroll-margin-top: 90px;
+}
+
+.help-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.help-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-secondary, #d4af37);
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-section-badge {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(26, 58, 108, 0.6);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-family: var(--font-tactical, sans-serif);
+}
+
+.help-section-desc {
+  font-size: 0.86rem;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* ACORDEONES EXPANDIBLES */
+.help-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.help-accordion-item {
+  background: rgba(22, 31, 51, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.help-accordion-item:hover {
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+.help-accordion-item.open {
+  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.help-accordion-header {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.02);
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.help-accordion-header:hover {
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.help-accordion-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.help-accordion-chevron {
+  font-size: 0.78rem;
+  color: var(--color-secondary, #d4af37);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.help-accordion-item.open .help-accordion-chevron {
+  transform: rotate(180deg);
+}
+
+.help-accordion-body {
+  display: none;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(11, 19, 43, 0.5);
+}
+
+.help-accordion-item.open .help-accordion-body {
+  display: block;
+}
+
+/* CALLOUTS Y BLOQUES TÁCTICOS */
+.help-callout {
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 10px 0;
+  border-left: 4px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.help-callout.verde {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  color: #d1fae5;
+}
+
+.help-callout.naranja {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fef3c7;
+}
+
+.help-callout.rojo {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fee2e2;
+}
+
+.help-callout.negro {
+  border-left-color: #64748b;
+  background: rgba(100, 116, 139, 0.18);
+  color: #cbd5e1;
+}
+
+.help-callout.gold {
+  border-left-color: var(--color-secondary, #d4af37);
+  background: rgba(212, 175, 55, 0.12);
+  color: #fef9c3;
+}
+
+/* TECLAS KBD Y BADGES */
+.help-kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 0.76rem;
+  font-family: monospace;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 4px;
+  color: #f8fafc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  margin: 0 2px;
+}
+
+.help-badge-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-family: var(--font-tactical, sans-serif);
+  text-transform: uppercase;
+  border-radius: 4px;
+  background: rgba(26, 58, 108, 0.5);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #cbd5e1;
+}
+
+/* BOTONES DE ACCIÓN RÁPIDA DENTRO DEL CONTENIDO */
+.help-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin-top: 8px;
+  margin-right: 6px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, rgba(26, 58, 108, 0.8), rgba(212, 175, 55, 0.4));
+  border: 1px solid var(--color-secondary, #d4af37);
+  color: #ffffff;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.help-action-btn:hover {
+  background: linear-gradient(135deg, rgba(26, 58, 108, 1), rgba(212, 175, 55, 0.6));
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+  transform: translateY(-1px);
+}
+
+/* TABLAS TÁCTICAS */
+.help-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.help-table th,
+.help-table td {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+}
+
+.help-table th {
+  background: rgba(26, 58, 108, 0.5);
+  color: var(--color-secondary, #d4af37);
+  font-family: var(--font-tactical, sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.help-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* CARD DE CONTACTO DE SOPORTE */
+.help-support-card {
+  background: linear-gradient(135deg, rgba(26, 58, 108, 0.6), rgba(15, 23, 42, 0.9));
+  border: 1.5px solid rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  padding: 1.4rem;
+  margin-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.help-support-info h4 {
+  color: var(--color-secondary, #d4af37);
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
+}
+
+.help-support-info p {
+  color: #94a3b8;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+@media (max-width: 900px) {
+  .help-sidebar {
+    display: none;
+  }
+  .help-mobile-nav {
+    display: flex;
+  }
+  .help-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .help-search-box {
+    max-width: 100%;
+  }
+  .help-toolbar-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .help-section {
+    padding: 1rem;
+  }
+  .help-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .help-section-title {
+    font-size: 1.05rem;
+  }
+  .help-accordion-header {
+    padding: 9px 11px;
+    font-size: 0.85rem;
+  }
+  .help-accordion-body {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+  .help-tool-btn {
+    font-size: 0.72rem;
+    padding: 5px 8px;
+  }
+}
+

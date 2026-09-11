@@ -1,34 +1,103 @@
 <div id="helpModal" class="modal">
-  <div class="modal-content" style="max-width:550px;">
+  <div class="modal-content" style="max-width:620px;max-height:90vh;display:flex;flex-direction:column;">
     <div class="modal-header">
-      <h3>❓ Centro de Ayuda & Soporte</h3>
+      <h3 style="color:var(--color-secondary,#d4af37);margin:0;display:flex;align-items:center;gap:8px;">
+        <span>❓</span> Centro de Ayuda Rápida & Soporte Táctico
+      </h3>
       <span class="close-btn" onclick="closeModal('helpModal')">&times;</span>
     </div>
-    <div class="modal-body" style="font-size:0.95rem;line-height:1.6;color:#e2e8f0;">
-      <h4 style="color:var(--color-secondary,#d4af37);margin-bottom:6px;">🎖️ Tabla de Estados de Rendimiento</h4>
-      <ul style="list-style:none;padding:0;margin-bottom:14px;">
-        <li style="margin-bottom:6px;"><span class="status-badge status-verde">🟢 VERDE</span> : <strong>175+ tokens</strong> — Operatividad plena</li>
-        <li style="margin-bottom:6px;"><span class="status-badge status-naranja">🟠 NARANJA</span> : <strong>130 - 174 tokens</strong> — Rendimiento estándar</li>
-        <li style="margin-bottom:6px;"><span class="status-badge status-rojo">🔴 ROJO</span> : <strong>100 - 129 tokens</strong> — Advertencia de inactividad</li>
-        <li style="margin-bottom:6px;"><span class="status-badge status-negro">⚫ NEGRO</span> : <strong>Menos de 100 tokens</strong> — Estado crítico</li>
-      </ul>
 
-      <h4 style="color:var(--color-secondary,#d4af37);margin-bottom:6px;">⏱️ Ventana de Carga de Eventos</h4>
-      <p style="margin-bottom:14px;color:#a0aec0;font-size:0.88rem;">
-        Los eventos estándar cierran los jueves a las 08:59 (PY). Los Black Market abren de lunes a miércoles según disposición del mando.
-      </p>
+    <div class="modal-body" style="font-size:0.9rem;line-height:1.55;color:#e2e8f0;overflow-y:auto;padding:1.2rem;">
+      <!-- ACCESOS RÁPIDOS A LAS 10 GUÍAS -->
+      <div style="margin-bottom:1.2rem;">
+        <h4 style="color:var(--color-secondary,#d4af37);margin:0 0 8px 0;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;font-family:var(--font-tactical);">
+          ⚡ Salto Directo a Módulos del Manual
+        </h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:6px;">
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-auth');">
+            <span>🔐</span> 1. Autenticación
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-performance');">
+            <span>📊</span> 2. Rendimiento
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-hangar');">
+            <span>✈️</span> 3. Hangar (42)
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-upgrades');">
+            <span>⚡</span> 4. Upgrades 2.0
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-bm');">
+            <span>🏴‍☠️</span> 5. Black Market
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-admin');">
+            <span>🛡️</span> 6. Administración
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-audit');">
+            <span>👁️</span> 7. Auditoría
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-pwa');">
+            <span>📲</span> 8. PWA & Offline
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-troubleshooting');">
+            <span>🛠️</span> 9. Diagnóstico
+          </button>
+          <button class="help-tool-btn" style="width:100%;text-align:left;padding:6px 8px;font-size:0.75rem;" onclick="closeModal('helpModal');goToHelpSection('help-sec-shortcuts');">
+            <span>⌨️</span> 10. Atajos
+          </button>
+        </div>
+      </div>
 
-      <div style="text-align:center;margin-top:16px;">
-        <button onclick="closeModal('helpModal');if(typeof startTour==='function')startTour();" class="btn-primary" style="margin-right:8px;">
+      <!-- SEMÁFORO MILITAR -->
+      <div style="background:rgba(15,23,42,0.8);border:1px solid rgba(212,175,55,0.25);border-radius:8px;padding:10px 12px;margin-bottom:1rem;">
+        <h4 style="color:var(--color-secondary,#d4af37);margin:0 0 6px 0;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">
+          🎖️ Criterios del Semáforo Militar
+        </h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:0.8rem;">
+          <div><strong style="color:#10b981;">🟢 VERDE:</strong> 175+ Tokens (Óptimo)</div>
+          <div><strong style="color:#f59e0b;">🟠 NARANJA:</strong> 130 - 174 Tokens (Estándar)</div>
+          <div><strong style="color:#ef4444;">🔴 ROJO:</strong> 100 - 129 Tokens (Alerta)</div>
+          <div><strong style="color:#94a3b8;">⚫ NEGRO:</strong> &lt; 100 Tokens (Crítico)</div>
+        </div>
+      </div>
+
+      <!-- HORARIOS Y ATAJOS -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:1rem;">
+        <div style="background:rgba(26,58,108,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;">
+          <div style="color:var(--color-secondary,#d4af37);font-size:0.8rem;font-weight:700;margin-bottom:4px;">
+            ⏱️ Ventana Semanal
+          </div>
+          <div style="font-size:0.78rem;color:#cbd5e1;">
+            Abre: Lunes 09:00 (PY)<br>
+            Cierra: Jueves 08:59 (PY)
+          </div>
+        </div>
+
+        <div style="background:rgba(26,58,108,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 10px;">
+          <div style="color:var(--color-secondary,#d4af37);font-size:0.8rem;font-weight:700;margin-bottom:4px;">
+            ⌨️ Atajos Clave
+          </div>
+          <div style="font-size:0.78rem;color:#cbd5e1;">
+            <span class="help-kbd">←</span> / <span class="help-kbd">→</span> Hangar &bull; 
+            <span class="help-kbd">Enter</span> Enviar &bull; 
+            <span class="help-kbd">Esc</span> Cerrar
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:0.9rem 1.2rem;border-top:1px solid rgba(255,255,255,0.08);">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="closeModal('helpModal');if(typeof startTour==='function')startTour();" class="btn-primary" style="padding:6px 12px;font-size:0.82rem;">
           🚀 Iniciar Tour Guiado
         </button>
-        <button onclick="closeModal('helpModal');showView('helpView');" class="btn-secondary">
+        <button onclick="closeModal('helpModal');showView('helpView');" class="btn-secondary" style="padding:6px 12px;font-size:0.82rem;">
           📖 Ver Manual Completo
         </button>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button onclick="closeModal('helpModal')" class="btn-secondary">Cerrar</button>
+      <button onclick="closeModal('helpModal')" class="btn-secondary" style="padding:6px 12px;font-size:0.82rem;">
+        Cerrar
+      </button>
     </div>
   </div>
 </div>
+
