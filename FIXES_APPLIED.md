@@ -202,6 +202,69 @@ fc657f0 refactor: implement helper functions for typed queries
 
 ---
 
+### 🔹 Fix #9: Actualizar `sistemas_disponibles` y Validación de Sistemas (2026-09-11)
+
+**Fecha:** 2026-09-11  
+**Archivos:** `plane_models` (Supabase), `src/controllers/planes.controller.js`  
+**Severidad:** 🚨 Crítica (Permitía mejorar sistemas inexistentes)
+
+**Problema Detectado:**
+Todos los 42 aviones tenían la misma estructura genérica en `sistemas_disponibles`, lo que permitía intentar mejorar sistemas que no existían para ciertos aviones (ej: cañones en F-111).
+
+**Solución:**
+1. Actualizar `sistemas_disponibles` en `plane_models` con la estructura específica por avión (`canones`, `misiles_ir`, `misiles_radar`, `misiles_beam`, `misiles_manual`, `misiles_largo`, `cohetes`).
+2. Agregar validación en `updatePlaneSystem` que verifica que el sistema solicitado esté disponible antes de aplicar la mejora.
+3. Retornar error `SYSTEM_NOT_AVAILABLE` si no está disponible.
+
+**Código implementado:**
+```javascript
+const sistemaKeyMap = {
+  fuselaje: 'fuselaje',
+  motor: 'motor',
+  avionica: 'avionica',
+  armas: 'canones'
+};
+
+const sistemaKey = sistemaKeyMap[sistema];
+
+if (sistemaKey) {
+  const { data: modelData, error: modelError } = await supabase
+    .from('plane_models')
+    .select('sistemas_disponibles, name')
+    .eq('id', plane.avion_id)
+    .single();
+
+  if (!modelError && modelData) {
+    const sistemasDisponibles = modelData.sistemas_disponibles || {};
+    const sistemaDisponible = sistemasDisponibles[sistemaKey];
+
+    if (sistemaDisponible === null || sistemaDisponible === false || 
+        sistemaDisponible === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: `Esta aeronave (${modelData.name}) no tiene el sistema ${sistema.toUpperCase()} disponible`,
+        error: 'SYSTEM_NOT_AVAILABLE',
+        details: { ... }
+      });
+    }
+  }
+}
+```
+
+**Evidencia de Validación:**
+```text
+✅ [Upgrade] Sistema armas disponible para F/A-18 Hornet
+```
+
+**Resultado:**
+- ✅ 42 aviones con armas específicas
+- ✅ Validación funcional en producción
+- ✅ Prueba exitosa: PUT /api/planes/4/system → success: true
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |
@@ -211,10 +274,11 @@ fc657f0 refactor: implement helper functions for typed queries
 | `src/controllers/admin.controller.js` | Modificación de rangos militares y estado de cuenta | 🟢 ESTABLE |
 | `src/controllers/profile.controller.js` | Persistencia de datos personales y teléfono de alertas | 🟢 ESTABLE |
 | `src/controllers/performances.controller.js` | Historial de tokens y sincronización de semáforo | 🟢 ESTABLE |
-| `src/controllers/planes.controller.js` | Habilidades, Upgrades 2.0, cálculo de mods y recomendaciones | 🟢 ESTABLE |
+| `src/controllers/planes.controller.js` | Habilidades, Upgrades 2.0, cálculo de mods, recomendaciones y validación de sistemas disponibles | 🟢 ESTABLE |
 | `src/utils/upgradeEffects.js` | Lógica y fallback de bonificaciones por niveles de subsistemas (0-8) | 🟢 ESTABLE |
 | `src/utils/modEffects.js` | Lógica, caché y cálculo de multiplicadores de los 10 mods tácticos | 🟢 ESTABLE |
 | `src/utils/audit.js` | Resolución de UUIDs en eventos de seguridad y auditoría | 🟢 ESTABLE |
 | `components/aircraft-stats-modal.html` | Modal de datos profundos y markup de Upgrade Planner 2.0 | 🟢 ESTABLE |
 | `planes (Supabase)` | Normalización 1NF (UNIQUE, FK, CHECKs, habilidades) | 🟢 ESTABLE |
+| `plane_models (Supabase)` | Catálogo de 42 modelos con `sistemas_disponibles` detallado por armamento | 🟢 ESTABLE |
 | `components/change-password-modal.html` | Modal de actualización táctica (Workaround: ENTER) | 🟡 FIX UI PENDIENTE |

@@ -82,9 +82,35 @@ CREATE TABLE users (
 | `passive_levels` | JSONB | Array de niveles de la pasiva (5 niveles) |
 | `is_active` | BOOLEAN | ¿Está activo? |
 | `stats_real` | JSONB | Estadísticas reales |
-| `sistemas_disponibles` | JSONB | Sistemas mejorables |
+| `sistemas_disponibles` | JSONB | Sistemas y armas disponibles por avión (fuselaje, motor, avionica, canones, misiles_ir, misiles_radar, misiles_beam, misiles_manual, misiles_largo, cohetes) |
 
-**Catálogo oficial:** 39 modelos de combate
+**Catálogo oficial:** 42 modelos de combate con configuración individual de armamento y subsistemas.
+
+##### Estructura de `sistemas_disponibles` (JSONB)
+
+```json
+{
+  "fuselaje": true,
+  "motor": true,
+  "avionica": true,
+  "canones": "precision" | "asalto" | null,
+  "misiles_ir": true | false,
+  "misiles_radar": true | false,
+  "misiles_beam": true | false,
+  "misiles_manual": true | false,
+  "misiles_largo": true | false,
+  "cohetes": true | false
+}
+```
+
+##### Ejemplos Reales de `sistemas_disponibles` por Aeronave
+
+| Modelo (ID) | Fuselaje | Motor | Aviónica | Cañones | Misiles IR | Misiles Radar | Misiles Largo | Otros Sistemas |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
+| **F-5 Tiger (101)** | `true` | `true` | `true` | `"precision"` | `true` | `false` | `false` | Beam: `false`, Manual: `false`, Cohetes: `false` |
+| **F-111 Aardvark (401)** | `true` | `true` | `true` | `null` | `false` | `true` | `true` | Beam: `false`, Manual: `false`, Cohetes: `false` |
+| **J-20 Mighty Dragon (404)** | `true` | `true` | `true` | `null` | `true` | `true` | `true` | Beam: `false`, Manual: `false`, Cohetes: `false` |
+| **F-14 Tomcat (402)** | `true` | `true` | `true` | `"asalto"` | `true` | `true` | `true` | Beam: `false`, Manual: `false`, Cohetes: `false` |
 
 #### Tabla `plane_mods` (Catálogo de Modificaciones)
 
@@ -293,7 +319,7 @@ CREATE TABLE users (
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Fixes Aplicados (2026-09-10)
+### Fixes Aplicados (2026-09-10 / 2026-09-11)
 
 | # | Fix | Archivo | Estado |
 |---|-----|---------|--------|
@@ -303,6 +329,34 @@ CREATE TABLE users (
 | 4 | IA de recomendación | `planes.controller.js` | ✅ IMPLEMENTADO |
 | 5 | Upgrade Planner | `aircraft-stats-modal.html` | ✅ IMPLEMENTADO |
 | 6 | Efectos de Mods (10 mods x 5 niveles) | `modEffects.js`, `planes.controller.js` | ✅ IMPLEMENTADO |
+| 7 | Validación de sistemas disponibles (42 aviones) | `plane_models`, `planes.controller.js` | ✅ IMPLEMENTADO |
+
+### Validación de Sistemas en `updatePlaneSystem`
+
+Mecanismo de control operativo incorporado en `src/controllers/planes.controller.js` para evitar la calibración de subsistemas o armamento no disponible en el diseño de fábrica del avión:
+
+1. **Mapeo de Subsistemas:** El subsistema solicitado en el endpoint `PUT /api/planes/:id/system` se traduce a la columna de armamento o estructura en `plane_models.sistemas_disponibles`:
+   - `fuselaje` $\to$ `fuselaje`
+   - `motor` $\to$ `motor`
+   - `avionica` $\to$ `avionica`
+   - `armas` $\to$ `canones`
+2. **Validación de Disponibilidad:** Se consulta `plane_models` mediante `avion_id`. Si el valor es `null`, `false` o no definido, se rechaza la solicitud con código HTTP **400** (`SYSTEM_NOT_AVAILABLE`).
+3. **Respuesta de Error Estructurada:**
+   ```json
+   {
+     "success": false,
+     "message": "Esta aeronave (F-111 Aardvark) no tiene el sistema ARMAS disponible",
+     "error": "SYSTEM_NOT_AVAILABLE",
+     "details": {
+       "sistema_solicitado": "armas",
+       "sistema_key": "canones",
+       "avion_id": "401",
+       "avion_name": "F-111 Aardvark",
+       "sistemas_disponibles": ["fuselaje", "motor", "avionica", "misiles_radar", "misiles_largo"]
+     }
+   }
+   ```
+4. **Validación en Producción:** Verificado en Fly.io con log táctico `✅ [Upgrade] Sistema armas disponible para F/A-18 Hornet` y retorno exitoso en mejoras válidas (`PUT /api/planes/4/system` $\to$ `success: true`).
 
 ---
 
