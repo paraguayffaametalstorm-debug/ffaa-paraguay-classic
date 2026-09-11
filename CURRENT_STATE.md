@@ -49,7 +49,7 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 
 ---
 
-## 🛡️ Estado de Módulos (Actualizado 2026-09-10)
+## 🛡️ Estado de Módulos (Actualizado 2026-09-11)
 
 | Módulo | Estado | Detalle |
 |--------|--------|---------|
@@ -57,8 +57,9 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 | **Cambio de Contraseña** | ✅ Funcional | Lógica tipada UUID/INTEGER |
 | **Registro de Rendimiento** | ✅ Funcional | Guarda `role` histórico |
 | **Black Market** | ✅ Funcional | Misiones, progreso, descuentos |
-| **Catálogo de Aviones** | ✅ Normalizado | 39 modelos |
+| **Catálogo de Aviones** | ✅ Normalizado | 42 modelos con armas específicas |
 | **Hangar de Pilotos** | ✅ Normalizado | UNIQUE + FK + CHECK |
+| **Validación de Sistemas** | ✅ Funcional | Sistema disponible por avión |
 | **Carrusel Circular** | ✅ Funcional | Navegación infinita |
 | **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre + ID |
 | **IA de Recomendación** | ✅ Funcional | 3 estilos de combate |
@@ -67,17 +68,26 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 | **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
 | **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
 
-## 🛠️ Sistema de Aviones (2026-09-10)
+## 🛠️ Sistema de Aviones (Actualizado 2026-09-11)
 
-El sistema de aviones fue normalizado y ampliado:
+El sistema de aviones fue normalizado, calibrado y dotado de validación técnica de armamento:
 
-- ✅ 39 modelos en el catálogo
+- ✅ 42 modelos en el catálogo maestro con armas y subsistemas específicos (`sistemas_disponibles` en JSONB)
+- ✅ Validación previa en `updatePlaneSystem` (`src/controllers/planes.controller.js`) que impide calibrar sistemas no soportados (ej: cañones en F-111 / J-20)
 - ✅ 10 mods disponibles con efectos numéricos (m1..m10 en 5 niveles)
-- ✅ 4 sistemas mejorables (Fuselaje, Motor, Aviónica, Armas)
+- ✅ 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas/Cañones según disponibilidad)
 - ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles)
-- ✅ IA de Recomendación (3 estilos)
-- ✅ Upgrade Planner (previsualización)
+- ✅ IA de Recomendación (3 estilos de combate)
+- ✅ Upgrade Planner (previsualización cuantitativa de builds)
 - ✅ Integración de efectos de mods en telemetría de combate (`getPlaneStats`)
+
+### 🎯 Estructura de `sistemas_disponibles` (42 Aviones)
+Cada modelo en `plane_models` define detalladamente su arquitectura:
+- `fuselaje`: `true`
+- `motor`: `true`
+- `avionica`: `true`
+- `canones`: `"precision"` | `"asalto"` | `null`
+- `misiles_ir`, `misiles_radar`, `misiles_beam`, `misiles_manual`, `misiles_largo`, `cohetes`: `true` | `false`
 
 ### ⚡ Efectos de Mods (10 Mods × 5 Niveles)
 - **Siempre Activos en Stats:**
