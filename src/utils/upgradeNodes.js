@@ -276,42 +276,56 @@ export function getNodesForSystem(sistema) {
 
 /**
  * Calcula el efecto total acumulado de los nodos de un sistema
- * @param {Object} nodos - Objeto estructurado de nodos (de getUpgradeNodes)
- * @param {string} sistema - Nombre del sistema ('fuselaje', 'motor', etc.)
- * @param {number} nivel - Nivel alcanzado (0 a 8)
- * @param {Object} rutas - Objeto con elecciones de ruta por nivel, ej: { 5: 'A', 6: 'B', 7: 'A', 8: 'B' }
- * @returns {Object} Efectos numéricos acumulados y descripción consolidada
+ * @param {Object} nodos - Objeto de nodos (de getUpgradeNodes)
+ * @param {string} sistema - Sistema ('fuselaje', 'motor', 'avionica', etc.)
+ * @param {number} nivel - Nivel máximo alcanzado (0-8)
+ * @param {Object} rutas - Elecciones A/B por nivel: { 5: 'A', 6: 'B', ... }
+ * @returns {Object} Efectos acumulados: { vida: 22.5, velocidad_total: 3.5, ... }
  */
 export function calculateNodeEffects(nodos, sistema, nivel, rutas = {}) {
-  const all = nodos || cachedNodes || getFallbackUpgradeNodes();
-  if (!all || !all[sistema] || !nivel || nivel <= 0) {
-    return {};
+  const efectos = {};
+  
+  // Validaciones
+  if (!nodos || !sistema || !nivel || nivel <= 0) {
+    return efectos;
   }
-
-  const accumulated = {};
-  const descriptions = [];
-
-  for (let lvl = 1; lvl <= Math.min(nivel, 8); lvl++) {
-    const route = lvl <= 4 ? 'base' : (rutas[lvl] || rutas[String(lvl)] || 'A');
-    const node = all[sistema]?.[route]?.[lvl];
-    if (node && node.effects) {
-      Object.entries(node.effects).forEach(([key, val]) => {
-        if (key === 'descripcion') {
-          descriptions.push(val);
-        } else if (typeof val === 'number') {
-          accumulated[key] = (accumulated[key] || 0) + val;
-        } else {
-          accumulated[key] = val;
-        }
-      });
+  
+  const sistemaNodos = nodos[sistema];
+  if (!sistemaNodos) {
+    console.warn(`⚠️ [UpgradeNodes] Sistema '${sistema}' no encontrado`);
+    return efectos;
+  }
+  
+  // Recorrer cada nivel desde 1 hasta el nivel máximo
+  for (let n = 1; n <= nivel; n++) {
+    // Determinar la ruta
+    let ruta = 'base';
+    if (n >= 5) {
+      ruta = rutas[n] || rutas[String(n)] || 'A';
     }
+    
+    // Obtener el nodo
+    const nodo = sistemaNodos[ruta]?.[n];
+    
+    if (!nodo || !nodo.effects) {
+      continue;
+    }
+    
+    // Acumular todos los efectos numéricos
+    Object.entries(nodo.effects).forEach(([key, value]) => {
+      // Ignorar claves no numéricas
+      if (key === 'descripcion' || key === 'condicion' || key === 'pendiente') {
+        return;
+      }
+      
+      const numValue = Number(value);
+      if (!isNaN(numValue)) {
+        efectos[key] = (efectos[key] || 0) + numValue;
+      }
+    });
   }
-
-  if (descriptions.length > 0) {
-    accumulated.descripcion = descriptions.join(' · ');
-  }
-
-  return accumulated;
+  
+  return efectos;
 }
 
 /**
