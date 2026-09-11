@@ -969,25 +969,51 @@ export async function getPlaneStats(req, res, next) {
       speed: baseStats.top_speed_afterburner || 1260,
       agility: baseStats.optimal_turn_rate || 39.0,
       armor: baseStats.health || 100,
-      firepower: 1600, // TODO: obtener de armas (requiere stats de armas)
+      firepower: 1600,
       radar: statsAdvanced.radar_range || 5.7,
-      ecm: 90 // TODO: obtener de avionica
+      ecm: 90
     };
 
-    // Bonus por nivel de sistema (basados en la Wiki)
-    const bonusFuselaje = 1 + ((plane.nivel_fuselaje || 0) * 0.03);   // +3% HP por nivel
-    const bonusMotor = 1 + ((plane.nivel_motor || 0) * 0.025);       // +2.5% speed por nivel
-    const bonusAvionica = 1 + ((plane.nivel_avionica || 0) * 0.03);  // +3% radar por nivel
-    const bonusArmas = 1 + ((plane.nivel_armas || 0) * 0.035);       // +3.5% daño por nivel
+    const levelFactor = (plane.nivel || 1) / 20;
 
-    // Aplicar a las stats base
+    // ✅ CARGAR EFECTOS DE UPGRADES 2.0
+    const effects = await getUpgradeEffects(supabase);
+
+    const rutaFuselaje = plane.ruta_fuselaje || 'A';
+    const rutaMotor = plane.ruta_motor || 'A';
+    const rutaAvionica = plane.ruta_avionica || 'A';
+    const rutaArmas = plane.ruta_armas || 'A';
+
+    const bonusMotor = calculateSystemBonus(effects, 'motor', plane.nivel_motor, rutaMotor);
+    const bonusFuselaje = calculateSystemBonus(effects, 'fuselaje', plane.nivel_fuselaje, rutaFuselaje);
+    const bonusArmas = calculateSystemBonus(effects, 'armas', plane.nivel_armas, rutaArmas);
+    const bonusAvionica = calculateSystemBonus(effects, 'avionica', plane.nivel_avionica, rutaAvionica);
+
+    // ✅ CARGAR EFECTOS DE MODS
+    const modEffects = await getModEffects(supabase);
+
+    const mod1Agility = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'agility');
+    const mod2Agility = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'agility');
+    const mod1Armor = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'armor');
+    const mod2Armor = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'armor');
+    const mod1Ecm = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'ecm');
+    const mod2Ecm = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'ecm');
+    const mod1Radar = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'radar');
+    const mod2Radar = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'radar');
+
+    const bonusModAgility = 1 + (mod1Agility + mod2Agility) / 100;
+    const bonusModArmor = 1 + (mod1Armor + mod2Armor) / 100;
+    const bonusModEcm = 1 + (mod1Ecm + mod2Ecm) / 100;
+    const bonusModRadar = 1 + (mod1Radar + mod2Radar) / 100;
+
+    // Aplicar todos los factores
     const current_raw = {
-      speed: Math.round(max_raw.speed * bonusMotor),
-      agility: Math.round(max_raw.agility * (1 + ((plane.nivel_fuselaje || 0) * 0.015))),
-      armor: Math.round(max_raw.armor * bonusFuselaje),
-      firepower: Math.round(max_raw.firepower * bonusArmas),
-      radar: Math.round(max_raw.radar * bonusAvionica),
-      ecm: Math.round(Math.min(99, max_raw.ecm * bonusAvionica))
+      speed: Math.round(max_raw.speed * (0.6 + 0.4 * levelFactor) * bonusMotor),
+      agility: Math.round(max_raw.agility * (0.6 + 0.4 * levelFactor) * (1 + ((plane.nivel_fuselaje || 0) * 0.015)) * bonusModAgility),
+      armor: Math.round(max_raw.armor * (0.5 + 0.5 * levelFactor) * bonusFuselaje * bonusModArmor),
+      firepower: Math.round(max_raw.firepower * (0.5 + 0.5 * levelFactor) * bonusArmas),
+      radar: Math.round(max_raw.radar * (0.6 + 0.4 * levelFactor) * bonusAvionica * bonusModRadar),
+      ecm: Math.round(Math.min(99, max_raw.ecm * (0.4 + 0.6 * levelFactor) * bonusAvionica * bonusModEcm))
     };
 
     // ✅ CARGAR TRAITS DEL AVIÓN
