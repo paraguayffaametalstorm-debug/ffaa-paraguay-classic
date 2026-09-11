@@ -13,6 +13,7 @@ import { getUpgradeEffects, calculateSystemBonus } from '../utils/upgradeEffects
 import { getModEffects, calculateModBonus, getModDescription } from '../utils/modEffects.js';
 import { getPlaneTraitsWithInfo } from '../utils/traits.js';
 import { getUpgradeNodes, getNode, calculateNodeEffects } from '../utils/upgradeNodes.js';
+import { logSecurityEvent } from '../utils/audit.js';
 
 // Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
@@ -597,6 +598,192 @@ export async function updatePlaneSystem(req, res, next) {
 }
 
 /**
+ * Actualizar múltiples subsistemas y rutas A/B de Upgrades 2.0 para una aeronave
+ * PUT /api/planes/:id/systems
+ */
+export async function updatePlaneSystems(req, res) {
+  try {
+    const rawId = req.params.id;
+    const planeId = /^\d+$/.test(String(rawId)) ? parseInt(rawId, 10) : rawId;
+    const userId = req.user.user_id || req.user.id;
+    const supabase = getSupabase();
+
+    if (!supabase) {
+      return res.status(500).json({ success: false, message: 'Base de datos no disponible', error: 'DATABASE_UNAVAILABLE' });
+    }
+
+    const { data: plane, error: findError } = await supabase
+      .from('planes')
+      .select('*')
+      .eq('id', planeId)
+      .single();
+
+    if (findError || !plane) {
+      return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
+    }
+
+    if (String(plane.user_id) !== String(userId) && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({ success: false, message: 'Permiso denegado para modificar esta aeronave', error: 'FORBIDDEN' });
+    }
+
+    const planeLevel = plane.nivel || 1;
+    if (planeLevel < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Los subsistemas Upgrades 2.0 requieren que la aeronave sea Nivel 6 o superior',
+        error: 'UPGRADE_LOCKED_LEVEL_TOO_LOW'
+      });
+    }
+
+    const { sistemas } = req.body;
+    if (!sistemas || typeof sistemas !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'Estructura de sistemas no provista o inválida',
+        error: 'INVALID_SYSTEMS_PAYLOAD'
+      });
+    }
+
+    // Cargar catálogo de nodos para validar requirement_level
+    const allNodes = await getUpgradeNodes(supabase);
+
+    // Preparar objeto de rutas existente
+    let currentRutasSistemas = plane.rutas_sistemas || {};
+    if (typeof currentRutasSistemas === 'string') {
+      try { currentRutasSistemas = JSON.parse(currentRutasSistemas); } catch (_) { currentRutasSistemas = {}; }
+    }
+    const updatedRutas = { ...currentRutasSistemas };
+
+    const updatePayload = {};
+
+    const systemColumnMap = {
+      fuselaje: 'nivel_fuselaje',
+      motor: 'nivel_motor',
+      avionica: 'nivel_avionica',
+      armas: 'nivel_armas'
+    };
+
+    // Validar y procesar cada sistema
+    for (const [sysKey, sysData] of Object.entries(sistemas)) {
+      if (!sysData || typeof sysData !== 'object') continue;
+
+      const targetNivel = Math.min(8, Math.max(0, parseInt(sysData.nivel, 10) || 0));
+      const targetRutas = (sysData.rutas && typeof sysData.rutas === 'object') ? sysData.rutas : {};
+
+      // Validar requisito de nivel de aeronave para cada nivel activo
+      const nodeSysKey = (sysKey === 'armas') ? 'canones_precision' : sysKey;
+      const sysNodes = allNodes?.[nodeSysKey] || allNodes?.[sysKey];
+
+      if (sysNodes) {
+        for (let l = 1; l <= targetNivel; l++) {
+          const ruta = l <= 4 ? 'base' : (targetRutas[l] || targetRutas[String(l)] || 'A');
+          const nodeObj = sysNodes[ruta]?.[l];
+          if (nodeObj && planeLevel < (nodeObj.requirement_level || 6)) {
+            return res.status(400).json({
+              success: false,
+              message: `El nodo Nivel ${l} (${nodeObj.node_name || sysKey}) requiere que el avión sea Nivel ${nodeObj.requirement_level}`,
+              error: 'REQUIREMENT_LEVEL_NOT_MET',
+              details: { sistema: sysKey, nivel: l, requirement_level: nodeObj.requirement_level, plane_level: planeLevel }
+            });
+          }
+        }
+      }
+
+      // Mapear a columnas de la base de datos
+      if (systemColumnMap[sysKey]) {
+        updatePayload[systemColumnMap[sysKey]] = targetNivel;
+      } else if (sysKey === 'canones_precision' || sysKey === 'canones_asalto') {
+        if (updatePayload.nivel_armas === undefined) {
+          updatePayload.nivel_armas = targetNivel;
+        }
+      }
+
+      // Actualizar rutas para el sistema
+      updatedRutas[sysKey] = { ...targetRutas };
+    }
+
+    updatePayload.rutas_sistemas = updatedRutas;
+
+    // Ejecutar actualización en Supabase
+    const { data: updatedPlane, error: updateErr } = await supabase
+      .from('planes')
+      .update(updatePayload)
+      .eq('id', planeId)
+      .select()
+      .single();
+
+    if (updateErr) {
+      console.error('❌ [Hangar] Error actualizando planes en Supabase:', updateErr.message);
+      // Fallback si la columna rutas_sistemas aún no existiese en la BD
+      if (updateErr.message && updateErr.message.includes('rutas_sistemas')) {
+        const fallbackPayload = { ...updatePayload };
+        delete fallbackPayload.rutas_sistemas;
+        const { data: fbPlane, error: fbErr } = await supabase
+          .from('planes')
+          .update(fallbackPayload)
+          .eq('id', planeId)
+          .select()
+          .single();
+        if (fbErr) throw fbErr;
+      } else {
+        throw updateErr;
+      }
+    }
+
+    // Auditoría en plane_upgrades
+    try {
+      const auditEntries = [];
+      Object.entries(sistemas).forEach(([sistema, data]) => {
+        const col = systemColumnMap[sistema] || `nivel_${sistema}`;
+        const prevNivel = plane[col] || 0;
+        const newNivel = data.nivel !== undefined ? data.nivel : prevNivel;
+        if (prevNivel !== newNivel) {
+          auditEntries.push({
+            plane_id: planeId,
+            user_id: plane.user_id,
+            sistema,
+            nivel_anterior: prevNivel,
+            nivel_nuevo: newNivel,
+            piezas_usadas: 0,
+            avanzadas_usadas: 0
+          });
+        }
+      });
+      if (auditEntries.length > 0) {
+        await supabase.from('plane_upgrades').insert(auditEntries);
+      }
+    } catch (auditErr) {
+      console.warn('⚠️ [Hangar] Advertencia registrando auditoría en plane_upgrades:', auditErr.message);
+    }
+
+    // Registrar en auditoría de seguridad
+    try {
+      await logSecurityEvent({
+        supabase,
+        userId,
+        nick: req.user.nick || req.user.username,
+        event: 'PLANE_SYSTEMS_UPDATED',
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        metadata: { planeId, sistemas }
+      });
+    } catch (_) {}
+
+    console.log(`✅ [Hangar] Subsistemas Upgrades 2.0 actualizados para avión ${planeId}`);
+
+    return res.json({
+      success: true,
+      message: 'Sistemas actualizados correctamente',
+      plane: updatedPlane || { ...plane, ...updatePayload }
+    });
+
+  } catch (err) {
+    console.error('❌ [Hangar] Error en updatePlaneSystems:', err);
+    return res.status(500).json({ success: false, message: 'Error al actualizar sistemas', error: err.message });
+  }
+}
+
+/**
  * Obtener detalles y telemetría de una aeronave por ID
  */
 export async function getPlaneDetails(req, res, next) {
@@ -624,6 +811,16 @@ export async function getPlaneDetails(req, res, next) {
     const modelName = model?.name || (plane.name && !/^\d+$/.test(plane.name) ? plane.name : null) || plane.avion_id;
     const modelType = model?.type || plane.type || 'Caza de Combate';
 
+    let systemNames = model?.system_names || {};
+    if (typeof systemNames === 'string') {
+      try { systemNames = JSON.parse(systemNames); } catch (_) { systemNames = {}; }
+    }
+
+    let rutasSistemas = plane.rutas_sistemas || {};
+    if (typeof rutasSistemas === 'string') {
+      try { rutasSistemas = JSON.parse(rutasSistemas); } catch (_) { rutasSistemas = {}; }
+    }
+
     const isUnlocked = (plane.nivel || 1) >= 6;
     const planeLvl = plane.nivel || 1;
     const nf = plane.nivel_fuselaje || 0;
@@ -643,14 +840,14 @@ export async function getPlaneDetails(req, res, next) {
     };
 
     // Constructor de sistema con nodos 2.0 (12 nodos, rutas A/B, nodo actual y siguiente)
-    function buildSystemObject(sysKey, nodeSysKey, nombre, descripcion, nivel) {
+    function buildSystemObject(sysKey, nodeSysKey, defaultNombre, descripcion, nivel) {
       const allSysNodes = (allNodes && allNodes[nodeSysKey]) ? [
         ...Object.values(allNodes[nodeSysKey].base || {}),
         ...Object.values(allNodes[nodeSysKey].A || {}),
         ...Object.values(allNodes[nodeSysKey].B || {})
       ].sort((a, b) => a.nivel - b.nivel || (a.ruta === 'base' ? -1 : a.ruta.localeCompare(b.ruta))) : [];
 
-      const rutasSys = plane[`rutas_${sysKey}`] || plane[`rutas_${nodeSysKey}`] || {};
+      const rutasSys = rutasSistemas[sysKey] || rutasSistemas[nodeSysKey] || plane[`rutas_${sysKey}`] || plane[`rutas_${nodeSysKey}`] || {};
       const currentRoute = nivel <= 4 ? 'base' : (rutasSys[nivel] || plane[`ruta_${sysKey}`] || plane[`ruta_${nodeSysKey}`] || 'A');
       const currentNode = nivel > 0 ? (allNodes?.[nodeSysKey]?.[currentRoute]?.[nivel] || null) : null;
 
@@ -681,11 +878,15 @@ export async function getPlaneDetails(req, res, next) {
         desbloqueado: planeLvl >= (n.requirement_level || 6) && nivel >= n.nivel
       }));
 
+      const sysDisplayName = systemNames[sysKey] || systemNames[nodeSysKey] || defaultNombre;
+
       return {
-        nombre,
+        sistema: sysKey,
+        nombre: sysDisplayName,
         descripcion,
         nivel,
         max: 8,
+        rutas: rutasSys,
         disponible: isUnlocked,
         costo_siguiente: UPGRADE_COSTS[nivel + 1] || null,
         nodo_actual: currentNode ? {
@@ -756,6 +957,9 @@ export async function getPlaneDetails(req, res, next) {
       type: modelType,
       image_url: model?.image_url || null,
       nivel: plane.nivel,
+      system_names: systemNames,
+      rutas_sistemas: rutasSistemas,
+      stats_real: model?.stats_real || null,
       especial_nombre: plane.especial_nombre,
       especial_nivel_num: plane.especial_nivel_num,
       especial_efecto: plane.especial_efecto,
