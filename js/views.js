@@ -2401,7 +2401,7 @@ async function openAircraftDeepModal(planeId) {
     const paints = plane?.paints;
     if (Array.isArray(paints) && paints.length > 0) {
       paintsEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
           ${paints.map(p => `
             <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
                         border-radius:6px;padding:8px;text-align:center;">
@@ -2436,7 +2436,7 @@ async function openAircraftDeepModal(planeId) {
     const canopies = plane?.canopies;
     if (Array.isArray(canopies) && canopies.length > 0) {
       canopiesEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
           ${canopies.map(c => `
             <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
                         border-radius:6px;padding:8px;text-align:center;">
@@ -2642,7 +2642,7 @@ async function openAircraftDeepModal(planeId) {
           const paints = plane?.paints;
           if (Array.isArray(paints) && paints.length > 0) {
             paintsEl.innerHTML = `
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
                 ${paints.map(p => `
                   <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
                               border-radius:6px;padding:8px;text-align:center;">
@@ -2674,7 +2674,7 @@ async function openAircraftDeepModal(planeId) {
           const canopies = plane?.canopies;
           if (Array.isArray(canopies) && canopies.length > 0) {
             canopiesEl.innerHTML = `
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
                 ${canopies.map(c => `
                   <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
                               border-radius:6px;padding:8px;text-align:center;">
