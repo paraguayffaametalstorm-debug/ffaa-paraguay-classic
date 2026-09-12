@@ -1418,6 +1418,9 @@ function updateCarouselView() {
 
           <!-- Card Action Buttons -->
           <div class="card-actions">
+            <button class="btn-secondary" onclick="event.stopPropagation(); openPlaneUpgrades(${plane.id})" title="Gestionar Upgrades 2.0">
+              <i data-lucide="wrench" style="width:13px;height:13px;"></i> Upgrades
+            </button>
             <button class="btn-secondary" onclick="event.stopPropagation(); openAircraftDeepModal(${plane.id})" title="Ver Telemetría y Datos Profundos">
               <i data-lucide="gauge" style="width:13px;height:13px;"></i> Stats
             </button>
@@ -3016,12 +3019,24 @@ async function applySystemUpgrade(sistema) {
 
   try {
     const updatedPlane = await updatePlaneSystem(planeId, sistema, newLevel);
-    
+
+    // ✅ FIX: Obtener datos frescos del backend (incluye .sistemas completos)
+    let freshDetails = updatedPlane;
+    if (typeof getPlaneDetails === 'function') {
+      try {
+        freshDetails = await getPlaneDetails(planeId);
+      } catch (e) {
+        console.warn('No se pudo refrescar getPlaneDetails, usando updatedPlane:', e);
+      }
+    }
+
+    // Actualizar caché local
     const pIdx = allUserPlanes.findIndex(p => p.id === planeId);
     if (pIdx !== -1) {
       allUserPlanes[pIdx] = { ...allUserPlanes[pIdx], ...updatedPlane };
     }
-    _currentUpgradesPlane = { ..._currentUpgradesPlane, ...updatedPlane };
+
+    _currentUpgradesPlane = freshDetails || { ..._currentUpgradesPlane, ...updatedPlane };
 
     renderPlaneUpgradesModal(_currentUpgradesPlane);
     displayPlanes(allUserPlanes);
