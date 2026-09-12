@@ -2937,6 +2937,29 @@ function renderPlaneUpgradesModal(plane) {
 
   const modelName = plane.model_name || plane.name || plane.avion_id || 'Aeronave';
   if (nameEl) nameEl.textContent = modelName;
+
+  // ✅ FIX: Poblar nombres reales de sistemas desde plane.system_names
+  const sysNames = plane.system_names || {};
+  const formatSysName = (val) => {
+    if (Array.isArray(val)) return val.join(' / ');
+    return val || '';
+  };
+
+  // Mapeo de clave del modal → clave de system_names
+  const sysNameMap = {
+    fuselaje: 'fuselaje',
+    motor:    'motor',
+    avionica: 'avionica',
+    armas:    'canones'  // ⚠️ El modal usa 'armas' pero system_names usa 'canones'
+  };
+
+  Object.entries(sysNameMap).forEach(([modalKey, sysKey]) => {
+    const el = document.getElementById(`sysName_${modalKey}`);
+    if (el) {
+      const nombre = formatSysName(sysNames[sysKey]);
+      el.textContent = nombre ? ` · ${nombre}` : '';
+    }
+  });
   if (typeEl) typeEl.textContent = plane.type || 'Caza de Combate';
   if (lvlEl) lvlEl.textContent = `Nv. ${plane.nivel || 1}`;
 
@@ -5018,25 +5041,19 @@ async function handleSavePlaneModel(event) {
     return;
   }
 
-  // Parsear JSON o fallback
+  // Parsear niveles de habilidades (JSON o texto)
   let specialLevels = null;
   const specText = document.getElementById('modelFormSpecialLevels')?.value?.trim();
   if (specText) {
-    try {
-      specialLevels = JSON.parse(specText);
-    } catch {
-      specialLevels = { "1": specText };
-    }
+    try { specialLevels = JSON.parse(specText); }
+    catch { specialLevels = { "1": specText }; }
   }
 
   let passiveLevels = null;
   const passText = document.getElementById('modelFormPassiveLevels')?.value?.trim();
   if (passText) {
-    try {
-      passiveLevels = JSON.parse(passText);
-    } catch {
-      passiveLevels = { "1": passText };
-    }
+    try { passiveLevels = JSON.parse(passText); }
+    catch { passiveLevels = { "1": passText }; }
   }
 
   const velocidad = parseInt(document.getElementById('statVelocidad')?.value, 10) || 2000;
@@ -5044,18 +5061,60 @@ async function handleSavePlaneModel(event) {
   const blindaje = parseInt(document.getElementById('statBlindaje')?.value, 10) || 1200;
   const potenciaArmas = parseInt(document.getElementById('statArmas')?.value, 10) || 1200;
 
+  // ✅ FIX CRÍTICO: Buscar el modelo existente para hacer MERGE (preserva campos no editables)
+  const existingModel = (mode === 'edit')
+    ? (window.currentAdminPlaneModels || []).find(m => String(m.id) === String(id))
+    : null;
+
+  const existingBase = existingModel?.stats_real?.base_statistics || {};
+  const existingAdv  = existingModel?.stats_real?.advanced_statistics || {};
+  const existingSys  = existingModel?.sistemas_disponibles || {};
+
+  // Construir stats_real con estructura ANIDADA correcta
+  // Si el campo no está en el form, preservar el valor existente o usar un default razonable
   const statsReal = {
-    velocidad,
-    agilidad,
-    blindaje,
-    potencia_armas: potenciaArmas
+    base_statistics: {
+      health:                    blindaje,
+      flare_count:               existingBase.flare_count               ?? 3,
+      afterburner_fuel:          existingBase.afterburner_fuel          ?? 12,
+      optimal_turn_rate:         agilidad,
+      optimal_turning_speed:     existingBase.optimal_turning_speed     ?? 720,
+      top_speed_afterburner:     velocidad,
+      acceleration_afterburner:  existingBase.acceleration_afterburner  ?? 45
+    },
+    advanced_statistics: {
+      top_speed:                       existingAdv.top_speed                       ?? velocidad,
+      turning_top_speed_afterburner:   existingAdv.turning_top_speed_afterburner   ?? Math.round(velocidad * 0.5),
+      turning_top_speed:               existingAdv.turning_top_speed               ?? Math.round(velocidad * 0.35),
+      optimal_turning_range:           existingAdv.optimal_turning_range           ?? 162,
+      stall_speed:                     existingAdv.stall_speed                     ?? 216,
+      climb_speed:                     existingAdv.climb_speed                     ?? 350,
+      acceleration:                    existingAdv.acceleration                    ?? Math.round(agilidad * 0.5),
+      high_speed_turn_rate:            existingAdv.high_speed_turn_rate            ?? 14,
+      roll_rate:                       existingAdv.roll_rate                       ?? 300,
+      turn_responsiveness:             existingAdv.turn_responsiveness             ?? 7,
+      fuel_regeneration_time:          existingAdv.fuel_regeneration_time          ?? 16,
+      flare_cooldown:                  existingAdv.flare_cooldown                  ?? 5,
+      flare_duration:                  existingAdv.flare_duration                  ?? 1.5,
+      detection_range:                 existingAdv.detection_range                 ?? 3.0,
+      radar_range:                     existingAdv.radar_range                     ?? 5.7,
+      radar_cone:                      existingAdv.radar_cone                      ?? 30,
+      lock_warning_range:              existingAdv.lock_warning_range              ?? 8.0,
+      missile_warning_range:           existingAdv.missile_warning_range           ?? 8.0
+    }
   };
 
+  // Construir sistemas_disponibles con las 7 categorías
+  // Los 3 nuevos (misiles_ir, misiles_radar, cohetes) se preservan del existente
+  // o se ponen como true/false por defecto
   const sistemasDisponibles = {
-    fuselaje: document.getElementById('sysFuselaje')?.checked ?? true,
-    motor: document.getElementById('sysMotor')?.checked ?? true,
-    avionica: document.getElementById('sysAvionica')?.checked ?? true,
-    armas: document.getElementById('sysArmas')?.checked ?? true
+    fuselaje:      document.getElementById('sysFuselaje')?.checked ?? true,
+    motor:         document.getElementById('sysMotor')?.checked    ?? true,
+    avionica:      document.getElementById('sysAvionica')?.checked ?? true,
+    canones:       document.getElementById('sysArmas')?.checked    ?? true,  // ✅ Renombrado
+    misiles_ir:    existingSys.misiles_ir    ?? true,
+    misiles_radar: existingSys.misiles_radar ?? true,
+    cohetes:       existingSys.cohetes       ?? false
   };
 
   const specialName = document.getElementById('modelFormSpecialName')?.value?.trim() || null;
@@ -5091,12 +5150,12 @@ async function handleSavePlaneModel(event) {
     closeModal('planeModelModal');
     await loadAdminPlaneModels(true);
 
-    // Refrescar selector de aeronaves en hangar si está disponible
     if (typeof loadPlaneModels === 'function') {
       loadPlaneModels();
     }
   } catch (err) {
     console.error('❌ Error guardando modelo:', err);
+    showToast('❌ Error al guardar: ' + (err.message || 'Error desconocido'), 'error');
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
