@@ -148,28 +148,52 @@ const RAW_FALLBACK_NODES = [
  * @returns {Object} { sistema: { base: { nivel: {...} }, A: {...}, B: {...} } }
  */
 export function getFallbackUpgradeNodes() {
-  const structured = {};
+  console.warn('⚠️ [UpgradeNodes] Usando nodos de fallback en memoria');
+  const baseStructured = {};
   RAW_FALLBACK_NODES.forEach(node => {
     const sys = node.sistema;
     const ruta = node.ruta || 'base';
     const lvl = node.nivel;
 
-    if (!structured[sys]) {
-      structured[sys] = { base: {}, A: {}, B: {} };
+    if (!baseStructured[sys]) {
+      baseStructured[sys] = { base: {}, A: {}, B: {} };
     }
-    if (!structured[sys][ruta]) {
-      structured[sys][ruta] = {};
+    if (!baseStructured[sys][ruta]) {
+      baseStructured[sys][ruta] = {};
     }
 
-    structured[sys][ruta][lvl] = { ...node };
+    baseStructured[sys][ruta][lvl] = {
+      id: node.id,
+      avion_id: null,
+      sistema_web: node.sistema,
+      sistema_categoria: node.sistema,
+      nivel: node.nivel,
+      ruta: node.ruta,
+      node_name: node.node_name,
+      requirement_level: node.requirement_level,
+      effects: typeof node.effects === 'string' ? JSON.parse(node.effects) : (node.effects || {}),
+      stats_afectadas: typeof node.effects === 'string' ? JSON.parse(node.effects) : (node.effects || {}),
+      cost_piezas: node.cost_piezas || 0,
+      cost_avanzadas: node.cost_avanzadas || 0
+    };
   });
-  return structured;
+
+  return new Proxy(baseStructured, {
+    get(target, prop) {
+      if (prop in target) return target[prop];
+      if (typeof prop === 'string' && (/^\d+$/.test(prop) || prop === 'default')) {
+        return target;
+      }
+      return target[prop];
+    }
+  });
 }
 
 /**
- * Consulta la tabla `upgrade_nodes` desde Supabase con caché en memoria de 5 min y fallback
+ * Consulta la tabla `upgrade_nodes_v2` desde Supabase con caché en memoria de 5 min y fallback
+ * Estructura de retorno: indexada por avion_id -> categoria -> ruta (base, A, B) -> nivel (1-8)
  * @param {Object} supabase - Cliente Supabase (opcional)
- * @returns {Promise<Object>} Estructura completa de nodos por sistema y ruta
+ * @returns {Promise<Object>} Estructura completa de nodos por avion_id y categoria
  */
 export async function getUpgradeNodes(supabase = null) {
   const now = Date.now();
@@ -187,14 +211,14 @@ export async function getUpgradeNodes(supabase = null) {
 
   try {
     const { data, error } = await client
-      .from('upgrade_nodes')
+      .from('upgrade_nodes_v2')
       .select('*')
-      .order('sistema', { ascending: true })
-      .order('nivel', { ascending: true })
-      .order('ruta', { ascending: true });
+      .order('avion_id', { ascending: true })
+      .order('sistema_categoria', { ascending: true })
+      .order('nivel', { ascending: true });
 
     if (error || !data || data.length === 0) {
-      console.warn('⚠️ [UpgradeNodes] No se pudieron cargar nodos de Supabase, usando fallback:', error?.message);
+      console.warn('⚠️ [UpgradeNodes] No se pudieron cargar nodos de upgrade_nodes_v2 en Supabase, usando fallback:', error?.message);
       cachedNodes = getFallbackUpgradeNodes();
       cacheTimestamp = now;
       return cachedNodes;
@@ -202,25 +226,41 @@ export async function getUpgradeNodes(supabase = null) {
 
     const structured = {};
     data.forEach(node => {
-      const sys = node.sistema;
-      const ruta = node.ruta || 'base';
+      const avionId = String(node.avion_id);
+      const cat = node.sistema_categoria;
+      const ruta = node.ruta || (node.nivel <= 4 ? 'base' : 'A');
       const lvl = node.nivel;
 
-      if (!structured[sys]) {
-        structured[sys] = { base: {}, A: {}, B: {} };
+      if (!structured[avionId]) {
+        structured[avionId] = {};
       }
-      if (!structured[sys][ruta]) {
-        structured[sys][ruta] = {};
+      if (!structured[avionId][cat]) {
+        structured[avionId][cat] = { base: {}, A: {}, B: {} };
+      }
+      if (!structured[avionId][cat][ruta]) {
+        structured[avionId][cat][ruta] = {};
       }
 
-      structured[sys][ruta][lvl] = {
+      let effects = node.effects;
+      if (typeof effects === 'string') {
+        try { effects = JSON.parse(effects); } catch (_) { effects = {}; }
+      }
+      let statsAfectadas = node.stats_afectadas;
+      if (typeof statsAfectadas === 'string') {
+        try { statsAfectadas = JSON.parse(statsAfectadas); } catch (_) { statsAfectadas = {}; }
+      }
+
+      structured[avionId][cat][ruta][lvl] = {
         id: node.id,
-        sistema: node.sistema,
+        avion_id: node.avion_id,
+        sistema_web: node.sistema_web,
+        sistema_categoria: node.sistema_categoria,
         nivel: node.nivel,
         ruta: node.ruta,
         node_name: node.node_name,
-        effects: typeof node.effects === 'string' ? JSON.parse(node.effects) : (node.effects || {}),
         requirement_level: node.requirement_level,
+        effects: effects || {},
+        stats_afectadas: statsAfectadas || {},
         cost_piezas: node.cost_piezas || 0,
         cost_avanzadas: node.cost_avanzadas || 0
       };
@@ -228,7 +268,7 @@ export async function getUpgradeNodes(supabase = null) {
 
     cachedNodes = structured;
     cacheTimestamp = now;
-    console.log(`✅ [UpgradeNodes] ${data.length} nodos cargados exitosamente desde Supabase`);
+    console.log(`✅ [UpgradeNodes] ${data.length} nodos cargados exitosamente desde upgrade_nodes_v2`);
     return cachedNodes;
 
   } catch (err) {
@@ -248,19 +288,21 @@ export async function getUpgradeNodes(supabase = null) {
  */
 export function getNode(sistema, nivel, ruta = 'base') {
   const all = cachedNodes || getFallbackUpgradeNodes();
-  if (!all || !all[sistema]) return null;
+  if (!all) return null;
+  const sysContainer = all[sistema] || Object.values(all).find(v => v && v[sistema])?.[sistema];
+  if (!sysContainer) return null;
   const targetRuta = nivel <= 4 ? 'base' : (ruta || 'A');
-  return all[sistema]?.[targetRuta]?.[nivel] || null;
+  return sysContainer[targetRuta]?.[nivel] || null;
 }
 
 /**
  * Retorna todos los nodos de un sistema específico agrupados por nivel y ruta
  * @param {string} sistema - Nombre del subsistema
- * @returns {Array<Object>} Lista completa de los 12 nodos
+ * @returns {Array<Object>} Lista completa de nodos
  */
 export function getNodesForSystem(sistema) {
   const all = cachedNodes || getFallbackUpgradeNodes();
-  const sysData = all?.[sistema];
+  const sysData = all?.[sistema] || Object.values(all || {}).find(v => v && v[sistema])?.[sistema];
   if (!sysData) return [];
 
   const list = [];
@@ -275,7 +317,74 @@ export function getNodesForSystem(sistema) {
 }
 
 /**
+ * Retorna lista plana de nodos para una categoría dada de un avión específico
+ * @param {Object} planeNodes - Objeto de nodos del avión (ej: allNodes[avion_id])
+ * @param {string} categoria - Categoría del sistema ('fuselaje', 'motor', etc.)
+ * @returns {Array<Object>} Lista plana ordenada de nodos
+ */
+export function getNodesForCategory(planeNodes, categoria) {
+  if (!planeNodes || !categoria || !planeNodes[categoria]) return [];
+  const catData = planeNodes[categoria];
+  const list = [];
+  ['base', 'A', 'B'].forEach(r => {
+    if (catData[r]) {
+      Object.values(catData[r]).forEach(n => list.push(n));
+    }
+  });
+  list.sort((a, b) => a.nivel - b.nivel || (a.ruta === 'base' ? -1 : a.ruta.localeCompare(b.ruta)));
+  return list;
+}
+
+/**
+ * Calcula los efectos acumulados normalizados para una categoría específica
+ * @param {Object} planeNodes - Objeto de nodos del avión (ej: allNodes[avion_id])
+ * @param {string} categoria - 'fuselaje', 'motor', 'avionica', 'canones', 'misiles_ir', 'misiles_radar', 'cohetes'
+ * @param {number} nivel - Nivel alcanzado en el sistema (0-8)
+ * @param {Object} rutas - Rutas elegidas por nivel: { 5: 'A'|'B', 6: 'A'|'B', 7: 'A'|'B', 8: 'A'|'B' }
+ * @returns {Object} Efectos acumulados: { velocidad: 8.5, agilidad: 3.2, blindaje: 25, potencia: 45, ... }
+ */
+export function calculateCategoryEffects(planeNodes, categoria, nivel, rutas = {}) {
+  const efectos = {};
+  if (!planeNodes || !categoria || !nivel || nivel <= 0) {
+    return efectos;
+  }
+
+  const catNodes = planeNodes[categoria];
+  if (!catNodes) {
+    return efectos;
+  }
+
+  const targetNivel = Math.min(8, Math.max(0, parseInt(nivel, 10) || 0));
+
+  for (let n = 1; n <= targetNivel; n++) {
+    let ruta = 'base';
+    if (n >= 5) {
+      ruta = rutas[n] || rutas[String(n)] || 'A';
+    }
+
+    const nodo = catNodes[ruta]?.[n];
+    if (!nodo) continue;
+
+    const stats = nodo.stats_afectadas || nodo.effects;
+    if (stats && typeof stats === 'object') {
+      Object.entries(stats).forEach(([statKey, val]) => {
+        if (statKey === 'descripcion' || statKey === 'condicion' || statKey === 'pendiente') {
+          return;
+        }
+        const numVal = Number(val);
+        if (!isNaN(numVal)) {
+          efectos[statKey] = (efectos[statKey] || 0) + numVal;
+        }
+      });
+    }
+  }
+
+  return efectos;
+}
+
+/**
  * Calcula el efecto total acumulado de los nodos de un sistema
+ * @deprecated Usar calculateCategoryEffects en su lugar
  * @param {Object} nodos - Objeto de nodos (de getUpgradeNodes)
  * @param {string} sistema - Sistema ('fuselaje', 'motor', 'avionica', etc.)
  * @param {number} nivel - Nivel máximo alcanzado (0-8)

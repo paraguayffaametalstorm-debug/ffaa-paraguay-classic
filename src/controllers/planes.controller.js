@@ -9,10 +9,9 @@ import { getSupabase } from '../db/supabase.js';
 import { PlaneSchema, UpdatePlaneSystemSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 import { INITIAL_PLANE_MODELS } from './plane-models.controller.js';
-import { getUpgradeEffects, calculateSystemBonus } from '../utils/upgradeEffects.js';
 import { getModEffects, calculateModBonus, getModDescription } from '../utils/modEffects.js';
 import { getPlaneTraitsWithInfo } from '../utils/traits.js';
-import { getUpgradeNodes, getNode, calculateNodeEffects } from '../utils/upgradeNodes.js';
+import { getUpgradeNodes, getNode, calculateNodeEffects, calculateCategoryEffects, getNodesForCategory } from '../utils/upgradeNodes.js';
 import { logSecurityEvent } from '../utils/audit.js';
 
 // Catálogo oficial de modelos de aeronaves base
@@ -677,14 +676,9 @@ export async function updatePlaneSystems(req, res) {
         fuselaje: 'fuselaje',
         motor: 'motor',
         avionica: 'avionica',
-        armas: 'canones',
-        canones_precision: 'canones',
-        canones_asalto: 'canones',
+        canones: 'canones',
         misiles_ir: 'misiles_ir',
         misiles_radar: 'misiles_radar',
-        misiles_beam: 'misiles_beam',
-        misiles_manual: 'misiles_manual',
-        misiles_largo: 'misiles_largo',
         cohetes: 'cohetes'
       };
 
@@ -694,8 +688,8 @@ export async function updatePlaneSystems(req, res) {
 
         const sistemaDisponible = sistemasDisponibles[sistemaKey];
 
-        // Caso 1: null, false o undefined → No disponible
-        if (sistemaDisponible === null || sistemaDisponible === false || sistemaDisponible === undefined) {
+        // Validar que el sistema esté disponible (boolean === true)
+        if (sistemaDisponible !== true) {
           return res.status(400).json({
             success: false,
             message: `Esta aeronave (${modelData.name}) no tiene el sistema ${sysKey.toUpperCase()} disponible`,
@@ -706,29 +700,9 @@ export async function updatePlaneSystems(req, res) {
               avion_id: plane.avion_id,
               avion_name: modelData.name,
               sistemas_disponibles: Object.keys(sistemasDisponibles).filter(
-                k => sistemasDisponibles[k] === true || 
-                     (typeof sistemasDisponibles[k] === 'string')
+                k => sistemasDisponibles[k] === true
               )
             }
-          });
-        }
-
-        // Caso 2: canones_precision vs canones_asalto (validar tipo específico)
-        if (sysKey === 'canones_precision' && sistemaDisponible !== 'precision') {
-          return res.status(400).json({
-            success: false,
-            message: `Esta aeronave (${modelData.name}) no tiene Cañones de Precisión disponibles`,
-            error: 'SYSTEM_NOT_AVAILABLE',
-            details: { sistema_solicitado: sysKey, sistema_key: 'canones', tipo_requerido: 'precision', tipo_actual: sistemaDisponible }
-          });
-        }
-
-        if (sysKey === 'canones_asalto' && sistemaDisponible !== 'asalto') {
-          return res.status(400).json({
-            success: false,
-            message: `Esta aeronave (${modelData.name}) no tiene Cañones de Asalto disponibles`,
-            error: 'SYSTEM_NOT_AVAILABLE',
-            details: { sistema_solicitado: sysKey, sistema_key: 'canones', tipo_requerido: 'asalto', tipo_actual: sistemaDisponible }
           });
         }
       }
@@ -736,6 +710,7 @@ export async function updatePlaneSystems(req, res) {
 
     // Cargar catálogo de nodos para validar requirement_level
     const allNodes = await getUpgradeNodes(supabase);
+    const planeNodes = allNodes[plane.avion_id] || allNodes[String(plane.avion_id)] || {};
 
     // Preparar objeto de rutas existente
     let currentRutasSistemas = plane.rutas_sistemas || {};
@@ -747,10 +722,13 @@ export async function updatePlaneSystems(req, res) {
     const updatePayload = {};
 
     const systemColumnMap = {
-      fuselaje: 'nivel_fuselaje',
-      motor: 'nivel_motor',
-      avionica: 'nivel_avionica',
-      armas: 'nivel_armas'
+      fuselaje:      'nivel_fuselaje',
+      motor:         'nivel_motor',
+      avionica:      'nivel_avionica',
+      canones:       'nivel_armas',
+      misiles_ir:    'nivel_armas',
+      misiles_radar: 'nivel_armas',
+      cohetes:       'nivel_armas'
     };
 
     // Validar y procesar cada sistema
@@ -761,8 +739,7 @@ export async function updatePlaneSystems(req, res) {
       const targetRutas = (sysData.rutas && typeof sysData.rutas === 'object') ? sysData.rutas : {};
 
       // Validar requisito de nivel de aeronave para cada nivel activo
-      const nodeSysKey = (sysKey === 'armas') ? 'canones_precision' : sysKey;
-      const sysNodes = allNodes?.[nodeSysKey] || allNodes?.[sysKey];
+      const sysNodes = planeNodes[sysKey] || allNodes?.[sysKey];
 
       if (sysNodes) {
         for (let l = 1; l <= targetNivel; l++) {
@@ -780,11 +757,12 @@ export async function updatePlaneSystems(req, res) {
       }
 
       // Mapear a columnas de la base de datos
-      if (systemColumnMap[sysKey]) {
-        updatePayload[systemColumnMap[sysKey]] = targetNivel;
-      } else if (sysKey === 'canones_precision' || sysKey === 'canones_asalto') {
-        if (updatePayload.nivel_armas === undefined) {
-          updatePayload.nivel_armas = targetNivel;
+      const col = systemColumnMap[sysKey];
+      if (col) {
+        if (col === 'nivel_armas') {
+          updatePayload[col] = Math.max(updatePayload[col] || 0, targetNivel);
+        } else {
+          updatePayload[col] = targetNivel;
         }
       }
 
@@ -920,55 +898,67 @@ export async function getPlaneDetails(req, res, next) {
 
     // Cargar nodos de Upgrades 2.0 (Supabase con fallback y caché en memoria)
     const allNodes = await getUpgradeNodes(supabase);
+    const planeNodes = allNodes[plane.avion_id] || allNodes[String(plane.avion_id)] || {};
 
-    const sistemasDisponibles = model?.sistemas_disponibles || plane?.sistemas_disponibles || {
+    let sistemasDisponibles = model?.sistemas_disponibles || plane?.sistemas_disponibles || {
       fuselaje: true,
       motor: true,
       avionica: true,
-      canones: 'precision',
+      canones: true,
       misiles_ir: true
     };
+    if (typeof sistemasDisponibles === 'string') {
+      try { sistemasDisponibles = JSON.parse(sistemasDisponibles); } catch (_) { sistemasDisponibles = {}; }
+    }
 
     // Constructor de sistema con nodos 2.0 (12 nodos, rutas A/B, nodo actual y siguiente)
-    function buildSystemObject(sysKey, nodeSysKey, defaultNombre, descripcion, nivel) {
-      const allSysNodes = (allNodes && allNodes[nodeSysKey]) ? [
-        ...Object.values(allNodes[nodeSysKey].base || {}),
-        ...Object.values(allNodes[nodeSysKey].A || {}),
-        ...Object.values(allNodes[nodeSysKey].B || {})
-      ].sort((a, b) => a.nivel - b.nivel || (a.ruta === 'base' ? -1 : a.ruta.localeCompare(b.ruta))) : [];
+    function buildSystemObject(sysKey, categoria, defaultNombre, descripcion, nivel) {
+      const catNodes = planeNodes[categoria] || allNodes?.[categoria] || {};
+      const allSysNodes = [
+        ...Object.values(catNodes.base || {}),
+        ...Object.values(catNodes.A || {}),
+        ...Object.values(catNodes.B || {})
+      ].sort((a, b) => a.nivel - b.nivel || (a.ruta === 'base' ? -1 : a.ruta.localeCompare(b.ruta)));
 
-      const rutasSys = rutasSistemas[sysKey] || rutasSistemas[nodeSysKey] || plane[`rutas_${sysKey}`] || plane[`rutas_${nodeSysKey}`] || {};
-      const currentRoute = nivel <= 4 ? 'base' : (rutasSys[nivel] || plane[`ruta_${sysKey}`] || plane[`ruta_${nodeSysKey}`] || 'A');
-      const currentNode = nivel > 0 ? (allNodes?.[nodeSysKey]?.[currentRoute]?.[nivel] || null) : null;
+      const rutasSys = rutasSistemas[sysKey] || rutasSistemas[categoria] || plane[`rutas_${sysKey}`] || {};
+      const currentRoute = nivel <= 4 ? 'base' : (rutasSys[nivel] || 'A');
+      const currentNode = nivel > 0 ? (catNodes[currentRoute]?.[nivel] || null) : null;
 
       const nextLevel = nivel + 1;
       const nextRoute = nextLevel <= 4 ? 'base' : (rutasSys[nextLevel] || 'A');
-      const nextNode = nextLevel <= 8 ? (allNodes?.[nodeSysKey]?.[nextRoute]?.[nextLevel] || null) : null;
+      const nextNode = nextLevel <= 8 ? (catNodes[nextRoute]?.[nextLevel] || null) : null;
 
       const rutasDisponibles = {};
       [5, 6, 7, 8].forEach(lvl => {
-        const nodeA = allNodes?.[nodeSysKey]?.A?.[lvl];
-        const nodeB = allNodes?.[nodeSysKey]?.B?.[lvl];
+        const nodeA = catNodes.A?.[lvl];
+        const nodeB = catNodes.B?.[lvl];
         rutasDisponibles[lvl] = [
-          { ruta: 'A', node_name: nodeA?.node_name || '', effects: nodeA?.effects || {}, requirement_level: nodeA?.requirement_level || 12 },
-          { ruta: 'B', node_name: nodeB?.node_name || '', effects: nodeB?.effects || {}, requirement_level: nodeB?.requirement_level || 12 }
+          { ruta: 'A', node_name: nodeA?.node_name || '', effects: nodeA?.effects || {}, stats_afectadas: nodeA?.stats_afectadas || {}, requirement_level: nodeA?.requirement_level || 12 },
+          { ruta: 'B', node_name: nodeB?.node_name || '', effects: nodeB?.effects || {}, stats_afectadas: nodeB?.stats_afectadas || {}, requirement_level: nodeB?.requirement_level || 12 }
         ];
       });
 
       const nodosCompletos = allSysNodes.map(n => ({
         id: n.id,
-        sistema: n.sistema,
+        avion_id: n.avion_id,
+        sistema_web: n.sistema_web,
+        sistema_categoria: n.sistema_categoria || categoria,
+        sistema: categoria,
         nivel: n.nivel,
         ruta: n.ruta,
         node_name: n.node_name,
         effects: n.effects,
+        stats_afectadas: n.stats_afectadas,
         requirement_level: n.requirement_level,
         cost_piezas: n.cost_piezas || 0,
         cost_avanzadas: n.cost_avanzadas || 0,
         desbloqueado: planeLvl >= (n.requirement_level || 6) && nivel >= n.nivel
       }));
 
-      const sysDisplayName = systemNames[sysKey] || systemNames[nodeSysKey] || defaultNombre;
+      const sysNamesVal = systemNames[sysKey] || systemNames[categoria];
+      const sysDisplayName = Array.isArray(sysNamesVal)
+        ? sysNamesVal.join(' / ')
+        : (sysNamesVal || defaultNombre);
 
       return {
         sistema: sysKey,
@@ -983,13 +973,15 @@ export async function getPlaneDetails(req, res, next) {
           nivel,
           ruta: currentRoute,
           node_name: currentNode.node_name,
-          effects: currentNode.effects || {}
+          effects: currentNode.effects || {},
+          stats_afectadas: currentNode.stats_afectadas || {}
         } : null,
         nodo_siguiente: nextNode ? {
           nivel: nextLevel,
           ruta: nextRoute,
           node_name: nextNode.node_name,
           effects: nextNode.effects || {},
+          stats_afectadas: nextNode.stats_afectadas || {},
           requirement_level: nextNode.requirement_level || 6,
           desbloqueado: planeLvl >= (nextNode.requirement_level || 6)
         } : null,
@@ -998,46 +990,36 @@ export async function getPlaneDetails(req, res, next) {
       };
     }
 
-    // Filtrar y armar los sistemas disponibles del avión
+    // Filtrar y armar los sistemas disponibles del avión (7 categorías oficiales)
+    const systemTitles = {
+      fuselaje: 'Fuselaje',
+      motor: 'Motor',
+      avionica: 'Aviónica',
+      canones: 'Cañones',
+      misiles_ir: 'Misiles Infrarrojos',
+      misiles_radar: 'Misiles de Radar',
+      cohetes: 'Cohetes'
+    };
+    const systemDescriptions = {
+      fuselaje: 'Resistencia estructural, blindaje e integridad',
+      motor: 'Empuje, aceleración, postcombustión y velocidad punta',
+      avionica: 'Adquisición de radar, tiempo de enganche y ECM',
+      canones: 'Cadencia de fuego, tiempo de recarga y daño balístico',
+      misiles_ir: 'Misiles térmicos de persecución y combate cercano',
+      misiles_radar: 'Misiles guiados por radar BVR más allá del alcance visual',
+      cohetes: 'Salvas de cohetes no guiados de alto impacto'
+    };
+
     const sistemas = {};
-
-    if (sistemasDisponibles.fuselaje !== false) {
-      sistemas.fuselaje = buildSystemObject('fuselaje', 'fuselaje', 'Fuselaje', 'Resistencia estructural, blindaje e integridad', nf);
-    }
-
-    if (sistemasDisponibles.motor !== false) {
-      sistemas.motor = buildSystemObject('motor', 'motor', 'Motor', 'Empuje, aceleración, postcombustión y velocidad punta', nm);
-    }
-
-    if (sistemasDisponibles.avionica !== false) {
-      sistemas.avionica = buildSystemObject('avionica', 'avionica', 'Aviónica', 'Adquisición de radar, tiempo de enganche y ECM', na);
-    }
-
-    // Armas base / compatibilidad general
-    const primaryCannonSys = sistemasDisponibles.canones === 'asalto' ? 'canones_asalto' : 'canones_precision';
-    if (sistemasDisponibles.canones !== null && sistemasDisponibles.armas !== false) {
-      sistemas.armas = buildSystemObject('armas', primaryCannonSys, 'Armas', 'Cadencia de fuego, tiempo de recarga y daño balístico', nw);
-    }
-
-    // Armas específicas según sistemas_disponibles
-    if (sistemasDisponibles.canones === 'precision' || sistemasDisponibles.canones_precision === true || (Array.isArray(sistemasDisponibles.armas) && sistemasDisponibles.armas.includes('canon_precision'))) {
-      sistemas.canones_precision = buildSystemObject('canones_precision', 'canones_precision', 'Cañones de Precisión', 'Balística de alta precisión, daño crítico y disparos a distancia', plane.nivel_canones_precision || nw);
-    }
-    if (sistemasDisponibles.canones === 'asalto' || sistemasDisponibles.canones_asalto === true || (Array.isArray(sistemasDisponibles.armas) && sistemasDisponibles.armas.includes('canon_asalto'))) {
-      sistemas.canones_asalto = buildSystemObject('canones_asalto', 'canones_asalto', 'Cañones de Asalto', 'Fuego de saturación, cadencia masiva y penetración pesada', plane.nivel_canones_asalto || nw);
-    }
-    if (sistemasDisponibles.misiles_ir === true || (Array.isArray(sistemasDisponibles.armas) && (sistemasDisponibles.armas.includes('misiles_ir') || sistemasDisponibles.armas.includes('misiles_corto')))) {
-      sistemas.misiles_ir = buildSystemObject('misiles_ir', 'misiles_ir', 'Misiles IR (Corto Alcance)', 'Misiles térmicos de persecución y combate cercano', plane.nivel_misiles_ir || nw);
-    }
-    if (sistemasDisponibles.cohetes === true || (Array.isArray(sistemasDisponibles.armas) && sistemasDisponibles.armas.includes('cohetes'))) {
-      sistemas.cohetes = buildSystemObject('cohetes', 'cohetes', 'Cohetes de Asalto', 'Salvas de cohetes no guiados de alto impacto', plane.nivel_cohetes || nw);
-    }
-    if (sistemasDisponibles.misiles_manual === true || (Array.isArray(sistemasDisponibles.armas) && (sistemasDisponibles.armas.includes('misiles_manual') || sistemasDisponibles.armas.includes('misiles_guiados')))) {
-      sistemas.misiles_manual = buildSystemObject('misiles_manual', 'misiles_manual', 'Misiles Guiados Manuales', 'Misiles por comando manual para impacto quirúrgico', plane.nivel_misiles_manual || nw);
-    }
-    if (sistemasDisponibles.misiles_radar === true || sistemasDisponibles.misiles_largo === true || (Array.isArray(sistemasDisponibles.armas) && (sistemasDisponibles.armas.includes('misiles_radar') || sistemasDisponibles.armas.includes('misiles_bvr') || sistemasDisponibles.armas.includes('misiles_medio')))) {
-      sistemas.misiles_radar = buildSystemObject('misiles_radar', 'misiles_radar', 'Misiles de Radar (Largo Alcance)', 'Misiles guiados por radar BVR más allá del alcance visual', plane.nivel_misiles_radar || nw);
-    }
+    ['fuselaje', 'motor', 'avionica', 'canones', 'misiles_ir', 'misiles_radar', 'cohetes'].forEach(cat => {
+      if (sistemasDisponibles[cat] === true) {
+        const nivel = cat === 'fuselaje' ? nf
+                    : cat === 'motor'    ? nm
+                    : cat === 'avionica' ? na
+                    : nw;
+        sistemas[cat] = buildSystemObject(cat, cat, systemTitles[cat], systemDescriptions[cat], nivel);
+      }
+    });
 
     const planeDetail = {
       id: plane.id,
@@ -1255,74 +1237,152 @@ export async function getPlaneStats(req, res, next) {
 
     const baseStats = Object.keys(statsBase).length > 0 ? statsBase : defaultStats;
 
-    const labels = ['Velocidad', 'Maniobrabilidad', 'Blindaje', 'Potencia de Fuego', 'Rango de Radar', 'Defensa ECM'];
-    const stat_keys = ['speed', 'agility', 'armor', 'firepower', 'radar', 'ecm'];
-    const units = { speed: 'km/h', agility: '°/s', armor: 'HP', firepower: 'DPS', radar: 'km', ecm: '%' };
+    const levelFactor = 1 + ((plane.nivel || 1) - 1) / 19;
 
-    const max_raw = {
-      speed: baseStats.top_speed_afterburner || 1260,
-      agility: baseStats.optimal_turn_rate || 39.0,
-      armor: baseStats.health || 100,
-      firepower: 1600,
-      radar: statsAdvanced.radar_range || 5.7,
-      ecm: 90
+    // Cargar catálogo de nodos upgrade_nodes_v2
+    const allNodes = await getUpgradeNodes(supabase);
+    const planeNodes = allNodes[plane.avion_id] || allNodes[String(plane.avion_id)] || {};
+
+    let rutasSistemas = plane.rutas_sistemas || {};
+    if (typeof rutasSistemas === 'string') {
+      try { rutasSistemas = JSON.parse(rutasSistemas); } catch (_) { rutasSistemas = {}; }
+    }
+
+    // Calcular efectos acumulados por categoría
+    const efectos = {
+      fuselaje:      calculateCategoryEffects(planeNodes, 'fuselaje',      plane.nivel_fuselaje  || 0, rutasSistemas.fuselaje      || {}),
+      motor:         calculateCategoryEffects(planeNodes, 'motor',         plane.nivel_motor     || 0, rutasSistemas.motor         || {}),
+      avionica:      calculateCategoryEffects(planeNodes, 'avionica',      plane.nivel_avionica  || 0, rutasSistemas.avionica      || {}),
+      canones:       calculateCategoryEffects(planeNodes, 'canones',       plane.nivel_armas     || 0, rutasSistemas.canones       || {}),
+      misiles_ir:    calculateCategoryEffects(planeNodes, 'misiles_ir',    plane.nivel_armas     || 0, rutasSistemas.misiles_ir    || {}),
+      misiles_radar: calculateCategoryEffects(planeNodes, 'misiles_radar', plane.nivel_armas     || 0, rutasSistemas.misiles_radar || {}),
+      cohetes:       calculateCategoryEffects(planeNodes, 'cohetes',       plane.nivel_armas     || 0, rutasSistemas.cohetes       || {})
     };
 
-    const levelFactor = (plane.nivel || 1) / 20;
+    // Firepower base por rol
+    const rol = plane.type || modelType || '';
+    let firepowerBase = 1400;
+    if (/ligero/i.test(rol)) firepowerBase = 1200;
+    else if (/pesado/i.test(rol)) firepowerBase = 1600;
+    else if (/interceptor/i.test(rol)) firepowerBase = 1500;
+    else if (/ataque/i.test(rol)) firepowerBase = 1800;
+    else if (/mediano/i.test(rol)) firepowerBase = 1400;
 
-    // ✅ CARGAR EFECTOS DE UPGRADES 2.0
-    const effects = await getUpgradeEffects(supabase);
-
-    const rutaFuselaje = plane.ruta_fuselaje || 'A';
-    const rutaMotor = plane.ruta_motor || 'A';
-    const rutaAvionica = plane.ruta_avionica || 'A';
-    const rutaArmas = plane.ruta_armas || 'A';
-
-    const bonusMotor = calculateSystemBonus(effects, 'motor', plane.nivel_motor, rutaMotor);
-    const bonusFuselaje = calculateSystemBonus(effects, 'fuselaje', plane.nivel_fuselaje, rutaFuselaje);
-    const bonusArmas = calculateSystemBonus(effects, 'armas', plane.nivel_armas, rutaArmas);
-    const bonusAvionica = calculateSystemBonus(effects, 'avionica', plane.nivel_avionica, rutaAvionica);
-
-    // ✅ CARGAR EFECTOS DE MODS
+    // Efectos de Mods
     const modEffects = await getModEffects(supabase);
 
-    const mod1Agility = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'agility');
-    const mod2Agility = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'agility');
-    const mod1Armor = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'armor');
-    const mod2Armor = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'armor');
-    const mod1Ecm = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'ecm');
-    const mod2Ecm = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'ecm');
-    const mod1Radar = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'radar');
-    const mod2Radar = calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'radar');
+    const modAgility = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'agility')
+                     * calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'agility');
+    const modArmor   = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'armor')
+                     * calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'armor');
+    const modEcm     = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'ecm')
+                     * calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'ecm');
+    const modRadar   = calculateModBonus(modEffects, plane.mod1_id, plane.mod1_lvl, 'radar')
+                     * calculateModBonus(modEffects, plane.mod2_id, plane.mod2_lvl, 'radar');
 
-    const bonusModAgility = 1 + (mod1Agility + mod2Agility) / 100;
-    const bonusModArmor = 1 + (mod1Armor + mod2Armor) / 100;
-    const bonusModEcm = 1 + (mod1Ecm + mod2Ecm) / 100;
-    const bonusModRadar = 1 + (mod1Radar + mod2Radar) / 100;
+    const agilityMods = Math.round((modAgility - 1) * 100 * 10) / 10;
+    const armorMods   = Math.round((modArmor - 1) * 100 * 10) / 10;
+    const ecmMods     = Math.round((modEcm - 1) * 100 * 10) / 10;
+    const radarMods   = Math.round((modRadar - 1) * 100 * 10) / 10;
 
-    // Aplicar todos los factores
-    const current_raw = {
-      speed: Math.round(max_raw.speed * (0.6 + 0.4 * levelFactor) * bonusMotor),
-      agility: Math.round(max_raw.agility * (0.6 + 0.4 * levelFactor) * (1 + ((plane.nivel_fuselaje || 0) * 0.015)) * bonusModAgility),
-      armor: Math.round(max_raw.armor * (0.5 + 0.5 * levelFactor) * bonusFuselaje * bonusModArmor),
-      firepower: Math.round(max_raw.firepower * (0.5 + 0.5 * levelFactor) * bonusArmas),
-      radar: Math.round(max_raw.radar * (0.6 + 0.4 * levelFactor) * bonusAvionica * bonusModRadar),
-      ecm: Math.round(Math.min(99, max_raw.ecm * (0.4 + 0.6 * levelFactor) * bonusAvionica * bonusModEcm))
-    };
+    // Cálculo de estadísticas finales
+    // 1. Velocidad: base + efectos motor
+    const speedBase = baseStats.top_speed_afterburner || 1260;
+    const speedNodos = efectos.motor.velocidad || 0;
+    const speedMods = 0;
+    const speedTotal = Math.round(speedBase * (1 + speedNodos / 100) * (1 + speedMods / 100));
 
-    // ✅ CARGAR TRAITS DEL AVIÓN
+    // 2. Agilidad: base + efectos fuselaje.agilidad + mods
+    const agilityBase = baseStats.optimal_turn_rate || 39.0;
+    const agilityNodos = efectos.fuselaje.agilidad || 0;
+    const agilityTotal = Math.round((agilityBase * (1 + agilityNodos / 100) * modAgility) * 10) / 10;
+
+    // 3. Blindaje: base × levelFactor + efectos fuselaje.blindaje + mods
+    const armorBase = baseStats.health || 100;
+    const armorNodos = efectos.fuselaje.blindaje || 0;
+    const armorTotal = Math.round(armorBase * levelFactor * (1 + armorNodos / 100) * modArmor);
+
+    // 4. Potencia de Fuego: firepowerBase × levelFactor + efectos armas
+    const firepowerNodos = (efectos.canones.potencia || 0) + (efectos.misiles_ir.potencia || 0) + (efectos.misiles_radar.potencia || 0) + (efectos.cohetes.potencia || 0);
+    const firepowerTotal = Math.round(firepowerBase * levelFactor * (1 + firepowerNodos / 100));
+
+    // 5. Rango de Radar: base + efectos avionica.radar + mods
+    const radarBase = statsAdvanced.radar_range || 5.7;
+    const radarNodos = efectos.avionica.radar || 0;
+    const radarTotal = Math.round((radarBase * (1 + radarNodos / 100) * modRadar) * 10) / 10;
+
+    // 6. Defensa ECM (base 0)
+    const ecmBase = 0;
+    const ecmNodos = efectos.avionica.ecm || 0;
+    const ecmTotal = Math.round(Math.min(99, ecmNodos * modEcm));
+
+    // 7. Postquemador: base + efectos motor.postquemador
+    const afterburnerBase = baseStats.afterburner_fuel || 12;
+    const afterburnerNodos = efectos.motor.postquemador || 0;
+    const afterburnerTotal = Math.round((afterburnerBase * (1 + afterburnerNodos / 100)) * 10) / 10;
+
+    // 8. Aceleración: base + efectos motor.aceleracion
+    const accelerationBase = baseStats.acceleration_afterburner || 45;
+    const accelerationNodos = efectos.motor.aceleracion || 0;
+    const accelerationTotal = Math.round((accelerationBase * (1 + accelerationNodos / 100)) * 10) / 10;
+
+    // Traits del avión
     if (!plane.traits && model?.traits) {
       plane.traits = model.traits;
     }
     const planeTraits = getPlaneTraitsWithInfo(plane);
 
-    const base_raw = { ...max_raw };
+    const labels = ['Velocidad', 'Agilidad', 'Blindaje', 'Potencia de Fuego', 'Rango de Radar', 'Defensa ECM', 'Postquemador', 'Aceleración'];
+    const stat_keys = ['speed', 'agility', 'armor', 'firepower', 'radar', 'ecm', 'afterburner', 'acceleration'];
+    const units = {
+      speed: 'km/h',
+      agility: '°/s',
+      armor: 'HP',
+      firepower: 'DPS',
+      radar: 'km',
+      ecm: '%',
+      afterburner: 's',
+      acceleration: 'm/s²'
+    };
+
+    const max_reference = {
+      speed: 2500,
+      agility: 60.0,
+      armor: 2500,
+      firepower: 3500,
+      radar: 15.0,
+      ecm: 100,
+      afterburner: 30.0,
+      acceleration: 80.0
+    };
+
+    const base_raw = {
+      speed: speedBase,
+      agility: agilityBase,
+      armor: armorBase,
+      firepower: firepowerBase,
+      radar: radarBase,
+      ecm: ecmBase,
+      afterburner: afterburnerBase,
+      acceleration: accelerationBase
+    };
+
+    const current_raw = {
+      speed: speedTotal,
+      agility: agilityTotal,
+      armor: armorTotal,
+      firepower: firepowerTotal,
+      radar: radarTotal,
+      ecm: ecmTotal,
+      afterburner: afterburnerTotal,
+      acceleration: accelerationTotal
+    };
+
     const current = {};
     const base = {};
-
     stat_keys.forEach(k => {
-      current[k] = Math.min(100, Math.round((current_raw[k] / max_raw[k]) * 100));
-      base[k] = 100;
+      current[k] = Math.min(100, Math.round((current_raw[k] / max_reference[k]) * 100));
+      base[k] = Math.min(100, Math.round((base_raw[k] / max_reference[k]) * 100));
     });
 
     const mod1Obj = DEFAULT_PLANE_MODS.find(m => String(m.id) === String(plane.mod1_id));
@@ -1336,16 +1396,18 @@ export async function getPlaneStats(req, res, next) {
         model_name: modelName,
         type: modelType,
         nivel: plane.nivel,
-        especial: plane.especial_nombre,
+        especial_nombre: plane.especial_nombre,
         especial_nivel_num: plane.especial_nivel_num,
         especial_efecto: plane.especial_efecto,
-        pasiva: plane.pasiva_nombre,
+        pasiva_nombre: plane.pasiva_nombre,
         pasiva_nivel_num: plane.pasiva_nivel_num,
         pasiva_efecto: plane.pasiva_efecto,
         mod1: mod1Obj ? mod1Obj.name : plane.mod1_id,
+        mod1_id: plane.mod1_id,
         mod1_type: mod1Obj?.type || null,
         mod1_lvl: plane.mod1_lvl,
         mod2: mod2Obj ? mod2Obj.name : plane.mod2_id,
+        mod2_id: plane.mod2_id,
         mod2_type: mod2Obj?.type || null,
         mod2_lvl: plane.mod2_lvl,
         nivel_fuselaje: plane.nivel_fuselaje || 0,
@@ -1365,7 +1427,17 @@ export async function getPlaneStats(req, res, next) {
       base,
       current,
       base_raw,
-      current_raw
+      current_raw,
+      breakdown: {
+        speed:        { base: speedBase, nodos: speedNodos, mods: speedMods, level_factor: 1.0, total: speedTotal },
+        agility:      { base: agilityBase, nodos: agilityNodos, mods: agilityMods, level_factor: 1.0, total: agilityTotal },
+        armor:        { base: armorBase, nodos: armorNodos, mods: armorMods, level_factor: levelFactor, total: armorTotal },
+        firepower:    { base: firepowerBase, nodos: firepowerNodos, mods: 0, level_factor: levelFactor, total: firepowerTotal },
+        radar:        { base: radarBase, nodos: radarNodos, mods: radarMods, level_factor: 1.0, total: radarTotal },
+        ecm:          { base: ecmBase, nodos: ecmNodos, mods: ecmMods, level_factor: 1.0, total: ecmTotal },
+        afterburner:  { base: afterburnerBase, nodos: afterburnerNodos, mods: 0, level_factor: 1.0, total: afterburnerTotal },
+        acceleration: { base: accelerationBase, nodos: accelerationNodos, mods: 0, level_factor: 1.0, total: accelerationTotal }
+      }
     });
 
   } catch (err) {
