@@ -210,12 +210,40 @@ export async function getUpgradeNodes(supabase = null) {
   }
 
   try {
-    const { data, error } = await client
-      .from('upgrade_nodes_v2')
-      .select('*')
-      .order('avion_id', { ascending: true })
-      .order('sistema_categoria', { ascending: true })
-      .order('nivel', { ascending: true });
+    // ✅ FIX: Cargar en chunks para superar el límite de 1000 filas de PostgREST
+    let allData = [];
+    let from = 0;
+    const CHUNK_SIZE = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data: chunk, error: chunkError } = await client
+        .from('upgrade_nodes_v2')
+        .select('*')
+        .order('avion_id', { ascending: true })
+        .order('sistema_categoria', { ascending: true })
+        .order('nivel', { ascending: true })
+        .order('ruta', { ascending: true })
+        .range(from, from + CHUNK_SIZE - 1);
+
+      if (chunkError) {
+        console.error('❌ [UpgradeNodes] Error en chunk', from, ':', chunkError.message);
+        break;
+      }
+      if (!chunk || chunk.length === 0) {
+        hasMore = false;
+        break;
+      }
+      allData = allData.concat(chunk);
+      if (chunk.length < CHUNK_SIZE) {
+        hasMore = false;
+      } else {
+        from += CHUNK_SIZE;
+      }
+    }
+
+    const data = allData;
+    const error = (data.length === 0) ? new Error('No se cargaron nodos') : null;
 
     if (error || !data || data.length === 0) {
       console.warn('⚠️ [UpgradeNodes] No se pudieron cargar nodos de upgrade_nodes_v2 en Supabase, usando fallback:', error?.message);
