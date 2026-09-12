@@ -2925,11 +2925,6 @@ function showAddPlaneModal() {
   ['planeLevel','mod1Level','mod2Level'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  ['formNivelFuselaje','formNivelMotor','formNivelAvionica','formNivelArmas'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '0';
-  });
-  const upGrp = document.getElementById('formUpgradesGroup');
-  if (upGrp) upGrp.style.display = 'none';
 
   ['specialSkill','passiveSkill'].forEach(id => {
     const el = document.getElementById(id);
@@ -2990,14 +2985,6 @@ function editPlane(planeId) {
     setSel('mod1Level',    plane.mod1_lvl);
     setSel('mod2',         plane.mod2_id);
     setSel('mod2Level',    plane.mod2_lvl);
-
-    setSel('formNivelFuselaje', plane.nivel_fuselaje || 0);
-    setSel('formNivelMotor',    plane.nivel_motor || 0);
-    setSel('formNivelAvionica', plane.nivel_avionica || 0);
-    setSel('formNivelArmas',    plane.nivel_armas || 0);
-
-    const upGrp = document.getElementById('formUpgradesGroup');
-    if (upGrp) upGrp.style.display = (plane.nivel || 1) >= 6 ? 'block' : 'none';
   });
 }
 
