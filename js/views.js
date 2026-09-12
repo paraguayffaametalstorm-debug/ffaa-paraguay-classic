@@ -2010,6 +2010,8 @@ let _deepCollapsedSections = new Set([
   'deepRecommendationSection',
   'deepModsSection',
   'deepTraitsSection',
+  'deepPaintsSection',      // ← NUEVO
+  'deepCanopiesSection',    // ← NUEVO
   'deepHistorySection',
   'deepTipsSection'
 ]);
@@ -2039,6 +2041,64 @@ function renderArmamentoEquipado(plane) {
   const container = document.getElementById('deepArmamentList');
   if (!container) return;
 
+  const loadout = plane?.loadout_wiki;
+
+  // Si hay loadout_wiki con datos, mostrar detalles de armas
+  if (loadout && (Array.isArray(loadout.canones) || Array.isArray(loadout.misiles))) {
+    const canones = loadout.canones || [];
+    const misiles = loadout.misiles || [];
+
+    if (canones.length === 0 && misiles.length === 0) {
+      container.innerHTML = `
+        <div class="deep-armament-item empty" style="grid-column:1/-1;">
+          <span class="deep-armament-icon">⚠️</span>
+          <span class="deep-armament-name">Sin datos de armamento en la Wiki</span>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+
+    if (canones.length > 0) {
+      html += canones.map(c => {
+        const esRocket = (c.Type || '').toLowerCase().includes('rocket');
+        const icon = esRocket ? '🚀' : '🎯';
+        const dmg = c['Max Damage(DPS)'] || c.Damage || '—';
+        return `
+          <div class="deep-armament-item equipped">
+            <span class="deep-armament-icon">${icon}</span>
+            <span class="deep-armament-name">${escapeHtml(c.Type || 'Arma principal')}</span>
+            <span class="deep-armament-level">${escapeHtml(String(dmg))} DPS</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (misiles.length > 0) {
+      html += misiles.map(m => {
+        const guia = (m.Guidance || '').toLowerCase();
+        const icon = guia.includes('heat') ? '🔥'
+                   : guia.includes('radar') ? '📡'
+                   : guia.includes('hunter') ? '🎯'
+                   : '🚀';
+        const qty = m.Quantity || '?';
+        const dmg = m.Damage || '?';
+        return `
+          <div class="deep-armament-item equipped">
+            <span class="deep-armament-icon">${icon}</span>
+            <span class="deep-armament-name">${escapeHtml(m.Guidance || 'Misil')}</span>
+            <span class="deep-armament-level">x${escapeHtml(String(qty))} · ${escapeHtml(String(dmg))} DMG</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    container.innerHTML = html;
+    return;
+  }
+
+  // Fallback: comportamiento anterior con plane.sistemas
   const categorias = [
     { key: 'canones',      icon: '🎯', label: 'Cañones' },
     { key: 'misiles_ir',   icon: '🔥', label: 'Misiles IR' },
@@ -2315,8 +2375,131 @@ async function openAircraftDeepModal(planeId) {
     }
   }
 
+  // 3B: Renderizar Historia (dentro de openAircraftDeepModal)
+  const historiaEl = document.getElementById('deepHistoryContent');
+  if (historiaEl) {
+    if (plane?.historia && String(plane.historia).trim().length > 0) {
+      const parrafos = String(plane.historia).split(/\n\n+/).filter(p => p.trim().length > 0);
+      historiaEl.innerHTML = parrafos.map(p => `
+        <p style="color:#e2e8f0;font-size:0.88rem;line-height:1.6;margin-bottom:12px;">
+          ${escapeHtml(p.trim())}
+        </p>
+      `).join('');
+    } else {
+      historiaEl.innerHTML = `
+        <div style="color:#64748b;font-style:italic;font-size:0.85rem;
+                    padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+          📜 Sin información histórica disponible para esta aeronave.
+        </div>
+      `;
+    }
+  }
+
+  // 3D: Renderizar Paints
+  const paintsEl = document.getElementById('deepPaintsContent');
+  if (paintsEl) {
+    const paints = plane?.paints;
+    if (Array.isArray(paints) && paints.length > 0) {
+      paintsEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+          ${paints.map(p => `
+            <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
+                        border-radius:6px;padding:8px;text-align:center;">
+              <img src="${escapeHtml(p.Image || '')}" alt="${escapeHtml(p.Name || 'Paint')}"
+                   style="width:100%;height:80px;object-fit:cover;border-radius:4px;
+                          margin-bottom:6px;background:#0f172a;"
+                   onerror="this.style.display='none'">
+              <div style="color:#e2e8f0;font-size:0.8rem;font-weight:600;margin-bottom:4px;">
+                ${escapeHtml(p.Name || 'Sin nombre')}
+              </div>
+              <div style="color:#d4af37;font-size:0.7rem;font-weight:700;
+                          text-transform:uppercase;letter-spacing:0.4px;">
+                ${escapeHtml(p.Rarity || 'Common')}
+              </div>
+              <div style="color:#94a3b8;font-size:0.7rem;margin-top:4px;">
+                ${escapeHtml(p['Unlock requirement'] || '')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      paintsEl.innerHTML = `<div style="color:#64748b;font-style:italic;font-size:0.85rem;">
+        🎨 Sin paints disponibles.
+      </div>`;
+    }
+  }
+
+  // 3E: Renderizar Canopies
+  const canopiesEl = document.getElementById('deepCanopiesContent');
+  if (canopiesEl) {
+    const canopies = plane?.canopies;
+    if (Array.isArray(canopies) && canopies.length > 0) {
+      canopiesEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+          ${canopies.map(c => `
+            <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
+                        border-radius:6px;padding:8px;text-align:center;">
+              <img src="${escapeHtml(c.Image || '')}" alt="${escapeHtml(c.Name || 'Canopy')}"
+                   style="width:100%;height:80px;object-fit:cover;border-radius:4px;
+                          margin-bottom:6px;background:#0f172a;"
+                   onerror="this.style.display='none'">
+              <div style="color:#e2e8f0;font-size:0.8rem;font-weight:600;margin-bottom:4px;">
+                ${escapeHtml(c.Name || 'Sin nombre')}
+              </div>
+              <div style="color:#d4af37;font-size:0.7rem;font-weight:700;
+                          text-transform:uppercase;letter-spacing:0.4px;">
+                ${escapeHtml(c.Rarity || 'Common')}
+              </div>
+              <div style="color:#94a3b8;font-size:0.7rem;margin-top:4px;">
+                Nv. ${escapeHtml(c['Unlock Level'] || '—')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      canopiesEl.innerHTML = `<div style="color:#64748b;font-style:italic;font-size:0.85rem;">
+        🪟 Sin canopies disponibles.
+      </div>`;
+    }
+  }
+
+  // 3C: Renderizar Recomendaciones
+  const tipsEl = document.getElementById('deepTipsContent');
+  if (tipsEl) {
+    const tips = plane?.recomendaciones;
+    const secciones = (tips && typeof tips === 'object')
+      ? Object.entries(tips).filter(([k, v]) => Array.isArray(v) && v.length > 0)
+      : [];
+
+    if (secciones.length > 0) {
+      tipsEl.innerHTML = secciones.map(([titulo, items]) => `
+        <div style="margin-bottom:14px;">
+          <h4 style="color:#d4af37;font-size:0.82rem;font-weight:700;
+                     margin-bottom:6px;text-transform:uppercase;
+                     letter-spacing:0.5px;">
+            ${escapeHtml(titulo)}
+          </h4>
+          <ul style="margin:0;padding-left:20px;color:#e2e8f0;
+                     font-size:0.85rem;line-height:1.6;">
+            ${items.map(item => `<li style="margin-bottom:6px;">${escapeHtml(item)}</li>`).join('')}
+          </ul>
+        </div>
+      `).join('');
+    } else {
+      tipsEl.innerHTML = `
+        <div style="color:#64748b;font-style:italic;font-size:0.85rem;
+                    padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+          💡 Sin recomendaciones tácticas disponibles para esta aeronave.
+        </div>
+      `;
+    }
+  }
+
   // Renderizar Armamento Equipado
   renderArmamentoEquipado(plane);
+  // (las nuevas funciones ya están inline arriba, no necesitan llamada)
 
   // Inicializar secciones colapsables
   _deepCollapsedSections.forEach(sectionId => {
@@ -2406,6 +2589,118 @@ async function openAircraftDeepModal(planeId) {
         }
         if (plane.sistemas) {
           renderDeepModalSystems(plane.sistemas);
+        }
+
+        // Actualizar secciones de Wiki con datos de planeDetails
+        if (historiaEl) {
+          if (plane?.historia && String(plane.historia).trim().length > 0) {
+            const parrafos = String(plane.historia).split(/\n\n+/).filter(p => p.trim().length > 0);
+            historiaEl.innerHTML = parrafos.map(p => `
+              <p style="color:#e2e8f0;font-size:0.88rem;line-height:1.6;margin-bottom:12px;">
+                ${escapeHtml(p.trim())}
+              </p>
+            `).join('');
+          } else {
+            historiaEl.innerHTML = `
+              <div style="color:#64748b;font-style:italic;font-size:0.85rem;
+                          padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+                📜 Sin información histórica disponible para esta aeronave.
+              </div>
+            `;
+          }
+        }
+        if (tipsEl) {
+          const tips = plane?.recomendaciones;
+          const secciones = (tips && typeof tips === 'object')
+            ? Object.entries(tips).filter(([k, v]) => Array.isArray(v) && v.length > 0)
+            : [];
+
+          if (secciones.length > 0) {
+            tipsEl.innerHTML = secciones.map(([titulo, items]) => `
+              <div style="margin-bottom:14px;">
+                <h4 style="color:#d4af37;font-size:0.82rem;font-weight:700;
+                           margin-bottom:6px;text-transform:uppercase;
+                           letter-spacing:0.5px;">
+                  ${escapeHtml(titulo)}
+                </h4>
+                <ul style="margin:0;padding-left:20px;color:#e2e8f0;
+                           font-size:0.85rem;line-height:1.6;">
+                  ${items.map(item => `<li style="margin-bottom:6px;">${escapeHtml(item)}</li>`).join('')}
+                </ul>
+              </div>
+            `).join('');
+          } else {
+            tipsEl.innerHTML = `
+              <div style="color:#64748b;font-style:italic;font-size:0.85rem;
+                          padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+                💡 Sin recomendaciones tácticas disponibles para esta aeronave.
+              </div>
+            `;
+          }
+        }
+        if (paintsEl) {
+          const paints = plane?.paints;
+          if (Array.isArray(paints) && paints.length > 0) {
+            paintsEl.innerHTML = `
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+                ${paints.map(p => `
+                  <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
+                              border-radius:6px;padding:8px;text-align:center;">
+                    <img src="${escapeHtml(p.Image || '')}" alt="${escapeHtml(p.Name || 'Paint')}"
+                         style="width:100%;height:80px;object-fit:cover;border-radius:4px;
+                                margin-bottom:6px;background:#0f172a;"
+                         onerror="this.style.display='none'">
+                    <div style="color:#e2e8f0;font-size:0.8rem;font-weight:600;margin-bottom:4px;">
+                      ${escapeHtml(p.Name || 'Sin nombre')}
+                    </div>
+                    <div style="color:#d4af37;font-size:0.7rem;font-weight:700;
+                                text-transform:uppercase;letter-spacing:0.4px;">
+                      ${escapeHtml(p.Rarity || 'Common')}
+                    </div>
+                    <div style="color:#94a3b8;font-size:0.7rem;margin-top:4px;">
+                      ${escapeHtml(p['Unlock requirement'] || '')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            paintsEl.innerHTML = `<div style="color:#64748b;font-style:italic;font-size:0.85rem;">
+              🎨 Sin paints disponibles.
+            </div>`;
+          }
+        }
+        if (canopiesEl) {
+          const canopies = plane?.canopies;
+          if (Array.isArray(canopies) && canopies.length > 0) {
+            canopiesEl.innerHTML = `
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+                ${canopies.map(c => `
+                  <div style="background:rgba(11,19,43,0.6);border:1px solid #3A506B;
+                              border-radius:6px;padding:8px;text-align:center;">
+                    <img src="${escapeHtml(c.Image || '')}" alt="${escapeHtml(c.Name || 'Canopy')}"
+                         style="width:100%;height:80px;object-fit:cover;border-radius:4px;
+                                margin-bottom:6px;background:#0f172a;"
+                         onerror="this.style.display='none'">
+                    <div style="color:#e2e8f0;font-size:0.8rem;font-weight:600;margin-bottom:4px;">
+                      ${escapeHtml(c.Name || 'Sin nombre')}
+                    </div>
+                    <div style="color:#d4af37;font-size:0.7rem;font-weight:700;
+                                text-transform:uppercase;letter-spacing:0.4px;">
+                      ${escapeHtml(c.Rarity || 'Common')}
+                    </div>
+                    <div style="color:#94a3b8;font-size:0.7rem;margin-top:4px;">
+                      Nv. ${escapeHtml(c['Unlock Level'] || '—')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            canopiesEl.innerHTML = `<div style="color:#64748b;font-style:italic;font-size:0.85rem;">
+              🪟 Sin canopies disponibles.
+            </div>`;
+          }
         }
       }
     }
