@@ -1510,13 +1510,10 @@ function renderSystemNodes(sistemaData) {
       fuselaje: { A: 'Acorazado', B: 'Acróbata' },
       motor: { A: 'Postquemador Extremo', B: 'Resistencia Térmica' },
       avionica: { A: 'Guerra Electrónica', B: 'Adquisición Furtiva' },
-      canones_precision: { A: 'Balística Pesada', B: 'Cadencia Quirúrgica' },
-      canones_asalto: { A: 'Saturación Masiva', B: 'Perforación de Blindaje' },
+      canones: { A: 'Balística Pesada', B: 'Cadencia Quirúrgica' },
       misiles_ir: { A: 'Maniobrabilidad Cerrada', B: 'Resistencia a Contramedidas' },
-      cohetes: { A: 'Salva Concentrada', B: 'Dispersión de Área' },
-      misiles_manual: { A: 'Velocidad Terminal', B: 'Guiado Inercial' },
       misiles_radar: { A: 'Alcance BVR Extremo', B: 'Discriminación de Chaff' },
-      armas: { A: 'Balística Pesada', B: 'Cadencia Quirúrgica' }
+      cohetes: { A: 'Salva Concentrada', B: 'Dispersión de Área' }
     };
 
     const sysKey = sistemaData.sistema || '';
@@ -1550,32 +1547,32 @@ function renderDeepModalSystems(sistemas) {
     fuselaje: '🛡️',
     motor: '⚙️',
     avionica: '📡',
-    armas: '🎯',
-    canones_precision: '🎯',
-    canones_asalto: '💥',
+    canones: '🎯',
     misiles_ir: '🔥',
-    cohetes: '🚀',
-    misiles_manual: '🕹️',
-    misiles_radar: '🛰️'
+    misiles_radar: '🛰️',
+    cohetes: '🚀'
+  };
+
+  const formatSysName = (val, defaultName) => {
+    if (Array.isArray(val)) return val.join(' / ');
+    return val || defaultName;
   };
 
   const systemTitles = {
-    fuselaje: window.currentPlane?.system_names?.fuselaje || 'Fuselaje',
-    motor: window.currentPlane?.system_names?.motor || 'Motor',
-    avionica: window.currentPlane?.system_names?.avionica || 'Aviónica',
-    canones_precision: window.currentPlane?.system_names?.canones_precision || 'Cañones de Precisión',
-    canones_asalto: window.currentPlane?.system_names?.canones_asalto || 'Cañones de Asalto',
-    misiles_ir: window.currentPlane?.system_names?.misiles_ir || 'Misiles Infrarrojos',
-    misiles_radar: window.currentPlane?.system_names?.misiles_radar || 'Misiles de Radar',
-    misiles_manual: window.currentPlane?.system_names?.misiles_manual || 'Misiles Manuales',
-    cohetes: window.currentPlane?.system_names?.cohetes || 'Cohetes',
-    armas: window.currentPlane?.system_names?.armas || 'Armas'
+    fuselaje: formatSysName(window.currentPlane?.system_names?.fuselaje, 'Fuselaje'),
+    motor: formatSysName(window.currentPlane?.system_names?.motor, 'Motor'),
+    avionica: formatSysName(window.currentPlane?.system_names?.avionica, 'Aviónica'),
+    canones: formatSysName(window.currentPlane?.system_names?.canones, 'Cañones'),
+    misiles_ir: formatSysName(window.currentPlane?.system_names?.misiles_ir, 'Misiles Infrarrojos'),
+    misiles_radar: formatSysName(window.currentPlane?.system_names?.misiles_radar, 'Misiles de Radar'),
+    cohetes: formatSysName(window.currentPlane?.system_names?.cohetes, 'Cohetes')
   };
 
   systemsEl.innerHTML = Object.entries(sistemas).map(([sistemaKey, sistemaData]) => {
     const icon = iconMap[sistemaKey] || '⚙️';
     const nivel = sistemaData?.nivel || 0;
-    const nombre = window.currentPlane?.system_names?.[sistemaKey] || sistemaData?.nombre || systemTitles[sistemaKey] || sistemaKey;
+    const rawName = window.currentPlane?.system_names?.[sistemaKey] || sistemaData?.nombre || systemTitles[sistemaKey] || sistemaKey;
+    const nombre = Array.isArray(rawName) ? rawName.join(' / ') : rawName;
     const safeNombre = typeof escapeHtml === 'function' ? escapeHtml(nombre) : nombre;
     return `
       <section class="system-section system-detail" data-system="${sistemaKey}">
@@ -1693,7 +1690,7 @@ function toggleNode(element) {
   if (sysKey === 'fuselaje') plane.nivel_fuselaje = sistema.nivel;
   else if (sysKey === 'motor') plane.nivel_motor = sistema.nivel;
   else if (sysKey === 'avionica') plane.nivel_avionica = sistema.nivel;
-  else if (sysKey === 'armas' || sysKey === 'canones_precision' || sysKey === 'canones_asalto') {
+  else if (sysKey === 'canones' || sysKey === 'misiles_ir' || sysKey === 'misiles_radar' || sysKey === 'cohetes' || sysKey === 'armas') {
     plane.nivel_armas = sistema.nivel;
   }
   
@@ -1715,36 +1712,235 @@ function toggleNode(element) {
 }
 
 /**
+ * Extrae y acumula los efectos activos de los nodos del avión para cálculo en tiempo real
+ */
+function calculateActiveEffectsFromPlane(plane) {
+  const efectos = {
+    fuselaje: {},
+    motor: {},
+    avionica: {},
+    canones: {},
+    misiles_ir: {},
+    misiles_radar: {},
+    cohetes: {}
+  };
+
+  if (!plane?.sistemas) return efectos;
+
+  Object.entries(plane.sistemas).forEach(([sysKey, sysData]) => {
+    let cat = sysData.sistema || sysKey;
+    if (cat === 'armas') cat = 'canones';
+    if (!efectos[cat]) efectos[cat] = {};
+    const nivelActivo = sysData.nivel || 0;
+    const rutasActivas = sysData.rutas || {};
+
+    (sysData.nodos_completos || []).forEach(nodo => {
+      if (nodo.nivel <= nivelActivo) {
+        const rutaRequerida = nodo.nivel <= 4 ? 'base' : (rutasActivas[nodo.nivel] || rutasActivas[String(nodo.nivel)] || 'A');
+        if (nodo.ruta === rutaRequerida) {
+          const stats = nodo.stats_afectadas || nodo.effects || {};
+          Object.entries(stats).forEach(([k, v]) => {
+            const num = Number(v);
+            if (!isNaN(num)) {
+              efectos[cat][k] = (efectos[cat][k] || 0) + num;
+            }
+          });
+        }
+      }
+    });
+  });
+
+  return efectos;
+}
+
+/**
  * Actualiza la rejilla de estadísticas en tiempo real reflejando los nodos activos
  */
-function updateDeepModalStats(plane) {
+function updateDeepModalStats(plane, statsData = null) {
   if (!plane) return;
   const statsGridEl = document.getElementById('deepStatsGrid');
   if (!statsGridEl) return;
 
-  const planeLevel = plane.nivel || 1;
-  const levelFactor = planeLevel / 20;
-  const bonusMotor = 1 + ((plane.nivel_motor || 0) * 0.025);
-  const bonusFuselaje = 1 + ((plane.nivel_fuselaje || 0) * 0.03);
+  const currentStats = statsData || window.currentStatsData;
 
-  const rawSpeed = Math.round(2800 * (0.6 + 0.4 * levelFactor) * bonusMotor);
-  const rawAgility = Math.round(42 * (0.6 + 0.4 * levelFactor) * (1 + (plane.nivel_fuselaje || 0) * 0.015));
-  const rawArmor = Math.round(3200 * (0.5 + 0.5 * levelFactor) * bonusFuselaje);
-  const afterburnerVal = Math.round(15 + (plane.nivel_motor || 0) * 4.2 + levelFactor * 16);
-  const accelVal = (18 + levelFactor * 12 + (plane.nivel_motor || 0) * 1.5).toFixed(1);
-  const maneuverSpeedVal = Math.round(rawSpeed * 0.44 + (plane.nivel_fuselaje || 0) * 18);
+  const statKeys = ['speed', 'agility', 'armor', 'firepower', 'radar', 'ecm', 'afterburner', 'acceleration'];
 
-  const statsList = [
-    { label: 'Velocidad', val: `${rawSpeed.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((rawSpeed / 2800) * 100)), color: '#60a5fa' },
-    { label: 'Ángulo de Giro', val: `${rawAgility}`, unit: '°/s', pct: Math.min(100, Math.round((rawAgility / 42) * 100)), color: '#4ade80' },
-    { label: 'Puntos de Vida', val: `${rawArmor.toLocaleString()}`, unit: 'HP', pct: Math.min(100, Math.round((rawArmor / 3200) * 100)), color: '#f59e0b' },
-    { label: 'Postquemador', val: `+${afterburnerVal}`, unit: '% Empuje', pct: Math.min(100, Math.round((afterburnerVal / 50) * 100)), color: '#fb923c' },
-    { label: 'Aceleración', val: `${accelVal}`, unit: 'm/s²', pct: Math.min(100, Math.round((parseFloat(accelVal) / 35) * 100)), color: '#c084fc' },
-    { label: 'Vel. Maniobra', val: `${maneuverSpeedVal.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((maneuverSpeedVal / 1400) * 100)), color: '#38bdf8' }
-  ];
+  const labels = {
+    speed: 'Velocidad',
+    agility: 'Agilidad',
+    armor: 'Blindaje',
+    firepower: 'Potencia de Fuego',
+    radar: 'Rango de Radar',
+    ecm: 'Defensa ECM',
+    afterburner: 'Postquemador',
+    acceleration: 'Aceleración'
+  };
+
+  const units = {
+    speed: 'km/h',
+    agility: '°/s',
+    armor: 'HP',
+    firepower: 'DPS',
+    radar: 'km',
+    ecm: '%',
+    afterburner: 's',
+    acceleration: 'm/s²'
+  };
+
+  const colors = {
+    speed: '#60a5fa',
+    agility: '#4ade80',
+    armor: '#f59e0b',
+    firepower: '#ef4444',
+    radar: '#38bdf8',
+    ecm: '#a855f7',
+    afterburner: '#fb923c',
+    acceleration: '#c084fc'
+  };
+
+  let rawValues = {};
+  let pcts = {};
+  const breakdown = currentStats?.breakdown || {};
+
+  if (currentStats?.current_raw && currentStats?.current) {
+    // Usar datos oficiales del backend
+    rawValues = currentStats.current_raw;
+    pcts = currentStats.current;
+  } else if (currentStats?.breakdown) {
+    // Si se interactúa con nodos en tiempo real, recalcular usando breakdown de base y mods
+    const bd = currentStats.breakdown;
+    const efectos = calculateActiveEffectsFromPlane(plane);
+    const nivelAvion = plane.nivel || 1;
+    const levelFactor = 1 + (nivelAvion - 1) / 19;
+
+    const sBase = bd.speed?.base || 1260;
+    const sNodos = efectos.motor?.velocidad || 0;
+
+    const aBase = bd.agility?.base || 39.0;
+    const aNodos = efectos.fuselaje?.agilidad || 0;
+    const aModsFactor = 1 + ((bd.agility?.mods || 0) / 100);
+
+    const arBase = bd.armor?.base || 100;
+    const arNodos = efectos.fuselaje?.blindaje || 0;
+    const arModsFactor = 1 + ((bd.armor?.mods || 0) / 100);
+
+    const fpBase = bd.firepower?.base || 1400;
+    const fpNodos = (efectos.canones?.potencia || 0) + (efectos.misiles_ir?.potencia || 0) + (efectos.misiles_radar?.potencia || 0) + (efectos.cohetes?.potencia || 0);
+
+    const rBase = bd.radar?.base || 5.7;
+    const rNodos = efectos.avionica?.radar || 0;
+    const rModsFactor = 1 + ((bd.radar?.mods || 0) / 100);
+
+    const ecmNodos = efectos.avionica?.ecm || 0;
+    const ecmModsFactor = 1 + ((bd.ecm?.mods || 0) / 100);
+
+    const abBase = bd.afterburner?.base || 12;
+    const abNodos = efectos.motor?.postquemador || 0;
+
+    const acBase = bd.acceleration?.base || 45;
+    const acNodos = efectos.motor?.aceleracion || 0;
+
+    rawValues = {
+      speed: Math.round(sBase * (1 + sNodos / 100)),
+      agility: Math.round(aBase * (1 + aNodos / 100) * aModsFactor * 10) / 10,
+      armor: Math.round(arBase * levelFactor * (1 + arNodos / 100) * arModsFactor),
+      firepower: Math.round(fpBase * levelFactor * (1 + fpNodos / 100)),
+      radar: Math.round(rBase * (1 + rNodos / 100) * rModsFactor * 10) / 10,
+      ecm: Math.round(Math.min(99, ecmNodos * ecmModsFactor)),
+      afterburner: Math.round(abBase * (1 + abNodos / 100) * 10) / 10,
+      acceleration: Math.round(acBase * (1 + acNodos / 100) * 10) / 10
+    };
+
+    const maxRef = {
+      speed: 2500,
+      agility: 60.0,
+      armor: 2500,
+      firepower: 3500,
+      radar: 15.0,
+      ecm: 100,
+      afterburner: 30.0,
+      acceleration: 80.0
+    };
+
+    statKeys.forEach(k => {
+      pcts[k] = Math.min(100, Math.round(((rawValues[k] || 0) / maxRef[k]) * 100));
+    });
+  } else {
+    // Fallback completo desde stats_real y plane
+    const baseStats = plane?.stats_real?.base_statistics || plane?.base_statistics || {
+      health: 100,
+      top_speed_afterburner: 1260,
+      optimal_turn_rate: 39.0,
+      afterburner_fuel: 12,
+      acceleration_afterburner: 45
+    };
+    const advStats = plane?.stats_real?.advanced_statistics || plane?.advanced_statistics || { radar_range: 5.7 };
+    const nivelAvion = plane.nivel || 1;
+    const levelFactor = 1 + (nivelAvion - 1) / 19;
+    const rol = plane.type || plane.model_name || '';
+    const fpBase = { 'Ligero': 1200, 'Mediano': 1400, 'Pesado': 1600, 'Interceptor': 1500, 'Ataque': 1800 }[rol]
+      || (/ligero/i.test(rol) ? 1200 : /pesado/i.test(rol) ? 1600 : /interceptor/i.test(rol) ? 1500 : /ataque/i.test(rol) ? 1800 : 1400);
+
+    const efectos = calculateActiveEffectsFromPlane(plane);
+    const fpNodos = (efectos.canones?.potencia || 0) + (efectos.misiles_ir?.potencia || 0) + (efectos.misiles_radar?.potencia || 0) + (efectos.cohetes?.potencia || 0);
+
+    rawValues = {
+      speed: Math.round((baseStats.top_speed_afterburner || 1260) * (1 + (efectos.motor?.velocidad || 0) / 100)),
+      agility: Math.round((baseStats.optimal_turn_rate || 39.0) * (1 + (efectos.fuselaje?.agilidad || 0) / 100) * 10) / 10,
+      armor: Math.round((baseStats.health || 100) * levelFactor * (1 + (efectos.fuselaje?.blindaje || 0) / 100)),
+      firepower: Math.round(fpBase * levelFactor * (1 + fpNodos / 100)),
+      radar: Math.round((advStats.radar_range || 5.7) * (1 + (efectos.avionica?.radar || 0) / 100) * 10) / 10,
+      ecm: Math.round(Math.min(99, efectos.avionica?.ecm || 0)),
+      afterburner: Math.round((baseStats.afterburner_fuel || 12) * (1 + (efectos.motor?.postquemador || 0) / 100) * 10) / 10,
+      acceleration: Math.round((baseStats.acceleration_afterburner || 45) * (1 + (efectos.motor?.aceleracion || 0) / 100) * 10) / 10
+    };
+
+    const maxRef = {
+      speed: 2500,
+      agility: 60.0,
+      armor: 2500,
+      firepower: 3500,
+      radar: 15.0,
+      ecm: 100,
+      afterburner: 30.0,
+      acceleration: 80.0
+    };
+
+    statKeys.forEach(k => {
+      pcts[k] = Math.min(100, Math.round(((rawValues[k] || 0) / maxRef[k]) * 100));
+    });
+  }
+
+  const statsList = statKeys.map(k => {
+    const rawVal = rawValues[k] ?? 0;
+    const valStr = typeof rawVal === 'number'
+      ? (Number.isInteger(rawVal) ? rawVal.toLocaleString() : rawVal.toFixed(1))
+      : rawVal;
+    const pctVal = typeof pcts[k] === 'number' ? Math.min(100, Math.max(0, pcts[k])) : 50;
+    const bd = breakdown[k];
+
+    let tooltip = '';
+    if (bd) {
+      const parts = [`Base: ${bd.base}`];
+      if (bd.nodos !== undefined) parts.push(`Nodos: +${bd.nodos}%`);
+      if (bd.mods !== undefined && bd.mods !== 0) parts.push(`Mods: +${bd.mods}%`);
+      if (bd.level_factor !== undefined && bd.level_factor !== 1.0) parts.push(`Nivel: ×${bd.level_factor.toFixed(2)}`);
+      tooltip = parts.join(' | ');
+    }
+
+    return {
+      key: k,
+      label: labels[k],
+      val: valStr,
+      unit: units[k],
+      pct: pctVal,
+      color: colors[k],
+      tooltip
+    };
+  });
 
   statsGridEl.innerHTML = statsList.map(s => `
-    <div class="deep-stat-card">
+    <div class="deep-stat-card" ${s.tooltip ? `title="${s.tooltip}"` : ''}>
       <div class="deep-stat-header">
         <span class="deep-stat-label">${s.label}</span>
         <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
@@ -2057,6 +2253,8 @@ async function openAircraftDeepModal(planeId) {
     let statsData = null;
     if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
       statsData = await statsRes.value.json();
+      window.currentStatsData = statsData;
+      updateDeepModalStats(plane, statsData);
       if (statsData?.plane?.traits && traitsEl) {
         const serverTraits = statsData.plane.traits;
         if (serverTraits.length > 0) {
@@ -2082,16 +2280,13 @@ async function openAircraftDeepModal(planeId) {
         plane = { ...plane, ...planeDetails };
         window.currentPlane = plane;
 
-        // Títulos de sistemas específicos por modelo militar (Tarea F)
         const systemTitles = {
           fuselaje: plane.system_names?.fuselaje || 'Fuselaje',
           motor: plane.system_names?.motor || 'Motor',
           avionica: plane.system_names?.avionica || 'Aviónica',
-          canones_precision: plane.system_names?.canones_precision || 'Cañones de Precisión',
-          canones_asalto: plane.system_names?.canones_asalto || 'Cañones de Asalto',
+          canones: plane.system_names?.canones || 'Cañones',
           misiles_ir: plane.system_names?.misiles_ir || 'Misiles Infrarrojos',
           misiles_radar: plane.system_names?.misiles_radar || 'Misiles de Radar',
-          misiles_manual: plane.system_names?.misiles_manual || 'Misiles Manuales',
           cohetes: plane.system_names?.cohetes || 'Cohetes'
         };
 
@@ -2113,64 +2308,11 @@ async function openAircraftDeepModal(planeId) {
       }
     }
 
-    const levelFactor = planeLevel / 20;
-    const bonusMotor = 1 + ((plane?.nivel_motor || 0) * 0.025);
-    const bonusFuselaje = 1 + ((plane?.nivel_fuselaje || 0) * 0.03);
-
-    const rawSpeed = statsData?.current_raw?.speed || Math.round(2800 * (0.6 + 0.4 * levelFactor) * bonusMotor);
-    const rawAgility = statsData?.current_raw?.agility || Math.round(42 * (0.6 + 0.4 * levelFactor) * (1 + (plane?.nivel_fuselaje || 0) * 0.015));
-    const rawArmor = statsData?.current_raw?.armor || Math.round(3200 * (0.5 + 0.5 * levelFactor) * bonusFuselaje);
-    const afterburnerVal = Math.round(15 + (plane?.nivel_motor || 0) * 4.2 + levelFactor * 16);
-    const accelVal = (18 + levelFactor * 12 + (plane?.nivel_motor || 0) * 1.5).toFixed(1);
-    const maneuverSpeedVal = Math.round(rawSpeed * 0.44 + (plane?.nivel_fuselaje || 0) * 18);
-
-    const statsList = [
-      { label: 'Velocidad', val: `${rawSpeed.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((rawSpeed / 2800) * 100)), color: '#60a5fa' },
-      { label: 'Ángulo de Giro', val: `${rawAgility}`, unit: '°/s', pct: Math.min(100, Math.round((rawAgility / 42) * 100)), color: '#4ade80' },
-      { label: 'Puntos de Vida', val: `${rawArmor.toLocaleString()}`, unit: 'HP', pct: Math.min(100, Math.round((rawArmor / 3200) * 100)), color: '#f59e0b' },
-      { label: 'Postquemador', val: `+${afterburnerVal}`, unit: '% Empuje', pct: Math.min(100, Math.round((afterburnerVal / 50) * 100)), color: '#fb923c' },
-      { label: 'Aceleración', val: `${accelVal}`, unit: 'm/s²', pct: Math.min(100, Math.round((parseFloat(accelVal) / 35) * 100)), color: '#c084fc' },
-      { label: 'Vel. Maniobra', val: `${maneuverSpeedVal.toLocaleString()}`, unit: 'km/h', pct: Math.min(100, Math.round((maneuverSpeedVal / 1400) * 100)), color: '#38bdf8' }
-    ];
-
-    if (statsGridEl) {
-      statsGridEl.innerHTML = statsList.map(s => `
-        <div class="deep-stat-card">
-          <div class="deep-stat-header">
-            <span class="deep-stat-label">${s.label}</span>
-            <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
-          </div>
-          <div class="deep-stat-bar-track">
-            <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
-          </div>
-        </div>
-      `).join('');
-    }
+    // Actualizar rejilla de estadísticas con el motor Upgrades 2.0
+    updateDeepModalStats(plane, statsData);
   } catch (err) {
     console.warn('Error fetching detailed stats, showing fallback:', err);
-    const levelFactor = planeLevel / 20;
-    const speed = Math.round(2400 * (0.6 + 0.4 * levelFactor));
-    const statsList = [
-      { label: 'Velocidad', val: `${speed}`, unit: 'km/h', pct: Math.round((speed / 2800) * 100), color: '#60a5fa' },
-      { label: 'Ángulo de Giro', val: `${Math.round(36 * (0.6 + 0.4 * levelFactor))}`, unit: '°/s', pct: 75, color: '#4ade80' },
-      { label: 'Puntos de Vida', val: `${Math.round(2800 * (0.6 + 0.4 * levelFactor))}`, unit: 'HP', pct: 70, color: '#f59e0b' },
-      { label: 'Postquemador', val: `+${Math.round(20 * levelFactor)}`, unit: '% Empuje', pct: 60, color: '#fb923c' },
-      { label: 'Aceleración', val: `${(20 + levelFactor * 10).toFixed(1)}`, unit: 'm/s²', pct: 65, color: '#c084fc' },
-      { label: 'Vel. Maniobra', val: `${Math.round(980 * levelFactor + 300)}`, unit: 'km/h', pct: 72, color: '#38bdf8' }
-    ];
-    if (statsGridEl) {
-      statsGridEl.innerHTML = statsList.map(s => `
-        <div class="deep-stat-card">
-          <div class="deep-stat-header">
-            <span class="deep-stat-label">${s.label}</span>
-            <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
-          </div>
-          <div class="deep-stat-bar-track">
-            <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
-          </div>
-        </div>
-      `).join('');
-    }
+    updateDeepModalStats(plane);
   }
 
   if (typeof refreshLucideIcons === 'function') {
