@@ -2896,9 +2896,124 @@ function applyPlaneFilters() { filterPlanes(); }
 
 // ========== GESTIÓN DE UPGRADES 2.0 ==========
 let _currentUpgradesPlane = null;
+let _pendingSystemChanges = {};
+let _currentStatsData = null;
+let _collapsedSystems = new Set();  // Sistemas colapsados (por key)
+let _collapsedInitialized = false;
+
+async function getPlaneStats(planeId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/planes/${planeId}/stats`, {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) throw new Error('Error al obtener estadísticas de la aeronave');
+    return await res.json();
+  } catch (err) {
+    console.warn('Error en getPlaneStats:', err);
+    throw err;
+  }
+}
+window.getPlaneStats = getPlaneStats;
+
+/**
+ * Renderiza el panel de estadísticas en vivo del modal Upgrades 2.0
+ */
+function renderUpgradesStatsPanel(statsData) {
+  const gridEl = document.getElementById('upgradesStatsGrid');
+  if (!gridEl) return;
+  
+  if (!statsData || !statsData.current_raw || !statsData.current) {
+    gridEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;font-size:0.85rem;padding:12px;">Estadísticas no disponibles</div>';
+    return;
+  }
+  
+  const labels = {
+    speed: 'Velocidad',
+    agility: 'Agilidad',
+    armor: 'Blindaje',
+    firepower: 'Potencia',
+    radar: 'Radar',
+    ecm: 'ECM',
+    afterburner: 'Postquemador',
+    acceleration: 'Aceleración'
+  };
+  
+  const units = {
+    speed: 'km/h',
+    agility: '°/s',
+    armor: 'HP',
+    firepower: 'DPS',
+    radar: 'km',
+    ecm: '%',
+    afterburner: 's',
+    acceleration: 'm/s²'
+  };
+  
+  const colors = {
+    speed: '#60a5fa',
+    agility: '#4ade80',
+    armor: '#f59e0b',
+    firepower: '#ef4444',
+    radar: '#38bdf8',
+    ecm: '#a855f7',
+    afterburner: '#fb923c',
+    acceleration: '#c084fc'
+  };
+  
+  const keys = ['speed', 'agility', 'armor', 'firepower', 'radar', 'ecm', 'afterburner', 'acceleration'];
+  
+  gridEl.innerHTML = keys.map(k => {
+    const rawVal = statsData.current_raw[k] ?? 0;
+    const valStr = typeof rawVal === 'number'
+      ? (Number.isInteger(rawVal) ? rawVal.toLocaleString() : rawVal.toFixed(1))
+      : rawVal;
+    const pct = typeof statsData.current[k] === 'number' ? Math.min(100, Math.max(0, statsData.current[k])) : 50;
+    
+    return `
+      <div style="background:rgba(30, 41, 59, 0.6);border-radius:6px;padding:8px 10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:0.75rem;color:#94a3b8;">${labels[k]}</span>
+          <span style="font-size:0.85rem;font-weight:700;color:${colors[k]};">${valStr} <span style="font-size:0.65rem;color:#64748b;">${units[k]}</span></span>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${colors[k]};transition:width 0.3s;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderUpgradesStatsPanel = renderUpgradesStatsPanel;
+
+function toggleSystemCollapse(catKey) {
+  if (_collapsedSystems.has(catKey)) {
+    _collapsedSystems.delete(catKey);
+  } else {
+    _collapsedSystems.add(catKey);
+  }
+  // Re-renderizar solo el sistema afectado
+  const plane = _currentUpgradesPlane;
+  if (plane) renderPlaneUpgradesModal(plane);
+}
+window.toggleSystemCollapse = toggleSystemCollapse;
+
+async function updateLiveStatsAfterChange() {
+  const plane = _currentUpgradesPlane;
+  if (!plane || typeof getPlaneStats !== 'function') return;
+  
+  try {
+    const data = await getPlaneStats(plane.id);
+    _currentStatsData = data;
+    renderUpgradesStatsPanel(data);
+  } catch (err) {
+    console.warn('No se pudieron actualizar stats en vivo:', err);
+  }
+}
+window.updateLiveStatsAfterChange = updateLiveStatsAfterChange;
 
 async function openPlaneUpgrades(planeId) {
   _pendingSystemChanges = {};  // ✅ FIX: limpiar pendientes al abrir modal
+  _currentStatsData = null;
+  _collapsedInitialized = false;
   showModal('planeUpgradesModal');
   const pIdInput = document.getElementById('upgradesPlaneId');
   if (pIdInput) pIdInput.value = planeId;
@@ -2973,19 +3088,39 @@ function renderPlaneUpgradesModal(plane) {
     8: { piezas: 3500, avanzadas: 350 }
   };
 
-  const CATEGORIES = ['fuselaje', 'motor', 'avionica', 'armas'];
+  const planeSysKeys = plane.sistemas ? Object.keys(plane.sistemas) : [];
+  const CATEGORIES = planeSysKeys.length > 0 ? planeSysKeys : ['fuselaje', 'motor', 'avionica', 'armas'];
   const CAT_META = {
-    fuselaje: { icon: '🛡️', color: '#38bdf8', label: 'Fuselaje' },
-    motor:    { icon: '⚙️', color: '#fbbf24', label: 'Motor' },
-    avionica: { icon: '📡', color: '#c084fc', label: 'Aviónica' },
-    armas:    { icon: '🎯', color: '#f87171', label: 'Armas' }
+    fuselaje:      { icon: '🛡️', color: '#38bdf8', label: 'Fuselaje' },
+    motor:         { icon: '⚙️', color: '#fbbf24', label: 'Motor' },
+    avionica:      { icon: '📡', color: '#c084fc', label: 'Aviónica' },
+    armas:         { icon: '🎯', color: '#f87171', label: 'Armas' },
+    canones:       { icon: '🎯', color: '#f87171', label: 'Cañones' },
+    misiles_ir:    { icon: '🚀', color: '#ef4444', label: 'Misiles IR' },
+    misiles_radar: { icon: '🛰️', color: '#06b6d4', label: 'Misiles Radar' },
+    cohetes:       { icon: '💥', color: '#f97316', label: 'Cohetes' }
   };
 
   // Mapeo modal → clave de system_names
-  const sysNameMap = { fuselaje: 'fuselaje', motor: 'motor', avionica: 'avionica', armas: 'canones' };
+  const sysNameMap = {
+    fuselaje: 'fuselaje',
+    motor: 'motor',
+    avionica: 'avionica',
+    armas: 'canones',
+    canones: 'canones',
+    misiles_ir: 'misiles_ir',
+    misiles_radar: 'misiles_radar',
+    cohetes: 'cohetes'
+  };
+
+  // Inicializar colapso solo la primera vez
+  if (!_collapsedInitialized) {
+    _collapsedSystems = new Set(CATEGORIES.filter(c => c !== 'fuselaje')); // Todos colapsados excepto fuselaje
+    _collapsedInitialized = true;
+  }
 
   gridEl.innerHTML = CATEGORIES.map(catKey => {
-    const meta = CAT_META[catKey];
+    const meta = CAT_META[catKey] || { icon: '🔧', color: '#94a3b8', label: catKey.charAt(0).toUpperCase() + catKey.slice(1) };
     const sysKey = catKey;
 
     // Datos del sistema en este avión (del backend)
@@ -2995,7 +3130,7 @@ function renderPlaneUpgradesModal(plane) {
     const rutas = sysData.rutas || {};
 
     // Nombre real del sistema
-    const nombreSistema = formatSysName(sysNames[sysNameMap[catKey]]) || meta.label;
+    const nombreSistema = formatSysName(sysNames[sysNameMap[catKey] || catKey]) || sysData.nombre || meta.label;
 
     // Nivel máximo actual: base + el nivel más alto con ruta asignada
     const nivelesConRuta = Object.keys(rutas).map(n => parseInt(n, 10)).filter(n => !isNaN(n));
@@ -3057,45 +3192,65 @@ function renderPlaneUpgradesModal(plane) {
       if (UPGRADE_COSTS[lvl]) { costePiezas += UPGRADE_COSTS[lvl].piezas; costeAvanzadas += UPGRADE_COSTS[lvl].avanzadas; }
     });
 
+    const isCollapsed = _collapsedSystems.has(catKey);
+
     return `
-      <div class="system-card" data-sistema="${catKey}" style="background:rgba(30, 41, 59, 0.6);border:1px solid rgba(99, 110, 130, 0.3);border-radius:8px;padding:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="system-card" data-sistema="${catKey}" style="background:rgba(30, 41, 59, 0.6);border:1px solid rgba(99, 110, 130, 0.3);border-radius:8px;">
+        <!-- Header clickeable para colapsar/expandir -->
+        <div onclick="toggleSystemCollapse('${catKey}')" style="display:flex;justify-content:space-between;align-items:center;padding:14px;cursor:pointer;user-select:none;">
           <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1rem;color:#94a3b8;">${isCollapsed ? '▶' : '▼'}</span>
             <span style="font-size:1.2rem;">${meta.icon}</span>
             <div>
               <strong style="color:#e2e8f0;font-size:0.95rem;">${meta.label} · <span style="color:#94a3b8;font-weight:400;">${nombreSistema}</span></strong>
-              <span style="font-size:0.75rem;color:#94a3b8;display:block;">${meta.label === 'Fuselaje' ? 'Resistencia & Blindaje' : meta.label === 'Motor' ? 'Empuje & Postcombustión' : meta.label === 'Aviónica' ? 'Radar, Bloqueo & ECM' : 'Cadencia, Daño & Recarga'}</span>
+              <span style="font-size:0.75rem;color:#94a3b8;display:block;">${meta.label === 'Fuselaje' ? 'Resistencia & Blindaje' : meta.label === 'Motor' ? 'Empuje & Postcombustión' : meta.label === 'Aviónica' ? 'Radar, Bloqueo & ECM' : meta.label === 'Armas' ? 'Cadencia, Daño & Recarga' : meta.label === 'Misiles IR' ? 'Misiles de persecución térmica' : 'Sistema de armas'}</span>
             </div>
           </div>
           <span class="status-badge" style="background:${meta.color}33;color:${meta.color};border:1px solid ${meta.color};font-weight:700;">Nv. ${nivelMaxActual} / 8</span>
         </div>
+        
+        <!-- Contenido colapsable -->
+        <div style="display:${isCollapsed ? 'none' : 'block'};padding:0 14px 14px 14px;">
+          <div style="margin-bottom:8px;">
+            <label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:4px;">Nivel Base (secuencial):</label>
+            <select class="select_base_${catKey}" onchange="onBaseLevelChange('${catKey}', this.value)" style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:6px 8px;font-size:0.85rem;width:100%;">
+              ${selectBaseHtml}
+            </select>
+          </div>
 
-        <div style="margin-bottom:8px;">
-          <label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:4px;">Nivel Base (secuencial):</label>
-          <select class="select_base_${catKey}" onchange="onBaseLevelChange('${catKey}', this.value)" style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:6px 8px;font-size:0.85rem;width:100%;">
-            ${selectBaseHtml}
-          </select>
+          <div style="margin-bottom:8px;">
+            <label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:4px;">Bifurcación (rutas independientes 5-8):</label>
+            ${bifurcacionHtml}
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#94a3b8;margin-bottom:10px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);">
+            <span>Coste acumulado:</span>
+            <span style="color:#fbbf24;font-weight:600;">🔩 ${costePiezas.toLocaleString()} pzas${costeAvanzadas > 0 ? ` + 💎 ${costeAvanzadas} avanz.` : ''}</span>
+          </div>
+
+          <button onclick="saveSystemChanges('${catKey}')" class="btn-primary" style="width:100%;padding:6px 12px;font-size:0.8rem;">
+            💾 Guardar ${meta.label}
+          </button>
         </div>
-
-        <div style="margin-bottom:8px;">
-          <label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:4px;">Bifurcación (rutas independientes 5-8):</label>
-          ${bifurcacionHtml}
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#94a3b8;margin-bottom:10px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);">
-          <span>Coste acumulado:</span>
-          <span style="color:#fbbf24;font-weight:600;">🔩 ${costePiezas.toLocaleString()} pzas${costeAvanzadas > 0 ? ` + 💎 ${costeAvanzadas} avanz.` : ''}</span>
-        </div>
-
-        <button onclick="saveSystemChanges('${catKey}')" class="btn-primary" style="width:100%;padding:6px 12px;font-size:0.8rem;">
-          💾 Guardar ${meta.label}
-        </button>
       </div>
     `;
   }).join('');
-}
 
-let _pendingSystemChanges = {};
+  // Al final de renderPlaneUpgradesModal, después de gridEl.innerHTML = ...:
+  if (_currentStatsData) {
+    renderUpgradesStatsPanel(_currentStatsData);
+  } else {
+    // Cargar stats si no están cargadas
+    if (typeof getPlaneStats === 'function') {
+      getPlaneStats(plane.id).then(data => {
+        _currentStatsData = data;
+        renderUpgradesStatsPanel(data);
+      }).catch(err => {
+        console.warn('No se pudieron cargar stats en vivo:', err);
+      });
+    }
+  }
+}
 
 function onBaseLevelChange(catKey, newBaseLevel) {
   const plane = _currentUpgradesPlane;
@@ -3122,6 +3277,9 @@ function onBaseLevelChange(catKey, newBaseLevel) {
 
   // Re-renderizar el modal para reflejar cambios visuales
   renderPlaneUpgradesModal(plane);
+
+  // Actualizar stats en vivo
+  if (typeof updateLiveStatsAfterChange === 'function') updateLiveStatsAfterChange();
 }
 
 function onRouteChange(catKey, nivel, ruta) {
@@ -3130,6 +3288,12 @@ function onRouteChange(catKey, nivel, ruta) {
   }
   _pendingSystemChanges[catKey].rutas[nivel] = ruta;
   // No re-renderizamos para no perder el foco del radio
+
+  // Actualizar stats en vivo (con debounce)
+  if (window._liveStatsTimeout) clearTimeout(window._liveStatsTimeout);
+  window._liveStatsTimeout = setTimeout(() => {
+    if (typeof updateLiveStatsAfterChange === 'function') updateLiveStatsAfterChange();
+  }, 300);
 }
 
 async function saveSystemChanges(catKey) {
