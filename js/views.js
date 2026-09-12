@@ -1116,7 +1116,7 @@ function populatePlaneFilters(planes) {
   const hangarTypeFilter = document.getElementById('hangarTypeFilter');
   if (hangarTypeFilter) {
     const existingVal = hangarTypeFilter.value;
-    const baseRoles = ['Ligero', 'Mediano', 'Pesado', 'Interceptor', 'Ataque', 'Caza de Combate', 'Caza de Superioridad Aérea', 'Caza Polivalente'];
+    const baseRoles = ['Ligero', 'Mediano', 'Pesado', 'Interceptor', 'Ataque'];
     const merged = [...new Set([...baseRoles, ...types])];
     hangarTypeFilter.innerHTML = '<option value="">Todos los tipos</option>' +
       merged.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
@@ -2003,6 +2003,77 @@ window.savePlaneSystems = savePlaneSystems;
 // ============================================================================
 // MODAL DE DATOS PROFUNDOS DE AERONAVE (C4ISR TELEMETRÍA)
 // ============================================================================
+let _deepCollapsedSections = new Set([
+  'deepSpecialSection',
+  'deepPassiveSection',
+  'deepSystemsSection',
+  'deepRecommendationSection',
+  'deepModsSection',
+  'deepTraitsSection',
+  'deepHistorySection',
+  'deepTipsSection'
+]);
+
+function toggleDeepSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  const content = section.querySelector('.deep-section-content');
+  const chevron = section.querySelector('.deep-chevron');
+  if (!content) return;
+  const isCollapsed = _deepCollapsedSections.has(sectionId);
+  if (isCollapsed) {
+    _deepCollapsedSections.delete(sectionId);
+    content.style.display = 'block';
+    section.classList.remove('collapsed');
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  } else {
+    _deepCollapsedSections.add(sectionId);
+    content.style.display = 'none';
+    section.classList.add('collapsed');
+    if (chevron) chevron.style.transform = 'rotate(-90deg)';
+  }
+}
+window.toggleDeepSection = toggleDeepSection;
+
+function renderArmamentoEquipado(plane) {
+  const container = document.getElementById('deepArmamentList');
+  if (!container) return;
+
+  const categorias = [
+    { key: 'canones',      icon: '🎯', label: 'Cañones' },
+    { key: 'misiles_ir',   icon: '🔥', label: 'Misiles IR' },
+    { key: 'misiles_radar',icon: '📡', label: 'Misiles Radar' },
+    { key: 'cohetes',      icon: '🚀', label: 'Cohetes' }
+  ];
+
+  const sistemas = plane?.sistemas || {};
+  const systemNames = plane?.system_names || {};
+
+  const html = categorias.map(cat => {
+    const sistema = sistemas[cat.key];
+    const nombreSistema = systemNames[cat.key] || cat.label;
+    const nodos = sistema?.nodos_completos || [];
+    const nivelActual = nodos.length > 0
+      ? nodos.filter(n => n.completado).length
+      : (sistema?.nivel_actual || 0);
+
+    const equipado = nivelActual > 0 || nodos.length > 0;
+    const clase = equipado ? 'equipped' : 'empty';
+    const nombreMostrar = equipado ? nombreSistema : 'Sin equipar';
+
+    return `
+      <div class="deep-armament-item ${clase}">
+        <span class="deep-armament-icon">${cat.icon}</span>
+        <span class="deep-armament-name">${escapeHtml(nombreMostrar)}</span>
+        <span class="deep-armament-level">Nv. ${nivelActual}/8</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+}
+window.renderArmamentoEquipado = renderArmamentoEquipado;
+
 async function openAircraftDeepModal(planeId) {
   window.currentPlaneId = planeId;
   currentPlaneId = planeId;
@@ -2238,6 +2309,28 @@ async function openAircraftDeepModal(planeId) {
     }
   }
 
+  // Renderizar Armamento Equipado
+  renderArmamentoEquipado(plane);
+
+  // Inicializar secciones colapsables
+  _deepCollapsedSections.forEach(sectionId => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      const content = section.querySelector('.deep-section-content');
+      const chevron = section.querySelector('.deep-chevron');
+      if (content) content.style.display = 'none';
+      section.classList.add('collapsed');
+      if (chevron) chevron.style.transform = 'rotate(-90deg)';
+    }
+  });
+  // Asegurar Armamento abierto
+  const armSection = document.getElementById('deepArmamentSection');
+  if (armSection) {
+    const armContent = armSection.querySelector('.deep-section-content');
+    if (armContent) armContent.style.display = 'block';
+    armSection.classList.remove('collapsed');
+  }
+
   // Open modal
   showModal('aircraftDeepModal');
 
@@ -2313,9 +2406,13 @@ async function openAircraftDeepModal(planeId) {
 
     // Actualizar rejilla de estadísticas con el motor Upgrades 2.0
     updateDeepModalStats(plane, statsData);
+
+    // Re-renderizar armamento con datos actualizados de details
+    renderArmamentoEquipado(plane);
   } catch (err) {
     console.warn('Error fetching detailed stats, showing fallback:', err);
     updateDeepModalStats(plane);
+    renderArmamentoEquipado(plane);
   }
 
   if (typeof refreshLucideIcons === 'function') {
