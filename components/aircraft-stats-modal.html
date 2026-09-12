@@ -115,6 +115,61 @@
   border: 1px solid rgba(58,80,107,0.8);
   border-radius: 6px;
 }
+
+/* ============================================================
+   FIX: Override de reglas globales para #aircraftDeepModal
+   ============================================================ */
+
+#aircraftDeepModal .modal-content {
+  max-width: 1400px !important;
+  width: 95vw !important;
+  max-height: 92vh !important;
+  height: 92vh !important;
+  overflow: hidden !important;      /* Quita scroll del content */
+  padding: 0 !important;            /* Padding se maneja en header/body/footer */
+  display: flex;
+  flex-direction: column;
+}
+
+#aircraftDeepModal .modal-header {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  background: rgba(11, 19, 43, 0.98);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+#aircraftDeepModal .modal-body {
+  flex: 1;
+  min-height: 0;                    /* CRÍTICO para flex scroll */
+  max-height: none !important;      /* Quita el max-height global */
+  overflow-y: auto !important;      /* Scroll SOLO acá */
+  overflow-x: hidden;
+  padding: 16px 20px 24px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.5) rgba(11, 19, 43, 0.5);
+}
+
+#aircraftDeepModal .modal-footer {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  border-top: 1px solid rgba(212, 175, 55, 0.25);
+  background: #0F172A;
+}
+
+/* Mobile: mantener usabilidad */
+@media (max-width: 768px) {
+  #aircraftDeepModal .modal-content {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0;
+  }
+}
 </style>
 
 <div id="aircraftStatsModal" class="modal">
@@ -190,7 +245,7 @@
      ========================================================================== -->
 <div id="aircraftDeepModal" class="modal">
   <div class="modal-content aircraft-deep-modal"
-       style="max-width:1400px;width:95vw;height:92vh;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;">
+       style="max-width:1400px;width:95vw;height:92vh;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="modal-header"
          style="position:sticky;top:0;z-index:20;background:rgba(11,19,43,0.98);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,0.25);padding:14px 20px;">
       <div>
