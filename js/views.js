@@ -2052,12 +2052,18 @@ function renderArmamentoEquipado(plane) {
   const html = categorias.map(cat => {
     const sistema = sistemas[cat.key];
     const nombreSistema = systemNames[cat.key] || cat.label;
-    const nodos = sistema?.nodos_completos || [];
-    const nivelActual = nodos.length > 0
-      ? nodos.filter(n => n.completado).length
-      : (sistema?.nivel_actual || 0);
 
-    const equipado = nivelActual > 0 || nodos.length > 0;
+    const nivelBase = sistema?.nivel || 0;
+    const rutas = sistema?.rutas || {};
+    const nivelesConRuta = Object.keys(rutas)
+      .map(n => parseInt(n, 10))
+      .filter(n => !isNaN(n));
+    const nivelMaxRuta = nivelesConRuta.length > 0
+      ? Math.max(...nivelesConRuta)
+      : 0;
+    const nivelActual = Math.max(nivelBase, nivelMaxRuta);
+
+    const equipado = nivelActual > 0;
     const clase = equipado ? 'equipped' : 'empty';
     const nombreMostrar = equipado ? nombreSistema : 'Sin equipar';
 
