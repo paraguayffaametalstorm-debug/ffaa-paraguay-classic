@@ -2898,6 +2898,7 @@ function applyPlaneFilters() { filterPlanes(); }
 let _currentUpgradesPlane = null;
 
 async function openPlaneUpgrades(planeId) {
+  _pendingSystemChanges = {};  // ✅ FIX: limpiar pendientes al abrir modal
   showModal('planeUpgradesModal');
   const pIdInput = document.getElementById('upgradesPlaneId');
   if (pIdInput) pIdInput.value = planeId;
@@ -2938,28 +2939,13 @@ function renderPlaneUpgradesModal(plane) {
   const modelName = plane.model_name || plane.name || plane.avion_id || 'Aeronave';
   if (nameEl) nameEl.textContent = modelName;
 
-  // ✅ FIX: Poblar nombres reales de sistemas desde plane.system_names
+  // Nombres reales de sistemas
   const sysNames = plane.system_names || {};
   const formatSysName = (val) => {
     if (Array.isArray(val)) return val.join(' / ');
     return val || '';
   };
 
-  // Mapeo de clave del modal → clave de system_names
-  const sysNameMap = {
-    fuselaje: 'fuselaje',
-    motor:    'motor',
-    avionica: 'avionica',
-    armas:    'canones'  // ⚠️ El modal usa 'armas' pero system_names usa 'canones'
-  };
-
-  Object.entries(sysNameMap).forEach(([modalKey, sysKey]) => {
-    const el = document.getElementById(`sysName_${modalKey}`);
-    if (el) {
-      const nombre = formatSysName(sysNames[sysKey]);
-      el.textContent = nombre ? ` · ${nombre}` : '';
-    }
-  });
   if (typeEl) typeEl.textContent = plane.type || 'Caza de Combate';
   if (lvlEl) lvlEl.textContent = `Nv. ${plane.nivel || 1}`;
 
@@ -2973,6 +2959,9 @@ function renderPlaneUpgradesModal(plane) {
 
   if (lockBan) lockBan.style.display = isUnlocked ? 'none' : 'block';
 
+  if (!gridEl) return;
+
+  // Costes por nivel (definidos por el juego)
   const UPGRADE_COSTS = {
     1: { piezas: 100, avanzadas: 0 },
     2: { piezas: 250, avanzadas: 0 },
@@ -2984,54 +2973,235 @@ function renderPlaneUpgradesModal(plane) {
     8: { piezas: 3500, avanzadas: 350 }
   };
 
-  const systems = [
-    { key: 'fuselaje', label: 'Fuselaje', color: '#38bdf8', curLvl: plane.sistemas?.fuselaje?.nivel ?? plane.nivel_fuselaje ?? 0 },
-    { key: 'motor',    label: 'Motor',    color: '#fbbf24', curLvl: plane.sistemas?.motor?.nivel ?? plane.nivel_motor ?? 0 },
-    { key: 'avionica', label: 'Aviónica', color: '#c084fc', curLvl: plane.sistemas?.avionica?.nivel ?? plane.nivel_avionica ?? 0 },
-    { key: 'armas',    label: 'Armas',    color: '#f87171', curLvl: plane.sistemas?.armas?.nivel ?? plane.nivel_armas ?? 0 }
-  ];
+  const CATEGORIES = ['fuselaje', 'motor', 'avionica', 'armas'];
+  const CAT_META = {
+    fuselaje: { icon: '🛡️', color: '#38bdf8', label: 'Fuselaje' },
+    motor:    { icon: '⚙️', color: '#fbbf24', label: 'Motor' },
+    avionica: { icon: '📡', color: '#c084fc', label: 'Aviónica' },
+    armas:    { icon: '🎯', color: '#f87171', label: 'Armas' }
+  };
 
-  systems.forEach(sys => {
-    const badge = document.getElementById(`levelBadge_${sys.key}`);
-    if (badge) {
-      badge.textContent = `Nv. ${sys.curLvl} / 8`;
-      badge.style.color = sys.color;
+  // Mapeo modal → clave de system_names
+  const sysNameMap = { fuselaje: 'fuselaje', motor: 'motor', avionica: 'avionica', armas: 'canones' };
+
+  gridEl.innerHTML = CATEGORIES.map(catKey => {
+    const meta = CAT_META[catKey];
+    const sysKey = catKey;
+
+    // Datos del sistema en este avión (del backend)
+    const sysData = plane.sistemas?.[sysKey] || plane.sistemas?.[catKey] || {};
+    const nodos = sysData.nodos_completos || [];
+    const nivelBase = Math.min(sysData.nivel || 0, 4);
+    const rutas = sysData.rutas || {};
+
+    // Nombre real del sistema
+    const nombreSistema = formatSysName(sysNames[sysNameMap[catKey]]) || meta.label;
+
+    // Nivel máximo actual: base + el nivel más alto con ruta asignada
+    const nivelesConRuta = Object.keys(rutas).map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+    const nivelMaxConRuta = nivelesConRuta.length > 0 ? Math.max(...nivelesConRuta) : 0;
+    const nivelMaxActual = Math.max(nivelBase, nivelMaxConRuta);
+    
+    // Generar HTML del select de nivel base (0-4)
+    let selectBaseHtml = '';
+    for (let i = 0; i <= 4; i++) {
+      const nodo = nodos.find(n => n.nivel === i && n.ruta === 'base');
+      const reqLvl = nodo?.requirement_level || 6;
+      const allowed = i === 0 || (plane.nivel || 1) >= reqLvl;
+      const label = i === 0 ? 'Nivel 0 (Base)' : `Nivel ${i} · ${nodo?.node_name || ''}`;
+      selectBaseHtml += `<option value="${i}" ${i === nivelBase ? 'selected' : ''} ${!allowed ? 'disabled' : ''}>${label}${!allowed ? ` 🔒 Requiere Nv. ${reqLvl}` : ''}</option>`;
     }
 
-    const matrix = document.getElementById(`matrix_${sys.key}`);
-    if (matrix) {
-      let slotsHtml = '';
-      for (let i = 1; i <= 8; i++) {
-        const filled = i <= sys.curLvl;
-        const bg = filled ? sys.color : 'rgba(255,255,255,0.1)';
-        slotsHtml += `<div style="flex:1;height:6px;border-radius:2px;background:${bg};transition:background 0.3s;" title="Nivel ${i}"></div>`;
-      }
-      matrix.innerHTML = slotsHtml;
+    // Generar HTML de las 4 filas de bifurcación (niveles 5-8)
+    let bifurcacionHtml = '';
+    for (let n = 5; n <= 8; n++) {
+      const nodoA = nodos.find(x => x.nivel === n && x.ruta === 'A');
+      const nodoB = nodos.find(x => x.nivel === n && x.ruta === 'B');
+      const reqLvl = nodoA?.requirement_level || nodoB?.requirement_level || 6;
+      const allowedByLevel = (plane.nivel || 1) >= reqLvl;
+      const allowedByBase = nivelBase >= 4;
+      const allowed = allowedByLevel && allowedByBase;
+      const rutaSel = rutas[n] || rutas[String(n)] || null;
+
+      const radioA = rutaSel === 'A' ? 'checked' : '';
+      const radioB = rutaSel === 'B' ? 'checked' : '';
+
+      const nameA = nodoA?.node_name || '—';
+      const nameB = nodoB?.node_name || '—';
+
+      const disableAttr = allowed ? '' : 'disabled';
+      const lockLabel = !allowedByBase ? ` 🔒 Requiere Base Nv. 4` : (!allowedByLevel ? ` 🔒 Requiere Nv. ${reqLvl}` : '');
+
+      bifurcacionHtml += `
+        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="font-size:0.8rem;color:#94a3b8;font-weight:600;">Nv. ${n}${lockLabel}</div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:${allowed ? 'pointer' : 'not-allowed'};font-size:0.8rem;color:${rutaSel === 'A' ? '#e2e8f0' : '#64748b'};">
+            <input type="radio" name="ruta_${catKey}_${n}" value="A" ${radioA} ${disableAttr} onchange="onRouteChange('${catKey}', ${n}, 'A')" />
+            <span>${nameA}</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:${allowed ? 'pointer' : 'not-allowed'};font-size:0.8rem;color:${rutaSel === 'B' ? '#e2e8f0' : '#64748b'};">
+            <input type="radio" name="ruta_${catKey}_${n}" value="B" ${radioB} ${disableAttr} onchange="onRouteChange('${catKey}', ${n}, 'B')" />
+            <span>${nameB}</span>
+          </label>
+        </div>
+      `;
     }
 
-    const costEl = document.getElementById(`cost_${sys.key}`);
-    if (costEl) {
-      if (sys.curLvl >= 8) {
-        costEl.innerHTML = `<span style="color:#22c55e;">✨ NIVEL MÁXIMO</span>`;
-      } else if (!isUnlocked) {
-        costEl.innerHTML = `<span style="color:#64748b;">Requiere Nivel 6</span>`;
-      } else {
-        const nextCost = UPGRADE_COSTS[sys.curLvl + 1];
-        if (nextCost) {
-          costEl.innerHTML = `🔩 ${nextCost.piezas} pzas` + (nextCost.avanzadas > 0 ? ` + 💎 ${nextCost.avanzadas} avanz.` : '');
-        } else {
-          costEl.textContent = '—';
-        }
-      }
+    // Calcular coste acumulado actual
+    let costePiezas = 0, costeAvanzadas = 0;
+    for (let i = 1; i <= nivelBase; i++) {
+      if (UPGRADE_COSTS[i]) { costePiezas += UPGRADE_COSTS[i].piezas; costeAvanzadas += UPGRADE_COSTS[i].avanzadas; }
     }
+    Object.keys(rutas).forEach(n => {
+      const lvl = parseInt(n, 10);
+      if (UPGRADE_COSTS[lvl]) { costePiezas += UPGRADE_COSTS[lvl].piezas; costeAvanzadas += UPGRADE_COSTS[lvl].avanzadas; }
+    });
 
-    const sel = document.getElementById(`select_${sys.key}`);
-    if (sel) {
-      sel.value = String(sys.curLvl);
-      sel.disabled = !isUnlocked;
-    }
-  });
+    return `
+      <div class="system-card" data-sistema="${catKey}" style="background:rgba(30, 41, 59, 0.6);border:1px solid rgba(99, 110, 130, 0.3);border-radius:8px;padding:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.2rem;">${meta.icon}</span>
+            <div>
+              <strong style="color:#e2e8f0;font-size:0.95rem;">${meta.label} · <span style="color:#94a3b8;font-weight:400;">${nombreSistema}</span></strong>
+              <span style="font-size:0.75rem;color:#94a3b8;display:block;">${meta.label === 'Fuselaje' ? 'Resistencia & Blindaje' : meta.label === 'Motor' ? 'Empuje & Postcombustión' : meta.label === 'Aviónica' ? 'Radar, Bloqueo & ECM' : 'Cadencia, Daño & Recarga'}</span>
+            </div>
+          </div>
+          <span class="status-badge" style="background:${meta.color}33;color:${meta.color};border:1px solid ${meta.color};font-weight:700;">Nv. ${nivelMaxActual} / 8</span>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:4px;">Nivel Base (secuencial):</label>
+          <select class="select_base_${catKey}" onchange="onBaseLevelChange('${catKey}', this.value)" style="background:#0f172a;border:1px solid #334155;color:#fff;border-radius:4px;padding:6px 8px;font-size:0.85rem;width:100%;">
+            ${selectBaseHtml}
+          </select>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:4px;">Bifurcación (rutas independientes 5-8):</label>
+          ${bifurcacionHtml}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#94a3b8;margin-bottom:10px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);">
+          <span>Coste acumulado:</span>
+          <span style="color:#fbbf24;font-weight:600;">🔩 ${costePiezas.toLocaleString()} pzas${costeAvanzadas > 0 ? ` + 💎 ${costeAvanzadas} avanz.` : ''}</span>
+        </div>
+
+        <button onclick="saveSystemChanges('${catKey}')" class="btn-primary" style="width:100%;padding:6px 12px;font-size:0.8rem;">
+          💾 Guardar ${meta.label}
+        </button>
+      </div>
+    `;
+  }).join('');
 }
+
+let _pendingSystemChanges = {};
+
+function onBaseLevelChange(catKey, newBaseLevel) {
+  const plane = _currentUpgradesPlane;
+  if (!plane) return;
+
+  const newBase = parseInt(newBaseLevel, 10);
+
+  if (!_pendingSystemChanges[catKey]) {
+    _pendingSystemChanges[catKey] = { nivel: null, rutas: {} };
+  }
+  _pendingSystemChanges[catKey].nivel = newBase;
+
+  // Si el nuevo base es < 4, resetear las rutas 5-8
+  if (newBase < 4) {
+    _pendingSystemChanges[catKey].rutas = {};
+    if (typeof showToast === 'function') {
+      showToast('⚠️ Se resetearon las rutas 5-8 al bajar el nivel base', 'warning');
+    }
+  } else {
+    // Mantener las rutas actuales del sistema
+    const sysData = plane.sistemas?.[catKey] || {};
+    _pendingSystemChanges[catKey].rutas = { ...(sysData.rutas || {}) };
+  }
+
+  // Re-renderizar el modal para reflejar cambios visuales
+  renderPlaneUpgradesModal(plane);
+}
+
+function onRouteChange(catKey, nivel, ruta) {
+  if (!_pendingSystemChanges[catKey]) {
+    _pendingSystemChanges[catKey] = { nivel: null, rutas: {} };
+  }
+  _pendingSystemChanges[catKey].rutas[nivel] = ruta;
+  // No re-renderizamos para no perder el foco del radio
+}
+
+async function saveSystemChanges(catKey) {
+  const plane = _currentUpgradesPlane;
+  if (!plane) {
+    showToast('❌ Aeronave no seleccionada', 'error');
+    return;
+  }
+
+  const pending = _pendingSystemChanges[catKey];
+  if (!pending) {
+    showToast('⚠️ No hay cambios pendientes para este sistema', 'warning');
+    return;
+  }
+
+  const sysData = plane.sistemas?.[catKey] || {};
+  const nivelFinal = pending.nivel !== null ? pending.nivel : (sysData.nivel || 0);
+  const rutasFinal = pending.rutas || {};
+
+  // Validación local: el nivel base máximo es 4
+  if (nivelFinal > 4) {
+    showToast('❌ El nivel base máximo es 4. Usá las rutas A/B para niveles 5-8.', 'error');
+    return;
+  }
+
+  const sistemasPayload = {
+    [catKey]: {
+      nivel: nivelFinal,
+      rutas: rutasFinal
+    }
+  };
+
+  try {
+    if (typeof apiUpdatePlaneSystems !== 'function') {
+      showToast('❌ API de actualización no disponible', 'error');
+      return;
+    }
+
+    const response = await apiUpdatePlaneSystems(plane.id, { sistemas: sistemasPayload });
+    if (!response.success) {
+      showToast('❌ ' + (response.message || 'Error al guardar'), 'error');
+      return;
+    }
+
+    // Limpiar pendientes de esta categoría
+    delete _pendingSystemChanges[catKey];
+
+    // Refrescar datos
+    let freshDetails = null;
+    if (typeof getPlaneDetails === 'function') {
+      try { freshDetails = await getPlaneDetails(plane.id); } catch (e) {}
+    }
+
+    if (freshDetails) {
+      _currentUpgradesPlane = freshDetails;
+      const pIdx = allUserPlanes.findIndex(p => p.id === plane.id);
+      if (pIdx !== -1) allUserPlanes[pIdx] = { ...allUserPlanes[pIdx], ...freshDetails };
+      renderPlaneUpgradesModal(freshDetails);
+      displayPlanes(allUserPlanes);
+      updatePlanesStats(allUserPlanes);
+      showToast('✅ ' + catKey.toUpperCase() + ' actualizado', 'success');
+    }
+  } catch (err) {
+    console.error('Error guardando sistema:', err);
+    showToast('❌ Error de conexión al guardar', 'error');
+  }
+}
+
+// Exponer globalmente
+window.onBaseLevelChange = onBaseLevelChange;
+window.onRouteChange = onRouteChange;
+window.saveSystemChanges = saveSystemChanges;
 
 async function applySystemUpgrade(sistema) {
   const planeId = parseInt(document.getElementById('upgradesPlaneId')?.value, 10);
