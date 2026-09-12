@@ -644,6 +644,96 @@ export async function updatePlaneSystems(req, res) {
       });
     }
 
+    // ✅ VALIDACIÓN DE SISTEMAS DISPONIBLES (H-04)
+    // Verificar que el avión tenga los sistemas solicitados según plane_models.sistemas_disponibles
+    let modelData = null;
+    const { data: dbModel, error: modelError } = await supabase
+      .from('plane_models')
+      .select('sistemas_disponibles, name')
+      .eq('id', plane.avion_id)
+      .single();
+
+    if (!modelError && dbModel) {
+      modelData = dbModel;
+    } else {
+      const catalog = await getFullCatalogModels(supabase);
+      const fallbackModel = findModel(catalog, plane.avion_id);
+      if (fallbackModel) {
+        modelData = {
+          name: fallbackModel.name,
+          sistemas_disponibles: fallbackModel.sistemas_disponibles
+        };
+      }
+    }
+
+    if (modelData) {
+      let sistemasDisponibles = modelData.sistemas_disponibles || {};
+      if (typeof sistemasDisponibles === 'string') {
+        try { sistemasDisponibles = JSON.parse(sistemasDisponibles); } catch (_) { sistemasDisponibles = {}; }
+      }
+
+      // Mapeo de claves de sistema del payload → claves de sistemas_disponibles
+      const sistemaKeyMap = {
+        fuselaje: 'fuselaje',
+        motor: 'motor',
+        avionica: 'avionica',
+        armas: 'canones',
+        canones_precision: 'canones',
+        canones_asalto: 'canones',
+        misiles_ir: 'misiles_ir',
+        misiles_radar: 'misiles_radar',
+        misiles_beam: 'misiles_beam',
+        misiles_manual: 'misiles_manual',
+        misiles_largo: 'misiles_largo',
+        cohetes: 'cohetes'
+      };
+
+      for (const [sysKey, sysData] of Object.entries(sistemas)) {
+        const sistemaKey = sistemaKeyMap[sysKey];
+        if (!sistemaKey) continue;
+
+        const sistemaDisponible = sistemasDisponibles[sistemaKey];
+
+        // Caso 1: null, false o undefined → No disponible
+        if (sistemaDisponible === null || sistemaDisponible === false || sistemaDisponible === undefined) {
+          return res.status(400).json({
+            success: false,
+            message: `Esta aeronave (${modelData.name}) no tiene el sistema ${sysKey.toUpperCase()} disponible`,
+            error: 'SYSTEM_NOT_AVAILABLE',
+            details: {
+              sistema_solicitado: sysKey,
+              sistema_key: sistemaKey,
+              avion_id: plane.avion_id,
+              avion_name: modelData.name,
+              sistemas_disponibles: Object.keys(sistemasDisponibles).filter(
+                k => sistemasDisponibles[k] === true || 
+                     (typeof sistemasDisponibles[k] === 'string')
+              )
+            }
+          });
+        }
+
+        // Caso 2: canones_precision vs canones_asalto (validar tipo específico)
+        if (sysKey === 'canones_precision' && sistemaDisponible !== 'precision') {
+          return res.status(400).json({
+            success: false,
+            message: `Esta aeronave (${modelData.name}) no tiene Cañones de Precisión disponibles`,
+            error: 'SYSTEM_NOT_AVAILABLE',
+            details: { sistema_solicitado: sysKey, sistema_key: 'canones', tipo_requerido: 'precision', tipo_actual: sistemaDisponible }
+          });
+        }
+
+        if (sysKey === 'canones_asalto' && sistemaDisponible !== 'asalto') {
+          return res.status(400).json({
+            success: false,
+            message: `Esta aeronave (${modelData.name}) no tiene Cañones de Asalto disponibles`,
+            error: 'SYSTEM_NOT_AVAILABLE',
+            details: { sistema_solicitado: sysKey, sistema_key: 'canones', tipo_requerido: 'asalto', tipo_actual: sistemaDisponible }
+          });
+        }
+      }
+    }
+
     // Cargar catálogo de nodos para validar requirement_level
     const allNodes = await getUpgradeNodes(supabase);
 
