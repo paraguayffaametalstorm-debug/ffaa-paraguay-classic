@@ -1110,50 +1110,95 @@ i[data-lucide] {
 
 .deep-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+@media (max-width: 1000px) {
+  .deep-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .deep-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .deep-stat-card {
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: rgba(11, 19, 43, 0.75);
+  border: 1px solid rgba(58, 80, 107, 0.75);
   border-radius: 6px;
   padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  min-width: 0;
+}
+
+.deep-stat-card:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(15, 23, 42, 0.85);
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.15);
 }
 
 .deep-stat-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+  min-width: 0;
 }
 
 .deep-stat-label {
-  font-size: 0.8rem;
-  color: var(--steel-gray);
-  font-family: var(--font-tactical);
+  font-size: 0.82rem;
+  color: var(--steel-gray, #94a3b8);
+  font-family: var(--font-tactical, 'Rajdhani', sans-serif);
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
 }
 
 .deep-stat-value {
   font-size: 0.95rem;
   font-weight: 700;
   color: #fff;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  white-space: nowrap;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.deep-stat-unit {
+  font-size: 0.75rem;
+  color: var(--steel-gray, #94a3b8);
+  font-weight: 500;
+  margin-left: 2px;
 }
 
 .deep-stat-bar-track {
+  width: 100%;
   height: 6px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   overflow: hidden;
+  position: relative;
 }
 
 .deep-stat-bar-fill {
   height: 100%;
   border-radius: 3px;
-  background: var(--blue-telemetry);
-  transition: width 0.5s ease;
+  background: var(--blue-telemetry, #60a5fa);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .deep-skill {
