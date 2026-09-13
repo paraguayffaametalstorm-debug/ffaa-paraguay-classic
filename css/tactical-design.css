@@ -1387,6 +1387,193 @@ i[data-lucide] {
   align-items: center;
 }
 
+/* ============================================================
+   REDISEÑO VISUAL #aircraftDeepModal (v3.9.0 - TABS & STATS)
+   ============================================================ */
+
+#aircraftDeepModal .modal-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+#aircraftDeepModal .deep-modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  background: rgba(11, 19, 43, 0.98);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+#aircraftDeepModal .deep-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #94a3b8;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+#aircraftDeepModal .deep-tab:hover {
+  color: #cbd5e1;
+  background: rgba(96, 165, 250, 0.05);
+}
+
+#aircraftDeepModal .deep-tab.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+#aircraftDeepModal .deep-tab i,
+#aircraftDeepModal .deep-tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+#aircraftDeepModal .deep-tab-panel {
+  display: none;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+#aircraftDeepModal .deep-tab-panel.active {
+  display: block;
+}
+
+#aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+#aircraftDeepModal .deep-stat-card {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 8px 12px;
+  padding: 14px 16px;
+  background: rgba(11, 19, 43, 0.75);
+  border: 1px solid rgba(58, 80, 107, 0.6);
+  border-left: 4px solid var(--stat-color, #60a5fa);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  align-items: center;
+}
+
+#aircraftDeepModal .deep-stat-card:hover {
+  border-left-color: var(--stat-color, #60a5fa);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.2);
+  transform: translateX(2px);
+}
+
+#aircraftDeepModal .deep-stat-icon {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--stat-color, #60a5fa);
+}
+
+#aircraftDeepModal .deep-stat-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+}
+
+#aircraftDeepModal .deep-stat-label {
+  grid-column: 2;
+  grid-row: 1;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+#aircraftDeepModal .deep-stat-value {
+  grid-column: 3;
+  grid-row: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--stat-color, #60a5fa);
+  text-align: right;
+  line-height: 1;
+}
+
+#aircraftDeepModal .deep-stat-unit {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+#aircraftDeepModal .deep-stat-bar-track {
+  grid-column: 2 / 4;
+  grid-row: 2;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+#aircraftDeepModal .deep-stat-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--stat-color, #60a5fa);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 900px) {
+  #aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#aircraftDeepModal .skill-image-wrapper {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+#aircraftDeepModal #deepSpecialSection .skill-image-wrapper {
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.25);
+}
+
+#aircraftDeepModal #deepPassiveSection .skill-image-wrapper {
+  border-color: rgba(52, 211, 153, 0.5);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.25);
+}
+
 /* ── PLANIFICADOR DE UPGRADES 2.0 (Tarea 8) ───────────────────────────────── */
 .planner-modal-content {
   background: var(--bg-card);

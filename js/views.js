@@ -1942,17 +1942,33 @@ function updateDeepModalStats(plane, statsData = null) {
     };
   });
 
+  const statIcons = {
+    speed: 'zap',
+    agility: 'rotate-cw',
+    armor: 'shield',
+    firepower: 'target',
+    radar: 'radar',
+    ecm: 'radio',
+    afterburner: 'flame',
+    acceleration: 'gauge'
+  };
+
   statsGridEl.innerHTML = statsList.map(s => `
-    <div class="deep-stat-card" ${s.tooltip ? `title="${escapeHtml(s.tooltip)}"` : ''}>
-      <div class="deep-stat-header">
-        <span class="deep-stat-label">${s.label}</span>
-        <span class="deep-stat-value" style="color:${s.color};">${s.val} <span class="deep-stat-unit" style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
+    <div class="deep-stat-card" style="--stat-color: ${s.color};" title="${escapeHtml(s.tooltip || '')}">
+      <div class="deep-stat-icon">
+        <i data-lucide="${statIcons[s.key] || 'activity'}"></i>
       </div>
+      <span class="deep-stat-label">${s.label}</span>
+      <span class="deep-stat-value">${s.val} <span class="deep-stat-unit">${s.unit}</span></span>
       <div class="deep-stat-bar-track">
-        <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
+        <div class="deep-stat-bar-fill" style="width:${s.pct}%;"></div>
       </div>
     </div>
   `).join('');
+
+  if (typeof refreshLucideIcons === 'function') {
+    refreshLucideIcons();
+  }
 }
 
 /**
@@ -2006,13 +2022,29 @@ window.savePlaneSystems = savePlaneSystems;
 let _deepCollapsedSections = new Set([
   'deepSystemsSection',
   'deepRecommendationSection',
-  'deepModsSection',
   'deepTraitsSection',
   'deepPaintsSection',      // ← NUEVO
   'deepCanopiesSection',    // ← NUEVO
   'deepHistorySection',
   'deepTipsSection'
 ]);
+
+function switchDeepTab(tabName) {
+  const modal = document.getElementById('aircraftDeepModal');
+  if (!modal) return;
+
+  modal.querySelectorAll('.deep-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tabName);
+  });
+  modal.querySelectorAll('.deep-tab-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.tab === tabName);
+  });
+
+  if (typeof refreshLucideIcons === 'function') {
+    setTimeout(refreshLucideIcons, 30);
+  }
+}
+window.switchDeepTab = switchDeepTab;
 
 function toggleDeepSection(sectionId) {
   const section = document.getElementById(sectionId);
@@ -2577,16 +2609,24 @@ async function openAircraftDeepModal(planeId) {
       if (chevron) chevron.style.transform = 'rotate(-90deg)';
     }
   });
-  // Asegurar Armamento abierto
-  const armSection = document.getElementById('deepArmamentSection');
-  if (armSection) {
-    const armContent = armSection.querySelector('.deep-section-content');
-    if (armContent) armContent.style.display = 'block';
-    armSection.classList.remove('collapsed');
-  }
+  // Asegurar secciones iniciales abiertas (Armamento, Especial, Pasiva, Mods)
+  ['deepArmamentSection', 'deepSpecialSection', 'deepPassiveSection', 'deepModsSection'].forEach(sId => {
+    const sec = document.getElementById(sId);
+    if (sec) {
+      const cnt = sec.querySelector('.deep-section-content');
+      if (cnt) cnt.style.display = 'block';
+      sec.classList.remove('collapsed');
+      const chv = sec.querySelector('.deep-chevron');
+      if (chv) chv.style.transform = 'rotate(0deg)';
+    }
+  });
 
   // Open modal
   showModal('aircraftDeepModal');
+
+  document.querySelectorAll('#aircraftDeepModal .deep-tab').forEach(tab => {
+    tab.onclick = () => switchDeepTab(tab.dataset.tab);
+  });
 
   // Stats Grid: Velocidad, Ángulo de Giro, Puntos de Vida, Postquemador, Aceleración, Vel. Maniobra
   const statsGridEl = document.getElementById('deepStatsGrid');
