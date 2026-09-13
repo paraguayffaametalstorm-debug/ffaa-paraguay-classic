@@ -88,16 +88,18 @@ function findModel(catalog, avionId) {
   return null;
 }
 
-// Catálogo oficial de modificaciones tácticas
+// Catálogo oficial de modificaciones tácticas (fallback)
 const DEFAULT_PLANE_MODS = [
-  { id: 1, name: 'Radar AESA Longbow', type: 'Aviónica' },
-  { id: 2, name: 'Pod de Guerra Electrónica ECM', type: 'Defensa' },
-  { id: 3, name: 'Postquemador Vectorial 3D', type: 'Propulsión' },
-  { id: 4, name: 'Blindaje de Titanio Reforzado', type: 'Estructura' },
-  { id: 5, name: 'Cañón Rotativo Vulcan 20mm', type: 'Armamento' },
-  { id: 6, name: 'Bahía Interna de Misiles BVR', type: 'Armamento' },
-  { id: 7, name: 'Sistema Óptico IRST Cuántico', type: 'Sensores' },
-  { id: 8, name: 'Recubrimiento RAM Anti-Radar', type: 'Sigilo' }
+  { id: 'm1',  name: 'Giro Temerario',                 type: 'Agilidad', type_en: 'Agility' },
+  { id: 'm2',  name: 'Maniobrabilidad Ideal',          type: 'Agilidad', type_en: 'Agility' },
+  { id: 'm3',  name: 'Resistencia a las Explosiones',  type: 'Defensa',  type_en: 'Defense' },
+  { id: 'm4',  name: 'Blindaje de Ataque',             type: 'Defensa',  type_en: 'Defense' },
+  { id: 'm5',  name: 'Quemadores Auxiliares Eficientes', type: 'Motor',  type_en: 'Engine' },
+  { id: 'm6',  name: 'Máxima Propulsión',              type: 'Motor',    type_en: 'Engine' },
+  { id: 'm7',  name: 'Bengalas Disruptivas',           type: 'Señuelos', type_en: 'Flare' },
+  { id: 'm8',  name: 'Bengalas Más Rápidas',           type: 'Señuelos', type_en: 'Flare' },
+  { id: 'm9',  name: 'Armas Aniquiladoras',            type: 'Arma',     type_en: 'Weapon' },
+  { id: 'm10', name: 'Guiado Mejorado',                type: 'Arma',     type_en: 'Weapon' }
 ];
 
 // Costos oficiales de recursos para Starform Upgrades 2.0 (Niveles 1 a 8)
