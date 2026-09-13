@@ -1421,67 +1421,7 @@ i[data-lucide] {
 }
 
 #aircraftDeepModal .modal-body {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-#aircraftDeepModal .deep-modal-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 0 20px;
-  background: rgba(11, 19, 43, 0.98);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
-  flex-shrink: 0;
-  overflow-x: auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-#aircraftDeepModal .deep-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  color: #94a3b8;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-#aircraftDeepModal .deep-tab:hover {
-  color: #cbd5e1;
-  background: rgba(96, 165, 250, 0.05);
-}
-
-#aircraftDeepModal .deep-tab.active {
-  color: #d4af37;
-  border-bottom-color: #d4af37;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
-}
-
-#aircraftDeepModal .deep-tab i,
-#aircraftDeepModal .deep-tab svg {
-  width: 16px;
-  height: 16px;
-}
-
-#aircraftDeepModal .deep-tab-panel {
-  display: none;
+  display: block;
   padding: 20px 24px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -1490,13 +1430,27 @@ i[data-lucide] {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 175, 55, 0.5) rgba(11, 19, 43, 0.5);
 }
 
-#aircraftDeepModal .deep-tab-panel.active {
-  display: block;
+#aircraftDeepModal .deep-sections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
+}
+
+/* Grid de estadísticas: 2 columnas grandes */
+#aircraftDeepModal .deep-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  #aircraftDeepModal .deep-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 #aircraftDeepModal .modal-footer {
@@ -1508,28 +1462,21 @@ i[data-lucide] {
   background: #0F172A;
 }
 
-/* Scrollbar táctica en el panel activo (a la extrema derecha del modal) */
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar {
+/* Scrollbar táctica del modal (a la derecha del modal completo) */
+#aircraftDeepModal .modal-body::-webkit-scrollbar {
   width: 10px;
 }
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-track {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-track {
   background: rgba(11, 19, 43, 0.5);
   border-radius: 5px;
 }
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-thumb {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb {
   background: rgba(212, 175, 55, 0.5);
   border-radius: 5px;
   border: 2px solid rgba(11, 19, 43, 0.5);
 }
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-thumb:hover {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 175, 55, 0.8);
-}
-
-#aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  width: 100%;
 }
 
 #aircraftDeepModal .deep-stat-card {
@@ -1617,7 +1564,7 @@ i[data-lucide] {
 }
 
 @media (max-width: 900px) {
-  #aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
+  #aircraftDeepModal .deep-stats-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -2047,6 +1994,70 @@ i[data-lucide] {
   #deepPlaneName {
     font-size: 1.1rem !important;
   }
+}
+
+/* ============================================================
+   FIX v3.9.2 — ANCHO COMPLETO DEL MODAL Y SECCIONES APILADAS
+   ============================================================ */
+
+#aircraftDeepModal .modal-dialog,
+#aircraftDeepModal .modal-content,
+#aircraftDeepModal .aircraft-deep-modal {
+  width: 95vw !important;
+  max-width: 1400px !important;
+  min-width: 0 !important;
+  height: 92vh !important;
+  max-height: 92vh !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+#aircraftDeepModal .modal-header,
+#aircraftDeepModal .modal-body,
+#aircraftDeepModal .modal-footer {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#aircraftDeepModal .modal-header,
+#aircraftDeepModal .modal-footer {
+  flex-shrink: 0 !important;
+}
+
+#aircraftDeepModal .modal-body {
+  display: block !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  padding: 20px 24px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+#aircraftDeepModal .deep-sections-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#aircraftDeepModal .deep-section,
+#aircraftDeepModal .deep-stats-grid,
+#aircraftDeepModal .deep-mods-grid,
+#aircraftDeepModal .deep-systems-grid,
+#aircraftDeepModal .deep-armament-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 

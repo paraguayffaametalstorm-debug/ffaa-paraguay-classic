@@ -82,23 +82,19 @@
 }
 
 /* Scrollbar táctica */
-#aircraftDeepModal .modal-body::-webkit-scrollbar,
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar {
+#aircraftDeepModal .modal-body::-webkit-scrollbar {
   width: 10px;
 }
-#aircraftDeepModal .modal-body::-webkit-scrollbar-track,
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-track {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-track {
   background: rgba(11,19,43,0.5);
   border-radius: 5px;
 }
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb,
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-thumb {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb {
   background: rgba(212,175,55,0.5);
   border-radius: 5px;
   border: 2px solid rgba(11,19,43,0.5);
 }
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover,
-#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-thumb:hover {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover {
   background: rgba(212,175,55,0.8);
 }
 
@@ -152,7 +148,7 @@
 /* ============================================================
    REJILLA DE ESTADÍSTICAS TÁCTICAS (#aircraftDeepModal)
    ============================================================ */
-#aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
+#aircraftDeepModal .deep-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
@@ -244,7 +240,7 @@
 }
 
 @media (max-width: 900px) {
-  #aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
+  #aircraftDeepModal .deep-stats-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -276,67 +272,7 @@
 }
 
 #aircraftDeepModal .modal-body {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-#aircraftDeepModal .deep-modal-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 0 20px;
-  background: rgba(11, 19, 43, 0.98);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
-  flex-shrink: 0;
-  overflow-x: auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-#aircraftDeepModal .deep-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 18px;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  color: #94a3b8;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-#aircraftDeepModal .deep-tab:hover {
-  color: #cbd5e1;
-  background: rgba(96, 165, 250, 0.05);
-}
-
-#aircraftDeepModal .deep-tab.active {
-  color: #d4af37;
-  border-bottom-color: #d4af37;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
-}
-
-#aircraftDeepModal .deep-tab i,
-#aircraftDeepModal .deep-tab svg {
-  width: 16px;
-  height: 16px;
-}
-
-#aircraftDeepModal .deep-tab-panel {
-  display: none;
+  display: block;
   padding: 20px 24px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -345,12 +281,12 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 175, 55, 0.5) rgba(11, 19, 43, 0.5);
 }
 
-#aircraftDeepModal .deep-tab-panel.active {
-  display: block;
+#aircraftDeepModal .deep-sections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
 }
 
@@ -507,32 +443,14 @@
       <button class="modal-close" onclick="closeAircraftDeepModal()" aria-label="Cerrar modal">✕</button>
     </div>
 
-    <div class="deep-modal-tabs" role="tablist">
-      <button class="deep-tab active" data-tab="stats" role="tab">
-        <i data-lucide="bar-chart-3"></i> Estadísticas
-      </button>
-      <button class="deep-tab" data-tab="skills" role="tab">
-        <i data-lucide="target"></i> Habilidades
-      </button>
-      <button class="deep-tab" data-tab="mods" role="tab">
-        <i data-lucide="wrench"></i> Mods & Sistemas
-      </button>
-      <button class="deep-tab" data-tab="info" role="tab">
-        <i data-lucide="file-text"></i> Info
-      </button>
-    </div>
-
     <div class="modal-body">
-      <!-- PANEL 1: ESTADÍSTICAS -->
-      <div class="deep-tab-panel active" data-tab="stats">
+      <div class="deep-sections-container">
+        <!-- Sección Estadísticas -->
         <section class="deep-section">
           <h3>📊 Estadísticas</h3>
           <div class="deep-stats-grid" id="deepStatsGrid"></div>
         </section>
-      </div>
 
-      <!-- PANEL 2: HABILIDADES -->
-      <div class="deep-tab-panel" data-tab="skills">
         <!-- Armamento Equipado -->
         <section class="deep-section deep-section-collapsible" id="deepArmamentSection">
           <h3 onclick="toggleDeepSection('deepArmamentSection')"
@@ -571,10 +489,7 @@
             <div class="deep-skill" id="deepPassiveSkill"></div>
           </div>
         </section>
-      </div>
 
-      <!-- PANEL 3: MODS & SISTEMAS -->
-      <div class="deep-tab-panel" data-tab="mods">
         <!-- Mods Equipados -->
         <section class="deep-section deep-section-collapsible" id="deepModsSection">
           <h3 onclick="toggleDeepSection('deepModsSection')"
@@ -630,10 +545,7 @@
             </div>
           </div>
         </section>
-      </div>
 
-      <!-- PANEL 4: INFO -->
-      <div class="deep-tab-panel" data-tab="info">
         <!-- Traits -->
         <section class="deep-section deep-section-collapsible" id="deepTraitsSection">
           <h3 onclick="toggleDeepSection('deepTraitsSection')"
@@ -715,7 +627,6 @@
           </div>
         </section>
       </div>
-
     </div>
 
     <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-top:1px solid rgba(212,175,55,0.25);flex-wrap:wrap;background:#0F172A;">
