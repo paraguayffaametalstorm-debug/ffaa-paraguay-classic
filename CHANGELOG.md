@@ -6,6 +6,27 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.9.1] - 2026-09-12
+
+### 🔧 Mods Oficiales + Cloudinary + Fix de Datos
+
+- **Mods oficiales sincronizados:** Los 10 mods tácticos (`m1`-`m10`)
+  ahora usan valores exactos de la Wiki de MetalStorm.
+  - Corregidos `m1`, `m2`, `m3`, `m7`, `m8`, `m9` (valores obsoletos).
+  - Añadidas columnas a `plane_mods`: `name_en`, `description_es`,
+    `description_en`, `type_en`, `image_url`, `wiki_url`, `upgrade_costs`.
+  - Fallback en `modEffects.js` sincronizado con Supabase.
+  - `DEFAULT_PLANE_MODS` corregido (era un array de 8 mods ficticios).
+- **Cloudinary como CDN oficial:** Todas las imágenes de aviones (44)
+  y mods (10) se sirven desde Cloudinary con transformación
+  `w_256,h_256,c_fill,f_webp,q_auto`.
+- **Frontend — Modal Stats:** La sección de Mods Equipados ahora
+  muestra icono + nombre + tipo + nivel de cada mod.
+- **Costos de mejora oficiales:** Mod Tokens (1-5) + Mod Materials
+  (50-325) por nivel.
+
+---
+
 ## 📌 [3.9.0] - 2026-09-12
 
 ### 🎨 Integración Completa con la Wiki de Metalstorm

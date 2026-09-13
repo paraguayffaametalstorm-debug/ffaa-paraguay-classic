@@ -121,6 +121,24 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
   - `requireRole`: Validador de rangos (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`).
   - `errorHandler.js`: Captura centralizada de excepciones que asegura respuestas estructuradas en JSON.
 
+### 2.3 Capa de Medios (Cloudinary)
+
+El sistema utiliza **Cloudinary** como CDN externo para servir todas
+las imágenes de aeronaves y modificaciones tácticas, evitando cargar
+el backend de Express con tráfico de assets estáticos.
+
+- **Cloud Name:** `evoejuci`
+- **Estructura de carpetas:** `paraguay-ffaa/planes/` (attack, heavy, interceptor, light, medium) y `paraguay-ffaa/mods/` (10 mods tácticos)
+- **Transformaciones aplicadas:** `w_256,h_256,c_fill,f_webp,q_auto`
+  - Redimensionado uniforme 256×256 px
+  - Recorte inteligente (`c_fill`)
+  - Conversión a WebP (`f_webp`)
+  - Calidad automática (`q_auto`)
+- **Cobertura:** 44 aviones (fotos principales) + 10 mods (iconos)
+- **Uso:** Todas las URLs se almacenan en Supabase (`plane_models.image_url` y `plane_mods.image_url`) y se consumen directamente desde el frontend.
+- **Ventajas:** Ahorro de ancho de banda en Fly.io, cacheo en edge, optimización automática de formato.
+
+
 ---
 
 ## 3. Flujo C4ISR de Autenticación Híbrida Dual y Vinculación de Cuentas
@@ -310,7 +328,30 @@ El modal `#aircraftDeepModal` usa un grid responsive de cards con
 - **700-1000px:** 2 cards por fila (spans ignorados).
 - **<700px:** 1 columna (mobile).
 
-### 7.6 Limitaciones Conocidas
+### 7.7 Mods Oficiales de Aircraft Mods
+
+- **URL:** https://metalstorm.wiki.gg/wiki/Aircraft_Mods
+- **Datos extraídos:** 10 mods con 5 niveles cada uno (50 configuraciones).
+- **Fuente:** Wiki oficial de MetalStorm (Creative Commons).
+- **Integración:** Los datos se almacenan en dos tablas:
+  - `plane_mods`: Catálogo maestro (10 filas) — nombre ES/EN, tipo, descripción, costos de mejora, image_url Cloudinary.
+  - `mod_effects`: Efectos numéricos por nivel (50 filas).
+- **Fallback en memoria:** `src/utils/modEffects.js` → `getFallbackModEffects()` contiene los 10 mods oficiales en caso de caída de Supabase.
+- **Tipos oficiales (5):** Agility, Defense, Engine, Flare, Weapon (1 mod de cada tipo por avión).
+- **Restricción de equipamiento:** Avión nivel 16 (primer mod) y nivel 20 (segundo mod).
+- **Costos de mejora oficiales:**
+
+| Nivel | Mod Tokens | Mod Materials |
+|:---:|:---:|:---:|
+| 1 | 1 | 50 |
+| 2 | 2 | 80 |
+| 3 | 3 | 125 |
+| 4 | 4 | 200 |
+| 5 | 5 | 325 |
+
+- **Iconos:** Servidos desde Cloudinary con transformación `w_256,h_256,c_fill,f_webp,q_auto`.
+
+### 7.8 Limitaciones Conocidas
 - **Idioma:** Los datos están en inglés (idioma original de la Wiki). La traducción al español está planificada como Fase 3D.
 - **Frecuencia:** La Wiki se actualiza manualmente. Los datos quedan desactualizados hasta la próxima extracción.
 - **Trivia faltante:** 3 aviones no tienen sección de trivia en la Wiki (KF-21 Boramae, A-6 Intruder, A-10 Thunderbolt).
