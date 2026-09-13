@@ -265,6 +265,60 @@ if (sistemaKey) {
 
 ---
 
+### 🔹 Fix #10: Integración de Datos de la Wiki de Metalstorm (2026-09-12)
+
+**Fecha:** 2026-09-12  
+**Archivos:** `plane_models` (Supabase), `src/controllers/planes.controller.js`, `js/views.js`, `components/aircraft-stats-modal.html`  
+**Severidad:** 🎨 Media (feature nueva)  
+**Commit:** N/A (Fase 3 completa)  
+
+**Descripción:**  
+Integración completa de los datos de la Wiki de Metalstorm (historia, recomendaciones, paints, canopies, loadout detallado) en el modal de Stats de cada aeronave.
+
+**Problema Resuelto:**
+- El modal Stats mostraba placeholders en las secciones de Historia y Recomendaciones.
+- No había información sobre paints ni canopies disponibles.
+- El armamento se mostraba solo con nombre (sin stats detalladas).
+
+**Solución Implementada:**
+
+1. **Extracción (Fase 3B):**
+   - Script de consola del navegador que extrae 44 aviones desde `metalstorm.wiki.gg`.
+   - Consolidación en `all_aircraft_wiki_data_v2_FINAL.json`.
+   - Carga a Supabase con script Node.js (`import-wiki-data.cjs`).
+
+2. **Columnas nuevas en `plane_models`:**
+   ```sql
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS descripcion TEXT;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS historia TEXT;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS recomendaciones JSONB;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS loadout_wiki JSONB;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS paints JSONB;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS canopies JSONB;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS general_info_wiki JSONB;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS wiki_url TEXT;
+   ALTER TABLE plane_models ADD COLUMN IF NOT EXISTS wiki_extracted_at TIMESTAMPTZ;
+   ```
+
+3. **Backend (`getPlaneDetails`):** 8 campos nuevos añadidos a `planeDetail`.
+
+4. **Frontend (`openAircraftDeepModal`):**
+   - Sección "Historia" con párrafos completos.
+   - Sección "Recomendaciones" con subsecciones (Trait/Ability/Passive Tips).
+   - Sección "Paints" con galería visual.
+   - Sección "Canopies" con galería visual.
+   - `renderArmamentoEquipado` prioriza `plane.loadout_wiki`.
+
+**Resultado:**
+- ✅ 44 aviones con datos Wiki.
+- ✅ 310+ paints, 176 canopies, 41 historias, 44 recomendaciones.
+- ✅ Modal Stats con layout responsive 1-4 columnas.
+- ✅ Sin errores de sintaxis (`node --check` pasó).
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |

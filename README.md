@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.7.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v3.9.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 
@@ -29,6 +29,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
 - **PWA de Alto Rendimiento (Offline First):** Service Worker v3.7.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **Integración con Wiki de Metalstorm (v3.9.0):** Extracción y carga de datos históricos, descripciones, recomendaciones tácticas, paints y canopies de los 44 aviones desde https://metalstorm.wiki.gg/. Visualización completa en el modal de Stats con layout de cards responsive (1-4 columnas según ancho de pantalla).
 
 ---
 
@@ -420,6 +421,33 @@ El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su
 - **Modal de Datos Profundos:** Estadísticas, habilidades, sistemas y mods
 - **IA de Recomendación:** 3 estilos de combate (Agresivo, Defensivo, Apoyo)
 - **Upgrade Planner:** Previsualización de builds antes de gastar recursos
+
+### 🎨 Datos de la Wiki integrados en el Modal Stats
+
+El modal `#aircraftDeepModal` (botón "Stats") muestra, además de las
+estadísticas calculadas en vivo:
+
+| Sección | Contenido |
+|---------|-----------|
+| 📊 Estadísticas | Stats calculadas (base + nodos + mods + nivel) |
+| 🎯 Armamento Equipado | Lista de armas con nombre + nivel |
+| 🎯 Habilidad Especial | Nombre + nivel + efecto |
+| 🛡️ Habilidad Pasiva | Nombre + nivel + efecto |
+| 🔧 Sistemas Upgrades 2.0 | 7 sistemas colapsables con nodos |
+| 🤖 Recomendación Táctica | 3 estilos de build (Agresivo/Defensivo/Apoyo) |
+| 🔩 Mods Equipados | 2 slots con nombre + nivel |
+| 🎯 Traits | Lista de traits con descripción |
+| 🎨 Paints | Galería visual (nombre, raridad, requisito) |
+| 🪟 Canopies | Galería visual (nombre, raridad, nivel) |
+| 📜 Historia | Trivia multi-párrafo extraída de la Wiki |
+| 💡 Recomendaciones | Trait Tips, Ability Tips, Passive Tips |
+
+**Layout responsive:** Grid de cards flotantes con columnas
+auto-ajustables según el ancho (1 columna <700px, 2 columnas
+700-1000px, 3-4 columnas >1000px).
+
+**Fuente:** 44 aviones, 310+ paints, 176 canopies, 41 historias,
+44 recomendaciones, 44 loadouts cargados desde la Wiki oficial.
 
 ### Estructura de `planes`
 

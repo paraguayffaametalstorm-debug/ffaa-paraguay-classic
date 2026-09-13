@@ -2140,6 +2140,32 @@ function renderArmamentoEquipado(plane) {
 }
 window.renderArmamentoEquipado = renderArmamentoEquipado;
 
+/**
+ * Abre el modal de datos profundos y telemetría de una aeronave (#aircraftDeepModal).
+ * Carga datos locales y complementa con datos de la API (/api/planes/:id/details)
+ * incluyendo información enriquecida de la Wiki de Metalstorm (Fase 3).
+ *
+ * @param {number|string} planeId - ID del avión en el hangar del usuario o ID de modelo
+ * @returns {Promise<void>}
+ *
+ * @description
+ * Secciones renderizadas en el modal (layout grid responsive):
+ * 1. 📊 Estadísticas (radar chart / barras de progreso)
+ * 2. 🎯 Armamento Equipado (prioriza plane.loadout_wiki sobre sistemas locales)
+ * 3. 🎯 Habilidad Especial (niveles 1-3)
+ * 4. 🛡️ Habilidad Pasiva (niveles 1-5)
+ * 5. 🔧 Sistemas Upgrades 2.0 (fuselaje, motor, aviónica, armas)
+ * 6. 🤖 Recomendación Táctica (estilos de combate: dogfight, bvr, multirol)
+ * 7. 🔩 Mods Equipados (mod1, mod2 con niveles y efectos)
+ * 8. 🎯 Traits del Modelo
+ * 9. 🎨 Paints Disponibles (galería visual de la Wiki - NUEVO Fase 3B)
+ * 10. 🪟 Canopies Disponibles (galería visual de la Wiki - NUEVO Fase 3B)
+ * 11. 📜 Historia de la Aeronave (trivia multi-párrafo de la Wiki - NUEVO Fase 3B)
+ * 12. 💡 Recomendaciones de la Wiki (Trait Tips, Ability Tips, etc. - NUEVO Fase 3B)
+ *
+ * @since v3.0.0
+ * @updated v3.9.0 - Integración datos Wiki + layout grid responsive de cards
+ */
 async function openAircraftDeepModal(planeId) {
   window.currentPlaneId = planeId;
   currentPlaneId = planeId;

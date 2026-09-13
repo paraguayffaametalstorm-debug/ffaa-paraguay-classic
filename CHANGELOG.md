@@ -6,6 +6,47 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.9.0] - 2026-09-12
+
+### 🎨 Integración Completa con la Wiki de Metalstorm
+- **Extracción de datos:** Script de consola ejecutado en https://metalstorm.wiki.gg/wiki/Aircraft que extrae información de los 44 aviones del juego.
+- **Nuevas columnas en plane_models:** `descripcion`, `historia`, `recomendaciones` (JSONB), `loadout_wiki` (JSONB), `paints` (JSONB), `canopies` (JSONB), `general_info_wiki` (JSONB), `wiki_url`, `wiki_extracted_at`.
+- **Datos cargados:** 310+ paints, 176 canopies, 41 historias, 44 recomendaciones, 44 loadouts.
+- **Backend:** `getPlaneDetails` ahora devuelve los 8 campos nuevos al frontend.
+- **Frontend — Modal Stats:**
+  - Sección "Historia de la Aeronave" con párrafos completos.
+  - Sección "Recomendaciones de Uso" con Trait Tips, Ability Tips y Passive Tips.
+  - Sección "Paints" con galería visual de imágenes y raridades.
+  - Sección "Canopies" con galería visual de imágenes y niveles.
+  - `renderArmamentoEquipado` prioriza `plane.loadout_wiki` (stats detalladas de cada arma).
+
+---
+
+## 📌 [3.8.0] - 2026-09-12
+
+### 🃏 Grid Responsive de Cards en el Modal Stats
+- **Layout:** `.modal-body` ahora usa `display:grid` con `grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))`.
+- **Cards flotantes:** cada `.deep-section` es una card visual con borde, fondo oscuro y hover dorado.
+- **Clases de span:** `.span-2` y `.span-3` para cards anchas.
+- **Responsive:** desktop (>1000px) 3-4 cards por fila; tablet (700-1000px) 2 cards; mobile (<700px) 1 columna.
+- **Colapsables:** todas las cards se expanden/contraen sin perder su posición en el grid.
+- **Paints y Canopies:** grid interno ajustado a `minmax(150px, 1fr)`.
+
+---
+
+## 📌 [3.7.5] - 2026-09-12
+
+### 🎯 Rediseño y Ampliación del Modal de Stats
+- **Modal `#aircraftDeepModal` rediseñado:** ancho 1400px, alto 92vh, header sticky, footer sticky, scroll interno optimizado.
+- **Sección "Armamento Equipado":** con datos de `plane.sistemas` + `plane.loadout_wiki`.
+- **Secciones colapsables:** con headers clickeables y chevron dinámico.
+- **Fix de cálculo de nivel de armamento:** ahora lee `sistema.nivel` y `sistema.rutas` correctamente (antes mostraba Nv. 0/8 siempre).
+- **Fix scroll doble:** `.modal-content` con `overflow:hidden`, `.modal-body` con `overflow-y:auto`.
+- **Fix `min-height:0`:** en `.modal-body` para flex scroll.
+- **Scrollbar dorada custom:** en `.modal-body`.
+
+---
+
 ## 📌 [3.7.0] - 2026-09-08
 
 ### 🔥 Sistema Completo de Black Market (BM)

@@ -1,216 +1,141 @@
-# 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
+# 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
-> **Manual de Operaciones y Despliegue en Fly.io, Docker Container y Servidores Linux para el Escuadrón PARAGUAY FFAA `[PRY]` (Versión v3.3.2).**
-
----
-
-## 1. Infraestructura de Producción Oficial
-
-La plataforma opera en alta disponibilidad en la infraestructura en la nube de **Fly.io**:
-- **URL Pública:** [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/)
-- **Región Primaria:** `gru` (São Paulo, Brasil) para mínima latencia con Paraguay y Sudamérica.
-- **Probe HTTP Ligero:** `GET /health` (texto plano para probes de Kubernetes/Fly Edge).
-- **Telemetría del Sistema:** `GET /api/health` (JSON con uptime, versión y estado de memoria).
+> **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
+> **Fecha de Congelamiento:** 2026-09-12  
+> **Versión Activa:** v3.9.0  
+> **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
+> **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
 ---
 
-## 2. Variables de Entorno en Producción
+## 🎯 Resumen Ejecutivo
 
-Copia `.env.example` o configura las variables secretas en tu orquestador:
+El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción. Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
 
-| Variable | Requerida | Ejemplo / Valor | Propósito |
-|---|:---:|---|---|
-| `PORT` | Opcional | `3000` | Puerto interno del contenedor |
-| `NODE_ENV` | **Sí** | `production` | Activa optimizaciones de Express y suprime stack traces |
-| `JWT_SECRET` | **Sí** | `f8a9e2c...` | Clave simétrica de al menos 32 caracteres para firmar JWT |
-| `JWT_EXPIRES_IN` | Opcional | `7d` | Tiempo de expiración del token |
-| `SUPABASE_URL` | **Sí** | `https://xxxx.supabase.co` | URL base de la API de Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Sí** | `eyJhbGciOi...` | Clave de servicio de backend (bypassa RLS) |
-| `SUPABASE_ANON_KEY` | Opcional | `eyJhbGciOi...` | Clave pública anónima para diagnóstico |
-| `ALLOWED_ORIGINS` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | Dominios habilitados en CORS separados por coma |
+Específicamente, el **flujo de registro y cambio de contraseña forzado** ha sido resuelto y validado de extremo a extremo tras implementar la **lógica tipada polimórfica** (resolución UUID vs INTEGER vs email) en el backend de Express y Supabase.
 
 ---
 
-## 3. Despliegue Automatizado en Fly.io
+## 🏆 Última Prueba Exitosa de Validación
 
-### 3.1 Archivo de Configuración `fly.toml`
-El repositorio incluye el manifiesto oficial de Fly.io optimizado para Node.js 22:
-
-```toml
-app = 'paraguay-ffaa-metalstorm'
-primary_region = 'gru'
-
-[build]
-
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_stop_machines = 'stop'
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
-
-[[http_service.checks]]
-  grace_period = '10s'
-  interval = '30s'
-  method = 'GET'
-  timeout = '5s'
-  path = '/api/health'
-
-[[vm]]
-  memory = '512mb'
-  cpu_kind = 'shared'
-  cpus = 1
-```
-
-### 3.2 Comandos de Despliegue CLI
-
-```bash
-# 1. Instalar la herramienta flyctl
-curl -L https://fly.io/install.sh | sh
-
-# 2. Iniciar sesión en Fly.io
-fly auth login
-
-# 3. Configurar secretos criptográficos y credenciales
-fly secrets set \
-  JWT_SECRET="super_secreto_militar_pry_ffaa_2026_seguro_minimo_32_caracteres" \
-  SUPABASE_URL="https://tu-proyecto.supabase.co" \
-  SUPABASE_SERVICE_ROLE_KEY="tu_service_role_key_de_supabase" \
-  NODE_ENV="production"
-
-# 4. Desplegar la aplicación
-fly deploy
-
-# 5. Monitorear logs en tiempo real
-fly logs
-```
+| Parámetro | Detalle Militar |
+|---|---|
+| **Piloto Evaluado** | `TestPilot` (Indicativo de pruebas operacionales) |
+| **Identificador Numérico (`user_id`)** | `1000` (INTEGER) |
+| **Identificador Interno (`id`)** | `3658df3a-3d15-4669-a595-dca33ec86fd3` (UUID) |
+| **Correo Institucional** | `testpilot@ffaa.py` |
+| **Contraseña Temporal Asignada** | `MS-MJWT-SU3U` (Generada por Administrador) |
+| **Nueva Contraseña Reglamentaria** | `Dni32355353` (Definida por el piloto) |
+| **Fecha y Hora de la Prueba** | `2026-09-09 23:54:52 UTC` |
+| **Token Version Resultante** | `2` (Incrementado desde `1`) |
+| **Estado de Cambio Obligatorio** | `must_change_password: false` |
+| **Resultado Global** | **✅ COMPLETO Y VALIDADO EN PRODUCCIÓN** |
 
 ---
 
-## 4. Despliegue con Docker
+## 🏛️ Reglas de Arquitectura y Negocio Vigentes
 
-### 4.1 `Dockerfile` Oficial Multi-Stage (Node 22 Alpine)
-
-```dockerfile
-# -------------------------------------------------------------
-# BUILD STAGE
-# -------------------------------------------------------------
-FROM node:22-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-# -------------------------------------------------------------
-# PRODUCTION RUNNER STAGE
-# -------------------------------------------------------------
-FROM node:22-alpine
-
-WORKDIR /app
-
-# Metadatos del contenedor
-LABEL maintainer="PARAGUAY FFAA - METALSTORM"
-LABEL version="3.3.2"
-
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# Copiar dependencias de producción limpias
-COPY --from=builder /app/node_modules ./node_modules
-COPY . .
-
-# Exponer exclusivamente el puerto 3000
-EXPOSE 3000
-
-# Usuario no privilegiado para seguridad
-USER node
-
-# Healthcheck interno de Docker
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
-
-CMD ["node", "server.js"]
-```
-
-### 4.2 Comandos de Construcción y Ejecución Local
-
-```bash
-# 1. Construir la imagen Docker
-docker build -t paraguay-ffaa-metalstorm:3.3.2 .
-
-# 2. Ejecutar el contenedor
-docker run -d \
-  --name pry-ffaa-app \
-  -p 3000:3000 \
-  --env-file .env \
-  --restart unless-stopped \
-  paraguay-ffaa-metalstorm:3.3.2
-
-# 3. Verificar estado
-docker ps
-docker logs -f pry-ffaa-app
-```
+1. **Dualidad de Identificadores en `users`:**
+   - `user_id` es siempre de tipo **`INTEGER`** (incremental, visible en reportes tácticos, selector de pilotos y telemetría).
+   - `id` es siempre de tipo **`UUID`** (clave primaria interna en PostgreSQL / Supabase).
+2. **Ciclo de Vida de Credenciales:**
+   - Todo nuevo usuario creado por el oficial `ADMIN` nace con `must_change_password = true` y `token_version = 1`.
+   - La contraseña temporal responde estrictamente al formato `MS-XXXX-XXXX`.
+   - El endpoint `/api/auth/change-password` soporta tanto el modo forzado (`isForced: true` o `must_change_password: true`) como el cambio voluntario desde el perfil.
+3. **Invalidación Criptográfica Anti-Sesión Fantasma:**
+   - Cada cambio de contraseña incrementa `token_version` en `+1`, invalidando inmediatamente cualquier JWT anterior en circulación.
+4. **Resolución de Consultas Tipadas:**
+   - Todos los controladores (`auth`, `admin`, `profile`, `performances`) implementan filtros dinámicos que diferencian UUID regex de números enteros para prevenir fallos de casting en PostgreSQL.
 
 ---
 
-## 5. Migración de Base de Datos (Upgrades 2.0)
+## 🛡️ Estado de Módulos (Actualizado 2026-09-11)
 
-Antes de iniciar la versión 3.3.2, ejecuta el script SQL en el panel de control de Supabase (**SQL Editor**):
+| Módulo | Estado | Detalle |
+|--------|--------|---------|
+| **Autenticación Dual** | ✅ Funcional | Login con email o Gmail |
+| **Cambio de Contraseña** | ✅ Funcional | Lógica tipada UUID/INTEGER |
+| **Registro de Rendimiento** | ✅ Funcional | Guarda `role` histórico |
+| **Black Market** | ✅ Funcional | Misiones, progreso, descuentos |
+| **Catálogo de Aviones** | ✅ Normalizado | 42 modelos con armas específicas |
+| **Hangar de Pilotos** | ✅ Normalizado | UNIQUE + FK + CHECK |
+| **Validación de Sistemas** | ✅ Funcional | Sistema disponible por avión |
+| **Carrusel Circular** | ✅ Funcional | Navegación infinita |
+| **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre + ID |
+| **IA de Recomendación** | ✅ Funcional | 3 estilos de combate |
+| **Upgrade Planner** | ✅ Funcional | Previsualización de builds |
+| **Efectos de Mods** | ✅ Funcional | 10 mods x 5 niveles aplicados a stats |
+| **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
+| **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
+| **Modal de Stats (Grid Cards)** | ✅ Funcional | Grid responsive 1-4 columnas |
+| **Integración Wiki (Historia)** | ✅ Funcional | 44 aviones con trivia |
+| **Integración Wiki (Paints)** | ✅ Funcional | 310+ paints en galería |
+| **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
+| **Integración Wiki (Loadout)** | ✅ Funcional | Stats detalladas por arma |
 
-```sql
--- Archivo: sql/upgrades_2_0.sql
-ALTER TABLE planes 
-ADD COLUMN IF NOT EXISTS nivel_fuselaje INT DEFAULT 0 CHECK (nivel_fuselaje >= 0 AND nivel_fuselaje <= 8),
-ADD COLUMN IF NOT EXISTS nivel_motor INT DEFAULT 0 CHECK (nivel_motor >= 0 AND nivel_motor <= 8),
-ADD COLUMN IF NOT EXISTS nivel_avionica INT DEFAULT 0 CHECK (nivel_avionica >= 0 AND nivel_avionica <= 8),
-ADD COLUMN IF NOT EXISTS nivel_armas INT DEFAULT 0 CHECK (nivel_armas >= 0 AND nivel_armas <= 8),
-ADD COLUMN IF NOT EXISTS recursos_piezas INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS recursos_avanzadas INT DEFAULT 0;
+## 🛠️ Sistema de Aviones (Actualizado 2026-09-11)
 
-ALTER TABLE plane_models 
-ADD COLUMN IF NOT EXISTS sistemas_disponibles JSONB DEFAULT '{"fuselaje": true, "motor": true, "avionica": true, "armas": ["canon", "misiles_corto", "misiles_medio"]}'::jsonb;
+El sistema de aviones fue normalizado, calibrado y dotado de validación técnica de armamento:
 
-CREATE TABLE IF NOT EXISTS plane_upgrades (
-    id SERIAL PRIMARY KEY,
-    plane_id INT REFERENCES planes(id) ON DELETE CASCADE,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    sistema VARCHAR(50) NOT NULL,
-    nivel_anterior INT NOT NULL DEFAULT 0,
-    nivel_nuevo INT NOT NULL,
-    piezas_usadas INT DEFAULT 0,
-    avanzadas_usadas INT DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- ✅ 42 modelos en el catálogo maestro con armas y subsistemas específicos (`sistemas_disponibles` en JSONB)
+- ✅ Validación previa en `updatePlaneSystem` (`src/controllers/planes.controller.js`) que impide calibrar sistemas no soportados (ej: cañones en F-111 / J-20)
+- ✅ 10 mods disponibles con efectos numéricos (m1..m10 en 5 niveles)
+- ✅ 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas/Cañones según disponibilidad)
+- ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles)
+- ✅ IA de Recomendación (3 estilos de combate)
+- ✅ Upgrade Planner (previsualización cuantitativa de builds)
+- ✅ Integración de efectos de mods en telemetría de combate (`getPlaneStats`)
 
-CREATE INDEX IF NOT EXISTS idx_planes_user_nivel ON planes(user_id, nivel);
-CREATE INDEX IF NOT EXISTS idx_plane_upgrades_plane_id ON plane_upgrades(plane_id);
-CREATE INDEX IF NOT EXISTS idx_plane_upgrades_user_id ON plane_upgrades(user_id);
-```
+### 🎯 Estructura de `sistemas_disponibles` (42 Aviones)
+Cada modelo en `plane_models` define detalladamente su arquitectura:
+- `fuselaje`: `true`
+- `motor`: `true`
+- `avionica`: `true`
+- `canones`: `"precision"` | `"asalto"` | `null`
+- `misiles_ir`, `misiles_radar`, `misiles_beam`, `misiles_manual`, `misiles_largo`, `cohetes`: `true` | `false`
+
+### ⚡ Efectos de Mods (10 Mods × 5 Niveles)
+- **Siempre Activos en Stats:**
+  - `m1` (Daredevil Turning) & `m2` (Ideal Maneuvering) $\to$ `agility`
+  - `m3` (Blast Resistance) $\to$ `armor`
+  - `m7` (Disruptive Flares) $\to$ `ecm`
+  - `m10` (Improved Targeting) $\to$ `radar`
+- **Condicionales & Utilitarios:** `m4` (kills), `m5` (postquemador), `m6` (<50% comb.), `m8` (cooldown), `m9` (<30% HP enem.) registrados para telemetría dinámica.
 
 ---
 
-## 6. Scripts de Diagnóstico y Mantenimiento
+## ⚠️ Nota Operativa y Bug de UI Detectado
 
-El proyecto incluye utilidades CLI en `src/scripts/` para el equipo de desarrollo y soporte:
-
-```bash
-# Diagnóstico de conexión a Supabase, recuento de pilotos y tablas
-node src/scripts/diagnostic.js
-
-# Verificación de integridad de cuentas y roles militares
-node src/scripts/maintain-users.js
-
-# Población inicial de pilotos de prueba
-node src/scripts/seed-users.js
-```
+> **Bug de Interfaz:** En ciertos navegadores y resoluciones compactas, el modal de cambio forzado de contraseña no despliega con claridad los botones de acción inferior.  
+> **Instrucción al Combatiente:** El formulario responde y procesa la actualización presionando la tecla **`ENTER`** directamente en el campo de confirmación de contraseña.  
+> **Fix Programado:** Ajuste de layout CSS en `components/change-password-modal.html` para asegurar visibilidad constante del botón *"Actualizar Credencial"*.
 
 ---
 
-## 7. Verificación de Despliegue Exitoso
+## 🎨 9. Datos de la Wiki Integrados (Fase 3B/3C)
+- **Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft
+- **Fecha de extracción:** 2026-09-12
+- **Volumen:**
+  - 44 aviones.
+  - 310+ paints (con nombre, imagen, raridad, requisito).
+  - 176 canopies (44 × 4).
+  - 41 historias (3 sin trivia: KF-21, A-6, A-10).
+  - 44 recomendaciones (Trait Tips, Ability Tips, Passive Tips, General).
+  - 44 loadouts detallados (cañones y misiles con stats).
+  - 44 descripciones in-game.
 
-1. **Probe Fly.io:** `curl https://paraguay-ffaa-metalstorm.fly.dev/health` $\rightarrow$ Retorna `OK`.
-2. **Telemetría JSON:** `curl https://paraguay-ffaa-metalstorm.fly.dev/api/health` $\rightarrow$ Retorna `{"status":"ok", "timestamp":"..."}`.
-3. **PWA Offline:** Abrir en navegador móvil y comprobar precaché `v3.3.2` en DevTools $\rightarrow$ Application $\rightarrow$ Cache Storage.
+- **Columnas nuevas en `plane_models`:**
 
+| Columna | Tipo | Contenido |
+|---------|------|-----------|
+| `descripcion` | TEXT | Descripción in-game |
+| `historia` | TEXT | Trivia multi-párrafo |
+| `recomendaciones` | JSONB | Tips tácticos |
+| `loadout_wiki` | JSONB | Armamento detallado |
+| `paints` | JSONB | Array de paints |
+| `canopies` | JSONB | Array de canopies |
+| `general_info_wiki` | JSONB | Info general |
+| `wiki_url` | TEXT | URL de la Wiki |
+| `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
+
+- **Frontend:** Modal `#aircraftDeepModal` con grid responsive de cards. Secciones nuevas: Paints y Canopies. Secciones actualizadas: Historia y Recomendaciones (ya no son placeholders).

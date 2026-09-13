@@ -107,6 +107,19 @@ El módulo de Hangar te permite registrar tus cazas de combate seleccionando ent
 - **Gestión de Recursos de Taller:** Control de piezas estándar (`recursos_piezas`) y componentes avanzados (`recursos_avanzadas`) requeridos para cada mejora.
 - **Ficha Técnica (Modal):** Presiona sobre cualquier caza para abrir la ventana de telemetría completa y especificaciones de combate.
 
+#### Datos de la Wiki en el Modal Stats
+Al abrir el modal de Stats (botón "Stats" en la tarjeta de un avión), ahora se muestran secciones adicionales con información extraída de la Wiki oficial de Metalstorm:
+
+- 📜 **Historia de la Aeronave:** Historia completa y curiosidades del avión (extraída de la Wiki).
+- 💡 **Recomendaciones de Uso:** Consejos tácticos organizados en Trait Tips, Ability Tips y Passive Tips.
+- 🎨 **Paints:** Galería visual de todas las pinturas disponibles para el avión, con nombre, raridad y requisito de desbloqueo.
+- 🪟 **Canopies:** Galería visual de todas las cabinas disponibles, con nombre, raridad y nivel de desbloqueo.
+- 🎯 **Armamento Detallado:** Stats específicas de cada arma (DPS, alcance, tiempo de lock, cantidad de misiles, etc.).
+
+*Nota sobre idioma:* El contenido está actualmente en inglés (idioma original de la Wiki). La traducción al español está planificada para una fase futura.
+
+*Layout:* El modal usa un grid responsive de cards (1 columna en mobile, 2 en tablet, 3-4 en desktop). Cada sección es colapsable.
+
 ### 2.4 👤 Expediente Militar y Perfil del Piloto
 - Visualiza tu Callsign oficial, correo y rango asignado.
 - Actualiza tus datos de contacto (teléfono para alertas tácticas, bio de combate y discord).
@@ -226,9 +239,15 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.7.0.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.9.0.
+
+**¿Puedo ver la historia y las curiosidades de mi avión?**  
+Sí. En el modal de Stats de cualquier aeronave encontrarás la sección "📜 Historia de la Aeronave" con la trivia completa extraída de la Wiki oficial de Metalstorm.
+
+**¿Por qué el contenido de Historia y Recomendaciones está en inglés?**  
+Los datos provienen de la Wiki oficial, que está íntegramente en inglés. La traducción al español se planificará como fase futura del proyecto.
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.7.0 · Actualizado: Septiembre 2026*
+*Versión: v3.9.0 · Actualizado: Septiembre 2026*
