@@ -70,6 +70,7 @@ function startCountdown() {
             
             if (seconds <= 0) {
                 clearInterval(interval);
+                closeModal('sessionWarningModal');
                 logout();
             }
         }, 1000);
