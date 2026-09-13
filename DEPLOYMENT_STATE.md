@@ -1,8 +1,8 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
-> **Fecha de Congelamiento:** 2026-09-09  
-> **Versión:** v3.7.0  
+> **Fecha de Congelamiento:** 2026-09-12  
+> **Versión:** v3.9.0  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - AUDITADO Y PROBADO
 
@@ -83,6 +83,15 @@ CREATE TABLE users (
 | `is_active` | BOOLEAN | ¿Está activo? |
 | `stats_real` | JSONB | Estadísticas reales |
 | `sistemas_disponibles` | JSONB | Sistemas y armas disponibles por avión (fuselaje, motor, avionica, canones, misiles_ir, misiles_radar, misiles_beam, misiles_manual, misiles_largo, cohetes) |
+| `descripcion` | TEXT | Descripción in-game (Wiki) |
+| `historia` | TEXT | Trivia histórica (Wiki) |
+| `recomendaciones` | JSONB | Tips tácticos (Wiki) |
+| `loadout_wiki` | JSONB | Armamento detallado (Wiki) |
+| `paints` | JSONB | Array de paints (Wiki) |
+| `canopies` | JSONB | Array de canopies (Wiki) |
+| `general_info_wiki` | JSONB | Info general (Wiki) |
+| `wiki_url` | TEXT | URL de la Wiki |
+| `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
 
 **Catálogo oficial:** 42 modelos de combate con configuración individual de armamento y subsistemas.
 
@@ -805,3 +814,41 @@ Para prevenir que futuras tareas de mantenimiento o despliegues automáticos alt
    }
    ```
 3. Cualquier cambio estructural en `users` requerirá una migración SQL versionada en `/sql`.
+
+---
+
+## ✈️ Datos de la Wiki Cargados (2026-09-12)
+
+### Fuente y Método
+- **URL:** https://metalstorm.wiki.gg/wiki/Aircraft
+- **Extracción:** Script de consola del navegador.
+- **Importación:** Script Node.js con `service_role_key`.
+- **Registros afectados:** 44 aviones del catálogo.
+
+### Distribución de Datos
+
+| Recurso | Cantidad | Notas |
+|---------|----------|-------|
+| Descripciones | 44 | 100% de los aviones |
+| Historias | 41 | 3 sin trivia: KF-21, A-6, A-10 |
+| Recomendaciones | 44 | Con Trait/Ability/Passive Tips |
+| Loadouts | 44 | Con cañones y misiles detallados |
+| Paints | 310+ | Promedio de 7 por avión |
+| Canopies | 176 | 4 por avión (uniforme) |
+
+### Modal Stats — Estado de Secciones
+
+| Sección | Fuente | Estado |
+|---------|--------|:---:|
+| 📊 Estadísticas | stats_real + nodos + mods | ✅ |
+| 🎯 Armamento Equipado | sistemas + loadout_wiki | ✅ |
+| 🎯 Habilidad Especial | especial_nombre | ✅ |
+| 🛡️ Habilidad Pasiva | pasiva_nombre | ✅ |
+| 🔧 Sistemas Upgrades 2.0 | sistemas | ✅ |
+| 🤖 Recomendación Táctica | Reglas locales | ✅ |
+| 🔩 Mods | mod1_*, mod2_* | ✅ |
+| 🎯 Traits | traits | ✅ |
+| 🎨 Paints | paints (Wiki) | ✅ NUEVA |
+| 🪟 Canopies | canopies (Wiki) | ✅ NUEVA |
+| 📜 Historia | historia (Wiki) | ✅ (antes placeholder) |
+| 💡 Recomendaciones | recomendaciones (Wiki) | ✅ (antes placeholder) |

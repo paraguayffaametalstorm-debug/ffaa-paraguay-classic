@@ -1,6 +1,6 @@
 # 📱 Configuración PWA y Modo Offline - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v3.3.2.**
+> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v3.9.0.**
 
 ---
 
@@ -19,8 +19,8 @@ La plataforma **PARAGUAY-FFAA | METALSTORM** implementa un diseño PWA militar d
   - `background_color`: `#0B132B` (Azul Táctico Nocturno)
 - **Iconografía:** Íconos adaptativos en resoluciones 72x72, 96x96, 128x128, 144x144, 152x152, 192x192, 384x384 y 512x512 con propósito `any maskable`.
 
-### 1.2 Estrategia de Caché del Service Worker (`sw.js` v3.3.2)
-El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v3.3.2` con estrategias diferenciadas por tipo de tráfico:
+### 1.2 Estrategia de Caché del Service Worker (`sw.js` v3.9.0)
+El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v3.9.0` con estrategias diferenciadas por tipo de tráfico:
 
 | Tipo de Recurso | Estrategia de Caché | Justificación Técnica |
 |---|:---:|---|
@@ -60,14 +60,14 @@ El evento `install` descarga y almacena de forma preventiva 26 recursos táctico
 
 ## 3. Procedimiento de Actualización y Despliegue de Versión
 
-Cuando se despliega una nueva versión del sistema (por ejemplo de v3.3.2 a v3.3.3):
+Cuando se despliega una nueva versión del sistema (por ejemplo de v3.9.0 a v3.9.1):
 1. **Actualizar Identificador en `sw.js`:**
    ```javascript
-   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.3.3';
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.1';
    ```
 2. **Ciclo de Activación:**
    - El evento `activate` detecta automáticamente que el nombre de caché cambió.
-   - Elimina de forma inmediata todas las versiones obsoletas (`PARAGUAY-FFAA-METALSTORM-v3.3.2`, etc.) liberando memoria en el dispositivo.
+   - Elimina de forma inmediata todas las versiones obsoletas (`PARAGUAY-FFAA-METALSTORM-v3.9.0`, etc.) liberando memoria en el dispositivo.
    - Invoca `self.clients.claim()` para tomar el control de todas las pestañas abiertas sin necesidad de recargar manualmente.
 3. **Cache-Busting en `index.html`:**
    - Todas las hojas de estilo cuentan con el sufijo `?v=3.3.0` (o versión superior) para forzar la invalidación inmediata de caché en proxies y navegadores de dispositivos móviles.

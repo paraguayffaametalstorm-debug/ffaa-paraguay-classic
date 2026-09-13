@@ -1,8 +1,8 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-09  
-> **Versión Activa:** v3.7.0  
+> **Fecha de Congelamiento:** 2026-09-12  
+> **Versión Activa:** v3.9.0  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -67,6 +67,11 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 | **Efectos de Mods** | ✅ Funcional | 10 mods x 5 niveles aplicados a stats |
 | **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
 | **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
+| **Modal de Stats (Grid Cards)** | ✅ Funcional | Grid responsive 1-4 columnas |
+| **Integración Wiki (Historia)** | ✅ Funcional | 44 aviones con trivia |
+| **Integración Wiki (Paints)** | ✅ Funcional | 310+ paints en galería |
+| **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
+| **Integración Wiki (Loadout)** | ✅ Funcional | Stats detalladas por arma |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-11)
 
@@ -104,3 +109,33 @@ Cada modelo en `plane_models` define detalladamente su arquitectura:
 > **Bug de Interfaz:** En ciertos navegadores y resoluciones compactas, el modal de cambio forzado de contraseña no despliega con claridad los botones de acción inferior.  
 > **Instrucción al Combatiente:** El formulario responde y procesa la actualización presionando la tecla **`ENTER`** directamente en el campo de confirmación de contraseña.  
 > **Fix Programado:** Ajuste de layout CSS en `components/change-password-modal.html` para asegurar visibilidad constante del botón *"Actualizar Credencial"*.
+
+---
+
+## 🎨 9. Datos de la Wiki Integrados (Fase 3B/3C)
+- **Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft
+- **Fecha de extracción:** 2026-09-12
+- **Volumen:**
+  - 44 aviones.
+  - 310+ paints (con nombre, imagen, raridad, requisito).
+  - 176 canopies (44 × 4).
+  - 41 historias (3 sin trivia: KF-21, A-6, A-10).
+  - 44 recomendaciones (Trait Tips, Ability Tips, Passive Tips, General).
+  - 44 loadouts detallados (cañones y misiles con stats).
+  - 44 descripciones in-game.
+
+- **Columnas nuevas en `plane_models`:**
+
+| Columna | Tipo | Contenido |
+|---------|------|-----------|
+| `descripcion` | TEXT | Descripción in-game |
+| `historia` | TEXT | Trivia multi-párrafo |
+| `recomendaciones` | JSONB | Tips tácticos |
+| `loadout_wiki` | JSONB | Armamento detallado |
+| `paints` | JSONB | Array de paints |
+| `canopies` | JSONB | Array de canopies |
+| `general_info_wiki` | JSONB | Info general |
+| `wiki_url` | TEXT | URL de la Wiki |
+| `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
+
+- **Frontend:** Modal `#aircraftDeepModal` con grid responsive de cards. Secciones nuevas: Paints y Canopies. Secciones actualizadas: Historia y Recomendaciones (ya no son placeholders).

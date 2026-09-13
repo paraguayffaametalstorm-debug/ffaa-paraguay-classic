@@ -852,7 +852,29 @@ export async function updatePlaneSystems(req, res) {
 }
 
 /**
- * Obtener detalles y telemetría de una aeronave por ID
+ * Obtiene los detalles completos y telemetría de una aeronave por ID.
+ * Busca primero en `planes` (hangar del usuario) y si no encuentra, en `plane_models` (catálogo).
+ * Enriquece la respuesta con datos de Upgrades 2.0, mods y datos de la Wiki de Metalstorm (Fase 3).
+ *
+ * @route GET /api/planes/:id/details
+ * @param {import('express').Request} req - Express request con req.params.id (ID numérico o de modelo)
+ * @param {import('express').Response} res - Express response
+ * @param {import('express').NextFunction} next - Express next middleware
+ * @returns {Promise<void>} JSON con { success: true, plane: { ...detalles, ...datosWiki } }
+ *
+ * @description
+ * Campos de la Wiki incluidos en la respuesta (Fase 3):
+ * - descripcion {string} - Descripción in-game
+ * - historia {string} - Trivia histórica multi-párrafo
+ * - recomendaciones {object} - Tips tácticos (Trait, Ability, Passive Tips)
+ * - loadout_wiki {object} - Armamento detallado con stats (cañones, misiles)
+ * - paints {Array} - Lista de pinturas con nombre, imagen, raridad, requisito
+ * - canopies {Array} - Lista de cabinas con nombre, imagen, raridad, nivel
+ * - general_info_wiki {object} - Info general (rol, fabricante, generación)
+ * - wiki_url {string} - URL de la página del avión en metalstorm.wiki.gg
+ *
+ * @since v2.0.0
+ * @updated v3.9.0 - Añadidos 8 campos de datos de la Wiki de Metalstorm
  */
 export async function getPlaneDetails(req, res, next) {
   try {

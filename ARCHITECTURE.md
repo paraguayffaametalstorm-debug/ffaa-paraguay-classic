@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.5.0).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.9.0).**
 
 ---
 
@@ -114,6 +114,8 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
   - `auth.routes.js`: Rutas de login dual, OAuth 2.0 (`/google`, `/google/callback`, `/google/status`), `/link-account`, `/forgot-password`, `/reset-password`.
   - `performances.routes.js`: Rutas de rendimiento, exportación CSV y selector táctico `/api/performances/pilots`.
   - `admin.routes.js` y `owner.routes.js`: Supervisión RBAC, auditoría y administración de escuadrón.
+  - `planes.routes.js`: Hangar, catálogo de cazas y mejoras Upgrades 2.0.
+  - **Integración Wiki (Fase 3C):** El endpoint `/api/planes/:id/details` devuelve 8 campos extraídos de la Wiki (`descripcion`, `historia`, `recomendaciones`, `loadout_wiki`, `paints`, `canopies`, `general_info_wiki`, `wiki_url`).
 - **`/src/middlewares/`:**
   - `auth.js`: Validación estricta de firma JWT y comparación de `token_version` con la base de datos para prevenir sesiones fantasma.
   - `requireRole`: Validador de rangos (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`).
@@ -245,5 +247,72 @@ Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel a
    - `audit_logs`: Registra modificaciones administrativas y cambios de rol.
 6. **Mitigación de CSV Formula Injection:**
    - Función `sanitizeCSVField()` que neutraliza fórmulas maliciosas (`=`, `+`, `-`, `@`, `\t`, `%`) anteponiendo apóstrofes (`'`).
+
+---
+
+## 7. Integración con la Wiki de Metalstorm
+
+### 7.1 Fuente de Datos
+- **URL:** https://metalstorm.wiki.gg/wiki/Aircraft
+- **Método:** Script de extracción en consola del navegador (JS vanilla) + consolidación con Node.js.
+- **Fecha de extracción:** 2026-09-12
+- **Frecuencia:** Manual, bajo demanda (cuando la Wiki se actualiza).
+
+### 7.2 Volumen de Datos
+
+| Recurso | Cantidad |
+|---------|----------|
+| Aviones | 44 |
+| Paints | 310+ |
+| Canopies | 176 (44 × 4) |
+| Historias | 41 (3 sin trivia: KF-21, A-6, A-10) |
+| Recomendaciones | 44 |
+| Loadouts | 44 |
+| Descripciones | 44 |
+
+### 7.3 Pipeline de Extracción e Importación
+
+```text
+[Wiki metalstorm.wiki.gg]
+        ↓ Script de consola
+[all_aircraft_wiki_data_v2_FINAL.json]
+        ↓ Script Node.js (import-wiki-data.cjs)
+[Supabase plane_models]
+        ↓ getPlaneDetails()
+[Frontend modal Stats]
+```
+
+### 7.4 Columnas Nuevas en plane_models
+
+| Columna | Tipo | Descripción |
+|---------|------|-------------|
+| `descripcion` | TEXT | Descripción in-game del avión |
+| `historia` | TEXT | Trivia multi-párrafo (con \n\n entre párrafos) |
+| `recomendaciones` | JSONB | Objeto con keys: Trait Tips, Ability Tips, Passive Tips |
+| `loadout_wiki` | JSONB | Objeto con canones y misiles detallados |
+| `paints` | JSONB | Array de { Name, Image, Rarity, Decal Support, Unlock requirement } |
+| `canopies` | JSONB | Array de { Name, Image, Rarity, Unlock Level, Gold Tier Unlock } |
+| `general_info_wiki` | JSONB | General info de la Wiki (role, hangar level, etc.) |
+| `wiki_url` | TEXT | URL de la página del avión en la Wiki |
+| `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de la extracción |
+
+### 7.5 Frontend — Modal Stats
+El modal `#aircraftDeepModal` usa un grid responsive de cards con
+`grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))`.
+
+**Distribución de spans:**
+- **span-2:** Stats, Armamento, Sistemas, Paints, Canopies, Recomendaciones.
+- **span-3:** Historia.
+- **span-1:** Habilidades (Especial, Pasiva), Recomendación Táctica, Mods, Traits.
+
+**Media queries:**
+- **>1000px:** 3-4 cards por fila (spans activos).
+- **700-1000px:** 2 cards por fila (spans ignorados).
+- **<700px:** 1 columna (mobile).
+
+### 7.6 Limitaciones Conocidas
+- **Idioma:** Los datos están en inglés (idioma original de la Wiki). La traducción al español está planificada como Fase 3D.
+- **Frecuencia:** La Wiki se actualiza manualmente. Los datos quedan desactualizados hasta la próxima extracción.
+- **Trivia faltante:** 3 aviones no tienen sección de trivia en la Wiki (KF-21 Boramae, A-6 Intruder, A-10 Thunderbolt).
 
 

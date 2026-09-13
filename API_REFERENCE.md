@@ -57,6 +57,7 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Planes** | `/api/planes/catalog/plane-mods` | `GET` | Público | Catálogo oficial de modificaciones |
 | **Planes** | `/api/planes` o `/my-planes` | `GET` | Autenticado | Cazas registrados en el hangar personal |
 | **Planes** | `/api/planes/:id/stats` | `GET` | Autenticado | Métricas de combate de la aeronave |
+| **Planes** | `/api/planes/:id/details` | `GET` | Autenticado | Telemetría completa con datos Wiki |
 | **Planes** | `/api/planes/:id/system` | `PUT` | Autenticado | **Upgrades 2.0**: Mejorar Fuselaje/Motor/Aviónica/Armas |
 | **Catalog** | `/api/plane-models` | `GET` | Autenticado | Listar catálogo de cazas (activos e inactivos) |
 | **Catalog** | `/api/plane-models/:id` | `GET` | Autenticado | Obtener ficha técnica completa de un caza |
@@ -412,6 +413,142 @@ Aplica una mejora tecnológica de subsistema a un caza registrado según Starfor
   ```
   *(Sistemas válidos: `fuselaje`, `motor`, `avionica`, `armas` con niveles de `0` a `8`)*.
 - **Auditoría:** La transacción se registra en la tabla `plane_upgrades`.
+
+---
+
+### `GET /api/planes/:id/details`
+
+Devuelve la telemetría completa de una aeronave del hangar, incluyendo
+campos extendidos extraídos de la Wiki de Metalstorm (Fase 3C).
+
+- **Acceso:** Autenticado (`requireAuth`).
+- **Parámetros de ruta:** `:id` = ID del avión del jugador (numérico).
+
+- **Response Exitosa (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Telemetría de combate obtenida",
+  "plane": {
+    "id": 4,
+    "user_id": 14,
+    "avion_id": "209",
+    "model_name": "Rafale F3-R",
+    "type": "Mediano",
+    "image_url": "https://...",
+    "nivel": 17,
+    "system_names": {
+      "canones": "PRECISION CANNONS GIAT 30",
+      "misiles_ir": "INFRARED MISSILES MICA IR",
+      ...
+    },
+    "rutas_sistemas": {
+      "fuselaje": 4,
+      "motor": 8,
+      "avionica": 6,
+      "canones": 7
+    },
+    "stats_real": {
+      "base_statistics": { ... },
+      "advanced_statistics": { ... }
+    },
+    "descripcion": "A modern Medium Fighter from France, with excellent low-speed agility, and six heat-seeking missiles with enhanced range and look-and-shoot capability.",
+    "historia": "The Rafale F3-R is a multirole fighter aircraft, designed and built by French manufacturer Dassault. In the late 1970's France had entered into an agreement with the UK, Germany, Italy and Spain...\n\n82-0062 was destroyed in a fatal crash on October 14, 1984...",
+    "recomendaciones": {
+      "Trait Tips": ["..."],
+      "Ability Tips": ["..."],
+      "Passive Tips": ["..."],
+      "General Tips": ["..."]
+    },
+    "loadout_wiki": {
+      "canones": [
+        {
+          "Type": "Precision cannon",
+          "Max Damage(DPS)": "192",
+          "Ideal Range(km)": "0.8",
+          "Reticle Range(km)": "1.0",
+          "Spin-up Time(s)": "0",
+          "Spread": "very low",
+          "Overheat Time(s)": "3.4",
+          "Ammo": "∞",
+          "Armor Piercing": "none"
+        }
+      ],
+      "misiles": [
+        {
+          "Guidance": "Heat-seeking missile",
+          "Range Type": "Medium range",
+          "Range(km)": "7.0",
+          "Quantity": "6",
+          "Damage": "80",
+          "Speed(km/h)": "4680",
+          "Turn Rate(°/s)": "45",
+          "Lock Angle(°)": "10",
+          "Lock Time(s)": "1.1"
+        }
+      ]
+    },
+    "paints": [
+      {
+        "Name": "Factory Gray",
+        "Image": "https://metalstorm.wiki.gg/images/Paint-factory-gray-swatch.png",
+        "Rarity": "Basic",
+        "Decal Support": "Yes",
+        "Unlock requirement": "Default"
+      }
+    ],
+    "canopies": [
+      {
+        "Name": "Metallic Purple",
+        "Image": "https://metalstorm.wiki.gg/images/Icon-canopy-metallic-purple-swatch.png",
+        "Rarity": "Common",
+        "Unlock Level": "4",
+        "Gold Tier Unlock": "Yes"
+      }
+    ],
+    "general_info_wiki": { ... },
+    "wiki_url": "https://metalstorm.wiki.gg/wiki/Rafale_F3-R",
+    "especial_nombre": "Arc Pulse",
+    "especial_nivel_num": 3,
+    "especial_efecto": "...",
+    "pasiva_nombre": "Relentless Fire",
+    "pasiva_nivel_num": 4,
+    "pasiva_efecto": "...",
+    "mod1_id": "m3",
+    "mod1_lvl": 5,
+    "mod2_id": null,
+    "mod2_lvl": null,
+    "desbloqueado_upgrades": true,
+    "recursos_piezas": 1200,
+    "recursos_avanzadas": 50,
+    "sistemas_disponibles": {
+      "fuselaje": true,
+      "motor": true,
+      "avionica": true,
+      "canones": "precision",
+      "misiles_ir": true,
+      "misiles_radar": true,
+      "cohetes": false
+    },
+    "sistemas": {
+      "fuselaje": { ... },
+      "motor": { ... },
+      "avionica": { ... },
+      "canones": { ... },
+      "misiles_ir": { ... },
+      "misiles_radar": { ... }
+    },
+    "upgrade_costs": { ... }
+  },
+  "data": { /* mismo objeto */ }
+}
+```
+
+**Notas:**
+- Los campos `descripcion`, `historia`, `recomendaciones`, `loadout_wiki`, `paints`, `canopies`, `general_info_wiki`, `wiki_url` provienen de la Wiki de Metalstorm (extracción 2026-09-12).
+- Si un avión no tiene datos de Wiki, los campos vienen como `null`.
+- Los array de `paints` y `canopies` incluyen un campo `Image` con la URL de la imagen servida desde `metalstorm.wiki.gg`.
 
 ---
 
