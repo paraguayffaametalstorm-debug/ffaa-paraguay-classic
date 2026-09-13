@@ -2292,12 +2292,22 @@ async function openAircraftDeepModal(planeId) {
   const specialEl = document.getElementById('deepSpecialSkill');
   if (specialEl) {
     if (plane?.especial_nombre) {
+      const specialImg = plane?.especial_image_url;
       specialEl.innerHTML = `
-        <div class="card-skill-title special" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
-          🎯 ${escapeHtml(plane.especial_nombre)} · Nivel ${plane.especial_nivel_num || 1}
-        </div>
-        <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
-          ${escapeHtml(plane.especial_efecto || 'Efecto táctico activo en combate.')}
+        <div class="skill-with-image">
+          <div class="skill-image-wrapper">
+            ${specialImg 
+              ? `<img src="${escapeHtml(specialImg)}" alt="${escapeHtml(plane.especial_nombre)}" class="skill-image" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'skill-image-placeholder\\'>🎯</div>';">` 
+              : `<div class="skill-image-placeholder">🎯</div>`}
+          </div>
+          <div class="skill-content">
+            <div class="card-skill-title special" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
+              🎯 ${escapeHtml(plane.especial_nombre)} · Nivel ${plane.especial_nivel_num || 1}
+            </div>
+            <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
+              ${escapeHtml(plane.especial_efecto || 'Efecto táctico activo en combate.')}
+            </div>
+          </div>
         </div>
       `;
     } else {
@@ -2312,12 +2322,22 @@ async function openAircraftDeepModal(planeId) {
   const passiveEl = document.getElementById('deepPassiveSkill');
   if (passiveEl) {
     if (plane?.pasiva_nombre) {
+      const passiveImg = plane?.pasiva_image_url;
       passiveEl.innerHTML = `
-        <div class="card-skill-title passive" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
-          🛡️ ${escapeHtml(plane.pasiva_nombre)} · Nivel ${plane.pasiva_nivel_num || 1}
-        </div>
-        <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
-          ${escapeHtml(plane.pasiva_efecto || 'Efecto pasivo permanente en combate.')}
+        <div class="skill-with-image">
+          <div class="skill-image-wrapper">
+            ${passiveImg 
+              ? `<img src="${escapeHtml(passiveImg)}" alt="${escapeHtml(plane.pasiva_nombre)}" class="skill-image" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'skill-image-placeholder\\'>🛡️</div>';">` 
+              : `<div class="skill-image-placeholder">🛡️</div>`}
+          </div>
+          <div class="skill-content">
+            <div class="card-skill-title passive" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
+              🛡️ ${escapeHtml(plane.pasiva_nombre)} · Nivel ${plane.pasiva_nivel_num || 1}
+            </div>
+            <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
+              ${escapeHtml(plane.pasiva_efecto || 'Efecto pasivo permanente en combate.')}
+            </div>
+          </div>
         </div>
       `;
     } else {

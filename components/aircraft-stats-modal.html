@@ -318,6 +318,39 @@
     grid-template-columns: 1fr;
   }
 }
+/* ============================================================
+   Habilidades con imagen (Fase 3D)
+   ============================================================ */
+.skill-with-image {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.skill-image-wrapper {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.skill-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.skill-image-placeholder {
+  font-size: 28px;
+  opacity: 0.5;
+}
+.skill-content {
+  flex: 1;
+  min-width: 0;
+}
 </style>
 
 <div id="aircraftStatsModal" class="modal">
