@@ -2396,61 +2396,67 @@ async function openAircraftDeepModal(planeId) {
 
   // Mods Equipados (con iconos de Cloudinary - Fase 3C)
   const modsEl = document.getElementById('deepModsGrid');
-  if (modsEl) {
-    const slot1Unlocked = planeLevel >= 16;
-    const slot2Unlocked = planeLevel >= 20;
 
-    // Función helper para renderizar cada slot de mod
-    const renderModSlot = (slotNum, unlocked, modInfo, modId, modLvl) => {
-      // Si la ranura no está desbloqueada por nivel
-      if (!unlocked) {
-        const reqLvl = slotNum === 1 ? 16 : 20;
-        return `
-          <div class="deep-mod-box">
-            <div class="deep-mod-slot">Ranura ${slotNum} (Desbloquea Nv. ${reqLvl})</div>
-            <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel ${reqLvl})</div>
-          </div>
-        `;
-      }
+  // Función helper para renderizar cada slot de mod
+  const renderModSlot = (slotNum, unlocked, modInfo, modId, modLvl) => {
+    // Si la ranura no está desbloqueada por nivel
+    if (!unlocked) {
+      const reqLvl = slotNum === 1 ? 16 : 20;
+      return `
+        <div class="deep-mod-box">
+          <div class="deep-mod-slot">Ranura ${slotNum} (Desbloquea Nv. ${reqLvl})</div>
+          <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel ${reqLvl})</div>
+        </div>
+      `;
+    }
 
-      // Si no hay mod equipado
-      if (!modId) {
-        return `
-          <div class="deep-mod-box">
-            <div class="deep-mod-slot">Ranura ${slotNum}</div>
-            <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
-          </div>
-        `;
-      }
-
-      // Mod equipado: usar modInfo del backend si está disponible, sino fallback
-      const imageUrl = modInfo?.image_url || null;
-      const modName = modInfo?.name || modId;
-      const modType = modInfo?.type || null;
-      const nivel = modLvl || 1;
-
+    // Si no hay mod equipado
+    if (!modId) {
       return `
         <div class="deep-mod-box">
           <div class="deep-mod-slot">Ranura ${slotNum}</div>
-          <div class="mod-slot">
-            <div class="mod-icon-wrapper">
-              ${imageUrl 
-                ? `<img src="${imageUrl}" alt="${escapeHtml(modName)}" class="mod-icon" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'mod-icon-placeholder\\'>🔩</div>';">` 
-                : `<div class="mod-icon-placeholder">🔩</div>`}
-            </div>
-            <div class="mod-info">
-              <div class="mod-name">${escapeHtml(modName)}</div>
-              ${modType ? `<div class="mod-type">${escapeHtml(modType)}</div>` : ''}
-              <div class="mod-level">Nivel ${nivel}/5</div>
-            </div>
-          </div>
+          <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
         </div>
       `;
-    };
+    }
 
+    // Mod equipado: usar modInfo del backend si está disponible, sino fallback
+    const imageUrl = modInfo?.image_url || null;
+    const modName = modInfo?.name || modInfo?.nombre || plane?.[`mod${slotNum}_nombre`] || modId;
+    const modType = modInfo?.type || modInfo?.tipo || null;
+    const nivel = modLvl || 1;
+
+    return `
+      <div class="deep-mod-box">
+        <div class="deep-mod-slot">Ranura ${slotNum}</div>
+        <div class="mod-slot">
+          <div class="mod-icon-wrapper">
+            ${imageUrl 
+              ? `<img src="${imageUrl}" alt="${escapeHtml(modName)}" class="mod-icon" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'mod-icon-placeholder\\'>🔩</div>';">` 
+              : `<div class="mod-icon-placeholder">🔩</div>`}
+          </div>
+          <div class="mod-info">
+            <div class="mod-name">${escapeHtml(modName)}</div>
+            ${modType ? `<div class="mod-type">${escapeHtml(modType)}</div>` : ''}
+            <div class="mod-level">Nivel ${nivel}/5</div>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderPlaneMods = (targetPlane) => {
+    if (!modsEl) return;
+    const pLvl = parseInt(targetPlane?.nivel || planeLevel || 1, 10);
+    const slot1Unlocked = pLvl >= 16;
+    const slot2Unlocked = pLvl >= 20;
     modsEl.innerHTML = 
-      renderModSlot(1, slot1Unlocked, plane?.mod1_info, plane?.mod1_id, plane?.mod1_lvl) +
-      renderModSlot(2, slot2Unlocked, plane?.mod2_info, plane?.mod2_id, plane?.mod2_lvl);
+      renderModSlot(1, slot1Unlocked, targetPlane?.mod1_info, targetPlane?.mod1_id, targetPlane?.mod1_lvl) +
+      renderModSlot(2, slot2Unlocked, targetPlane?.mod2_info, targetPlane?.mod2_id, targetPlane?.mod2_lvl);
+  };
+
+  if (modsEl) {
+    renderPlaneMods(plane);
   }
 
   // Cargar traits
@@ -2669,6 +2675,7 @@ async function openAircraftDeepModal(planeId) {
       if (planeDetails) {
         plane = { ...plane, ...planeDetails };
         window.currentPlane = plane;
+        renderPlaneMods(plane);
 
         const systemTitles = {
           fuselaje: plane.system_names?.fuselaje || 'Fuselaje',
