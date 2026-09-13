@@ -8,18 +8,18 @@ router.post('/online', requireAuth, (req, res) => {
   if (req.user?.user_id) {
     onlineUsers.add(req.user.user_id);
   }
-  res.json({ success: true, count: Math.max(onlineUsers.size, 1) });
+  res.json({ success: true, count: onlineUsers.size });
 });
 
 router.post('/offline', requireAuth, (req, res) => {
   if (req.user?.user_id) {
     onlineUsers.delete(req.user.user_id);
   }
-  res.json({ success: true, count: Math.max(onlineUsers.size, 0) });
+  res.json({ success: true, count: onlineUsers.size });
 });
 
 router.get('/active', (req, res) => {
-  res.json({ count: Math.max(onlineUsers.size, 5) });
+  res.json({ count: onlineUsers.size });
 });
 
 export default router;

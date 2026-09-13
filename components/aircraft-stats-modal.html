@@ -148,85 +148,101 @@
 /* ============================================================
    REJILLA DE ESTADÍSTICAS TÁCTICAS (#aircraftDeepModal)
    ============================================================ */
-#aircraftDeepModal .deep-stats-grid {
+#aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   width: 100%;
 }
 
 #aircraftDeepModal .deep-stat-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 8px 12px;
+  padding: 14px 16px;
   background: rgba(11, 19, 43, 0.75);
-  border: 1px solid rgba(58, 80, 107, 0.75);
+  border: 1px solid rgba(58, 80, 107, 0.6);
+  border-left: 4px solid var(--stat-color, #60a5fa);
   border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-  min-width: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  align-items: center;
 }
 
 #aircraftDeepModal .deep-stat-card:hover {
-  border-color: rgba(96, 165, 250, 0.5);
-  background: rgba(15, 23, 42, 0.85);
-  box-shadow: 0 0 10px rgba(96, 165, 250, 0.15);
+  border-left-color: var(--stat-color, #60a5fa);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.2);
+  transform: translateX(2px);
 }
 
-#aircraftDeepModal .deep-stat-header {
+#aircraftDeepModal .deep-stat-icon {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 32px;
+  height: 32px;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 8px;
-  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  color: var(--stat-color, #60a5fa);
+}
+
+#aircraftDeepModal .deep-stat-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
 }
 
 #aircraftDeepModal .deep-stat-label {
-  font-family: var(--font-tactical, 'Rajdhani', sans-serif);
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--steel-gray, #94a3b8);
+  grid-column: 2;
+  grid-row: 1;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #cbd5e1;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 1;
+  letter-spacing: 0.8px;
 }
 
 #aircraftDeepModal .deep-stat-value {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 0.95rem;
+  grid-column: 3;
+  grid-row: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.4rem;
   font-weight: 700;
-  color: #ffffff;
-  white-space: nowrap;
+  color: var(--stat-color, #60a5fa);
   text-align: right;
-  flex-shrink: 0;
+  line-height: 1;
 }
 
 #aircraftDeepModal .deep-stat-unit {
   font-size: 0.75rem;
-  color: var(--steel-gray, #94a3b8);
+  color: #94a3b8;
   font-weight: 500;
-  margin-left: 2px;
+  margin-left: 4px;
 }
 
 #aircraftDeepModal .deep-stat-bar-track {
+  grid-column: 2 / 4;
+  grid-row: 2;
   width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
   overflow: hidden;
-  position: relative;
 }
 
 #aircraftDeepModal .deep-stat-bar-fill {
   height: 100%;
-  border-radius: 3px;
-  background: var(--blue-telemetry, #60a5fa);
+  border-radius: 4px;
+  background: var(--stat-color, #60a5fa);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 900px) {
+  #aircraftDeepModal .deep-tab-panel[data-tab="stats"] .deep-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ============================================================
@@ -256,21 +272,71 @@
 }
 
 #aircraftDeepModal .modal-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
   flex: 1;
   min-height: 0;
-  max-height: none !important;
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  padding: 20px 24px 32px 24px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(212, 175, 55, 0.5) rgba(11, 19, 43, 0.5);
-  /* Grid táctico: 3 columnas fijas para desktop (>1000px) */
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-flow: dense;
-  gap: 16px;
-  align-content: start;
-  align-items: stretch;
+}
+
+#aircraftDeepModal .deep-modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 20px;
+  background: rgba(11, 19, 43, 0.98);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+#aircraftDeepModal .deep-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #94a3b8;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+#aircraftDeepModal .deep-tab:hover {
+  color: #cbd5e1;
+  background: rgba(96, 165, 250, 0.05);
+}
+
+#aircraftDeepModal .deep-tab.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+#aircraftDeepModal .deep-tab i,
+#aircraftDeepModal .deep-tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+#aircraftDeepModal .deep-tab-panel {
+  display: none;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+#aircraftDeepModal .deep-tab-panel.active {
+  display: block;
 }
 
 #aircraftDeepModal .modal-footer {
@@ -280,23 +346,7 @@
   background: #0F172A;
 }
 
-/* Tablet (700px - 1000px): 2 columnas en modal-body, 2 columnas en stats */
-@media (max-width: 1000px) {
-  #aircraftDeepModal .modal-body {
-    grid-template-columns: repeat(2, 1fr);
-    padding: 16px 20px 24px 20px;
-    gap: 14px;
-  }
-  #aircraftDeepModal .deep-section.span-2,
-  #aircraftDeepModal .deep-section.span-3 {
-    grid-column: 1 / -1;
-  }
-  #aircraftDeepModal .deep-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Mobile (<700px): 1 columna en modal-body, 1 columna en stats */
+/* Mobile (<700px): pantalla completa táctica */
 @media (max-width: 700px) {
   #aircraftDeepModal .modal-content {
     width: 100vw !important;
@@ -304,18 +354,6 @@
     height: 100vh !important;
     max-height: 100vh !important;
     border-radius: 0;
-  }
-  #aircraftDeepModal .modal-body {
-    grid-template-columns: 1fr;
-    padding: 14px 14px 20px 14px;
-    gap: 12px;
-  }
-  #aircraftDeepModal .deep-section.span-2,
-  #aircraftDeepModal .deep-section.span-3 {
-    grid-column: 1 / -1;
-  }
-  #aircraftDeepModal .deep-stats-grid {
-    grid-template-columns: 1fr;
   }
 }
 /* ============================================================
@@ -327,15 +365,16 @@
   gap: 12px;
 }
 .skill-image-wrapper {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 2px solid rgba(212, 175, 55, 0.4);
   border-radius: 8px;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
   overflow: hidden;
 }
 .skill-image {
@@ -451,188 +490,214 @@
       <button class="modal-close" onclick="closeAircraftDeepModal()" aria-label="Cerrar modal">✕</button>
     </div>
 
+    <div class="deep-modal-tabs" role="tablist">
+      <button class="deep-tab active" data-tab="stats" role="tab">
+        <i data-lucide="bar-chart-3"></i> Estadísticas
+      </button>
+      <button class="deep-tab" data-tab="skills" role="tab">
+        <i data-lucide="target"></i> Habilidades
+      </button>
+      <button class="deep-tab" data-tab="mods" role="tab">
+        <i data-lucide="wrench"></i> Mods & Sistemas
+      </button>
+      <button class="deep-tab" data-tab="info" role="tab">
+        <i data-lucide="file-text"></i> Info
+      </button>
+    </div>
+
     <div class="modal-body">
-      <!-- Estadísticas -->
-      <section class="deep-section span-2">
-        <h3>📊 Estadísticas</h3>
-        <div class="deep-stats-grid" id="deepStatsGrid"></div>
-      </section>
+      <!-- PANEL 1: ESTADÍSTICAS -->
+      <div class="deep-tab-panel active" data-tab="stats">
+        <section class="deep-section">
+          <h3>📊 Estadísticas</h3>
+          <div class="deep-stats-grid" id="deepStatsGrid"></div>
+        </section>
+      </div>
 
-      <!-- Armamento Equipado -->
-      <section class="deep-section deep-section-collapsible span-2" id="deepArmamentSection">
-        <h3 onclick="toggleDeepSection('deepArmamentSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🎯 Armamento Equipado</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepArmamentContent"
-             style="display:block;margin-top:8px;">
-          <div class="deep-armament-grid" id="deepArmamentList"></div>
-        </div>
-      </section>
-
-      <!-- Habilidad Especial -->
-      <section class="deep-section deep-section-collapsible" id="deepSpecialSection">
-        <h3 onclick="toggleDeepSection('deepSpecialSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🎯 Habilidad Especial</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepSpecialContent"
-             style="display:none;margin-top:8px;">
-          <div class="deep-skill" id="deepSpecialSkill"></div>
-        </div>
-      </section>
-
-      <!-- Habilidad Pasiva -->
-      <section class="deep-section deep-section-collapsible" id="deepPassiveSection">
-        <h3 onclick="toggleDeepSection('deepPassiveSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🛡️ Habilidad Pasiva</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepPassiveContent"
-             style="display:none;margin-top:8px;">
-          <div class="deep-skill" id="deepPassiveSkill"></div>
-        </div>
-      </section>
-
-      <!-- Sistemas Upgrades 2.0 -->
-      <section class="deep-section deep-section-collapsible span-2" id="deepSystemsSection">
-        <h3 onclick="toggleDeepSection('deepSystemsSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🔧 Sistemas Upgrades 2.0 (Nv 6+)</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepSystemsContent"
-             style="display:none;margin-top:8px;">
-          <div style="display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <button type="button" class="btn-sm btn-primary" onclick="savePlaneSystems()" style="font-size:0.75rem;padding:4px 12px;background:var(--color-primary-gold,#d4af37);color:#0a0f1d;font-weight:600;border:none;border-radius:4px;cursor:pointer;">
-              💾 Guardar Cambios
-            </button>
-            <button type="button" class="btn-sm btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="font-size:0.75rem;padding:3px 8px;border-color:var(--blue-telemetry);color:var(--blue-telemetry);">
-              🔧 Abrir Planificador
-            </button>
+      <!-- PANEL 2: HABILIDADES -->
+      <div class="deep-tab-panel" data-tab="skills">
+        <!-- Armamento Equipado -->
+        <section class="deep-section deep-section-collapsible" id="deepArmamentSection">
+          <h3 onclick="toggleDeepSection('deepArmamentSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🎯 Armamento Equipado</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepArmamentContent"
+               style="display:block;margin-top:8px;">
+            <div class="deep-armament-grid" id="deepArmamentList"></div>
           </div>
-          <div class="deep-systems-grid" id="deepSystemsGrid"></div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Recomendación Táctica de Build -->
-      <section class="deep-section deep-section-collapsible" id="deepRecommendationSection">
-        <h3 onclick="toggleDeepSection('deepRecommendationSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🤖 Recomendación Táctica de Build</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepRecommendationWrap"
-             style="display:none;margin-top:8px;">
-          <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-            <div class="recommendation-styles-nav" id="recStylesNav">
-              <button type="button" class="rec-style-btn active" id="recBtnAgresivo" onclick="loadPlaneRecommendation('agresivo')">⚡ Agresivo</button>
-              <button type="button" class="rec-style-btn" id="recBtnDefensivo" onclick="loadPlaneRecommendation('defensivo')">🛡️ Defensivo</button>
-              <button type="button" class="rec-style-btn" id="recBtnApoyo" onclick="loadPlaneRecommendation('apoyo')">📡 Apoyo</button>
+        <!-- Habilidad Especial -->
+        <section class="deep-section deep-section-collapsible" id="deepSpecialSection">
+          <h3 onclick="toggleDeepSection('deepSpecialSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🎯 Habilidad Especial</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepSpecialContent"
+               style="display:block;margin-top:8px;">
+            <div class="deep-skill" id="deepSpecialSkill"></div>
+          </div>
+        </section>
+
+        <!-- Habilidad Pasiva -->
+        <section class="deep-section deep-section-collapsible" id="deepPassiveSection">
+          <h3 onclick="toggleDeepSection('deepPassiveSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🛡️ Habilidad Pasiva</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepPassiveContent"
+               style="display:block;margin-top:8px;">
+            <div class="deep-skill" id="deepPassiveSkill"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- PANEL 3: MODS & SISTEMAS -->
+      <div class="deep-tab-panel" data-tab="mods">
+        <!-- Mods Equipados -->
+        <section class="deep-section deep-section-collapsible" id="deepModsSection">
+          <h3 onclick="toggleDeepSection('deepModsSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🔩 Mods Equipados</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepModsContent"
+               style="display:block;margin-top:8px;">
+            <div class="deep-mods-grid" id="deepModsGrid"></div>
+          </div>
+        </section>
+
+        <!-- Sistemas Upgrades 2.0 -->
+        <section class="deep-section deep-section-collapsible" id="deepSystemsSection">
+          <h3 onclick="toggleDeepSection('deepSystemsSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🔧 Sistemas Upgrades 2.0 (Nv 6+)</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepSystemsContent"
+               style="display:none;margin-top:8px;">
+            <div style="display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+              <button type="button" class="btn-sm btn-primary" onclick="savePlaneSystems()" style="font-size:0.75rem;padding:4px 12px;background:var(--color-primary-gold,#d4af37);color:#0a0f1d;font-weight:600;border:none;border-radius:4px;cursor:pointer;">
+                💾 Guardar Cambios
+              </button>
+              <button type="button" class="btn-sm btn-secondary" onclick="openUpgradePlanner(window.currentPlaneId || currentPlaneId)" style="font-size:0.75rem;padding:3px 8px;border-color:var(--blue-telemetry);color:var(--blue-telemetry);">
+                🔧 Abrir Planificador
+              </button>
+            </div>
+            <div class="deep-systems-grid" id="deepSystemsGrid"></div>
+          </div>
+        </section>
+
+        <!-- Recomendación Táctica de Build -->
+        <section class="deep-section deep-section-collapsible" id="deepRecommendationSection">
+          <h3 onclick="toggleDeepSection('deepRecommendationSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🤖 Recomendación Táctica de Build</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepRecommendationWrap"
+               style="display:none;margin-top:8px;">
+            <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+              <div class="recommendation-styles-nav" id="recStylesNav">
+                <button type="button" class="rec-style-btn active" id="recBtnAgresivo" onclick="loadPlaneRecommendation('agresivo')">⚡ Agresivo</button>
+                <button type="button" class="rec-style-btn" id="recBtnDefensivo" onclick="loadPlaneRecommendation('defensivo')">🛡️ Defensivo</button>
+                <button type="button" class="rec-style-btn" id="recBtnApoyo" onclick="loadPlaneRecommendation('apoyo')">📡 Apoyo</button>
+              </div>
+            </div>
+            <div class="deep-recommendation-box" id="deepRecommendationContent">
+              <div style="color:var(--steel-gray);font-size:0.85rem;">Selecciona un estilo de combate para calcular la build táctica óptima.</div>
             </div>
           </div>
-          <div class="deep-recommendation-box" id="deepRecommendationContent">
-            <div style="color:var(--steel-gray);font-size:0.85rem;">Selecciona un estilo de combate para calcular la build táctica óptima.</div>
+        </section>
+      </div>
+
+      <!-- PANEL 4: INFO -->
+      <div class="deep-tab-panel" data-tab="info">
+        <!-- Traits -->
+        <section class="deep-section deep-section-collapsible" id="deepTraitsSection">
+          <h3 onclick="toggleDeepSection('deepTraitsSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
+            <span>🎯 Traits</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepTraitsContent"
+               style="display:none;margin-top:8px;">
+            <div id="deepTraitsList"></div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Mods -->
-      <section class="deep-section deep-section-collapsible" id="deepModsSection">
-        <h3 onclick="toggleDeepSection('deepModsSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🔩 Mods Equipados</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepModsContent"
-             style="display:none;margin-top:8px;">
-          <div class="deep-mods-grid" id="deepModsGrid"></div>
-        </div>
-      </section>
-
-      <!-- Traits -->
-      <section class="deep-section deep-section-collapsible" id="deepTraitsSection">
-        <h3 onclick="toggleDeepSection('deepTraitsSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
-          <span>🎯 Traits</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepTraitsContent"
-             style="display:none;margin-top:8px;">
-          <div id="deepTraitsList"></div>
-        </div>
-      </section>
-
-      <!-- Paints -->
-      <section class="deep-section deep-section-collapsible span-2" id="deepPaintsSection">
-        <h3 onclick="toggleDeepSection('deepPaintsSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;
-                   align-items:center;user-select:none;">
-          <span>🎨 Paints</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepPaintsContent"
-             style="display:none;margin-top:8px;">
-          <div style="color:#64748b;font-style:italic;font-size:0.85rem;
-                      padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
-            🎨 Cargando paints...
+        <!-- Paints -->
+        <section class="deep-section deep-section-collapsible" id="deepPaintsSection">
+          <h3 onclick="toggleDeepSection('deepPaintsSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;
+                     align-items:center;user-select:none;">
+            <span>🎨 Paints</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepPaintsContent"
+               style="display:none;margin-top:8px;">
+            <div style="color:#64748b;font-style:italic;font-size:0.85rem;
+                        padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+              🎨 Cargando paints...
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Canopies -->
-      <section class="deep-section deep-section-collapsible span-2" id="deepCanopiesSection">
-        <h3 onclick="toggleDeepSection('deepCanopiesSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;
-                   align-items:center;user-select:none;">
-          <span>🪟 Canopies</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepCanopiesContent"
-             style="display:none;margin-top:8px;">
-          <div style="color:#64748b;font-style:italic;font-size:0.85rem;
-                      padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
-            🪟 Cargando canopies...
+        <!-- Canopies -->
+        <section class="deep-section deep-section-collapsible" id="deepCanopiesSection">
+          <h3 onclick="toggleDeepSection('deepCanopiesSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;
+                     align-items:center;user-select:none;">
+            <span>🪟 Canopies</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepCanopiesContent"
+               style="display:none;margin-top:8px;">
+            <div style="color:#64748b;font-style:italic;font-size:0.85rem;
+                        padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+              🪟 Cargando canopies...
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Historia de la Aeronave -->
-      <section class="deep-section deep-section-collapsible span-3" id="deepHistorySection">
-        <h3 onclick="toggleDeepSection('deepHistorySection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;
-                   align-items:center;user-select:none;">
-          <span>📜 Historia de la Aeronave</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepHistoryContent"
-             style="display:none;margin-top:8px;">
-          <div style="color:#64748b;font-style:italic;font-size:0.88rem;
-                      padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
-            📜 Contenido disponible próximamente · Extraído de la Wiki oficial
+        <!-- Historia de la Aeronave -->
+        <section class="deep-section deep-section-collapsible" id="deepHistorySection">
+          <h3 onclick="toggleDeepSection('deepHistorySection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;
+                     align-items:center;user-select:none;">
+            <span>📜 Historia de la Aeronave</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepHistoryContent"
+               style="display:none;margin-top:8px;">
+            <div style="color:#64748b;font-style:italic;font-size:0.88rem;
+                        padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+              📜 Contenido disponible próximamente · Extraído de la Wiki oficial
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Recomendaciones de Uso -->
-      <section class="deep-section deep-section-collapsible span-2" id="deepTipsSection">
-        <h3 onclick="toggleDeepSection('deepTipsSection')"
-            style="cursor:pointer;display:flex;justify-content:space-between;
-                   align-items:center;user-select:none;">
-          <span>💡 Recomendaciones de Uso</span>
-          <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
-        </h3>
-        <div class="deep-section-content" id="deepTipsContent"
-             style="display:none;margin-top:8px;">
-          <div style="color:#64748b;font-style:italic;font-size:0.88rem;
-                      padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
-            💡 Contenido disponible próximamente · Extraído de la Wiki oficial
+        <!-- Recomendaciones de Uso -->
+        <section class="deep-section deep-section-collapsible" id="deepTipsSection">
+          <h3 onclick="toggleDeepSection('deepTipsSection')"
+              style="cursor:pointer;display:flex;justify-content:space-between;
+                     align-items:center;user-select:none;">
+            <span>💡 Recomendaciones de Uso</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+          </h3>
+          <div class="deep-section-content" id="deepTipsContent"
+               style="display:none;margin-top:8px;">
+            <div style="color:#64748b;font-style:italic;font-size:0.88rem;
+                        padding:12px;background:rgba(0,0,0,0.2);border-radius:6px;">
+              💡 Contenido disponible próximamente · Extraído de la Wiki oficial
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
     </div>
 
