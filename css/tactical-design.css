@@ -1983,73 +1983,213 @@ i[data-lucide] {
 }
 
 /* ============================================================
-   FIX v3.9.2 — MODAL SIN SCROLL INTERNO Y SECCIONES APILADAS
+   HANGAR REDESIGN — CAMBIO 1: GRID PRINCIPAL
    ============================================================ */
-
-#aircraftDeepModal.modal.show {
-  align-items: flex-start !important;
-  padding: 2vh 0 !important;
-  overflow-y: auto !important;
-}
-
-#aircraftDeepModal .modal-dialog,
-#aircraftDeepModal .modal-content,
-#aircraftDeepModal .aircraft-deep-modal {
-  width: 95vw !important;
-  max-width: 1400px !important;
-  min-width: 0 !important;
+.hangar-carousel,
+.carousel-viewport {
+  min-height: auto !important;
   height: auto !important;
-  max-height: none !important;
-  padding: 0 !important;
-  margin: 2vh auto !important;
   overflow: visible !important;
-  display: flex !important;
-  flex-direction: column !important;
-  box-sizing: border-box !important;
+  display: block !important;
 }
 
-#aircraftDeepModal .modal-header,
-#aircraftDeepModal .modal-body,
-#aircraftDeepModal .modal-footer {
+.carousel-track {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  gap: 16px !important;
+  padding: 16px 0 !important;
+  position: relative !important;
+  height: auto !important;
   width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  box-sizing: border-box !important;
 }
 
-#aircraftDeepModal .modal-header,
-#aircraftDeepModal .modal-footer {
+.carousel-card.plane-card,
+.carousel-card {
+  position: static !important;
+  transform: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  cursor: pointer !important;
+  z-index: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+
+.carousel-arrow,
+.carousel-indicators,
+.carousel-counter {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .carousel-track {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   HANGAR REDESIGN — CAMBIO 2: MODAL STATS TABS & SCROLL
+   ============================================================ */
+.deep-modal-tabs {
+  display: flex !important;
+  gap: 4px !important;
+  padding: 0 24px !important;
+  background: rgba(11, 19, 43, 0.98) !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25) !important;
   flex-shrink: 0 !important;
 }
 
-#aircraftDeepModal .modal-body {
-  display: block !important;
-  flex: none !important;
-  min-height: auto !important;
-  padding: 20px 24px !important;
-  overflow: visible !important;
+.deep-tab {
+  padding: 12px 20px !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 3px solid transparent !important;
+  color: #94a3b8 !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
 }
 
-#aircraftDeepModal .deep-sections-container {
+.deep-tab:hover {
+  color: #f1f5f9 !important;
+}
+
+.deep-tab.active {
+  color: #d4af37 !important;
+  border-bottom-color: #d4af37 !important;
+}
+
+.deep-tab-panel {
+  display: none !important;
+  padding: 20px 24px !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.deep-tab-panel.active {
+  display: block !important;
+}
+
+.deep-tab-panel .deep-section {
+  margin-bottom: 16px !important;
+}
+
+.deep-tab-panel .deep-section:last-child {
+  margin-bottom: 0 !important;
+}
+
+#aircraftDeepModal.modal.show {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+#aircraftDeepModal .modal-content {
+  max-width: 1400px !important;
+  width: 95vw !important;
+  height: 92vh !important;
+  max-height: 92vh !important;
+  overflow: hidden !important;
+  padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 16px !important;
+  margin: 2vh auto !important;
+  box-sizing: border-box !important;
+}
+
+#aircraftDeepModal .modal-header {
+  flex-shrink: 0 !important;
+  padding: 14px 20px !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25) !important;
+  background: rgba(11, 19, 43, 0.98) !important;
+}
+
+#aircraftDeepModal .modal-body {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
 
-#aircraftDeepModal .deep-section,
-#aircraftDeepModal .deep-stats-grid,
-#aircraftDeepModal .deep-mods-grid,
-#aircraftDeepModal .deep-systems-grid,
-#aircraftDeepModal .deep-armament-grid {
+#aircraftDeepModal .modal-footer {
+  flex-shrink: 0 !important;
   width: 100% !important;
-  max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+/* ============================================================
+   HANGAR REDESIGN — CAMBIO 3: MODAL UPGRADES — NODOS EN CARDS
+   ============================================================ */
+.node-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 8px !important;
+  background: rgba(11, 19, 43, 0.75) !important;
+  border: 1px solid rgba(58, 80, 107, 0.6) !important;
+  border-left: 4px solid #60a5fa !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.node-item.active {
+  background: rgba(74, 222, 128, 0.12) !important;
+  border-left-color: #4ade80 !important;
+}
+
+.node-item.locked {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+.system-nodes-base {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 8px !important;
+}
+
+.system-bifurcation {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 16px !important;
+  margin-top: 12px !important;
+  padding-top: 12px !important;
+  border-top: 1px dashed rgba(58, 80, 107, 0.6) !important;
+}
+
+@media (max-width: 768px) {
+  .system-nodes-base {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .system-bifurcation {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 
 
 

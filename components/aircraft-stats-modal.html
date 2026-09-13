@@ -235,13 +235,13 @@
 #aircraftDeepModal .modal-content {
   max-width: 1400px !important;
   width: 95vw !important;
-  max-height: none !important;
-  height: auto !important;
-  overflow: visible !important;
+  height: 92vh !important;
+  max-height: 92vh !important;
+  overflow: hidden !important;
   padding: 0 !important;
-  display: flex;
-  flex-direction: column;
-  margin: 2vh auto;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 2vh auto !important;
 }
 
 #aircraftDeepModal .modal-header {
@@ -256,14 +256,60 @@
 }
 
 #aircraftDeepModal .modal-body {
-  display: block;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.deep-modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  background: rgba(11,19,43,0.98);
+  border-bottom: 1px solid rgba(212,175,55,0.25);
+  flex-shrink: 0;
+}
+
+.deep-tab {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #94a3b8;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.deep-tab.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+}
+
+.deep-tab-panel {
+  display: none;
   padding: 20px 24px;
-  overflow: visible;
-  flex: none;
-  min-height: auto;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.deep-tab-panel.active {
+  display: block;
+}
+
+.deep-tab-panel .deep-section {
+  margin-bottom: 16px;
+}
+
+.deep-tab-panel .deep-section:last-child {
+  margin-bottom: 0;
 }
 
 #aircraftDeepModal .deep-sections-container {
@@ -401,7 +447,7 @@
      ========================================================================== -->
 <div id="aircraftDeepModal" class="modal">
   <div class="modal-content aircraft-deep-modal"
-       style="max-width:1400px;width:95vw;height:auto;max-height:none;overflow:visible;display:flex;flex-direction:column;padding:0;margin:2vh auto;">
+       style="max-width:1400px;width:95vw;height:92vh;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;padding:0;margin:2vh auto;">
     <div class="modal-header"
          style="position:sticky;top:0;z-index:20;background:rgba(11,19,43,0.98);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,0.25);padding:14px 20px;">
       <div>
@@ -426,14 +472,33 @@
       <button class="modal-close" onclick="closeAircraftDeepModal()" aria-label="Cerrar modal">✕</button>
     </div>
 
+    <div class="deep-modal-tabs" role="tablist">
+      <button class="deep-tab active" data-tab="stats" onclick="switchDeepTab('stats')">
+        <i data-lucide="bar-chart-3"></i> Estadísticas
+      </button>
+      <button class="deep-tab" data-tab="skills" onclick="switchDeepTab('skills')">
+        <i data-lucide="target"></i> Habilidades
+      </button>
+      <button class="deep-tab" data-tab="mods" onclick="switchDeepTab('mods')">
+        <i data-lucide="wrench"></i> Mods & Sistemas
+      </button>
+      <button class="deep-tab" data-tab="info" onclick="switchDeepTab('info')">
+        <i data-lucide="file-text"></i> Info
+      </button>
+    </div>
+
     <div class="modal-body">
-      <div class="deep-sections-container">
+      <!-- PANEL 1: ESTADÍSTICAS -->
+      <div class="deep-tab-panel active" data-tab="stats">
         <!-- Sección Estadísticas -->
         <section class="deep-section">
           <h3>📊 Estadísticas</h3>
           <div class="deep-stats-grid" id="deepStatsGrid"></div>
         </section>
+      </div>
 
+      <!-- PANEL 2: HABILIDADES & ARMAMENTO -->
+      <div class="deep-tab-panel" data-tab="skills">
         <!-- Armamento Equipado -->
         <section class="deep-section deep-section-collapsible collapsed" id="deepArmamentSection">
           <h3 onclick="toggleDeepSection('deepArmamentSection')"
@@ -472,7 +537,10 @@
             <div class="deep-skill" id="deepPassiveSkill"></div>
           </div>
         </section>
+      </div>
 
+      <!-- PANEL 3: MODS, SISTEMAS & RECOMENDACIÓN -->
+      <div class="deep-tab-panel" data-tab="mods">
         <!-- Mods Equipados -->
         <section class="deep-section deep-section-collapsible collapsed" id="deepModsSection">
           <h3 onclick="toggleDeepSection('deepModsSection')"
@@ -528,7 +596,10 @@
             </div>
           </div>
         </section>
+      </div>
 
+      <!-- PANEL 4: INFO, HISTORIA & RECOMENDACIONES -->
+      <div class="deep-tab-panel" data-tab="info">
         <!-- Traits -->
         <section class="deep-section deep-section-collapsible" id="deepTraitsSection">
           <h3 onclick="toggleDeepSection('deepTraitsSection')"

@@ -97,7 +97,9 @@
     <div class="hangar-carousel">
       <button class="carousel-arrow carousel-arrow-left" onclick="scrollCarousel(-1)" aria-label="Aeronave anterior">◀</button>
       <div class="carousel-viewport" id="carouselViewport">
-        <div class="carousel-track" id="carouselTrack"></div>
+        <div id="hangarGridView" class="grid-planes">
+          <div class="carousel-track" id="carouselTrack"></div>
+        </div>
         <!-- Template de tarjeta de avión con imagen Cloudinary para carrusel táctico -->
         <template id="planeCardTemplate">
           <div class="plane-card type-${getTypeClass(plane.type)}">
