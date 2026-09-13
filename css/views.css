@@ -932,3 +932,286 @@ body[data-theme="clasico"] .view li  { color: #212529; }
 body[data-theme="clasico"] .view h2  { color: #0038A8; }
 body[data-theme="clasico"] .view h3  { color: #0038A8; }
 body[data-theme="clasico"] .view h4  { color: #212529; }
+
+/* ============================================================
+   FIX MODAL DEEP — Secciones visibles + Grid de sistemas
+   Fecha: 2026-09-13
+   Fase 3D — Cierre
+   ============================================================ */
+
+/* Contenido de secciones: visible por defecto */
+.deep-section-content {
+  display: block;
+  padding: 12px 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Cuando la sección está colapsada, se oculta */
+.deep-section.collapsed .deep-section-content {
+  display: none;
+}
+
+/* Header de sección clickeable */
+.deep-section-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.deep-section-header:hover {
+  background: rgba(30, 41, 59, 0.7);
+}
+
+/* Chevron que rota al colapsar */
+.deep-chevron {
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+/* Grid de sistemas Upgrades 2.0 */
+#deepSystemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* Tarjetas de sistema individuales */
+.system-section.system-detail {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 110, 130, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.system-section .system-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.system-section .system-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.system-section .system-level {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* Nodos base (niveles 1-4) */
+.system-nodes-base {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* Bifurcación A/B (niveles 5-8) */
+.system-bifurcation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.system-bifurcation .route-column h5 {
+  margin: 0 0 6px 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Item de nodo individual */
+.node-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(99, 110, 130, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.node-item:hover {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.node-item.active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.node-item.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.node-checkbox {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.node-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.node-level {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.node-name {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.node-effects {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.node-requirement {
+  font-size: 0.7rem;
+  color: #f87171;
+  margin-top: 4px;
+}
+
+/* Sección de habilidad con imagen (especial/pasiva) */
+.skill-with-image {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(99, 110, 130, 0.2);
+}
+
+.skill-image-wrapper {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skill-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.skill-image-placeholder {
+  font-size: 1.8rem;
+  color: #64748b;
+}
+
+.skill-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Mods: icono + info */
+.mod-slot {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(99, 110, 130, 0.2);
+}
+
+.mod-icon-wrapper {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mod-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mod-icon-placeholder {
+  font-size: 1.2rem;
+}
+
+.mod-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mod-name {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.mod-type {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mod-level {
+  font-size: 0.75rem;
+  color: #d4af37;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+
+/* Responsive: en mobile, bifurcación en 1 columna */
+@media (max-width: 768px) {
+  #deepSystemsGrid {
+    grid-template-columns: 1fr;
+  }
+  .system-bifurcation {
+    grid-template-columns: 1fr;
+  }
+}
