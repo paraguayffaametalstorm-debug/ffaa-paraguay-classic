@@ -2020,11 +2020,15 @@ window.savePlaneSystems = savePlaneSystems;
 // MODAL DE DATOS PROFUNDOS DE AERONAVE (C4ISR TELEMETRÍA)
 // ============================================================================
 let _deepCollapsedSections = new Set([
+  'deepArmamentSection',
+  'deepSpecialSection',
+  'deepPassiveSection',
+  'deepModsSection',
   'deepSystemsSection',
   'deepRecommendationSection',
   'deepTraitsSection',
-  'deepPaintsSection',      // ← NUEVO
-  'deepCanopiesSection',    // ← NUEVO
+  'deepPaintsSection',
+  'deepCanopiesSection',
   'deepHistorySection',
   'deepTipsSection'
 ]);
@@ -2615,24 +2619,13 @@ async function openAircraftDeepModal(planeId) {
       if (chevron) chevron.style.transform = 'rotate(-90deg)';
     }
   });
-  // Asegurar secciones iniciales abiertas (Armamento, Especial, Pasiva, Mods)
-  ['deepArmamentSection', 'deepSpecialSection', 'deepPassiveSection', 'deepModsSection'].forEach(sId => {
-    const sec = document.getElementById(sId);
-    if (sec) {
-      const cnt = sec.querySelector('.deep-section-content');
-      if (cnt) cnt.style.display = 'block';
-      sec.classList.remove('collapsed');
-      const chv = sec.querySelector('.deep-chevron');
-      if (chv) chv.style.transform = 'rotate(0deg)';
-    }
-  });
-
   // Open modal
   showModal('aircraftDeepModal');
 
-  document.querySelectorAll('#aircraftDeepModal .deep-tab').forEach(tab => {
-    tab.onclick = () => switchDeepTab(tab.dataset.tab);
-  });
+  // Resetear scroll del overlay al abrir
+  const modalOverlay = document.getElementById('aircraftDeepModal');
+  if (modalOverlay) modalOverlay.scrollTop = 0;
+  window.scrollTo({ top: 0, behavior: 'instant' });
 
   // Stats Grid: Velocidad, Ángulo de Giro, Puntos de Vida, Postquemador, Aceleración, Vel. Maniobra
   const statsGridEl = document.getElementById('deepStatsGrid');

@@ -1012,16 +1012,17 @@ i[data-lucide] {
 .aircraft-deep-modal {
   max-width: 1400px;
   width: 95vw;
-  max-height: 92vh;
-  height: 92vh;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  margin: 2vh auto;
   background: rgba(13, 20, 36, 0.98);
   border: 1.5px solid rgba(212, 175, 55, 0.4);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(212, 175, 55, 0.25);
   border-radius: 12px;
   padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .aircraft-deep-modal .modal-header {
@@ -1399,12 +1400,13 @@ i[data-lucide] {
 #aircraftDeepModal .modal-content {
   max-width: 1400px !important;
   width: 95vw !important;
-  max-height: 92vh !important;
-  height: 92vh !important;
-  overflow: hidden !important;
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
   padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
+  margin: 2vh auto !important;
 }
 
 #aircraftDeepModal .modal-header {
@@ -1423,10 +1425,9 @@ i[data-lucide] {
 #aircraftDeepModal .modal-body {
   display: block;
   padding: 20px 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1;
-  min-height: 0;
+  overflow: visible;
+  flex: none;
+  min-height: auto;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -1460,23 +1461,6 @@ i[data-lucide] {
   padding: 14px 20px;
   border-top: 1px solid rgba(212, 175, 55, 0.25);
   background: #0F172A;
-}
-
-/* Scrollbar táctica del modal (a la derecha del modal completo) */
-#aircraftDeepModal .modal-body::-webkit-scrollbar {
-  width: 10px;
-}
-#aircraftDeepModal .modal-body::-webkit-scrollbar-track {
-  background: rgba(11, 19, 43, 0.5);
-  border-radius: 5px;
-}
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.5);
-  border-radius: 5px;
-  border: 2px solid rgba(11, 19, 43, 0.5);
-}
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.8);
 }
 
 #aircraftDeepModal .deep-stat-card {
@@ -1977,8 +1961,10 @@ i[data-lucide] {
   #aircraftDeepModal .modal-content {
     width: 95vw !important;
     max-width: 95vw !important;
-    max-height: 92vh !important;
+    max-height: none !important;
+    height: auto !important;
     padding: 0 !important;
+    margin: 2vh auto !important;
   }
 
   #deepPlaneName {
@@ -1997,8 +1983,14 @@ i[data-lucide] {
 }
 
 /* ============================================================
-   FIX v3.9.2 — ANCHO COMPLETO DEL MODAL Y SECCIONES APILADAS
+   FIX v3.9.2 — MODAL SIN SCROLL INTERNO Y SECCIONES APILADAS
    ============================================================ */
+
+#aircraftDeepModal.modal.show {
+  align-items: flex-start !important;
+  padding: 2vh 0 !important;
+  overflow-y: auto !important;
+}
 
 #aircraftDeepModal .modal-dialog,
 #aircraftDeepModal .modal-content,
@@ -2006,11 +1998,11 @@ i[data-lucide] {
   width: 95vw !important;
   max-width: 1400px !important;
   min-width: 0 !important;
-  height: 92vh !important;
-  max-height: 92vh !important;
+  height: auto !important;
+  max-height: none !important;
   padding: 0 !important;
-  margin: 0 auto !important;
-  overflow: hidden !important;
+  margin: 2vh auto !important;
+  overflow: visible !important;
   display: flex !important;
   flex-direction: column !important;
   box-sizing: border-box !important;
@@ -2034,11 +2026,10 @@ i[data-lucide] {
 
 #aircraftDeepModal .modal-body {
   display: block !important;
-  flex: 1 !important;
-  min-height: 0 !important;
+  flex: none !important;
+  min-height: auto !important;
   padding: 20px 24px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow: visible !important;
 }
 
 #aircraftDeepModal .deep-sections-container {
