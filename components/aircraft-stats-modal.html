@@ -81,23 +81,6 @@
     white-space: nowrap;
 }
 
-/* Scrollbar táctica */
-#aircraftDeepModal .modal-body::-webkit-scrollbar {
-  width: 10px;
-}
-#aircraftDeepModal .modal-body::-webkit-scrollbar-track {
-  background: rgba(11,19,43,0.5);
-  border-radius: 5px;
-}
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb {
-  background: rgba(212,175,55,0.5);
-  border-radius: 5px;
-  border: 2px solid rgba(11,19,43,0.5);
-}
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(212,175,55,0.8);
-}
-
 /* Secciones como tarjetas en grid */
 #aircraftDeepModal .deep-section {
   background: rgba(15, 23, 42, 0.55);
@@ -252,12 +235,13 @@
 #aircraftDeepModal .modal-content {
   max-width: 1400px !important;
   width: 95vw !important;
-  max-height: 92vh !important;
-  height: 92vh !important;
-  overflow: hidden !important;      /* Quita scroll del content */
-  padding: 0 !important;            /* Padding se maneja en header/body/footer */
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding: 0 !important;
   display: flex;
   flex-direction: column;
+  margin: 2vh auto;
 }
 
 #aircraftDeepModal .modal-header {
@@ -274,10 +258,9 @@
 #aircraftDeepModal .modal-body {
   display: block;
   padding: 20px 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1;
-  min-height: 0;
+  overflow: visible;
+  flex: none;
+  min-height: auto;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -418,7 +401,7 @@
      ========================================================================== -->
 <div id="aircraftDeepModal" class="modal">
   <div class="modal-content aircraft-deep-modal"
-       style="max-width:1400px;width:95vw;height:92vh;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;padding:0;">
+       style="max-width:1400px;width:95vw;height:auto;max-height:none;overflow:visible;display:flex;flex-direction:column;padding:0;margin:2vh auto;">
     <div class="modal-header"
          style="position:sticky;top:0;z-index:20;background:rgba(11,19,43,0.98);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,0.25);padding:14px 20px;">
       <div>
@@ -452,53 +435,53 @@
         </section>
 
         <!-- Armamento Equipado -->
-        <section class="deep-section deep-section-collapsible" id="deepArmamentSection">
+        <section class="deep-section deep-section-collapsible collapsed" id="deepArmamentSection">
           <h3 onclick="toggleDeepSection('deepArmamentSection')"
               style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
             <span>🎯 Armamento Equipado</span>
-            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;transform:rotate(-90deg);">▼</span>
           </h3>
           <div class="deep-section-content" id="deepArmamentContent"
-               style="display:block;margin-top:8px;">
+               style="display:none;margin-top:8px;">
             <div class="deep-armament-grid" id="deepArmamentList"></div>
           </div>
         </section>
 
         <!-- Habilidad Especial -->
-        <section class="deep-section deep-section-collapsible" id="deepSpecialSection">
+        <section class="deep-section deep-section-collapsible collapsed" id="deepSpecialSection">
           <h3 onclick="toggleDeepSection('deepSpecialSection')"
               style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
             <span>🎯 Habilidad Especial</span>
-            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;transform:rotate(-90deg);">▼</span>
           </h3>
           <div class="deep-section-content" id="deepSpecialContent"
-               style="display:block;margin-top:8px;">
+               style="display:none;margin-top:8px;">
             <div class="deep-skill" id="deepSpecialSkill"></div>
           </div>
         </section>
 
         <!-- Habilidad Pasiva -->
-        <section class="deep-section deep-section-collapsible" id="deepPassiveSection">
+        <section class="deep-section deep-section-collapsible collapsed" id="deepPassiveSection">
           <h3 onclick="toggleDeepSection('deepPassiveSection')"
               style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
             <span>🛡️ Habilidad Pasiva</span>
-            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;transform:rotate(-90deg);">▼</span>
           </h3>
           <div class="deep-section-content" id="deepPassiveContent"
-               style="display:block;margin-top:8px;">
+               style="display:none;margin-top:8px;">
             <div class="deep-skill" id="deepPassiveSkill"></div>
           </div>
         </section>
 
         <!-- Mods Equipados -->
-        <section class="deep-section deep-section-collapsible" id="deepModsSection">
+        <section class="deep-section deep-section-collapsible collapsed" id="deepModsSection">
           <h3 onclick="toggleDeepSection('deepModsSection')"
               style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;">
             <span>🔩 Mods Equipados</span>
-            <span class="deep-chevron" style="transition:transform 0.2s;">▼</span>
+            <span class="deep-chevron" style="transition:transform 0.2s;transform:rotate(-90deg);">▼</span>
           </h3>
           <div class="deep-section-content" id="deepModsContent"
-               style="display:block;margin-top:8px;">
+               style="display:none;margin-top:8px;">
             <div class="deep-mods-grid" id="deepModsGrid"></div>
           </div>
         </section>
