@@ -1919,7 +1919,7 @@ function updateDeepModalStats(plane, statsData = null) {
     const valStr = typeof rawVal === 'number'
       ? (Number.isInteger(rawVal) ? rawVal.toLocaleString() : rawVal.toFixed(1))
       : rawVal;
-    const pctVal = typeof pcts[k] === 'number' ? Math.min(100, Math.max(0, pcts[k])) : 50;
+    const pctVal = typeof pcts[k] === 'number' && !isNaN(pcts[k]) ? Math.min(100, Math.max(0, pcts[k])) : 50;
     const bd = breakdown[k];
 
     let tooltip = '';
@@ -1943,10 +1943,10 @@ function updateDeepModalStats(plane, statsData = null) {
   });
 
   statsGridEl.innerHTML = statsList.map(s => `
-    <div class="deep-stat-card" ${s.tooltip ? `title="${s.tooltip}"` : ''}>
+    <div class="deep-stat-card" ${s.tooltip ? `title="${escapeHtml(s.tooltip)}"` : ''}>
       <div class="deep-stat-header">
         <span class="deep-stat-label">${s.label}</span>
-        <span class="deep-stat-value" style="color:${s.color};">${s.val} <span style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
+        <span class="deep-stat-value" style="color:${s.color};">${s.val} <span class="deep-stat-unit" style="font-size:0.75rem;color:var(--steel-gray);">${s.unit}</span></span>
       </div>
       <div class="deep-stat-bar-track">
         <div class="deep-stat-bar-fill" style="width:${s.pct}%;background:${s.color};"></div>
