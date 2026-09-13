@@ -90,6 +90,8 @@ export async function getModEffects(supabase = null) {
 
 /**
  * Fallback con los 10 mods oficiales y sus 5 niveles
+ * Datos oficiales extraídos de https://metalstorm.wiki.gg/wiki/Aircraft_Mods
+ * Fecha de extracción: 2026-09-12
  */
 export function getFallbackModEffects() {
     console.warn('⚠️ [ModEffects] Usando datos de respaldo de mods');
@@ -100,10 +102,10 @@ export function getFallbackModEffects() {
             mod_name: 'Giro Temerario (Daredevil Turning)',
             mod_type: 'Agilidad',
             levels: {
-                1: { giro: 4.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +4%' },
-                2: { giro: 8.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +8%' },
-                3: { giro: 12.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +12%' },
-                4: { giro: 16.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +16%' },
+                1: { giro: 10.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +10%' },
+                2: { giro: 13.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +13%' },
+                3: { giro: 15.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +15%' },
+                4: { giro: 17.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +17%' },
                 5: { giro: 20.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Velocidad de giro +20%' }
             }
         },
@@ -112,11 +114,11 @@ export function getFallbackModEffects() {
             mod_name: 'Maniobrabilidad Ideal (Ideal Maneuvering)',
             mod_type: 'Agilidad',
             levels: {
-                1: { eficiencia: 3.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +3%' },
-                2: { eficiencia: 6.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +6%' },
-                3: { eficiencia: 9.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +9%' },
-                4: { eficiencia: 12.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +12%' },
-                5: { eficiencia: 15.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +15%' }
+                1: { eficiencia: 15.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +15%' },
+                2: { eficiencia: 20.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +20%' },
+                3: { eficiencia: 25.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +25%' },
+                4: { eficiencia: 30.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +30%' },
+                5: { eficiencia: 35.0, unidad: '%', stat: 'agility', siempre_activo: true, desc: 'Eficiencia de viraje +35%' }
             }
         },
         m3: {
@@ -124,11 +126,11 @@ export function getFallbackModEffects() {
             mod_name: 'Resistencia a las Explosiones (Blast Resistance)',
             mod_type: 'Defensa',
             levels: {
-                1: { resistencia_misiles: 5.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles +5%' },
-                2: { resistencia_misiles: 10.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles +10%' },
-                3: { resistencia_misiles: 15.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles +15%' },
-                4: { resistencia_misiles: 20.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles +20%' },
-                5: { resistencia_misiles: 25.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles +25%' }
+                1: { resistencia_misiles: 10.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles -10%' },
+                2: { resistencia_misiles: 13.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles -13%' },
+                3: { resistencia_misiles: 15.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles -15%' },
+                4: { resistencia_misiles: 17.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles -17%' },
+                5: { resistencia_misiles: 20.0, unidad: '%', stat: 'armor', siempre_activo: true, desc: 'Resistencia a daño por misiles -20%' }
             }
         },
         m4: {
@@ -136,11 +138,11 @@ export function getFallbackModEffects() {
             mod_name: 'Blindaje de Ataque / Racha (Streak Armor)',
             mod_type: 'Defensa',
             levels: {
-                1: { armadura_por_kill: 5.0, unidad: '%', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+5% HP temporal por derribo' },
-                2: { armadura_por_kill: 10.0, unidad: '%', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+10% HP temporal por derribo' },
-                3: { armadura_por_kill: 15.0, unidad: '%', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+15% HP temporal por derribo' },
-                4: { armadura_por_kill: 20.0, unidad: '%', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+20% HP temporal por derribo' },
-                5: { armadura_por_kill: 25.0, unidad: '%', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+25% HP temporal por derribo' }
+                1: { armadura_por_kill: 30, unidad: 'HP', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+30 HP temporal por derribo' },
+                2: { armadura_por_kill: 35, unidad: 'HP', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+35 HP temporal por derribo' },
+                3: { armadura_por_kill: 40, unidad: 'HP', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+40 HP temporal por derribo' },
+                4: { armadura_por_kill: 45, unidad: 'HP', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+45 HP temporal por derribo' },
+                5: { armadura_por_kill: 50, unidad: 'HP', stat: 'armor', siempre_activo: false, condicional: 'solo con kills', desc: '+50 HP temporal por derribo' }
             }
         },
         m5: {
@@ -148,11 +150,11 @@ export function getFallbackModEffects() {
             mod_name: 'Quemadores Auxiliares Eficientes (Efficient Afterburners)',
             mod_type: 'Motor',
             levels: {
-                1: { consumo_combustible: -8.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -8%' },
-                2: { consumo_combustible: -16.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -16%' },
-                3: { consumo_combustible: -24.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -24%' },
-                4: { consumo_combustible: -32.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -32%' },
-                5: { consumo_combustible: -40.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -40%' }
+                1: { consumo_combustible: -10.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -10%' },
+                2: { consumo_combustible: -13.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -13%' },
+                3: { consumo_combustible: -15.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -15%' },
+                4: { consumo_combustible: -17.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -17%' },
+                5: { consumo_combustible: -20.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Consumo de postcombustión -20%' }
             }
         },
         m6: {
@@ -160,11 +162,11 @@ export function getFallbackModEffects() {
             mod_name: 'Máxima Propulsión (Thrust Booster)',
             mod_type: 'Motor',
             levels: {
-                1: { velocidad_max: 3.0, aceleracion: 4.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+3% Vel y +4% Acel bajo 50% de combustible' },
-                2: { velocidad_max: 6.0, aceleracion: 8.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+6% Vel y +8% Acel bajo 50% de combustible' },
-                3: { velocidad_max: 9.0, aceleracion: 12.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+9% Vel y +12% Acel bajo 50% de combustible' },
-                4: { velocidad_max: 12.0, aceleracion: 16.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+12% Vel y +16% Acel bajo 50% de combustible' },
-                5: { velocidad_max: 15.0, aceleracion: 20.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+15% Vel y +20% Acel bajo 50% de combustible' }
+                1: { velocidad_max: 10.0, aceleracion: 10.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+10% Vel y +10% Acel bajo 50% de combustible' },
+                2: { velocidad_max: 10.0, aceleracion: 15.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+10% Vel y +15% Acel bajo 50% de combustible' },
+                3: { velocidad_max: 10.0, aceleracion: 20.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+10% Vel y +20% Acel bajo 50% de combustible' },
+                4: { velocidad_max: 10.0, aceleracion: 25.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+10% Vel y +25% Acel bajo 50% de combustible' },
+                5: { velocidad_max: 10.0, aceleracion: 30.0, unidad: '%', stat: 'speed', siempre_activo: false, condicional: 'bajo 50% combustible', desc: '+10% Vel y +30% Acel bajo 50% de combustible' }
             }
         },
         m7: {
@@ -172,11 +174,11 @@ export function getFallbackModEffects() {
             mod_name: 'Bengalas Disruptivas (Disruptive Flares)',
             mod_type: 'Señuelos',
             levels: {
-                1: { bloqueo_enemigo: 5.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Disrupción ECM en bengalas +5%' },
-                2: { bloqueo_enemigo: 10.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Disrupción ECM en bengalas +10%' },
-                3: { bloqueo_enemigo: 15.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Disrupción ECM en bengalas +15%' },
-                4: { bloqueo_enemigo: 20.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Disrupción ECM en bengalas +20%' },
-                5: { bloqueo_enemigo: 25.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Disrupción ECM en bengalas +25%' }
+                1: { bloqueo_enemigo: 30.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Bloqueo enemigo -30% mientras usás bengalas' },
+                2: { bloqueo_enemigo: 38.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Bloqueo enemigo -38% mientras usás bengalas' },
+                3: { bloqueo_enemigo: 45.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Bloqueo enemigo -45% mientras usás bengalas' },
+                4: { bloqueo_enemigo: 52.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Bloqueo enemigo -52% mientras usás bengalas' },
+                5: { bloqueo_enemigo: 60.0, unidad: '%', stat: 'ecm', siempre_activo: true, desc: 'Bloqueo enemigo -60% mientras usás bengalas' }
             }
         },
         m8: {
@@ -184,11 +186,11 @@ export function getFallbackModEffects() {
             mod_name: 'Bengalas Más Rápidas (Faster Flares)',
             mod_type: 'Señuelos',
             levels: {
-                1: { cooldown: -6.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -6%' },
-                2: { cooldown: -12.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -12%' },
-                3: { cooldown: -18.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -18%' },
-                4: { cooldown: -24.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -24%' },
-                5: { cooldown: -30.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -30%' }
+                1: { cooldown: -40.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -40%' },
+                2: { cooldown: -45.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -45%' },
+                3: { cooldown: -50.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -50%' },
+                4: { cooldown: -55.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -55%' },
+                5: { cooldown: -60.0, unidad: '%', stat: null, siempre_activo: true, desc: 'Tiempo de recarga de bengalas -60%' }
             }
         },
         m9: {
@@ -196,11 +198,11 @@ export function getFallbackModEffects() {
             mod_name: 'Armas Aniquiladoras (Finishing Guns)',
             mod_type: 'Arma',
             levels: {
-                1: { dano: 5.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+5% daño contra aeronaves con <30% HP' },
-                2: { dano: 10.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+10% daño contra aeronaves con <30% HP' },
-                3: { dano: 15.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+15% daño contra aeronaves con <30% HP' },
-                4: { dano: 20.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+20% daño contra aeronaves con <30% HP' },
-                5: { dano: 25.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+25% daño contra aeronaves con <30% HP' }
+                1: { dano: 20.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+20% daño contra aeronaves con <30% HP' },
+                2: { dano: 22.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+22% daño contra aeronaves con <30% HP' },
+                3: { dano: 25.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+25% daño contra aeronaves con <30% HP' },
+                4: { dano: 28.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+28% daño contra aeronaves con <30% HP' },
+                5: { dano: 30.0, unidad: '%', stat: 'firepower', siempre_activo: false, condicional: 'bajo 30% HP enemigo', desc: '+30% daño contra aeronaves con <30% HP' }
             }
         },
         m10: {
@@ -208,16 +210,15 @@ export function getFallbackModEffects() {
             mod_name: 'Guiado Mejorado (Improved Targeting)',
             mod_type: 'Arma',
             levels: {
-                1: { lock_speed: 4.0, lock_angle: 3.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Velocidad de enganche radar +4% y ángulo +3%' },
-                2: { lock_speed: 8.0, lock_angle: 6.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Velocidad de enganche radar +8% y ángulo +6%' },
-                3: { lock_speed: 12.0, lock_angle: 9.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Velocidad de enganche radar +12% y ángulo +9%' },
-                4: { lock_speed: 16.0, lock_angle: 12.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Velocidad de enganche radar +16% y ángulo +12%' },
-                5: { lock_speed: 20.0, lock_angle: 15.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Velocidad de enganche radar +20% y ángulo +15%' }
+                1: { lock_speed: 10.0, lock_angle: 15.0, rocket_lead_range: 15.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Lock Speed +10%, Lock Angle +15%, Rocket Lead +15%' },
+                2: { lock_speed: 13.0, lock_angle: 17.0, rocket_lead_range: 17.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Lock Speed +13%, Lock Angle +17%, Rocket Lead +17%' },
+                3: { lock_speed: 15.0, lock_angle: 20.0, rocket_lead_range: 25.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Lock Speed +15%, Lock Angle +20%, Rocket Lead +25%' },
+                4: { lock_speed: 17.0, lock_angle: 22.0, rocket_lead_range: 28.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Lock Speed +17%, Lock Angle +22%, Rocket Lead +28%' },
+                5: { lock_speed: 20.0, lock_angle: 25.0, rocket_lead_range: 30.0, unidad: '%', stat: 'radar', siempre_activo: true, desc: 'Lock Speed +20%, Lock Angle +25%, Rocket Lead +30%' }
             }
         }
     };
 }
-
 /**
  * Obtiene los efectos de un mod específico en un nivel dado
  * @param {Object} effects - Catálogo de efectos de mods
