@@ -1366,8 +1366,8 @@ function updateCarouselView() {
       `;
 
       // Mods
-      const mod1 = plane.mod1_nombre || plane.mod1_id;
-      const mod2 = plane.mod2_nombre || plane.mod2_id;
+      const mod1 = plane.mod1_info?.name || plane.mod1_nombre || plane.mod1_id;
+      const mod2 = plane.mod2_info?.name || plane.mod2_nombre || plane.mod2_id;
       const modsHtml = (mod1 || mod2) ? `
         <div class="card-mods-section">
           <div class="card-mods-title">Mods Equipados</div>
@@ -2004,8 +2004,6 @@ window.savePlaneSystems = savePlaneSystems;
 // MODAL DE DATOS PROFUNDOS DE AERONAVE (C4ISR TELEMETRÍA)
 // ============================================================================
 let _deepCollapsedSections = new Set([
-  'deepSpecialSection',
-  'deepPassiveSection',
   'deepSystemsSection',
   'deepRecommendationSection',
   'deepModsSection',
