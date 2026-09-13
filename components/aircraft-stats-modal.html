@@ -82,19 +82,23 @@
 }
 
 /* Scrollbar táctica */
-#aircraftDeepModal .modal-body::-webkit-scrollbar {
+#aircraftDeepModal .modal-body::-webkit-scrollbar,
+#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar {
   width: 10px;
 }
-#aircraftDeepModal .modal-body::-webkit-scrollbar-track {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-track,
+#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-track {
   background: rgba(11,19,43,0.5);
   border-radius: 5px;
 }
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb,
+#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-thumb {
   background: rgba(212,175,55,0.5);
   border-radius: 5px;
   border: 2px solid rgba(11,19,43,0.5);
 }
-#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover {
+#aircraftDeepModal .modal-body::-webkit-scrollbar-thumb:hover,
+#aircraftDeepModal .deep-tab-panel::-webkit-scrollbar-thumb:hover {
   background: rgba(212,175,55,0.8);
 }
 
@@ -278,6 +282,9 @@
   overflow: hidden;
   flex: 1;
   min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 #aircraftDeepModal .deep-modal-tabs {
@@ -288,6 +295,8 @@
   border-bottom: 1px solid rgba(212, 175, 55, 0.25);
   flex-shrink: 0;
   overflow-x: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 #aircraftDeepModal .deep-tab {
@@ -330,17 +339,25 @@
   display: none;
   padding: 20px 24px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   min-height: 0;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.5) rgba(11, 19, 43, 0.5);
 }
 
 #aircraftDeepModal .deep-tab-panel.active {
   display: block;
+  width: 100%;
 }
 
 #aircraftDeepModal .modal-footer {
   flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
   padding: 14px 20px;
   border-top: 1px solid rgba(212, 175, 55, 0.25);
   background: #0F172A;
@@ -465,7 +482,7 @@
      ========================================================================== -->
 <div id="aircraftDeepModal" class="modal">
   <div class="modal-content aircraft-deep-modal"
-       style="max-width:1400px;width:95vw;height:92vh;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;">
+       style="max-width:1400px;width:95vw;height:92vh;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;padding:0;">
     <div class="modal-header"
          style="position:sticky;top:0;z-index:20;background:rgba(11,19,43,0.98);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,0.25);padding:14px 20px;">
       <div>
