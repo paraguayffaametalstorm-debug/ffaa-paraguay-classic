@@ -29,7 +29,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
 - **PWA de Alto Rendimiento (Offline First):** Service Worker v3.7.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
-- **Integración con Wiki de Metalstorm (v3.9.0):** Extracción y carga de datos históricos, descripciones, recomendaciones tácticas, paints y canopies de los 44 aviones desde https://metalstorm.wiki.gg/. Visualización completa en el modal de Stats con layout de cards responsive (1-4 columnas según ancho de pantalla).
+- **Integración con Wiki de Metalstorm (v3.9.0):** Extracción y carga de datos históricos, descripciones, recomendaciones tácticas, paints y canopies de los 44 aviones desde https://metalstorm.wiki.gg/. Incluye los 10 mods tácticos oficiales con efectos numéricos exactos y costos de mejora. Visualización completa en el modal de Stats con layout de cards responsive (1-4 columnas según ancho de pantalla).
 
 ---
 
@@ -59,6 +59,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 | **Frontend** | HTML5 + CSS3 + Vanilla JS | ES6+ | SPA modular táctica sin dependencias pesadas |
 | **Tipografía** | Google Fonts | - | Rajdhani (Táctico), Inter (Base), JetBrains Mono (Métricas) |
 | **Iconografía** | Lucide Icons | CDN | Simbología militar y de estado |
+| **CDN de Imágenes** | Cloudinary | - | Fotos de aviones e iconos de mods (transformaciones WebP auto) |
 | **Contenedores** | Docker & Fly.io | - | Despliegue en región São Paulo (`gru`) |
 
 ---
@@ -374,20 +375,26 @@ El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su
 | `created_at` | TIMESTAMP | Fecha de registro |
 | `updated_at` | TIMESTAMP | Última sincronización |
 
-#### Efectos Numéricos de los 10 Mods (Nivel 1 al 5)
+#### Efectos Numéricos de los 10 Mods (Nivel 1 al 5) — Oficiales
 
 | ID | Mod | Familia | Stat Impactada | Condición / Activación | Valores por Nivel (N1 $\to$ N5) |
 |:---:|---|---|:---:|:---:|---|
-| **m1** | Giro Temerario | Agilidad | `agility` | Permanente (Siempre activo) | Giro: +4%, +8%, +12%, +16%, +20% |
-| **m2** | Maniobrabilidad Ideal | Agilidad | `agility` | Permanente (Siempre activo) | Eficiencia de viraje: +3%, +6%, +9%, +12%, +15% |
-| **m3** | Resistencia a Explosiones | Defensa | `armor` | Permanente (Siempre activo) | Resistencia a misiles: +5%, +10%, +15%, +20%, +25% |
-| **m4** | Blindaje de Ataque | Defensa | `armor` | Condicional (Tras derribo) | HP temporal: +5%, +10%, +15%, +20%, +25% por derribo |
-| **m5** | Quemadores Eficientes | Motor | Consumo | Permanente (Motor en AB) | Consumo de combustible: -8%, -16%, -24%, -32%, -40% |
-| **m6** | Máxima Propulsión | Motor | `speed` | Condicional (<50% combustible) | Vel: +3..+15% / Aceleración: +4..+20% |
-| **m7** | Bengalas Disruptivas | Señuelos | `ecm` | Permanente (Siempre activo) | Disrupción ECM contra misiles: +5%, +10%, +15%, +20%, +25% |
-| **m8** | Bengalas Más Rápidas | Señuelos | Cooldown | Permanente (Sistemas) | Tiempo de recarga de contramedidas: -6%, -12%, -18%, -24%, -30% |
-| **m9** | Armas Aniquiladoras | Arma | `firepower` | Condicional (<30% HP rival) | Daño de cañón: +5%, +10%, +15%, +20%, +25% |
-| **m10** | Guiado Mejorado | Arma | `radar` | Permanente (Siempre activo) | Lock speed: +4..+20% / Lock angle: +3..+15% |
+| **m1** | Giro Temerario | Agilidad | `agility` | Permanente | Giro: +10%, +13%, +15%, +17%, +20% |
+| **m2** | Maniobrabilidad Ideal | Agilidad | `agility` | Permanente | Eficiencia: +15%, +20%, +25%, +30%, +35% |
+| **m3** | Resistencia a Explosiones | Defensa | `armor` | Permanente | Resistencia misiles: -10%, -13%, -15%, -17%, -20% |
+| **m4** | Blindaje de Ataque | Defensa | `armor` | Condicional (kill) | HP temporal: +30, +35, +40, +45, +50 |
+| **m5** | Quemadores Eficientes | Motor | Consumo | Permanente | Combustible: -10%, -13%, -15%, -17%, -20% |
+| **m6** | Máxima Propulsión | Motor | `speed` | Condicional (<50% fuel) | Vel: +10% fijo / Acel: +10%, +15%, +20%, +25%, +30% |
+| **m7** | Bengalas Disruptivas | Señuelos | `ecm` | Permanente | Bloqueo enemigo: -30%, -38%, -45%, -52%, -60% |
+| **m8** | Bengalas Más Rápidas | Señuelos | Cooldown | Permanente | Cooldown: -40%, -45%, -50%, -55%, -60% |
+| **m9** | Armas Aniquiladoras | Arma | `firepower` | Condicional (<30% HP) | Daño cañón: +20%, +22%, +25%, +28%, +30% |
+| **m10** | Guiado Mejorado | Arma | `radar` | Permanente | Lock Speed +10..20% / Lock Angle +15..25% / Rocket Lead +15..30% |
+
+**Restricciones oficiales:**
+- **Equipamiento:** Avión nivel 16 (primer mod) y nivel 20 (segundo mod).
+- **Tipos exclusivos:** Solo 1 mod de cada tipo por avión.
+- **Costos de mejora:** 1/2/3/4/5 Mod Tokens + 50/80/125/200/325 Mod Materials por nivel.
+- **Iconos:** Servidos desde Cloudinary (`paraguay-ffaa/mods/`).
 
 ### Upgrades 2.0
 
@@ -421,6 +428,17 @@ El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su
 - **Modal de Datos Profundos:** Estadísticas, habilidades, sistemas y mods
 - **IA de Recomendación:** 3 estilos de combate (Agresivo, Defensivo, Apoyo)
 - **Upgrade Planner:** Previsualización de builds antes de gastar recursos
+
+### 🎨 Mods Oficiales con Datos de la Wiki
+
+Los 10 mods tácticos del juego están sincronizados con los valores oficiales de la Wiki:
+
+- **Catálogo en Supabase:** `plane_mods` con 12 columnas (nombre ES/EN, tipo ES/EN, descripciones, `image_url`, `wiki_url`, `upgrade_costs`).
+- **Efectos numéricos:** `mod_effects` con 50 filas (10 mods × 5 niveles) con valores exactos.
+- **Fallback en código:** `src/utils/modEffects.js` mantiene sincronizados los 10 mods en memoria para resiliencia.
+- **Iconos:** Servidos desde Cloudinary con transformación `w_256,h_256,c_fill,f_webp,q_auto`.
+
+**Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft_Mods (Creative Commons Attribution-ShareAlike 4.0).
 
 ### 🎨 Datos de la Wiki integrados en el Modal Stats
 

@@ -318,6 +318,135 @@ Integración completa de los datos de la Wiki de Metalstorm (historia, recomenda
 **Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
 
 ---
+### 🔹 Fix #11: Limpieza de Tablas Huérfanas de Supabase (2026-09-12)
+
+**Fecha:** 2026-09-12  
+**Archivos:** Supabase (schema `public`)  
+**Severidad:** 🧹 Baja (housekeeping)  
+**Commit:** N/A (cambios directos en Supabase)
+
+**Descripción:**  
+Auditoría y limpieza de tablas huérfanas acumuladas durante migraciones
+y pruebas del proyecto.
+
+**Tablas eliminadas (10):**
+
+1. **7 tablas de backup** (copias manuales de migraciones antiguas):
+   - `planes_backup`, `planes_backup_full`
+   - `planes_backup_20260910`, `planes_backup_limpieza_20260910`
+   - `users_backup_full`
+   - `security_events_backup`
+   - `plane_models_backup`
+
+2. **3 tablas legacy:**
+   - `upgrade_nodes` (v1, reemplazada por `upgrade_nodes_v2` con 3072 filas)
+   - `mod_effects_history` (auditoría vacía sin uso)
+   - `performances_backup` (copia redundante)
+
+**Verificación:**
+- Grep de código: sin referencias en `src/`, `js/`, `components/`
+- Post-DROP: schema `public` con 20 tablas activas
+- App funcional: ✅
+
+**Estado:** ✅ COMPLETADO
+
+---
+### 🔹 Fix #12: Restauración de `image_url` en 2 Aeronaves (2026-09-12)
+
+**Fecha:** 2026-09-12  
+**Archivos:** `plane_models` (Supabase)  
+**Severidad:** 🖼️ Media (imágenes rotas en el hangar)  
+**Commit:** N/A (cambio directo en Supabase)
+
+**Descripción:**  
+Dos aeronaves del catálogo (`F-20 Tigershark` id=110 y `KF-21 Boramae`
+id=212) no tenían el campo `image_url` poblado, mostrándose sin imagen
+principal en el carrusel del hangar militar.
+
+**Diagnóstico:**
+- Ambas imágenes SÍ existían en Cloudinary pero nunca se vincularon en Supabase.
+- Las URLs crudas de Cloudinary usaban versionado por timestamp
+  (`/v1789134873/`), mientras el resto del catálogo usa versionado
+  explícito (`/v1/`).
+
+**Solución:**
+```sql
+UPDATE plane_models 
+SET image_url = 'https://res.cloudinary.com/evoejuci/image/upload/w_256,h_256,c_fill,f_webp,q_auto/v1/110-f-20-tigershark.png'
+WHERE id = '110';
+
+UPDATE plane_models 
+SET image_url = 'https://res.cloudinary.com/evoejuci/image/upload/w_256,h_256,c_fill,f_webp,q_auto/v1/212-kf-21-boramae.png'
+WHERE id = '212';
+```
+
+**Resultado:**
+- ✅ 44/44 aviones con `image_url` de Cloudinary
+- ✅ Patrón idéntico: `w_256,h_256,c_fill,f_webp,q_auto/v1`
+- ✅ Consistencia total en el catálogo
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
+
+### 🔹 Fix #13: Integración Completa de Mods Oficiales + Cloudinary (2026-09-12)
+
+**Fecha:** 2026-09-12  
+**Archivos:** `plane_mods` (Supabase), `src/controllers/planes.controller.js`,
+`src/utils/modEffects.js`, `components/aircraft-stats-modal.html`, `js/views.js`,
+`css/tactical-design.css`  
+**Severidad:** 🎨 Alta (datos incorrectos + mejora visual)  
+**Commit:** N/A
+
+**Descripción:**  
+Integración completa de los 10 mods oficiales de MetalStorm (fuente:
+https://metalstorm.wiki.gg/wiki/Aircraft_Mods) con datos exactos,
+iconos servidos desde Cloudinary y visualización enriquecida en el
+modal de Stats.
+
+**Problemas Resueltos:**
+
+1. **`DEFAULT_PLANE_MODS` (código):** Contenía 8 mods inventados con IDs
+   numéricos (1-8) y nombres ficticios. Reemplazado por los 10 mods
+   oficiales con IDs `m1-m10`.
+
+2. **`getFallbackModEffects()` (código):** Valores desactualizados en
+   los 10 mods. Corregidos con datos oficiales de la Wiki.
+
+3. **`plane_mods.levels` (Supabase):** m3 y m7 tenían valores erróneos.
+   Corregidos.
+
+4. **`plane_mods` (Supabase):** Añadidas 7 columnas
+   (`name_en`, `description_es`, `description_en`, `type_en`, `image_url`,
+   `wiki_url`, `upgrade_costs`) pobladas con datos oficiales.
+
+5. **Iconos de mods:** Subidos a Cloudinary en carpeta `mods/` con
+   transformación `w_256,h_256,c_fill,f_webp,q_auto`.
+
+6. **Frontend:** Modal de Stats ahora muestra icono + nombre + tipo +
+   nivel de cada mod equipado.
+
+**Tabla comparativa (muestra):**
+
+| Mod | Valor anterior (MAL) | Valor oficial (BIEN) |
+|---|---|---|
+| m1 L1 | +4% | +10% |
+| m2 L1 | +3% | +15% |
+| m3 L1 | +5% (positivo) | -10% (reducción daño) |
+| m7 L1 | +5% (positivo) | -30% (reducción bloqueo) |
+| m8 L1 | -6% | -40% |
+| m9 L1 | +5% | +20% |
+
+**Resultado:**
+- ✅ 10 mods con datos oficiales en Supabase y código
+- ✅ `node --check` pasa en `planes.controller.js` y `modEffects.js`
+- ✅ 10 iconos de mods servidos desde Cloudinary
+- ✅ Modal de Stats muestra iconos de mods equipados
+- ⏳ Pendiente: traducción al español de descripciones largas (Fase 3D)
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
 
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
