@@ -2344,42 +2344,63 @@ async function openAircraftDeepModal(planeId) {
     }
   }
 
-  // Mods Equipados
+  // Mods Equipados (con iconos de Cloudinary - Fase 3C)
   const modsEl = document.getElementById('deepModsGrid');
   if (modsEl) {
     const slot1Unlocked = planeLevel >= 16;
     const slot2Unlocked = planeLevel >= 20;
-    const mod1Name = plane?.mod1_nombre || plane?.mod1_id;
-    const mod2Name = plane?.mod2_nombre || plane?.mod2_id;
 
-    modsEl.innerHTML = `
-      <div class="deep-mod-box">
-        <div class="deep-mod-slot">Ranura 1 (Desbloquea Nv. 16)</div>
-        ${!slot1Unlocked ? `
-          <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel 16)</div>
-        ` : mod1Name ? `
-          <div style="font-weight:700;color:var(--gold-rank);font-size:0.95rem;">🔩 ${escapeHtml(mod1Name)}</div>
-          <div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">
-            ${plane?.mod1_type ? `Categoría: ${escapeHtml(plane.mod1_type)} · ` : ''}Nivel ${plane?.mod1_lvl || 1}
+    // Función helper para renderizar cada slot de mod
+    const renderModSlot = (slotNum, unlocked, modInfo, modId, modLvl) => {
+      // Si la ranura no está desbloqueada por nivel
+      if (!unlocked) {
+        const reqLvl = slotNum === 1 ? 16 : 20;
+        return `
+          <div class="deep-mod-box">
+            <div class="deep-mod-slot">Ranura ${slotNum} (Desbloquea Nv. ${reqLvl})</div>
+            <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel ${reqLvl})</div>
           </div>
-        ` : `
-          <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
-        `}
-      </div>
-      <div class="deep-mod-box">
-        <div class="deep-mod-slot">Ranura 2 (Desbloquea Nv. 20)</div>
-        ${!slot2Unlocked ? `
-          <div style="color:var(--steel-dark);font-size:0.85rem;font-style:italic;">🔒 Bloqueado (Alcanza Nivel 20)</div>
-        ` : mod2Name ? `
-          <div style="font-weight:700;color:var(--gold-rank);font-size:0.95rem;">🔩 ${escapeHtml(mod2Name)}</div>
-          <div style="font-size:0.78rem;color:#cbd5e1;margin-top:3px;">
-            ${plane?.mod2_type ? `Categoría: ${escapeHtml(plane.mod2_type)} · ` : ''}Nivel ${plane?.mod2_lvl || 1}
+        `;
+      }
+
+      // Si no hay mod equipado
+      if (!modId) {
+        return `
+          <div class="deep-mod-box">
+            <div class="deep-mod-slot">Ranura ${slotNum}</div>
+            <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
           </div>
-        ` : `
-          <div style="color:var(--green-tactical);font-size:0.85rem;">✓ Ranura disponible · Sin mod equipado</div>
-        `}
-      </div>
-    `;
+        `;
+      }
+
+      // Mod equipado: usar modInfo del backend si está disponible, sino fallback
+      const imageUrl = modInfo?.image_url || null;
+      const modName = modInfo?.name || modId;
+      const modType = modInfo?.type || null;
+      const nivel = modLvl || 1;
+
+      return `
+        <div class="deep-mod-box">
+          <div class="deep-mod-slot">Ranura ${slotNum}</div>
+          <div class="mod-slot">
+            <div class="mod-icon-wrapper">
+              ${imageUrl 
+                ? `<img src="${imageUrl}" alt="${escapeHtml(modName)}" class="mod-icon" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'mod-icon-placeholder\\'>🔩</div>';">` 
+                : `<div class="mod-icon-placeholder">🔩</div>`}
+            </div>
+            <div class="mod-info">
+              <div class="mod-name">${escapeHtml(modName)}</div>
+              ${modType ? `<div class="mod-type">${escapeHtml(modType)}</div>` : ''}
+              <div class="mod-level">Nivel ${nivel}/5</div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    modsEl.innerHTML = 
+      renderModSlot(1, slot1Unlocked, plane?.mod1_info, plane?.mod1_id, plane?.mod1_lvl) +
+      renderModSlot(2, slot2Unlocked, plane?.mod2_info, plane?.mod2_id, plane?.mod2_lvl);
   }
 
   // Cargar traits

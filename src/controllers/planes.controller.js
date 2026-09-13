@@ -854,6 +854,25 @@ export async function updatePlaneSystems(req, res) {
 }
 
 /**
+ * Obtiene la información completa de un mod por su ID.
+ * Incluye image_url de Cloudinary para renderizar el icono en el frontend.
+ */
+async function getModInfoById(supabase, modId) {
+  if (!modId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('plane_mods')
+      .select('id, name, name_en, type, type_en, image_url, description_es')
+      .eq('id', modId)
+      .single();
+    if (error || !data) return null;
+    return data;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
  * Obtiene los detalles completos y telemetría de una aeronave por ID.
  * Busca primero en `planes` (hangar del usuario) y si no encuentra, en `plane_models` (catálogo).
  * Enriquece la respuesta con datos de Upgrades 2.0, mods y datos de la Wiki de Metalstorm (Fase 3).
@@ -1045,6 +1064,10 @@ export async function getPlaneDetails(req, res, next) {
       }
     });
 
+    // Cargar info de mods equipados (para imagen + tipo + nombre en frontend)
+    const mod1Info = plane.mod1_id ? await getModInfoById(supabase, plane.mod1_id) : null;
+    const mod2Info = plane.mod2_id ? await getModInfoById(supabase, plane.mod2_id) : null;
+
     const planeDetail = {
       id: plane.id,
       user_id: plane.user_id,
@@ -1074,6 +1097,8 @@ export async function getPlaneDetails(req, res, next) {
       mod1_lvl: plane.mod1_lvl,
       mod2_id: plane.mod2_id,
       mod2_lvl: plane.mod2_lvl,
+      mod1_info: mod1Info,
+      mod2_info: mod2Info,
       desbloqueado_upgrades: isUnlocked,
       recursos_piezas: plane.recursos_piezas || 0,
       recursos_avanzadas: plane.recursos_avanzadas || 0,
