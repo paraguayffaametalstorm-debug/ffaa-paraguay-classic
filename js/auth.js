@@ -863,9 +863,15 @@ function loadOnlineUsers() {
   .then(res => res.json())
   .then(data => {
     if (data.count !== undefined) {
+      // Header desktop
       const onlineCountEl = document.getElementById('onlineCount');
       if (onlineCountEl) {
         onlineCountEl.textContent = data.count;
+      }
+      // Drawer móvil
+      const drawerOnlineEl = document.getElementById('drawerOnlineCount');
+      if (drawerOnlineEl) {
+        drawerOnlineEl.textContent = `🟢 ${data.count}`;
       }
     }
   })
