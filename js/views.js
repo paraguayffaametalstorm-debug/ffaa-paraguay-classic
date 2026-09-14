@@ -1571,7 +1571,30 @@ function renderDeepModalSystems(sistemas) {
     cohetes: formatSysName(window.currentPlane?.system_names?.cohetes, 'Cohetes')
   };
 
-  systemsEl.innerHTML = Object.entries(sistemas).map(([sistemaKey, sistemaData]) => {
+  // ✅ FIX: filtrar solo los sistemas disponibles para el avión activo
+  const plane = window.currentPlane;
+  const disponibles = plane?.sistemas_disponibles || null;
+  const keyMap = { armas: 'canones' };
+
+  const sistemasFiltrados = Object.entries(sistemas).filter(([key]) => {
+    if (!disponibles) return true; // fallback seguro si no hay info
+    const checkKey = keyMap[key] || key;
+    const valor = disponibles[checkKey];
+    if (valor === undefined || valor === null) return false;
+    if (valor === false) return false;
+    return true;
+  });
+
+  if (sistemasFiltrados.length === 0) {
+    systemsEl.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--steel-gray);font-style:italic;">
+        Esta aeronave no tiene sistemas Upgrades 2.0 disponibles.
+      </div>
+    `;
+    return;
+  }
+
+  systemsEl.innerHTML = sistemasFiltrados.map(([sistemaKey, sistemaData]) => {
     const icon = iconMap[sistemaKey] || '⚙️';
     const nivel = sistemaData?.nivel || 0;
     const rawName = window.currentPlane?.system_names?.[sistemaKey] || sistemaData?.nombre || systemTitles[sistemaKey] || sistemaKey;
@@ -6133,3 +6156,213 @@ window.togglePlaneModelStatus = togglePlaneModelStatus;
 window.viewPlaneModelFullDetails = viewPlaneModelFullDetails;
 
 console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
+
+
+/* ============================================================================
+   HANGAR REDESIGN — VISTA 1 (GRID) + VISTA 2 (PANTALLA DEDICADA)
+   Todo lo de aquí es aditivo. No se modifica ninguna función existente.
+   Fecha: 2026-09-13
+   ============================================================================ */
+
+/**
+ * VISTA 2: Abre el modal de datos profundos en modo "pantalla dedicada".
+ * Reutiliza openAircraftDeepModal(planeId) sin modificarla.
+ */
+function openAircraftDetailView(planeId) {
+  if (typeof openAircraftDeepModal !== 'function') {
+    console.warn('[Hangar] openAircraftDeepModal no disponible');
+    return;
+  }
+
+  // 1) Abrir el modal existente (llena todos los IDs internos)
+  openAircraftDeepModal(planeId);
+
+  // 2) Activar modo detalle
+  const modal = document.getElementById('aircraftDeepModal');
+  if (!modal) return;
+  modal.classList.add('aircraft-detail-mode');
+
+  // 3) Inyectar botón "← VOLVER AL HANGAR" si no existe
+  const body = modal.querySelector('.modal-body');
+  if (body && !modal.querySelector('.aircraft-detail-back')) {
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'aircraft-detail-back';
+    back.textContent = '← VOLVER AL HANGAR';
+    back.addEventListener('click', closeAircraftDetailView);
+    body.insertBefore(back, body.firstChild);
+  }
+
+  // 4) Etiquetar secciones con botones "IR A EDICIÓN DE X"
+  labelDetailSections();
+}
+
+/**
+ * Cierra el modo detalle y restaura el modal a su forma original.
+ */
+function closeAircraftDetailView() {
+  const modal = document.getElementById('aircraftDeepModal');
+  if (!modal) return;
+  modal.classList.remove('aircraft-detail-mode');
+
+  // Limpiar botones inyectados para no acumular en futuras aperturas
+  modal.querySelectorAll('.aircraft-detail-back, .deep-section-edit-btn').forEach(el => el.remove());
+
+  if (typeof closeAircraftDeepModal === 'function') {
+    closeAircraftDeepModal();
+  } else if (typeof closeModal === 'function') {
+    closeModal('aircraftDeepModal');
+  }
+}
+
+/**
+ * Inyecta un botón "IR A EDICIÓN DE X" al pie de cada .deep-section en modo detalle.
+ * El texto X se extrae del <h3> de la sección, ignorando el chevron.
+ */
+function labelDetailSections() {
+  const modal = document.getElementById('aircraftDeepModal');
+  if (!modal) return;
+
+  const sections = modal.querySelectorAll('.deep-tab-panel .deep-section');
+  sections.forEach(sec => {
+    // Evitar duplicados
+    if (sec.querySelector('.deep-section-edit-btn')) return;
+
+    const header = sec.querySelector('h3');
+    let title = 'SECCIÓN';
+    if (header) {
+      // Clonar el header y quitar chevrons antes de leer el texto
+      const clean = header.cloneNode(true);
+      clean.querySelectorAll('.deep-chevron').forEach(el => el.remove());
+      title = clean.textContent.trim();
+    }
+    // Quitar emojis/símbolos al inicio y normalizar
+    title = title.replace(/^[^\wÁÉÍÓÚÑÜ]+/, '').trim().toUpperCase();
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'deep-section-edit-btn';
+    btn.textContent = 'IR A EDICIÓN DE ' + title;
+    btn.addEventListener('click', () => {
+      const planeId = window.currentPlaneId;
+      if (!planeId || typeof openPlaneUpgrades !== 'function') return;
+
+      // ✅ FIX: cerrar la Vista 2 antes de abrir el modal de Upgrades
+      // para que no se superpongan ni quede bloqueado detrás.
+      if (typeof closeAircraftDetailView === 'function') {
+        closeAircraftDetailView();
+      }
+
+      // Delay corto para que la animación de cierre termine
+      setTimeout(() => {
+        openPlaneUpgrades(planeId);
+      }, 180);
+    });
+    sec.appendChild(btn);
+  });
+}
+
+/**
+ * VISTA 1: Reemplaza el onclick de cada tarjeta del carrusel por
+ * openAircraftDetailView(planeId), sin tocar handleCarouselCardClick.
+ * Se ejecuta después de updateCarouselView().
+ *
+ * v3.9.5 - Fix: pointer-events + clases del carrusel 3D (is-prev/is-next/is-hidden)
+ *          evitaban que las tarjetas del medio fueran clickeables.
+ */
+function overrideCarouselCardClick() {
+  const container = document.getElementById('hangarCarouselContainer');
+  if (!container) return;
+
+  const cards = container.querySelectorAll('.carousel-card');
+  cards.forEach(card => {
+    // ✅ FIX v3.9.5: forzar pointer-events en TODAS las tarjetas.
+    // El CSS del carrusel 3D original aplica `pointer-events: none` a las
+    // tarjetas laterales (is-prev / is-next / is-hidden). Como el grid
+    // reutiliza esas tarjetas, quedan bloqueadas.
+    card.style.pointerEvents = 'auto';
+    card.style.cursor = 'pointer';
+
+    // ✅ FIX v3.9.5: remover clases del carrusel 3D que pueden aplicar
+    // estilos indeseados (position: absolute, transform, opacity, etc.)
+    // en el contexto del grid.
+    card.classList.remove('is-prev', 'is-next', 'is-hidden', 'is-center');
+
+    // ✅ FIX v3.9.5: por si acaso, remover pointer-events: none del estilo computado
+    // (algunas reglas CSS con mayor especificidad pueden ganar).
+    // Esto se hace una sola vez por tarjeta, así que no hay costo de performance.
+
+    // ✅ FIX previo: evitar re-procesar tarjetas ya procesadas
+    if (card.getAttribute('data-hangar-processed') === 'true') return;
+
+    // ✅ FIX previo: leer planeId del onclick O de data-plane-id (si ya fue procesada antes)
+    let planeId = card.getAttribute('data-plane-id');
+    if (!planeId) {
+      const onclickAttr = card.getAttribute('onclick') || '';
+      const match = onclickAttr.match(/handleCarouselCardClick\s*\(\s*\d+\s*,\s*(\d+)\s*\)/);
+      planeId = match ? match[1] : null;
+    }
+    if (!planeId) return;
+
+    // ✅ Marcar como procesada para no duplicar el listener
+    card.setAttribute('data-hangar-processed', 'true');
+    card.setAttribute('data-plane-id', planeId);
+
+    // Ocultar los 4 botones originales
+    card.querySelectorAll('.card-actions button').forEach(btn => {
+      btn.style.display = 'none';
+    });
+
+    // ✅ FIX: interceptar el click con capture:true ANTES del onclick inline
+    // (sin remover el onclick, sin clonar la tarjeta, sin perder listeners)
+    card.addEventListener('click', (e) => {
+      // Ignorar clicks en botones internos (excepto los .card-actions que ya están ocultos)
+      if (e.target.closest('button:not(.card-actions button)')) return;
+
+      // Prevenir el onclick inline de la tarjeta
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      // Abrir la Vista 2
+      openAircraftDetailView(planeId);
+    }, true); // ← capture = true
+  });
+}
+
+/**
+ * Observer: re-aplica el override cada vez que updateCarouselView() regenera
+ * las tarjetas dentro de #hangarCarouselContainer.
+ */
+(function installHangarOverrideObserver() {
+  if (window.__hangarOverrideObserverInstalled) return;
+  window.__hangarOverrideObserverInstalled = true;
+
+  const attach = () => {
+    const container = document.getElementById('hangarCarouselContainer');
+    if (!container) {
+      // Reintentar si el componente aún no está en el DOM
+      setTimeout(attach, 300);
+      return;
+    }
+
+    const obs = new MutationObserver(() => {
+      clearTimeout(window.__hangarOverrideTimer);
+      window.__hangarOverrideTimer = setTimeout(overrideCarouselCardClick, 80);
+    });
+    obs.observe(container, { childList: true, subtree: true });
+
+    // Primera aplicación
+    overrideCarouselCardClick();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attach);
+  } else {
+    attach();
+  }
+})();
+
+// Exponer globalmente
+window.openAircraftDetailView = openAircraftDetailView;
+window.closeAircraftDetailView = closeAircraftDetailView;
+window.overrideCarouselCardClick = overrideCarouselCardClick;
