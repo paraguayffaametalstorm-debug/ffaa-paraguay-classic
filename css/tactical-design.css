@@ -2026,6 +2026,15 @@ i[data-lucide] {
   display: none !important;
 }
 
+/* ✅ FIX: forzar pointer-events: auto en TODAS las tarjetas del grid */
+/* (el carrusel original pone pointer-events: none en las laterales) */
+#hangarCarouselContainer .carousel-card,
+#hangarCarouselContainer .carousel-card.is-prev,
+#hangarCarouselContainer .carousel-card.is-next,
+#hangarCarouselContainer .carousel-card.is-hidden {
+  pointer-events: auto !important;
+}
+
 @media (max-width: 768px) {
   .carousel-track {
     grid-template-columns: 1fr !important;
@@ -2190,6 +2199,28 @@ i[data-lucide] {
   }
 }
 
-
-
-
+/* ============================================================
+   HANGAR REDESIGN — CAMBIO 5: BOTÓN SELECCIONAR VISUAL
+   ============================================================ */
+#hangarCarouselContainer .carousel-card .card-actions::after {
+  content: "SELECCIONAR";
+  display: block;
+  width: 100%;
+  padding: .85rem 0;
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: .12em;
+  font-size: .95rem;
+  color: #0A0E1A;
+  background: var(--gold-rank);
+  cursor: pointer;
+  transition: filter .15s ease;
+}
+#hangarCarouselContainer .carousel-card:hover .card-actions::after {
+  filter: brightness(1.12);
+}
+#hangarCarouselContainer .carousel-card .card-actions {
+  padding: 0 !important;
+  display: block !important;
+}

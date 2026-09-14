@@ -2,3 +2,4 @@
 node_modules/ 
 package-lock.json 
 ".env" 
+"cloudinary-abilities-urls.json" 

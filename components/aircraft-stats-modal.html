@@ -372,6 +372,158 @@
   flex: 1;
   min-width: 0;
 }
+/* ============================================================
+   HANGAR REDESIGN — CAMBIO 4: VISTA 2 (PANTALLA DEDICADA)
+   Actúa solo cuando #aircraftDeepModal tiene .aircraft-detail-mode
+   ============================================================ */
+
+/* El modal se comporta como página: altura auto, scroll del body */
+#aircraftDeepModal.aircraft-detail-mode.modal.show {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 2vh 1rem !important;
+}
+
+#aircraftDeepModal.aircraft-detail-mode .modal-content {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  display: block !important;
+  margin: 0 auto !important;
+  max-width: 1100px !important;
+  width: 95vw !important;
+}
+
+#aircraftDeepModal.aircraft-detail-mode .modal-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+}
+
+#aircraftDeepModal.aircraft-detail-mode .modal-body {
+  display: block !important;
+  overflow: visible !important;
+  max-height: none !important;
+  padding: 20px 24px !important;
+}
+
+/* Ocultar los tabs superiores en modo detalle */
+#aircraftDeepModal.aircraft-detail-mode .deep-modal-tabs {
+  display: none !important;
+}
+
+/* Mostrar todos los paneles apilados */
+#aircraftDeepModal.aircraft-detail-mode .deep-tab-panel {
+  display: block !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+/* Separación entre paneles apilados */
+#aircraftDeepModal.aircraft-detail-mode .deep-tab-panel + .deep-tab-panel {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed rgba(212, 175, 55, 0.25);
+}
+
+/* Cada .deep-section es una tarjeta apilada */
+#aircraftDeepModal.aircraft-detail-mode .deep-section {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(58, 80, 107, 0.7) !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  margin-bottom: 1rem !important;
+  overflow: hidden !important;
+}
+
+/* Ocultar los headers clickeables y chevrons: en modo detalle todo está expandido */
+#aircraftDeepModal.aircraft-detail-mode .deep-section > h3 {
+  background: rgba(11, 19, 43, 0.9);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  padding: 12px 16px !important;
+  margin: 0 !important;
+  cursor: default !important;
+}
+#aircraftDeepModal.aircraft-detail-mode .deep-chevron {
+  display: none !important;
+}
+
+/* Contenido siempre visible */
+#aircraftDeepModal.aircraft-detail-mode .deep-section-content {
+  display: block !important;
+  padding: 14px 16px !important;
+}
+
+/* Botón "← VOLVER AL HANGAR" */
+#aircraftDeepModal .aircraft-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 1.25rem 0;
+  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--border-tactical, #2A3A5C);
+  color: var(--gold-rank, #D4AF37);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+#aircraftDeepModal .aircraft-detail-back:hover {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: var(--gold-rank, #D4AF37);
+}
+
+/* Botón "IR A EDICIÓN DE X" al pie de cada sección */
+#aircraftDeepModal .deep-section-edit-btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0 0 0;
+  background: var(--gold-rank, #D4AF37);
+  color: #0A0E1A;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  border: none;
+  border-top: 1px solid rgba(212, 175, 55, 0.4);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+#aircraftDeepModal .deep-section-edit-btn:hover {
+  filter: brightness(1.12);
+}
+
+/* En modo detalle, el header del modal (imagen + nombre) más compacto */
+#aircraftDeepModal.aircraft-detail-mode .aircraft-image-container {
+  height: 140px;
+  margin-bottom: 8px;
+}
+#aircraftDeepModal.aircraft-detail-mode #deepPlaneName {
+  font-size: 1.4rem;
+}
+
+/* El footer del modal se oculta en modo detalle (no aplica) */
+#aircraftDeepModal.aircraft-detail-mode .modal-footer {
+  display: none !important;
+}
+
+/* ============================================================
+   HANGAR REDESIGN — FIX BOTÓN EDICIÓN (border-radius inferior)
+   ============================================================ */
+#aircraftDeepModal.aircraft-detail-mode .deep-section:last-child .deep-section-edit-btn {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
 </style>
 
 <div id="aircraftStatsModal" class="modal">
