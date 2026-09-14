@@ -10,10 +10,11 @@
     "predeploy": "cp CURRENT_STATE.md BACKUP_CURRENT_STATE_$(date +%Y%m%d).md"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.4",
+    "@supabase/supabase-js": "^2.116.0",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
+    "deepl-node": "^1.28.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
