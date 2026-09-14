@@ -2693,6 +2693,70 @@ async function openAircraftDeepModal(planeId) {
         window.currentPlane = plane;
         renderPlaneMods(plane);
 
+        // ✅ FIX v3.9.6: re-renderizar Habilidades con los datos completos de /details
+        // (el primer render usa datos de allUserPlanes que NO traen especial_image_url ni pasiva_image_url)
+        {
+          const specialEl2 = document.getElementById('deepSpecialSkill');
+          if (specialEl2) {
+            if (plane?.especial_nombre) {
+              const specialImg = plane?.especial_image_url;
+              specialEl2.innerHTML = `
+                <div class="skill-with-image">
+                  <div class="skill-image-wrapper">
+                    ${specialImg
+                      ? `<img src="${escapeHtml(specialImg)}" alt="${escapeHtml(plane.especial_nombre)}" class="skill-image" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'skill-image-placeholder\\'>🎯</div>';">`
+                      : `<div class="skill-image-placeholder">🎯</div>`}
+                  </div>
+                  <div class="skill-content">
+                    <div class="card-skill-title special" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
+                      🎯 ${escapeHtml(plane.especial_nombre)} · Nivel ${plane.especial_nivel_num || 1}
+                    </div>
+                    <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
+                      ${escapeHtml(plane.especial_efecto || 'Efecto táctico activo en combate.')}
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else {
+              specialEl2.innerHTML = `
+                <div style="color:var(--steel-dark);font-style:italic;font-size:0.85rem;">
+                  🔒 Sin habilidad especial equipada (Desbloquea en Nivel 8+)
+                </div>
+              `;
+            }
+          }
+
+          const passiveEl2 = document.getElementById('deepPassiveSkill');
+          if (passiveEl2) {
+            if (plane?.pasiva_nombre) {
+              const passiveImg = plane?.pasiva_image_url;
+              passiveEl2.innerHTML = `
+                <div class="skill-with-image">
+                  <div class="skill-image-wrapper">
+                    ${passiveImg
+                      ? `<img src="${escapeHtml(passiveImg)}" alt="${escapeHtml(plane.pasiva_nombre)}" class="skill-image" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'skill-image-placeholder\\'>🛡️</div>';">`
+                      : `<div class="skill-image-placeholder">🛡️</div>`}
+                  </div>
+                  <div class="skill-content">
+                    <div class="card-skill-title passive" style="font-size:0.85rem;font-weight:700;margin-bottom:4px;">
+                      🛡️ ${escapeHtml(plane.pasiva_nombre)} · Nivel ${plane.pasiva_nivel_num || 1}
+                    </div>
+                    <div style="font-size:0.88rem;color:#e2e8f0;line-height:1.4;">
+                      ${escapeHtml(plane.pasiva_efecto || 'Efecto pasivo permanente en combate.')}
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else {
+              passiveEl2.innerHTML = `
+                <div style="color:var(--steel-dark);font-style:italic;font-size:0.85rem;">
+                  🔒 Sin habilidad pasiva equipada (Desbloquea en Nivel 12+)
+                </div>
+              `;
+            }
+          }
+        }
+
         const systemTitles = {
           fuselaje: plane.system_names?.fuselaje || 'Fuselaje',
           motor: plane.system_names?.motor || 'Motor',
