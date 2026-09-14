@@ -1080,8 +1080,11 @@ export async function getPlaneDetails(req, res, next) {
       rutas_sistemas: rutasSistemas,
       stats_real: model?.stats_real || null,
       descripcion: model?.descripcion || null,
+      descripcion_es: model?.descripcion_es || null,
       historia: model?.historia || null,
+      historia_es: model?.historia_es || null,
       recomendaciones: model?.recomendaciones || null,
+      recomendaciones_es: model?.recomendaciones_es || null,
       loadout_wiki: model?.loadout_wiki || null,
       paints: model?.paints || null,
       canopies: model?.canopies || null,
@@ -1248,11 +1251,29 @@ export async function getPlaneStats(req, res, next) {
       return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'DATABASE_UNAVAILABLE' });
     }
 
-    const { data: plane, error } = await supabase
+    // Intentar por id del hangar primero
+    let { data: plane, error } = await supabase
       .from('planes')
       .select('*')
       .eq('id', planeId)
       .single();
+
+    // Fallback: buscar por avion_id del catálogo (plane_models.id)
+    if ((error || !plane) && (req.user?.user_id || req.user?.id)) {
+      const userId = req.user.user_id || req.user.id;
+      const { data: planesByAvion } = await supabase
+        .from('planes')
+        .select('*')
+        .eq('avion_id', String(planeId))
+        .eq('user_id', userId)
+        .order('id', { ascending: true })
+        .limit(1);
+
+      if (planesByAvion && planesByAvion.length > 0) {
+        plane = planesByAvion[0];
+        error = null;
+      }
+    }
 
     if (error || !plane) {
       return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });

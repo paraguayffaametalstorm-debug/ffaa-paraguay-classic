@@ -2508,8 +2508,9 @@ async function openAircraftDeepModal(planeId) {
   // 3B: Renderizar Historia (dentro de openAircraftDeepModal)
   const historiaEl = document.getElementById('deepHistoryContent');
   if (historiaEl) {
-    if (plane?.historia && String(plane.historia).trim().length > 0) {
-      const parrafos = String(plane.historia).split(/\n\n+/).filter(p => p.trim().length > 0);
+        const historiaTexto = plane?.historia_es || plane?.historia;
+    if (historiaTexto && String(historiaTexto).trim().length > 0) {
+      const parrafos = String(historiaTexto).split(/\n\n+/).filter(p => p.trim().length > 0);
       historiaEl.innerHTML = parrafos.map(p => `
         <p style="color:#e2e8f0;font-size:0.88rem;line-height:1.6;margin-bottom:12px;">
           ${escapeHtml(p.trim())}
@@ -2595,10 +2596,10 @@ async function openAircraftDeepModal(planeId) {
     }
   }
 
-  // 3C: Renderizar Recomendaciones
+    // 3C: Renderizar Recomendaciones
   const tipsEl = document.getElementById('deepTipsContent');
   if (tipsEl) {
-    const tips = plane?.recomendaciones;
+    const tips = plane?.recomendaciones_es || plane?.recomendaciones;
     const secciones = (tips && typeof tips === 'object')
       ? Object.entries(tips).filter(([k, v]) => Array.isArray(v) && v.length > 0)
       : [];
@@ -2785,8 +2786,9 @@ async function openAircraftDeepModal(planeId) {
 
         // Actualizar secciones de Wiki con datos de planeDetails
         if (historiaEl) {
-          if (plane?.historia && String(plane.historia).trim().length > 0) {
-            const parrafos = String(plane.historia).split(/\n\n+/).filter(p => p.trim().length > 0);
+                    const historiaTexto = plane?.historia_es || plane?.historia;
+          if (historiaTexto && String(historiaTexto).trim().length > 0) {
+            const parrafos = String(historiaTexto).split(/\n\n+/).filter(p => p.trim().length > 0);
             historiaEl.innerHTML = parrafos.map(p => `
               <p style="color:#e2e8f0;font-size:0.88rem;line-height:1.6;margin-bottom:12px;">
                 ${escapeHtml(p.trim())}
@@ -2801,8 +2803,8 @@ async function openAircraftDeepModal(planeId) {
             `;
           }
         }
-        if (tipsEl) {
-          const tips = plane?.recomendaciones;
+                if (tipsEl) {
+          const tips = plane?.recomendaciones_es || plane?.recomendaciones;
           const secciones = (tips && typeof tips === 'object')
             ? Object.entries(tips).filter(([k, v]) => Array.isArray(v) && v.length > 0)
             : [];

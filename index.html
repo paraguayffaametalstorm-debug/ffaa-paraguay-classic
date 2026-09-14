@@ -38,7 +38,7 @@
   <link rel="stylesheet" href="/css/global.css?v=3.4.0">
   <link rel="stylesheet" href="/css/components.css?v=3.4.0">
   <link rel="stylesheet" href="/css/views.css?v=3.4.0">
-  <link rel="stylesheet" href="/css/tactical-design.css?v=3.9.6">
+  <link rel="stylesheet" href="/css/tactical-design.css?v=3.9.7">
   <link rel="stylesheet" href="/css/help.css?v=3.4.0">
   
   <link rel="icon" href="/logo-escuadron.png">
@@ -155,22 +155,22 @@
 
     Promise.all([
       // Header y footer (siempre cargados)
-      fetch('/components/header.html?v=3.9.6').then(r => r.text()).catch(() => ''),
-      fetch('/components/footer.html?v=3.9.6').then(r => r.text()).catch(() => ''),
+      fetch('/components/header.html?v=3.9.7').then(r => r.text()).catch(() => ''),
+      fetch('/components/footer.html?v=3.9.7').then(r => r.text()).catch(() => ''),
 
       // Modales fijos
       Promise.all([
-      fetch('/components/help-modal.html?v=3.9.6').then(r => r.text()).catch(() => ''),
-      fetch('/components/session-warning.html?v=3.9.6').then(r => r.text()).catch(() => ''),
-      fetch('/components/forgot-password-modal.html?v=3.9.6').then(r => r.text()).catch(() => ''),
-      fetch('/components/aircraft-stats-modal.html?v=3.9.6').then(r => r.text()).catch(() => ''),
-      fetch('/components/change-password-modal.html?v=3.9.6').then(r => r.text()).catch(() => '')
+      fetch('/components/help-modal.html?v=3.9.7').then(r => r.text()).catch(() => ''),
+      fetch('/components/session-warning.html?v=3.9.7').then(r => r.text()).catch(() => ''),
+      fetch('/components/forgot-password-modal.html?v=3.9.7').then(r => r.text()).catch(() => ''),
+      fetch('/components/aircraft-stats-modal.html?v=3.9.7').then(r => r.text()).catch(() => ''),
+      fetch('/components/change-password-modal.html?v=3.9.7').then(r => r.text()).catch(() => '')
       ]).then(([h, s, f, a, c]) => h + s + f + a + c),
 
       // Vistas dinámicas (índice 6 en adelante) - INCLUYE performance-export
       Promise.all(
         COMPONENTS.slice(6).map(view =>
-          fetch(`/components/${view}.html?v=3.9.6`)
+          fetch(`/components/${view}.html?v=3.9.7`)
             .then(r => {
               if (!r.ok) throw new Error(`404: /components/${view}.html`);
               return r.text();
@@ -231,7 +231,7 @@
   <script src="/js/api.js?v=3.1.0"></script>
   
   <!-- 4. VIEWS (contiene showView, VIEWS, loadViewData) -->
-  <script src="/js/views.js?v=3.9.6"></script>
+  <script src="/js/views.js?v=3.9.7"></script>
   
   <!-- 5. BLACK MARKET (v3.7.0 - Módulo de eventos, misiones y descuentos) -->
   <script src="/js/bm.js?v=3.7.0"></script>
