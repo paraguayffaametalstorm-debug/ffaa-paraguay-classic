@@ -1,8 +1,8 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-12  
-> **Versión Activa:** v3.9.0  
+> **Fecha de Congelamiento:** 2026-09-15  
+> **Versión Activa:** v3.9.8  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -10,9 +10,12 @@
 
 ## 🎯 Resumen Ejecutivo
 
-El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción. Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
+El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v3.9.8). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
 
-Específicamente, el **flujo de registro y cambio de contraseña forzado** ha sido resuelto y validado de extremo a extremo tras implementar la **lógica tipada polimórfica** (resolución UUID vs INTEGER vs email) en el backend de Express y Supabase.
+Específicamente, en la versión v3.9.8 se ha consolidado:
+1. **Rediseño Completo del Hangar Militar:** Migración de carrusel rígido a doble arquitectura: **Vista 1 (Grid Táctico de Tarjetas)** para navegación ágil y **Vista 2 (Pantalla Dedicada / Detalle Completo de Aeronave)** con botón "← VOLVER AL HANGAR", accesos directos a calibración de Upgrades 2.0 y telemetría de combate profunda.
+2. **Sistema Integral de Traducción (i18n):** Extracción, traducción mediante DeepL y persistencia en Supabase de `descripcion_es`, `historia_es` y `recomendaciones_es`, con degradación elegante a inglés y diccionario cliente de los 13 traits oficiales (`TRAITS_ES`).
+3. **Catálogo Oficial Consolidado a 44 Aeronaves:** 44 cazas normalizados con armas y subsistemas específicos validados.
 
 ---
 
@@ -49,7 +52,7 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 
 ---
 
-## 🛡️ Estado de Módulos (Actualizado 2026-09-11)
+## 🛡️ Estado de Módulos (Actualizado 2026-09-15 - v3.9.8)
 
 | Módulo | Estado | Detalle |
 |--------|--------|---------|
@@ -57,36 +60,38 @@ Específicamente, el **flujo de registro y cambio de contraseña forzado** ha si
 | **Cambio de Contraseña** | ✅ Funcional | Lógica tipada UUID/INTEGER |
 | **Registro de Rendimiento** | ✅ Funcional | Guarda `role` histórico |
 | **Black Market** | ✅ Funcional | Misiones, progreso, descuentos |
-| **Catálogo de Aviones** | ✅ Normalizado | 42 modelos con armas específicas |
-| **Hangar de Pilotos** | ✅ Normalizado | UNIQUE + FK + CHECK |
+| **Catálogo de Aviones** | ✅ Normalizado | 44 modelos oficiales con armas específicas |
+| **Hangar de Pilotos (Vista 1 Grid)** | ✅ Funcional | Grid táctico con `overrideCarouselCardClick` |
+| **Hangar de Pilotos (Vista 2 Dedicada)**| ✅ Funcional | Detalle completo con botón volver y enlaces a Upgrades |
+| **Sistema i18n (DeepL + Fallback)** | ✅ Funcional | `_es` en BD + fallback a EN + 13 traits (`TRAITS_ES`) |
 | **Validación de Sistemas** | ✅ Funcional | Sistema disponible por avión |
-| **Carrusel Circular** | ✅ Funcional | Navegación infinita |
-| **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre + ID |
+| **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre, ID, stats y armas |
 | **IA de Recomendación** | ✅ Funcional | 3 estilos de combate |
 | **Upgrade Planner** | ✅ Funcional | Previsualización de builds |
 | **Efectos de Mods** | ✅ Funcional | 10 mods x 5 niveles aplicados a stats |
 | **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
-| **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
+| **PWA Offline** | ✅ Funcional | Service Worker v3.9.8 |
 | **Modal de Stats (Grid Cards)** | ✅ Funcional | Grid responsive 1-4 columnas |
-| **Integración Wiki (Historia)** | ✅ Funcional | 44 aviones con trivia |
+| **Integración Wiki (Historia)** | ✅ Funcional | 44 aviones con trivia (traducida al español) |
 | **Integración Wiki (Paints)** | ✅ Funcional | 310+ paints en galería |
 | **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
 | **Integración Wiki (Loadout)** | ✅ Funcional | Stats detalladas por arma |
 
-## 🛠️ Sistema de Aviones (Actualizado 2026-09-11)
+## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 
 El sistema de aviones fue normalizado, calibrado y dotado de validación técnica de armamento:
 
-- ✅ 42 modelos en el catálogo maestro con armas y subsistemas específicos (`sistemas_disponibles` en JSONB)
+- ✅ 44 modelos en el catálogo maestro con armas y subsistemas específicos (`sistemas_disponibles` en JSONB)
 - ✅ Validación previa en `updatePlaneSystem` (`src/controllers/planes.controller.js`) que impide calibrar sistemas no soportados (ej: cañones en F-111 / J-20)
 - ✅ 10 mods disponibles con efectos numéricos (m1..m10 en 5 niveles)
 - ✅ 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas/Cañones según disponibilidad)
-- ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles)
+- ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles) con imágenes oficiales
 - ✅ IA de Recomendación (3 estilos de combate)
 - ✅ Upgrade Planner (previsualización cuantitativa de builds)
 - ✅ Integración de efectos de mods en telemetría de combate (`getPlaneStats`)
+- ✅ Diccionario oficial de 13 traits traducidos al español rioplatense militar (`TRAITS_ES`)
 
-### 🎯 Estructura de `sistemas_disponibles` (42 Aviones)
+### 🎯 Estructura de `sistemas_disponibles` (44 Aviones)
 Cada modelo en `plane_models` define detalladamente su arquitectura:
 - `fuselaje`: `true`
 - `motor`: `true`
@@ -112,25 +117,29 @@ Cada modelo en `plane_models` define detalladamente su arquitectura:
 
 ---
 
-## 🎨 9. Datos de la Wiki Integrados (Fase 3B/3C)
+## 🎨 9. Datos de la Wiki e i18n Integrados (v3.9.8)
 - **Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft
-- **Fecha de extracción:** 2026-09-12
+- **Fecha de extracción:** 2026-09-12 (Traducción DeepL consolidada 2026-09-15)
 - **Volumen:**
-  - 44 aviones.
+  - 44 aviones de combate.
   - 310+ paints (con nombre, imagen, raridad, requisito).
   - 176 canopies (44 × 4).
-  - 41 historias (3 sin trivia: KF-21, A-6, A-10).
-  - 44 recomendaciones (Trait Tips, Ability Tips, Passive Tips, General).
+  - 41 historias (3 sin trivia: KF-21, A-6, A-10) traducidas al español (`historia_es`).
+  - 44 recomendaciones tácticas traducidas al español (`recomendaciones_es`).
   - 44 loadouts detallados (cañones y misiles con stats).
-  - 44 descripciones in-game.
+  - 44 descripciones in-game traducidas al español (`descripcion_es`).
+  - 13 traits únicos traducidos mediante `TRAITS_ES`.
 
-- **Columnas nuevas en `plane_models`:**
+- **Columnas de Wiki e i18n en `plane_models`:**
 
 | Columna | Tipo | Contenido |
 |---------|------|-----------|
-| `descripcion` | TEXT | Descripción in-game |
-| `historia` | TEXT | Trivia multi-párrafo |
-| `recomendaciones` | JSONB | Tips tácticos |
+| `descripcion` | TEXT | Descripción in-game (EN) |
+| `descripcion_es` | TEXT | Descripción in-game traducida (ES) |
+| `historia` | TEXT | Trivia multi-párrafo (EN) |
+| `historia_es` | TEXT | Trivia multi-párrafo traducida (ES) |
+| `recomendaciones` | JSONB | Tips tácticos (EN) |
+| `recomendaciones_es` | JSONB | Tips tácticos traducidos (ES) |
 | `loadout_wiki` | JSONB | Armamento detallado |
 | `paints` | JSONB | Array de paints |
 | `canopies` | JSONB | Array de canopies |
@@ -138,4 +147,4 @@ Cada modelo en `plane_models` define detalladamente su arquitectura:
 | `wiki_url` | TEXT | URL de la Wiki |
 | `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
 
-- **Frontend:** Modal `#aircraftDeepModal` con grid responsive de cards. Secciones nuevas: Paints y Canopies. Secciones actualizadas: Historia y Recomendaciones (ya no son placeholders).
+- **Frontend:** Vista 1 (Grid Táctico) y Vista 2 (Pantalla Dedicada). Modal `#aircraftDeepModal` con grid responsive de cards. Fallback automático a inglés cuando el contenido en español no está disponible.

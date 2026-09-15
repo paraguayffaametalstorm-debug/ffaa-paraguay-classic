@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.7.0).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.9.8).**
 
 ---
 
@@ -95,30 +95,37 @@ Cuando un oficial con rango **`ADMIN`** o **`OWNER`** accede al formulario de re
 - **Aislamiento y Trazabilidad:** Esto permite a los mandos registrar o ajustar las marcas de pilotos ausentes sin perder la trazabilidad de la auditoría.
 - **Acceso Regular:** Para pilotos `MIEMBRO` o `VETERANO`, el selector permanece restringido a su propia identidad para garantizar la privacidad y prevenir registros cruzados no autorizados.
 
-### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0
-El módulo de Hangar te permite registrar tus cazas de combate seleccionando entre el **catálogo oficial de 23 aeronaves de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, etc.) y gestionar sus especificaciones:
+### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0 (Rediseño v3.9.8)
+El módulo de Hangar te permite registrar y calibrar tus cazas seleccionando entre el **catálogo oficial de 44 aeronaves de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, Mirage 2000, etc.) y gestionar sus especificaciones:
+
+#### Rediseño de Navegación del Hangar:
+- **Vista 1 — Cuadrícula Táctica de Cazas (Grid View):**
+  - Despliegue de los 44 cazas en un grid de tarjetas adaptativo (`overrideCarouselCardClick`).
+  - Cada tarjeta presenta el identificador militar, silueta, modelo y nivel actual.
+  - Al hacer clic sobre cualquier tarjeta, accedes directamente a la vista en profundidad del caza sin rotaciones innecesarias.
+- **Vista 2 — Pantalla de Detalle Dedicada (Dedicated View):**
+  - Al seleccionar un caza (`openAircraftDetailView`), la interfaz activa la pantalla en profundidad `.aircraft-detail-mode`.
+  - **Cabecera Táctica de Navegación:** Dispone de un botón destacado **`← VOLVER AL HANGAR`** para retornar instantáneamente a la cuadrícula general.
+  - **Acceso Rápido a Upgrades 2.0:** Cada tarjeta de subsistema (Fuselaje, Motor, Aviónica, Armas) cuenta con botones directos `IR A EDICIÓN DE [SECCIÓN]`, abriendo la calibración del sistema específico sin salir de la ficha.
+
+#### Gestión de Sistemas Mecánicos y Mods:
 - **Nivel de Aeronave:** Rango de 1 a 20.
-- **Módulos Pasivos y Habilidades Especiales:** Selección de configuraciones según el catálogo oficial.
+- **Módulos Pasivos y Habilidades Especiales:** Selección de configuraciones según el catálogo oficial con previsualización gráfica de iconos de habilidades.
 - **Sistemas Mecánicos Upgrades 2.0 (Niveles 0 a 8):**
   - 🛡️ **Fuselaje:** Blindaje, reducción de firma de radar y resistencia estructural.
   - 🚀 **Motor:** Empuje vectorial, aceleración con posquemador y velocidad máxima.
   - 📡 **Aviónica:** Radar AESA, bloqueo de misiles y contramedidas electrónicas (ECM).
   - 💥 **Armas:** Cadencia de cañón rotativo y letalidad de misiles aire-aire.
+- **10 Mods Tácticos Oficiales (m1 a m10 en 5 niveles):** Giro Temerario, Maniobrabilidad Ideal, Resistencia a Explosiones, etc., con telemetría visual de bonificaciones porcentuales.
 - **Gestión de Recursos de Taller:** Control de piezas estándar (`recursos_piezas`) y componentes avanzados (`recursos_avanzadas`) requeridos para cada mejora.
-- **Ficha Técnica (Modal):** Presiona sobre cualquier caza para abrir la ventana de telemetría completa y especificaciones de combate.
 
-#### Datos de la Wiki en el Modal Stats
-Al abrir el modal de Stats (botón "Stats" en la tarjeta de un avión), ahora se muestran secciones adicionales con información extraída de la Wiki oficial de Metalstorm:
-
-- 📜 **Historia de la Aeronave:** Historia completa y curiosidades del avión (extraída de la Wiki).
-- 💡 **Recomendaciones de Uso:** Consejos tácticos organizados en Trait Tips, Ability Tips y Passive Tips.
-- 🎨 **Paints:** Galería visual de todas las pinturas disponibles para el avión, con nombre, raridad y requisito de desbloqueo.
-- 🪟 **Canopies:** Galería visual de todas las cabinas disponibles, con nombre, raridad y nivel de desbloqueo.
-- 🎯 **Armamento Detallado:** Stats específicas de cada arma (DPS, alcance, tiempo de lock, cantidad de misiles, etc.).
-
-*Nota sobre idioma:* El contenido está actualmente en inglés (idioma original de la Wiki). La traducción al español está planificada para una fase futura.
-
-*Layout:* El modal usa un grid responsive de cards (1 columna en mobile, 2 en tablet, 3-4 en desktop). Cada sección es colapsable.
+#### Información de la Wiki y Traducción Oficial al Español (i18n):
+- 📜 **Historia de la Aeronave:** Trivia y contexto histórico de combate traducido al **español** (`historia_es`, con degradación suave a inglés si fuese necesario).
+- 💡 **Recomendaciones de Uso:** Consejos tácticos completos (Trait Tips, Ability Tips y Passive Tips) traducidos al **español** (`recomendaciones_es`).
+- 🎯 **Traducción de Rasgos de Combate (13 Traits):** Mapeo de términos oficiales (`Blindaje Reforzado`, `Motores Fríos`, `Altitud de Crucero`, `Ala Delta`, `Cañones Expertos`, `Autoridad Total`, `Dispara y Olvida`, `Ala Leal`, `Sigilo`, `Ala Variable`, `Inversor de Empuje`, `Cañones Inestables`, `Motores Inestables`).
+- 🎨 **Galería de Paints:** Galería visual con más de 310 pinturas oficiales clasificadas por rareza y desbloqueo.
+- 🪟 **Galería de Canopies:** 176 cabinas tácticas visuales con requisitos de nivel.
+- 🎯 **Armamento Detallado:** Ficha balística completa con DPS, alcance, tiempos de lock-on y dotación de misiles.
 
 ### 2.4 👤 Expediente Militar y Perfil del Piloto
 - Visualiza tu Callsign oficial, correo y rango asignado.
@@ -239,15 +246,15 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.9.0.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.9.8.
 
 **¿Puedo ver la historia y las curiosidades de mi avión?**  
-Sí. En el modal de Stats de cualquier aeronave encontrarás la sección "📜 Historia de la Aeronave" con la trivia completa extraída de la Wiki oficial de Metalstorm.
+Sí. En la pantalla dedicada o modal de cualquier aeronave encontrarás la sección "📜 Historia de la Aeronave" con la trivia completa traducida al español.
 
-**¿Por qué el contenido de Historia y Recomendaciones está en inglés?**  
-Los datos provienen de la Wiki oficial, que está íntegramente en inglés. La traducción al español se planificará como fase futura del proyecto.
+**¿En qué idioma están disponibles la Historia, Recomendaciones y Rasgos de combate?**  
+A partir de la versión v3.9.8, las descripciones in-game, historias y recomendaciones tácticas han sido traducidas al español rioplatense mediante DeepL (`_es`), con fallback automático al inglés si faltara algún registro. Además, los 13 rasgos tácticos de combate (*traits*) disponen de terminología militar estandarizada en español (`TRAITS_ES`).
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.9.0 · Actualizado: Septiembre 2026*
+*Versión: v3.9.8 · Actualizado: 15 Septiembre 2026*

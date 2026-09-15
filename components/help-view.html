@@ -2,7 +2,7 @@
   <!-- HEADER PRINCIPAL -->
   <div class="view-header" style="margin-bottom:1rem;">
     <h2>📖 Centro de Ayuda & Manual Operativo Táctico</h2>
-    <p class="subtitle">Documentación integral del sistema PARAGUAY-FFAA | METALSTORM v3.7.0</p>
+    <p class="subtitle">Documentación integral del sistema PARAGUAY-FFAA | METALSTORM v3.9.8</p>
   </div>
 
   <!-- BARRA DE BÚSQUEDA Y HERRAMIENTAS -->
@@ -322,35 +322,54 @@
       </section>
 
       <!-- ============================================================ -->
+      <!-- ============================================================ -->
       <!-- SECCIÓN 3: GUÍA DEL HANGAR DE AVIONES -->
       <!-- ============================================================ -->
       <section id="help-sec-hangar" class="help-section">
         <div class="help-section-header">
-          <h3 class="help-section-title"><span>✈️</span> 3. Guía del Hangar de Aviones</h3>
+          <h3 class="help-section-title"><span>✈️</span> 3. Guía del Hangar de Aviones (Rediseño v3.9.8)</h3>
           <span class="help-section-badge">FLOTA AÉREA</span>
         </div>
         <p class="help-section-desc">
-          Catálogo táctico de 42 aeronaves de combate, carrusel 3D circular continuo, visor balístico de datos profundos, imágenes en Cloudinary CDN, colorimetría, habilidades especiales, mods y traits.
+          Catálogo táctico de 44 aeronaves de combate, navegación híbrida (Cuadrícula Táctica y Pantalla Dedicada), motor de internacionalización (i18n) en español, enlaces directos a Upgrades 2.0 y telemetría Cloudinary CDN.
         </p>
 
         <div class="help-accordion-list">
           <div class="help-accordion-item open">
             <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
               <div class="help-accordion-header-title">
-                <span>🎖️</span> Catálogo de 42 Aeronaves & Carrusel 3D Circular
+                <span>🎖️</span> Catálogo de 44 Aeronaves & Rediseño de Navegación (Vista 1 y Vista 2)
               </div>
               <span class="help-accordion-chevron">▼</span>
             </div>
             <div class="help-accordion-body">
-              El hangar militar reúne las 42 aeronaves del arsenal MetalStorm, organizadas en una interfaz de carrusel 3D circular optimizada:
+              El hangar militar reúne las 44 aeronaves del arsenal MetalStorm, organizadas en una interfaz táctica de dos vistas de alta velocidad:
               <ul style="margin:8px 0 10px 20px;">
-                <li><strong>Navegación Circular Infinita:</strong> Desplaza hacia la izquierda o derecha sin topar con bordes vacíos; las aeronaves rotan cíclicamente.</li>
-                <li><strong>Tarjeta Central Prominente:</strong> La aeronave enfocada se eleva con iluminación dorada y foco balístico.</li>
-                <li><strong>Scroll Interno Táctico:</strong> Las tarjetas de 280×420px cuentan con cabecera de imagen fija, cuerpo scrolleable para habilidades y botones anclados al pie.</li>
+                <li><strong>Vista 1 — Cuadrícula Táctica (Grid View):</strong> Despliegue de los 44 cazas en un grid de tarjetas con silueta, rango militar y nivel actual. Al hacer clic sobre cualquier tarjeta, accedes directamente al detalle técnico sin rotaciones intermedias.</li>
+                <li><strong>Vista 2 — Pantalla de Detalle Dedicada (Dedicated View):</strong> Ficha balística completa con cabecera fija y botón prominente <code>← VOLVER AL HANGAR</code> para regresar instantáneamente a la cuadrícula.</li>
+                <li><strong>Enlaces Directos a Upgrades 2.0:</strong> Cada tarjeta de subsistema (Fuselaje, Motor, Aviónica, Armas) cuenta con botones directos <code>IR A EDICIÓN DE [SECCIÓN]</code> que abren la calibración específica de ese sistema.</li>
               </ul>
               <button class="help-action-btn" onclick="showView('planes');">
                 <span>✈️</span> Abrir Hangar de Combate
               </button>
+            </div>
+          </div>
+
+          <div class="help-accordion-item">
+            <div class="help-accordion-header" onclick="toggleHelpAccordion(this)">
+              <div class="help-accordion-header-title">
+                <span>🌐</span> Traducción al Español (i18n) & Wiki Oficial
+              </div>
+              <span class="help-accordion-chevron">▼</span>
+            </div>
+            <div class="help-accordion-body">
+              A partir de la versión v3.9.8, la ficha técnica de los 44 cazas se encuentra completamente localizada al español:
+              <ul style="margin:8px 0 10px 20px;">
+                <li><strong>Historia y Trivia (<code>historia_es</code>):</strong> Contexto operacional e historia de cada fuselaje traducida con DeepL (con fallback en inglés).</li>
+                <li><strong>Recomendaciones Tácticas (<code>recomendaciones_es</code>):</strong> Consejos de vuelo, estilo de combate, tips de habilidad especial y pasiva en español.</li>
+                <li><strong>Mapeo de Rasgos (13 Traits):</strong> Diccionario oficial <code>TRAITS_ES</code> que traduce los 13 rasgos únicos de combate (Blindaje Reforzado, Motores Fríos, Altitud de Crucero, Ala Delta, etc.).</li>
+                <li><strong>Galería Visual:</strong> Más de 310 pinturas (*paints*) y 176 cabinas (*canopies*) con requisitos de desbloqueo.</li>
+              </ul>
             </div>
           </div>
 
@@ -430,8 +449,8 @@
                 <li><strong>Habilidad Pasiva (Desbloqueo Nv 12+):</strong> Ventaja permanente intrínseca (ej. Reducción de Firma Infrarroja, Recarga Rápida).</li>
                 <li><strong>Modificaciones de Combate (10 Mods × 5 Niveles):</strong>
                   <br>Desbloqueo progresivo: <em>Mod 1 (Nv 16+)</em> y <em>Mod 2 (Nv 20)</em>.
-                  <br>Opciones: Blindaje Reactivo, Radar Doppler, ECM Contramedidas, Refrigeración Líquida, Toberas Vectoriales, Cañones Pesados, etc.</li>
-                <li><strong>Traits Tácticos (12 Rasgos Únicos):</strong> Características intrínsecas de cada fuselaje (ej. "Giro Instantáneo Extremo", "Sigilo Térmico", "Disipación Rápida de Calor").</li>
+                  <br>Opciones oficiales: Giro Temerario, Maniobrabilidad Ideal, Resistencia a Explosiones, Blindaje de Asalto, etc.</li>
+                <li><strong>Traits Tácticos (13 Rasgos Únicos Oficiales):</strong> Características intrínsecas traducidas al español según la doctrina oficial.</li>
               </ul>
             </div>
           </div>
@@ -590,7 +609,7 @@
               <ul style="margin:6px 0 10px 20px;">
                 <li><strong>25 Puntos</strong> por cada misión individual completada (75 puntos).</li>
                 <li><strong>+25 Puntos de Bonus Diario</strong> al completar las 3 misiones del mismo día.</li>
-                <li><strong>Máximo diario:</strong> 100 puntos posibles por jornada.</li>
+                <li><strong>Máximo diario:</strong> 50 puntos posibles por jornada.</li>
                 <li><strong>Máximo global del evento:</strong> <strong>250 Puntos</strong> acumulables.</li>
               </ul>
             </div>

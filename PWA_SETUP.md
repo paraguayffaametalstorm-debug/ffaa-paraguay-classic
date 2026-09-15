@@ -1,6 +1,6 @@
 # 📱 Configuración PWA y Modo Offline - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v3.9.0.**
+> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v3.9.8.**
 
 ---
 
@@ -19,21 +19,21 @@ La plataforma **PARAGUAY-FFAA | METALSTORM** implementa un diseño PWA militar d
   - `background_color`: `#0B132B` (Azul Táctico Nocturno)
 - **Iconografía:** Íconos adaptativos en resoluciones 72x72, 96x96, 128x128, 144x144, 152x152, 192x192, 384x384 y 512x512 con propósito `any maskable`.
 
-### 1.2 Estrategia de Caché del Service Worker (`sw.js` v3.9.0)
-El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v3.9.0` con estrategias diferenciadas por tipo de tráfico:
+### 1.2 Estrategia de Caché del Service Worker (`sw.js` v3.9.8)
+El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v3.9.8` con estrategias diferenciadas por tipo de tráfico:
 
 | Tipo de Recurso | Estrategia de Caché | Justificación Técnica |
 |---|:---:|---|
 | **Navegación (`index.html`)** | **Network-First** con Fallback | Prioriza servir siempre la última versión desplegada. Si el dispositivo está sin cobertura, entrega la versión en caché local. |
-| **Activos Estáticos (`CSS`, `JS`, `Imágenes`)** | **Cache-First** con clonado | Carga instantánea de hojas de estilo, scripts de vistas y componentes HTML modulares. |
+| **Activos Estáticos (`CSS`, `JS`, `Imágenes`)** | **Cache-First** con clonado | Carga instantánea de hojas de estilo, scripts de vistas (incluyendo el Hangar rediseñado y diccionario `TRAITS_ES`) y componentes HTML modulares. |
 | **Llamadas a la API (`/api/*`) y Supabase** | **Network-Only** (Pass-Through) | Las peticiones dinámicas de combate y autenticación nunca son bloqueadas ni servidas con datos rancios del caché. |
 
 ### 1.3 Precaché de Activos Críticos (`STATIC_ASSETS`)
 El evento `install` descarga y almacena de forma preventiva 26 recursos tácticos esenciales:
-- Hojas de estilo: `/css/global.css`, `/css/components.css`, `/css/views.css`.
-- Lógica de cliente: `/js/utils.js`, `/js/auth.js`, `/js/api.js`, `/js/views.js`, `/js/performance.js`, `/js/profile.js`, `/js/settings.js`, `/js/main.js`.
+- Hojas de estilo: `/css/global.css`, `/css/components.css`, `/css/views.css`, `/css/tactical-design.css`.
+- Lógica de cliente: `/js/utils.js`, `/js/auth.js`, `/js/api.js`, `/js/views.js`, `/js/performance.js`, `/js/profile.js`, `/js/settings.js`, `/js/tour.js`, `/js/main.js`.
 - Identidad visual: `/logo-escuadron.png`.
-- Componentes HTML: `/components/header.html`, `/components/footer.html`, `/components/dashboard.html`, `/components/performance-form.html`, `/components/planes-view.html`, `/components/historial-view.html`, `/components/profile-view.html`, `/components/normativas-view.html`, `/components/admin-panel.html`, `/components/all-performances.html`, `/components/settings-view.html`, `/components/help-modal.html`, `/components/session-warning.html`, `/components/forgot-password-modal.html`, `/components/aircraft-stats-modal.html`.
+- Componentes HTML: `/components/header.html`, `/components/footer.html`, `/components/dashboard.html`, `/components/performance-form.html`, `/components/planes-view.html`, `/components/historial-view.html`, `/components/profile-view.html`, `/components/normativas-view.html`, `/components/admin-panel.html`, `/components/all-performances.html`, `/components/settings-view.html`, `/components/help-modal.html`, `/components/help-view.html`, `/components/session-warning.html`, `/components/forgot-password-modal.html`, `/components/aircraft-stats-modal.html`.
 
 ---
 
@@ -60,17 +60,17 @@ El evento `install` descarga y almacena de forma preventiva 26 recursos táctico
 
 ## 3. Procedimiento de Actualización y Despliegue de Versión
 
-Cuando se despliega una nueva versión del sistema (por ejemplo de v3.9.0 a v3.9.1):
+Cuando se despliega una nueva versión del sistema (v3.9.8):
 1. **Actualizar Identificador en `sw.js`:**
    ```javascript
-   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.1';
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.8';
    ```
 2. **Ciclo de Activación:**
    - El evento `activate` detecta automáticamente que el nombre de caché cambió.
    - Elimina de forma inmediata todas las versiones obsoletas (`PARAGUAY-FFAA-METALSTORM-v3.9.0`, etc.) liberando memoria en el dispositivo.
    - Invoca `self.clients.claim()` para tomar el control de todas las pestañas abiertas sin necesidad de recargar manualmente.
 3. **Cache-Busting en `index.html`:**
-   - Todas las hojas de estilo cuentan con el sufijo `?v=3.3.0` (o versión superior) para forzar la invalidación inmediata de caché en proxies y navegadores de dispositivos móviles.
+   - Todas las hojas de estilo cuentan con el sufijo `?v=3.9.8` para forzar la invalidación inmediata de caché en proxies y navegadores de dispositivos móviles.
 
 ---
 
@@ -78,6 +78,6 @@ Cuando se despliega una nueva versión del sistema (por ejemplo de v3.9.0 a v3.9
 
 1. En tu navegador de escritorio, presiona `F12` para abrir las herramientas de desarrollador.
 2. Ve a la pestaña **Application** $\rightarrow$ **Service Workers**.
-3. Confirma que el Service Worker se encuentra en estado `Activated and is running`.
+3. Confirma que el Service Worker se encuentra en estado `Activated and is running` con versión `PARAGUAY-FFAA-METALSTORM-v3.9.8`.
 4. Marca la casilla **Offline** (o desconecta la red Wi-Fi en un teléfono móvil).
 5. Recarga la página: La aplicación cargará al 100% de manera instantánea desde la memoria local en caché.

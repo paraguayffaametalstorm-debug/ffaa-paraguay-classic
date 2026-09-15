@@ -1,141 +1,163 @@
-# 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
+# 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
 
-> **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-12  
-> **Versión Activa:** v3.9.0  
-> **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
-> **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
+> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v3.9.8).**  
+> **Destino Operacional:** Fly.io (Región `gru` - São Paulo) & Supabase PostgreSQL Cloud.
 
 ---
 
-## 🎯 Resumen Ejecutivo
+## 1. 📋 Requisitos Previos y Entorno Operacional
 
-El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción. Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
+El sistema opera bajo un contenedor Docker optimizado sobre **Node.js 22 Alpine**, respaldado por **Express 5** y una base de datos **PostgreSQL** administrada en **Supabase**.
 
-Específicamente, el **flujo de registro y cambio de contraseña forzado** ha sido resuelto y validado de extremo a extremo tras implementar la **lógica tipada polimórfica** (resolución UUID vs INTEGER vs email) en el backend de Express y Supabase.
-
----
-
-## 🏆 Última Prueba Exitosa de Validación
-
-| Parámetro | Detalle Militar |
-|---|---|
-| **Piloto Evaluado** | `TestPilot` (Indicativo de pruebas operacionales) |
-| **Identificador Numérico (`user_id`)** | `1000` (INTEGER) |
-| **Identificador Interno (`id`)** | `3658df3a-3d15-4669-a595-dca33ec86fd3` (UUID) |
-| **Correo Institucional** | `testpilot@ffaa.py` |
-| **Contraseña Temporal Asignada** | `MS-MJWT-SU3U` (Generada por Administrador) |
-| **Nueva Contraseña Reglamentaria** | `Dni32355353` (Definida por el piloto) |
-| **Fecha y Hora de la Prueba** | `2026-09-09 23:54:52 UTC` |
-| **Token Version Resultante** | `2` (Incrementado desde `1`) |
-| **Estado de Cambio Obligatorio** | `must_change_password: false` |
-| **Resultado Global** | **✅ COMPLETO Y VALIDADO EN PRODUCCIÓN** |
+### Herramientas Requeridas en Estación de Mando
+- **Node.js:** Versión `>= 22.0.0` (LTS recomendado).
+- **Docker:** Motor Docker `>= 24.0`.
+- **Flyctl CLI:** Interfaz de línea de comandos de Fly.io (`curl -L https://fly.io/install.sh | sh`).
+- **Git:** Control de versiones del repositorio institucional.
 
 ---
 
-## 🏛️ Reglas de Arquitectura y Negocio Vigentes
+## 2. 🔐 Variables de Entorno de Mando (.env)
 
-1. **Dualidad de Identificadores en `users`:**
-   - `user_id` es siempre de tipo **`INTEGER`** (incremental, visible en reportes tácticos, selector de pilotos y telemetría).
-   - `id` es siempre de tipo **`UUID`** (clave primaria interna en PostgreSQL / Supabase).
-2. **Ciclo de Vida de Credenciales:**
-   - Todo nuevo usuario creado por el oficial `ADMIN` nace con `must_change_password = true` y `token_version = 1`.
-   - La contraseña temporal responde estrictamente al formato `MS-XXXX-XXXX`.
-   - El endpoint `/api/auth/change-password` soporta tanto el modo forzado (`isForced: true` o `must_change_password: true`) como el cambio voluntario desde el perfil.
-3. **Invalidación Criptográfica Anti-Sesión Fantasma:**
-   - Cada cambio de contraseña incrementa `token_version` en `+1`, invalidando inmediatamente cualquier JWT anterior en circulación.
-4. **Resolución de Consultas Tipadas:**
-   - Todos los controladores (`auth`, `admin`, `profile`, `performances`) implementan filtros dinámicos que diferencian UUID regex de números enteros para prevenir fallos de casting en PostgreSQL.
+Asegurarse de que las siguientes variables críticas estén configuradas en Fly.io vía `fly secrets set` o en el archivo `.env`:
 
----
+```bash
+# Servidor y Red
+PORT=3000
+NODE_ENV=production
 
-## 🛡️ Estado de Módulos (Actualizado 2026-09-11)
+# Seguridad C4ISR y Criptografía
+JWT_SECRET=clave_super_secreta_militar_minimo_32_caracteres_seguros
+COOKIE_SECRET=secreto_de_firma_de_sesiones_y_cookies_ffaa
 
-| Módulo | Estado | Detalle |
-|--------|--------|---------|
-| **Autenticación Dual** | ✅ Funcional | Login con email o Gmail |
-| **Cambio de Contraseña** | ✅ Funcional | Lógica tipada UUID/INTEGER |
-| **Registro de Rendimiento** | ✅ Funcional | Guarda `role` histórico |
-| **Black Market** | ✅ Funcional | Misiones, progreso, descuentos |
-| **Catálogo de Aviones** | ✅ Normalizado | 42 modelos con armas específicas |
-| **Hangar de Pilotos** | ✅ Normalizado | UNIQUE + FK + CHECK |
-| **Validación de Sistemas** | ✅ Funcional | Sistema disponible por avión |
-| **Carrusel Circular** | ✅ Funcional | Navegación infinita |
-| **Modal de Datos Profundos** | ✅ Funcional | Muestra nombre + ID |
-| **IA de Recomendación** | ✅ Funcional | 3 estilos de combate |
-| **Upgrade Planner** | ✅ Funcional | Previsualización de builds |
-| **Efectos de Mods** | ✅ Funcional | 10 mods x 5 niveles aplicados a stats |
-| **Descarga de Credencial** | ✅ Funcional | Imagen JPG |
-| **PWA Offline** | ✅ Funcional | Service Worker v3.7.0 |
-| **Modal de Stats (Grid Cards)** | ✅ Funcional | Grid responsive 1-4 columnas |
-| **Integración Wiki (Historia)** | ✅ Funcional | 44 aviones con trivia |
-| **Integración Wiki (Paints)** | ✅ Funcional | 310+ paints en galería |
-| **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
-| **Integración Wiki (Loadout)** | ✅ Funcional | Stats detalladas por arma |
+# Base de Datos Supabase
+SUPABASE_URL=https://<TU-PROYECTO>.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 
-## 🛠️ Sistema de Aviones (Actualizado 2026-09-11)
+# Google OAuth 2.0 (Opcional si se habilita vinculación de Gmail)
+GOOGLE_CLIENT_ID=xxxxxxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxx
+GOOGLE_CALLBACK_URL=https://ffaa-paraguay-classic.fly.dev/api/auth/google/callback
 
-El sistema de aviones fue normalizado, calibrado y dotado de validación técnica de armamento:
-
-- ✅ 42 modelos en el catálogo maestro con armas y subsistemas específicos (`sistemas_disponibles` en JSONB)
-- ✅ Validación previa en `updatePlaneSystem` (`src/controllers/planes.controller.js`) que impide calibrar sistemas no soportados (ej: cañones en F-111 / J-20)
-- ✅ 10 mods disponibles con efectos numéricos (m1..m10 en 5 niveles)
-- ✅ 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas/Cañones según disponibilidad)
-- ✅ Habilidades Especiales (3 niveles) y Pasivas (5 niveles)
-- ✅ IA de Recomendación (3 estilos de combate)
-- ✅ Upgrade Planner (previsualización cuantitativa de builds)
-- ✅ Integración de efectos de mods en telemetría de combate (`getPlaneStats`)
-
-### 🎯 Estructura de `sistemas_disponibles` (42 Aviones)
-Cada modelo en `plane_models` define detalladamente su arquitectura:
-- `fuselaje`: `true`
-- `motor`: `true`
-- `avionica`: `true`
-- `canones`: `"precision"` | `"asalto"` | `null`
-- `misiles_ir`, `misiles_radar`, `misiles_beam`, `misiles_manual`, `misiles_largo`, `cohetes`: `true` | `false`
-
-### ⚡ Efectos de Mods (10 Mods × 5 Niveles)
-- **Siempre Activos en Stats:**
-  - `m1` (Daredevil Turning) & `m2` (Ideal Maneuvering) $\to$ `agility`
-  - `m3` (Blast Resistance) $\to$ `armor`
-  - `m7` (Disruptive Flares) $\to$ `ecm`
-  - `m10` (Improved Targeting) $\to$ `radar`
-- **Condicionales & Utilitarios:** `m4` (kills), `m5` (postquemador), `m6` (<50% comb.), `m8` (cooldown), `m9` (<30% HP enem.) registrados para telemetría dinámica.
+# Notificaciones y Correo Táctico (Reseteo de 15 Minutos)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=notificaciones@ffaa.py
+SMTP_PASS=app_password_militar_16_caracteres
+```
 
 ---
 
-## ⚠️ Nota Operativa y Bug de UI Detectado
+## 3. 🐳 Arquitectura del Contenedor Docker (`Dockerfile`)
 
-> **Bug de Interfaz:** En ciertos navegadores y resoluciones compactas, el modal de cambio forzado de contraseña no despliega con claridad los botones de acción inferior.  
-> **Instrucción al Combatiente:** El formulario responde y procesa la actualización presionando la tecla **`ENTER`** directamente en el campo de confirmación de contraseña.  
-> **Fix Programado:** Ajuste de layout CSS en `components/change-password-modal.html` para asegurar visibilidad constante del botón *"Actualizar Credencial"*.
+El despliegue en Fly.io utiliza un Dockerfile multi-etapa optimizado para minimizar superficie de ataque y peso de imagen:
+
+```dockerfile
+FROM node:22-alpine AS base
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
 
 ---
 
-## 🎨 9. Datos de la Wiki Integrados (Fase 3B/3C)
-- **Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft
-- **Fecha de extracción:** 2026-09-12
-- **Volumen:**
-  - 44 aviones.
-  - 310+ paints (con nombre, imagen, raridad, requisito).
-  - 176 canopies (44 × 4).
-  - 41 historias (3 sin trivia: KF-21, A-6, A-10).
-  - 44 recomendaciones (Trait Tips, Ability Tips, Passive Tips, General).
-  - 44 loadouts detallados (cañones y misiles con stats).
-  - 44 descripciones in-game.
+## 4. 🚀 Despliegue en Fly.io (`fly.toml`)
 
-- **Columnas nuevas en `plane_models`:**
+### Configuración de Zona (`gru` - São Paulo)
+Fly.io enruta el tráfico directamente a la región de baja latencia `gru` (São Paulo) para asegurar tiempos de respuesta inferiores a 40ms en territorio paraguayo:
 
-| Columna | Tipo | Contenido |
-|---------|------|-----------|
-| `descripcion` | TEXT | Descripción in-game |
-| `historia` | TEXT | Trivia multi-párrafo |
-| `recomendaciones` | JSONB | Tips tácticos |
-| `loadout_wiki` | JSONB | Armamento detallado |
-| `paints` | JSONB | Array de paints |
-| `canopies` | JSONB | Array de canopies |
-| `general_info_wiki` | JSONB | Info general |
-| `wiki_url` | TEXT | URL de la Wiki |
-| `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
+```toml
+app = "ffaa-paraguay-classic"
+primary_region = "gru"
 
-- **Frontend:** Modal `#aircraftDeepModal` con grid responsive de cards. Secciones nuevas: Paints y Canopies. Secciones actualizadas: Historia y Recomendaciones (ya no son placeholders).
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/health"
+```
+
+### Ejecución del Despliegue
+1. **Comprobación de Sintaxis e Integridad:**
+   ```bash
+   npm test
+   ```
+2. **Autenticación en la Plataforma:**
+   ```bash
+   fly auth login
+   ```
+3. **Despliegue Inmutable:**
+   ```bash
+   fly deploy --remote-only
+   ```
+4. **Verificación Inmediata de Probes de Salud:**
+   ```bash
+   curl -s https://ffaa-paraguay-classic.fly.dev/health
+   # Respuesta esperada: OK
+   ```
+
+---
+
+## 5. 🗄️ Validación de Esquema de Base de Datos (Supabase)
+
+Antes de autorizar tráfico operativo en v3.9.8, verificar que las siguientes tablas y columnas existan en Supabase:
+
+1. **Tabla `plane_models`:**
+   - Asegurar columnas de texto e internacionalización: `descripcion_es` (TEXT), `historia_es` (TEXT), `recomendaciones_es` (JSONB).
+   - Verificar que los 44 modelos oficiales se encuentren dados de alta y activos.
+2. **Tabla `users`:**
+   - Dualidad `id` (UUID PK) y `user_id` (INTEGER UNIQUE).
+   - `token_version` (INTEGER DEFAULT 1) y `must_change_password` (BOOLEAN DEFAULT true).
+3. **Tablas de Hangar:**
+   - `planes` (cazas registrados por piloto).
+   - `plane_upgrades` (auditoría de mejoras de Fuselaje, Motor, Aviónica, Armas).
+   - `plane_mods` (10 mods oficiales) y `mod_effects` (50 filas de niveles).
+
+---
+
+## 6. 📱 Política de Cache Invalidation y PWA (v3.9.8)
+
+Al desplegar una nueva versión mayor o menor:
+1. **Actualizar el identificador de cache en `sw.js`:**
+   ```javascript
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.8';
+   ```
+2. **Comportamiento del Service Worker:**
+   - Durante la fase de `install`, cachea los activos estáticos y vistas HTML.
+   - En la fase de `activate`, purga automáticamente caches anteriores (`v3.7.0`, `v3.7.1`, etc.).
+   - Al navegar, si el cliente detecta nuevo SW, forzará la recarga suave en el siguiente reinicio de sesión táctica.
+
+---
+
+## 7. 🛡️ Monitoreo Post-Despliegue y Plan de Contingencia (Rollback)
+
+### Monitoreo en Tiempo Real
+Para supervisar la actividad de la aeronavegabilidad del sistema:
+```bash
+fly logs -a ffaa-paraguay-classic
+```
+
+### Procedimiento de Rollback Inmediato
+Si se detecta una anomalía crítica tras el despliegue:
+1. Listar las versiones operativas anteriores:
+   ```bash
+   fly releases -a ffaa-paraguay-classic
+   ```
+2. Revertir a la versión estable previa:
+   ```bash
+   fly deploy --image <IMAGEN_PREVIA_ESTABLE>
+   ```
+3. Notificar al Alto Mando en el canal de oficiales.

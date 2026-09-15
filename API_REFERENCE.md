@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.6.0 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.9.8 del núcleo táctico.**
 
 ---
 
@@ -53,7 +53,7 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Performances**| `/api/performances/stats` | `GET` | Autenticado | Estadísticas calculadas del piloto |
 | **Performances**| `/api/performances/all` | `GET` | `ADMIN` / `OWNER` | Lista global de rendimientos |
 | **Performances**| `/api/performances/export` | `GET` | `ADMIN` / `OWNER` | Descargar reporte CSV sanitizado |
-| **Planes** | `/api/planes/catalog/plane-models` | `GET` | Público | Catálogo oficial de 23 cazas militares |
+| **Planes** | `/api/planes/catalog/plane-models` | `GET` | Público | Catálogo oficial de 44 cazas militares |
 | **Planes** | `/api/planes/catalog/plane-mods` | `GET` | Público | Catálogo oficial de modificaciones |
 | **Planes** | `/api/planes` o `/my-planes` | `GET` | Autenticado | Cazas registrados en el hangar personal |
 | **Planes** | `/api/planes/:id/stats` | `GET` | Autenticado | Métricas de combate de la aeronave |
@@ -398,7 +398,7 @@ Obtiene la lista autorizada de pilotos para el **Selector Táctico de Pilotos** 
 
 ## 4. Hangar Militar & Upgrades 2.0 (`/api/planes`)
 
-El módulo gestiona la flota de **23 aeronaves de combate** y subsistemas de mejora mecánica.
+El módulo gestiona la flota oficial de **44 aeronaves de combate** y subsistemas de mejora mecánica, operando con una arquitectura de dos vistas (Vista 1: Grid Táctico y Vista 2: Pantalla Dedicada).
 
 ### `PUT /api/planes/:id/system`
 Aplica una mejora tecnológica de subsistema a un caza registrado según Starform Upgrades 2.0.
@@ -419,7 +419,7 @@ Aplica una mejora tecnológica de subsistema a un caza registrado según Starfor
 ### `GET /api/planes/:id/details`
 
 Devuelve la telemetría completa de una aeronave del hangar, incluyendo
-campos extendidos extraídos de la Wiki de Metalstorm (Fase 3C).
+campos extendidos extraídos de la Wiki de Metalstorm y localizados al español rioplatense (v3.9.8).
 
 - **Acceso:** Autenticado (`requireAuth`).
 - **Parámetros de ruta:** `:id` = ID del avión del jugador (numérico).
@@ -440,8 +440,7 @@ campos extendidos extraídos de la Wiki de Metalstorm (Fase 3C).
     "nivel": 17,
     "system_names": {
       "canones": "PRECISION CANNONS GIAT 30",
-      "misiles_ir": "INFRARED MISSILES MICA IR",
-      ...
+      "misiles_ir": "INFRARED MISSILES MICA IR"
     },
     "rutas_sistemas": {
       "fuselaje": 4,
@@ -450,16 +449,24 @@ campos extendidos extraídos de la Wiki de Metalstorm (Fase 3C).
       "canones": 7
     },
     "stats_real": {
-      "base_statistics": { ... },
-      "advanced_statistics": { ... }
+      "base_statistics": { },
+      "advanced_statistics": { }
     },
     "descripcion": "A modern Medium Fighter from France, with excellent low-speed agility, and six heat-seeking missiles with enhanced range and look-and-shoot capability.",
-    "historia": "The Rafale F3-R is a multirole fighter aircraft, designed and built by French manufacturer Dassault. In the late 1970's France had entered into an agreement with the UK, Germany, Italy and Spain...\n\n82-0062 was destroyed in a fatal crash on October 14, 1984...",
+    "descripcion_es": "Un caza mediano moderno de origen francés, dotado de sobresaliente agilidad a baja cota y seis misiles térmicos con alcance mejorado y capacidad de disparo fuera de eje.",
+    "historia": "The Rafale F3-R is a multirole fighter aircraft, designed and built by French manufacturer Dassault...",
+    "historia_es": "El Rafale F3-R es un caza polivalente diseñado y construido por el fabricante francés Dassault Aviation...",
     "recomendaciones": {
       "Trait Tips": ["..."],
       "Ability Tips": ["..."],
       "Passive Tips": ["..."],
       "General Tips": ["..."]
+    },
+    "recomendaciones_es": {
+      "Trait Tips": ["Aprovechá la agilidad a baja velocidad para forzar tijeras."],
+      "Ability Tips": ["Activá la postcombustión táctica al romper el cerco."],
+      "Passive Tips": ["El blindaje reforzado mitiga impactos de fragmentación."],
+      "General Tips": ["Mantené la altitud para conservar energía de maniobra."]
     },
     "loadout_wiki": {
       "canones": [

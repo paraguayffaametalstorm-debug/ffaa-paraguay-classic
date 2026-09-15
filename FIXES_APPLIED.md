@@ -442,7 +442,88 @@ modal de Stats.
 - ✅ `node --check` pasa en `planes.controller.js` y `modEffects.js`
 - ✅ 10 iconos de mods servidos desde Cloudinary
 - ✅ Modal de Stats muestra iconos de mods equipados
-- ⏳ Pendiente: traducción al español de descripciones largas (Fase 3D)
+- ✅ Traducción al español completada en v3.9.8 mediante pipeline DeepL y `TRAITS_ES`
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
+
+### 🔹 Fix #14: Sistema de Traducción Integral al Español (i18n) & Fallback Resiliente (2026-09-14)
+
+**Fecha:** 2026-09-14  
+**Archivos:** `plane_models` (Supabase), `src/controllers/planes.controller.js`, `js/views.js`  
+**Severidad:** 🌐 Media (Internacionalización y localización táctica)  
+**Versión:** v3.9.8  
+
+**Problema Detectado:**
+Gran parte de la información técnica, histórica y consejos tácticos extraídos de la Wiki oficial de MetalStorm se encontraban exclusivamente en inglés (`descripcion`, `historia`, `recomendaciones`, `traits`), reduciendo la inmersión y comprensión operativa para los combatientes paraguayos.
+
+**Solución Implementada:**
+1. **Base de Datos (`plane_models` en Supabase):**
+   - Agregadas y pobladas las columnas `descripcion_es` (TEXT), `historia_es` (TEXT) y `recomendaciones_es` (JSONB) traducidas profesionalmente con la API de DeepL.
+2. **Degradación Transparente en Cliente (`js/views.js`):**
+   - La capa de presentación prioriza siempre las variantes en español y cae transparentemente al texto en inglés en caso de ausencia:
+   ```javascript
+   const historia = plane.historia_es || plane.historia || 'Sin información histórica registrada.';
+   const descripcion = plane.descripcion_es || plane.descripcion || '';
+   const recomendaciones = plane.recomendaciones_es || plane.recomendaciones || {};
+   ```
+3. **Mapeo Oficial de Traits (`TRAITS_ES`):**
+   - Diccionario reactivo y función `translateTrait(trait)` en `js/views.js` que traduce los 13 rasgos únicos de combate (Blindaje Reforzado, Motores Fríos, Altitud de Crucero, Ala Delta, Cañones Expertos, Autoridad Total, Dispara y Olvida, Ala Leal, Sigilo, Ala Variable, Inversor de Empuje, Cañones Inestables, Motores Inestables).
+
+**Resultado:**
+- ✅ 100% de los 44 cazas con descripciones, historias y recomendaciones en español.
+- ✅ Fallback sin excepciones ante datos incompletos.
+- ✅ Los 13 rasgos de combate perfectamente traducidos y uniformados.
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
+
+### 🔹 Fix #15: Rediseño del Hangar Militar — Vista 1 (Grid Táctico) y Vista 2 (Pantalla Dedicada) (2026-09-15)
+
+**Fecha:** 2026-09-15  
+**Archivos:** `js/views.js`, `components/planes-view.html`, `components/aircraft-stats-modal.html`, `css/tactical-design.css`  
+**Severidad:** ✈️ Alta (Usabilidad y ergonomía táctica)  
+**Versión:** v3.9.8  
+
+**Problema Detectado:**
+La navegación de 44 aeronaves en un carrusel circular rígido resultaba tediosa y lenta para pilotos en dispositivos móviles. Además, la transición al detalle requería múltiples modales superpuestos sin navegación fluida ni acceso directo a las mejoras de Upgrades 2.0.
+
+**Solución Implementada:**
+1. **Vista 1 — Grid Táctico de Tarjetas (`overrideCarouselCardClick`):**
+   - Despliegue de los 44 cazas en un grid responsivo con tarjetas tácticas que exhiben rango, silueta, modelo y nivel actual.
+   - Intercepción de clicks para abrir directamente el detalle sin obligar a rotar el carrusel.
+2. **Vista 2 — Pantalla Dedicada (`openAircraftDetailView`):**
+   - Activación de `.aircraft-detail-mode` en el contenedor principal.
+   - Inyección de cabecera con botón prominente `← VOLVER AL HANGAR` que restaura instantáneamente la vista de cuadrícula.
+3. **Enlaces Directos a Upgrades 2.0:**
+   - Cada bloque de subsistemas (Fuselaje, Motor, Aviónica, Armas) cuenta con botones directos `IR A EDICIÓN DE [SECCIÓN]`, abriendo la ventana de calibración del sistema específico.
+
+**Resultado:**
+- ✅ Navegación instantánea en los 44 cazas.
+- ✅ Flujo intuitivo de ida y vuelta entre catálogo y ficha de combate.
+- ✅ Conexión directa y ergonómica entre ficha técnica y calibración mecánica.
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
+
+---
+
+### 🔹 Fix #16: Corrección de Carga de Imágenes en Habilidades Especiales y Pasivas (2026-09-15)
+
+**Fecha:** 2026-09-15  
+**Archivos:** `js/views.js`  
+**Severidad:** 🖼️ Menor (Consistencia visual)  
+**Versión:** v3.9.8  
+
+**Problema Detectado:**
+Al invocar `openAircraftDeepModal`, las imágenes de habilidades especiales (`especial_image_url`) y pasivas (`pasiva_image_url`) podían no re-renderizarse tras recibir la carga asíncrona de `/details`, mostrando iconos genéricos.
+
+**Solución:**
+Asegurar que el callback de respuesta de `/api/planes/:id/details` actualice de forma síncrona los elementos del DOM de ambas habilidades tanto en el modal como en la pantalla dedicada, renderizando la URL oficial o el fallback SVG estilizado.
+
+**Resultado:**
+- ✅ Visualización consistente y de alta fidelidad para habilidades de los 44 cazas.
 
 **Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN
 
@@ -457,11 +538,11 @@ modal de Stats.
 | `src/controllers/admin.controller.js` | Modificación de rangos militares y estado de cuenta | 🟢 ESTABLE |
 | `src/controllers/profile.controller.js` | Persistencia de datos personales y teléfono de alertas | 🟢 ESTABLE |
 | `src/controllers/performances.controller.js` | Historial de tokens y sincronización de semáforo | 🟢 ESTABLE |
-| `src/controllers/planes.controller.js` | Habilidades, Upgrades 2.0, cálculo de mods, recomendaciones y validación de sistemas disponibles | 🟢 ESTABLE |
+| `src/controllers/planes.controller.js` | Habilidades, Upgrades 2.0, cálculo de mods, recomendaciones, telemetría i18n y validación de sistemas disponibles | 🟢 ESTABLE |
 | `src/utils/upgradeEffects.js` | Lógica y fallback de bonificaciones por niveles de subsistemas (0-8) | 🟢 ESTABLE |
 | `src/utils/modEffects.js` | Lógica, caché y cálculo de multiplicadores de los 10 mods tácticos | 🟢 ESTABLE |
 | `src/utils/audit.js` | Resolución de UUIDs en eventos de seguridad y auditoría | 🟢 ESTABLE |
 | `components/aircraft-stats-modal.html` | Modal de datos profundos y markup de Upgrade Planner 2.0 | 🟢 ESTABLE |
 | `planes (Supabase)` | Normalización 1NF (UNIQUE, FK, CHECKs, habilidades) | 🟢 ESTABLE |
-| `plane_models (Supabase)` | Catálogo de 42 modelos con `sistemas_disponibles` detallado por armamento | 🟢 ESTABLE |
+| `plane_models (Supabase)` | Catálogo oficial de 44 modelos con `sistemas_disponibles` y columnas i18n (`_es`) | 🟢 ESTABLE |
 | `components/change-password-modal.html` | Modal de actualización táctica (Workaround: ENTER) | 🟡 FIX UI PENDIENTE |

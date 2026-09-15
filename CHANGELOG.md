@@ -6,6 +6,75 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.9.8] - 2026-09-15
+
+### ✈️ Rediseño del Hangar Militar (Grid + Pantalla Dedicada) & Sistema i18n
+
+- **Rediseño Integral del Hangar Militar:**
+  - **Arquitectura de Doble Vista:**
+    - **Vista 1 (Grid Táctico de Aeronaves):** Implementación de `overrideCarouselCardClick` para transformar la navegación de cazas en un grid interactivo de tarjetas tácticas, con acceso ágil y filtrado responsive.
+    - **Vista 2 (Pantalla Dedicada / Detalle de Aeronave):** Función `openAircraftDetailView(planeId)` que activa la clase `.aircraft-detail-mode`.
+    - **Botón de Retroceso al Hangar:** Inyección de botón `← VOLVER AL HANGAR` en la cabecera para regresar instantáneamente a la selección general.
+    - **Accesos Directos a Upgrades 2.0:** Botones `IR A EDICIÓN DE [SECCIÓN]` que transportan al piloto directamente al modal de calibración de Fuselaje, Motor, Aviónica o Armamento.
+    - **Renderizado Completo de Habilidades:** Corrección en el visor para actualizar las habilidades especiales y pasivas con imágenes oficiales y descripciones completas al recibir `/details`.
+- **Sistema de Traducción Integral (i18n):**
+  - **Columnas en Supabase (`plane_models`):** `descripcion_es`, `historia_es` y `recomendaciones_es` traducidas mediante **DeepL API**.
+  - **Estrategia de Fallback en Frontend (`js/views.js`):** El cliente evalúa primero las columnas en español (`plane.historia_es || plane.historia`, `plane.descripcion_es || plane.descripcion`, `plane.recomendaciones_es || plane.recomendaciones`). Si no hay traducción disponible, recurre transparentemente al texto original en inglés.
+  - **Traducción de 13 Traits Oficiales (`TRAITS_ES`):** Diccionario en cliente y helper `translateTrait(trait)` para traducir los 13 rasgos tácticos oficiales del simulador (Blindaje Reforzado, Motores Fríos, Altitud de Crucero, Ala Delta, Cañones Expertos, Autoridad Total, Dispara y Olvida, Ala Leal, Sigilo, Ala Variable, Inversor de Empuje, Cañones Inestables, Motores Inestables).
+- **Consolidación del Catálogo:** Catálogo oficial normalizado con **44 modelos de combate** activos.
+- **PWA / Service Worker:** Cache-busting y actualización de versión a `v3.9.8` (`PARAGUAY-FFAA-METALSTORM-v3.9.8`).
+
+---
+
+## 📌 [3.9.7] - 2026-09-14
+
+### ⚡ Telemetría y Rendimiento de Vistas
+- Optimización en la resolución de promesas en `getPlaneDetails`.
+- Manejo mejorado de estado en el carrusel de aeronaves y preservación de selección activa.
+- Ajustes en el scroll interno del modal de estadísticas y pantalla de detalle.
+
+---
+
+## 📌 [3.9.6] - 2026-09-13
+
+### 🎯 Fix de Imágenes de Habilidades Especiales y Pasivas
+- **Corrección en `openAircraftDeepModal`:** Las imágenes de habilidades (`especial_image_url`, `pasiva_image_url`) ahora se actualizan correctamente tras consultar `/details`, evitando caídas a iconos por defecto.
+- Refuerzo de fallback visual con insignias SVG tácticas cuando una habilidad carece de icono externo.
+
+---
+
+## 📌 [3.9.5] - 2026-09-13
+
+### 📱 Responsive Design y PWA Cache
+- Ajustes en media queries del grid de cards tácticas para pantallas de ancho ultra-estrecho (<380px).
+- Sincronización de activos cacheados en el Service Worker.
+
+---
+
+## 📌 [3.9.4] - 2026-09-13
+
+### 🎯 Telemetría Balística de Armamento
+- Mejora en la visualización de DPS, rango de retícula y tiempo de sobrecalentamiento de cañones y misiles.
+- Desglose de tipos de guiado en loadout wiki (Heat-seeking, Radar, etc.).
+
+---
+
+## 📌 [3.9.3] - 2026-09-12
+
+### ✈️ Consolidación de Flota (44 Cazas)
+- Normalización en base de datos de los 44 modelos oficiales de combate.
+- Sincronización de tipos de subsistemas disponibles por modelo (`sistemas_disponibles`).
+
+---
+
+## 📌 [3.9.2] - 2026-09-12
+
+### 🎨 Mejoras en Galería de Paints y Canopies
+- Ajuste del grid interno de pinturas y cabinas con badges de rareza militar.
+- Visualización de requisitos de desbloqueo oficiales de la Wiki.
+
+---
+
 ## 📌 [3.9.1] - 2026-09-12
 
 ### 🔧 Mods Oficiales + Cloudinary + Fix de Datos
