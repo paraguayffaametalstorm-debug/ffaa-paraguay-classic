@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.9.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v3.9.8-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 
@@ -23,13 +23,14 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 - **Cuadro de Mando Operacional (Dashboard C4ISR):** Telemetría en tiempo real, seguimiento de la meta semanal del escuadrón (175 tokens promedio), panel de miembros en riesgo, gráfico de tendencia histórica y clasificación Top 5 de pilotos.
 - **Registro Táctico de Rendimiento & Selector de Pilotos:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla), incluyendo selector táctico de combatientes (`#performanceTarget`) exclusivo para oficiales `ADMIN` y `OWNER` con banner de modo oficial.
 - **Panel de Administración Militar Avanzado:** Gestión de combatientes con cálculo en tiempo real de `avg_tokens`, `weeks_evaluated` y distintivos de semáforo militar `perf_status` conforme a las normativas del escuadrón.
-- **Catálogo & Hangar Militar (Upgrades 2.0):** Flota operacional de cazas de combate, CRUD completo de modelos para Oficiales (ADMIN/OWNER), gestión de 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas niveles 0-8) y control de recursos.
+- **Catálogo & Hangar Militar Rediseñado (v3.9.8):** Flota de 44 aeronaves de combate oficiales. Arquitectura dual de navegación: **Vista 1 (Grid Táctico de Tarjetas)** para selección rápida y **Vista 2 (Pantalla Dedicada / Detalle Completo)** con botón de retroceso "← VOLVER AL HANGAR", accesos directos de edición a **Upgrades 2.0** (Fuselaje, Motor, Aviónica, Armas niveles 0-8), telemetría balística y mods.
+- **Sistema de Traducción Integral (i18n) (v3.9.8):** Traducción automatizada con DeepL de historias, recomendaciones tácticas y descripciones (`historia_es`, `descripcion_es`, `recomendaciones_es` en base de datos) con fallback inteligente al inglés original si no existe traducción. Mapeo en frontend de los 13 traits únicos de combate (`TRAITS_ES`).
 - **Control de Mando RBAC & Cuotas Institucionales:** Restricción jerárquica estricta (1 Comandante en Jefe `OWNER`, máximo 3 Oficiales `ADMIN` y máximo 8 `VETERANO`).
 - **Seguridad Criptográfica & Anti-Sesión Fantasma:** Contraseñas temporales aleatorias de alta entropía (`MS-XXXX-XXXX`), invalidación instantánea de JWT mediante `token_version` y hashing con `bcryptjs`.
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
-- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.7.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
-- **Integración con Wiki de Metalstorm (v3.9.0):** Extracción y carga de datos históricos, descripciones, recomendaciones tácticas, paints y canopies de los 44 aviones desde https://metalstorm.wiki.gg/. Incluye los 10 mods tácticos oficiales con efectos numéricos exactos y costos de mejora. Visualización completa en el modal de Stats con layout de cards responsive (1-4 columnas según ancho de pantalla).
+- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.9.8 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **Integración con Wiki de Metalstorm (v3.9.8):** Sincronización oficial de los 44 aviones, 310+ pinturas (paints), 176 cabinas (canopies), loadouts balísticos y los 10 mods tácticos oficiales con efectos numéricos exactos y costos de mejora. Visualización completa en el visor de telemetría con layout de cards responsive.
 
 ---
 
@@ -85,7 +86,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 ├── README.md                     # Documentación principal del sistema
 ├── reset-password.html           # Terminal de restablecimiento de contraseña militar
 ├── server.js                     # Servidor Express, middlewares y montaje de rutas
-├── sw.js                         # Service Worker v3.5.0 (Cache-First estáticos)
+├── sw.js                         # Service Worker v3.9.8 (Cache-First estáticos)
 ├── USER_MANUAL.md                # Manual operativo para pilotos y oficiales
 │
 ├── components/                   # Vistas y componentes HTML inyectados en runtime
@@ -338,17 +339,18 @@ El sistema cuenta con un flujo seguro y robusto para la incorporación de nuevos
 
 ---
 
-## ✈️ Sistema de Aviones (Hangar Militar)
+## ✈️ Sistema de Aviones (Hangar Militar Rediseñado - v3.9.8)
 
-### Catálogo de Aeronaves
+### Catálogo de Aeronaves Oficial
 
-El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, etc.) con las siguientes características:
+El sistema cuenta con un catálogo oficial completo de **44 modelos de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, F-14 Tomcat, F-15 Eagle, etc.) con las siguientes características:
 
 - **Tipo:** Ligero, Mediano, Pesado, Interceptor, Ataque
 - **Estadísticas:** Velocidad, Agilidad, Blindaje, Potencia de Armas
-- **Habilidades Especiales:** 3 niveles
-- **Habilidades Pasivas:** 5 niveles
-- **Sistemas Mejorables:** Fuselaje, Motor, Aviónica, Armas (0-8)
+- **Habilidades Especiales:** 3 niveles con iconografía oficial
+- **Habilidades Pasivas:** 5 niveles con iconografía oficial
+- **Sistemas Mejorables:** Fuselaje, Motor, Aviónica, Armas (niveles 0-8)
+- **Armamento Wiki:** Especificaciones detalladas de cañones y misiles reales
 
 ### Sistema de Mods
 
@@ -422,12 +424,54 @@ El sistema cuenta con un catálogo de **39 modelos de combate** (F-22 Raptor, Su
 | 7 | 2,500 | 200 |
 | 8 | 3,500 | 350 |
 
-### Interfaz de Usuario
+### Interfaz de Usuario: Rediseño del Hangar Militar (v3.9.8)
 
-- **Carrusel Circular Infinito:** Navegación táctica con tarjeta central prominente
-- **Modal de Datos Profundos:** Estadísticas, habilidades, sistemas y mods
-- **IA de Recomendación:** 3 estilos de combate (Agresivo, Defensivo, Apoyo)
-- **Upgrade Planner:** Previsualización de builds antes de gastar recursos
+El Hangar Militar abandona el modelo rígido tradicional en favor de una arquitectura de **dos vistas operativas coordinadas**:
+
+1. **Vista 1 — Grid Táctico de Tarjetas de Aeronaves:**
+   - Despliegue de los cazas en un grid responsivo de tarjetas tácticas interactivas con `overrideCarouselCardClick`.
+   - Información visual rápida: modelo, rol, silueta, nivel actual, estado y botón de acceso a ficha completa.
+   - Filtrado dinámico por categoría y acceso ágil a cualquier aeronave sin restricciones de rotación.
+2. **Vista 2 — Pantalla Dedicada / Detalle Completo de la Aeronave:**
+   - Activada mediante `openAircraftDetailView(planeId)` activando la clase `.aircraft-detail-mode`.
+   - **Botón Superior de Retroceso:** Header prominente con botón `← VOLVER AL HANGAR` que restaura instantáneamente la vista de catálogo.
+   - **Telemetría Completa y Enlaces a Upgrades 2.0:** Cada bloque funcional (Fuselaje, Motor, Aviónica, Armamento) cuenta con botones directos `IR A EDICIÓN DE [SECCIÓN]` que conducen al modal de calibración de Upgrades 2.0.
+   - **Renderizado Completo de Habilidades:** Corrección en v3.9.8 para re-renderizar habilidades especiales y pasivas con imágenes oficiales y descripciones completas desde `/details`.
+   - **IA de Recomendación:** 3 estilos de combate (Agresivo, Defensivo, Apoyo).
+   - **Upgrade Planner:** Previsualización de builds antes de gastar recursos de fuselaje, motor, aviónica y armas.
+
+---
+
+### 🌐 Sistema de Traducción Integral (i18n) - v3.9.8
+
+La plataforma incorpora un motor integral de internacionalización y localización al español rioplatense/militar:
+
+1. **Estructura en Base de Datos (`plane_models` en Supabase):**
+   - Nuevas columnas específicas: `descripcion_es` (TEXT), `historia_es` (TEXT), `recomendaciones_es` (JSONB).
+   - Datos traducidos y refinados mediante pipeline automatizado con **DeepL API**.
+2. **Estrategia de Fallback en Cliente:**
+   - La capa de presentación (`js/views.js`) evalúa prioritariamente los campos en español (`plane.historia_es || plane.historia`, `plane.descripcion_es || plane.descripcion`, `plane.recomendaciones_es || plane.recomendaciones`).
+   - Si no existe traducción al español o el campo es nulo, el sistema degrada limpiamente al texto original en inglés sin generar excepciones ni bloquear la vista.
+3. **Mapeo Oficial de Traits de Combate (`TRAITS_ES`):**
+   - Implementado en `js/views.js` mediante diccionario reactivo y función `translateTrait(trait)` que normaliza y traduce los 13 rasgos únicos de combate del juego:
+
+| # | Trait Original (EN) | Nomenclatura Táctica Oficial (ES) | Función / Estilo de Combate |
+|---|---|---|---|
+| 1 | **Armor Plating** | **Blindaje Reforzado** | Incremento sustancial de resistencia estructural a proyectiles y fragmentación |
+| 2 | **Cool Engines** | **Motores Fríos** | Reducción de firma infrarroja y retardo en enganche térmico enemigo |
+| 3 | **Cruising Altitude** | **Altitud de Crucero** | Bonificación de velocidad y eficiencia de combustible a gran altitud |
+| 4 | **Delta Wing** | **Ala Delta** | Alta velocidad supersónica y retención de energía en trepadas |
+| 5 | **Expert Cannons** | **Cañones Expertos** | Mayor precisión, cadencia sostenida y menor tiempo de sobrecalentamiento |
+| 6 | **Full Authority** | **Autoridad Total** | Control aerodinámico extremo y respuesta ágil en maniobras post-stall |
+| 7 | **Look And Shoot** | **Dispara y Olvida** | Capacidad off-boresight para enganchar blancos fuera del eje longitudinal |
+| 8 | **Loyal Wingman** | **Ala Leal** | Sinergia y bonificación táctica al volar en formación cerrada con aliados |
+| 9 | **Stealth** | **Sigilo** | Firma de radar reducida (RCS baja), disminuyendo distancia de detección AESA |
+| 10 | **Swing Wing** | **Ala Variable** | Geometría alar móvil: máxima maniobrabilidad a baja velocidad y empuje en supersónico |
+| 11 | **Thrust Reverser** | **Inversor de Empuje** | Frenado aerodinámico súbito para forzar tijeras y sobrepasos del adversario |
+| 12 | **Unstable Cannons** | **Cañones Inestables** | Alto daño por ráfaga con dispersión progresiva a disparos sostenidos |
+| 13 | **Unstable Engines** | **Motores Inestables** | Aceleración explosiva en postquemador a expensas de mayor consumo térmico |
+
+---
 
 ### 🎨 Mods Oficiales con Datos de la Wiki
 
@@ -440,32 +484,32 @@ Los 10 mods tácticos del juego están sincronizados con los valores oficiales d
 
 **Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft_Mods (Creative Commons Attribution-ShareAlike 4.0).
 
-### 🎨 Datos de la Wiki integrados en el Modal Stats
+### 🎨 Datos de la Wiki integrados en el Modal Stats y Pantalla Dedicada
 
-El modal `#aircraftDeepModal` (botón "Stats") muestra, además de las
+El modal `#aircraftDeepModal` y la vista dedicada de aeronave muestran, además de las
 estadísticas calculadas en vivo:
 
-| Sección | Contenido |
-|---------|-----------|
-| 📊 Estadísticas | Stats calculadas (base + nodos + mods + nivel) |
-| 🎯 Armamento Equipado | Lista de armas con nombre + nivel |
-| 🎯 Habilidad Especial | Nombre + nivel + efecto |
-| 🛡️ Habilidad Pasiva | Nombre + nivel + efecto |
-| 🔧 Sistemas Upgrades 2.0 | 7 sistemas colapsables con nodos |
-| 🤖 Recomendación Táctica | 3 estilos de build (Agresivo/Defensivo/Apoyo) |
-| 🔩 Mods Equipados | 2 slots con nombre + nivel |
-| 🎯 Traits | Lista de traits con descripción |
-| 🎨 Paints | Galería visual (nombre, raridad, requisito) |
-| 🪟 Canopies | Galería visual (nombre, raridad, nivel) |
-| 📜 Historia | Trivia multi-párrafo extraída de la Wiki |
-| 💡 Recomendaciones | Trait Tips, Ability Tips, Passive Tips |
+| Sección | Contenido | Idioma |
+|---------|-----------|:---:|
+| 📊 Estadísticas | Stats calculadas (base + nodos + mods + nivel) | ES |
+| 🎯 Armamento Equipado | Lista de armas con nombre + nivel + calibres | ES |
+| 🎯 Habilidad Especial | Nombre + nivel + efecto + imagen oficial | ES |
+| 🛡️ Habilidad Pasiva | Nombre + nivel + efecto + imagen oficial | ES |
+| 🔧 Sistemas Upgrades 2.0 | 4 subsistemas (Fuselaje, Motor, Aviónica, Armas) con nodos | ES |
+| 🤖 Recomendación Táctica | 3 estilos de build (Agresivo/Defensivo/Apoyo) | ES |
+| 🔩 Mods Equipados | 2 slots con icono + nombre + nivel | ES |
+| 🎯 Traits | Lista de traits con traducción oficial (`TRAITS_ES`) | ES |
+| 🎨 Paints | Galería visual (nombre, raridad, requisito) | EN / ES |
+| 🪟 Canopies | Galería visual (nombre, raridad, nivel) | EN / ES |
+| 📜 Historia | Trivia histórica multi-párrafo | **ES** (Fallback EN) |
+| 💡 Recomendaciones | Trait Tips, Ability Tips, Passive Tips | **ES** (Fallback EN) |
 
 **Layout responsive:** Grid de cards flotantes con columnas
 auto-ajustables según el ancho (1 columna <700px, 2 columnas
 700-1000px, 3-4 columnas >1000px).
 
 **Fuente:** 44 aviones, 310+ paints, 176 canopies, 41 historias,
-44 recomendaciones, 44 loadouts cargados desde la Wiki oficial.
+44 recomendaciones, 44 loadouts cargados desde la Wiki oficial y traducidos al español.
 
 ### Estructura de `planes`
 

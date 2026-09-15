@@ -1,8 +1,8 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
-> **Fecha de Congelamiento:** 2026-09-12  
-> **Versión:** v3.9.0  
+> **Fecha de Congelamiento:** 2026-09-15  
+> **Versión:** v3.9.8  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - AUDITADO Y PROBADO
 
@@ -83,9 +83,12 @@ CREATE TABLE users (
 | `is_active` | BOOLEAN | ¿Está activo? |
 | `stats_real` | JSONB | Estadísticas reales |
 | `sistemas_disponibles` | JSONB | Sistemas y armas disponibles por avión (fuselaje, motor, avionica, canones, misiles_ir, misiles_radar, misiles_beam, misiles_manual, misiles_largo, cohetes) |
-| `descripcion` | TEXT | Descripción in-game (Wiki) |
-| `historia` | TEXT | Trivia histórica (Wiki) |
-| `recomendaciones` | JSONB | Tips tácticos (Wiki) |
+| `descripcion` | TEXT | Descripción in-game (Wiki EN) |
+| `descripcion_es` | TEXT | Descripción in-game traducida (DeepL ES) |
+| `historia` | TEXT | Trivia histórica (Wiki EN) |
+| `historia_es` | TEXT | Trivia histórica traducida (DeepL ES) |
+| `recomendaciones` | JSONB | Tips tácticos (Wiki EN) |
+| `recomendaciones_es` | JSONB | Tips tácticos traducidos (DeepL ES) |
 | `loadout_wiki` | JSONB | Armamento detallado (Wiki) |
 | `paints` | JSONB | Array de paints (Wiki) |
 | `canopies` | JSONB | Array de canopies (Wiki) |
@@ -93,7 +96,7 @@ CREATE TABLE users (
 | `wiki_url` | TEXT | URL de la Wiki |
 | `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
 
-**Catálogo oficial:** 42 modelos de combate con configuración individual de armamento y subsistemas.
+**Catálogo oficial:** 44 modelos de combate con configuración individual de armamento, subsistemas y traducción al español rioplatense.
 
 ##### Estructura de `sistemas_disponibles` (JSONB)
 
@@ -555,7 +558,7 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 |-------|-----------|---------------------|--------|
 | users | Core | ~5 | ✅ Documentada |
 | performances | Core | - | ✅ Documentada |
-| plane_models | Hangar | 42 | ✅ Documentada |
+| plane_models | Hangar | 44 | ✅ Documentada |
 | plane_mods | Hangar | 10 | ✅ Documentada |
 | mod_effects | Hangar | 50 | ✅ Documentada |
 | planes | Hangar | ~121 | ✅ Documentada |
@@ -836,19 +839,21 @@ Para prevenir que futuras tareas de mantenimiento o despliegues automáticos alt
 | Paints | 310+ | Promedio de 7 por avión |
 | Canopies | 176 | 4 por avión (uniforme) |
 
-### Modal Stats — Estado de Secciones
+### Modal Stats y Pantalla Dedicada — Estado de Secciones (v3.9.8)
 
-| Sección | Fuente | Estado |
-|---------|--------|:---:|
-| 📊 Estadísticas | stats_real + nodos + mods | ✅ |
-| 🎯 Armamento Equipado | sistemas + loadout_wiki | ✅ |
-| 🎯 Habilidad Especial | especial_nombre | ✅ |
-| 🛡️ Habilidad Pasiva | pasiva_nombre | ✅ |
-| 🔧 Sistemas Upgrades 2.0 | sistemas | ✅ |
-| 🤖 Recomendación Táctica | Reglas locales | ✅ |
-| 🔩 Mods | mod1_*, mod2_* | ✅ |
-| 🎯 Traits | traits | ✅ |
-| 🎨 Paints | paints (Wiki) | ✅ NUEVA |
-| 🪟 Canopies | canopies (Wiki) | ✅ NUEVA |
-| 📜 Historia | historia (Wiki) | ✅ (antes placeholder) |
-| 💡 Recomendaciones | recomendaciones (Wiki) | ✅ (antes placeholder) |
+| Sección | Fuente | Idioma | Estado |
+|---------|--------|:---:|:---:|
+| 📊 Estadísticas | stats_real + nodos + mods | ES | ✅ Validado |
+| 🎯 Armamento Equipado | sistemas + loadout_wiki | ES | ✅ Validado |
+| 🎯 Habilidad Especial | especial_nombre + especial_image_url | ES | ✅ Validado (Re-render fix v3.9.8) |
+| 🛡️ Habilidad Pasiva | pasiva_nombre + pasiva_image_url | ES | ✅ Validado (Re-render fix v3.9.8) |
+| 🔧 Sistemas Upgrades 2.0 | sistemas + enlaces a edición | ES | ✅ Validado |
+| 🤖 Recomendación Táctica | Reglas locales | ES | ✅ Validado |
+| 🔩 Mods | mod1_*, mod2_* | ES | ✅ Validado |
+| 🎯 Traits | traits + traducción oficial (`TRAITS_ES`) | ES | ✅ Validado (13 traits) |
+| 🎨 Paints | paints (Wiki) | EN / ES | ✅ Validado |
+| 🪟 Canopies | canopies (Wiki) | EN / ES | ✅ Validado |
+| 📜 Historia | `historia_es` (DeepL) / fallback `historia` | **ES** | ✅ Validado (Fallback EN) |
+| 💡 Recomendaciones | `recomendaciones_es` (DeepL) / fallback | **ES** | ✅ Validado (Fallback EN) |
+| 🔙 Header de Navegación | Botón sticky "← VOLVER AL HANGAR" | ES | ✅ Validado (Vista 2) |
+| 📱 Grid de Cazas | `overrideCarouselCardClick` | ES | ✅ Validado (Vista 1) |

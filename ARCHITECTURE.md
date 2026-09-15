@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.9.0).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.9.8).**
 
 ---
 
@@ -12,10 +12,10 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
 
 ```
                   ┌──────────────────────────────────────────────────────────┐
-                  │              NAVEGADOR / PWA CLIENT (v3.5.0)             │
+                  │              NAVEGADOR / PWA CLIENT (v3.9.8)             │
                   │  - Vanilla ES6+ SPA & Responsive Tactical Design         │
                   │  - Dynamic Component Loader (17+ Vistas & Modales)       │
-                  │  - Service Worker Cache-First (sw.js)                    │
+                  │  - Service Worker Cache-First (sw.js v3.9.8)             │
                   │  - Terminal de Vinculación Google (/link-account)        │
                   │  - Terminal de Restablecimiento (/reset-password)        │
                   └────────────┬─────────────────────────────┬───────────────┘
@@ -49,7 +49,7 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
    │  │   ├── /pilots (Selector Táctico de Pilotos para ADMIN/OWNER)             │
    │  │   ├── /history, /stats & /all (Historial & Consulta de Escuadrón)        │
    │  │   └── /export (Exportación CSV Militar Sanitizado contra Inyecciones)    │
-   │  ├── /api/planes (Hangar Militar - 23 Cazas, Starform Upgrades 2.0)         │
+   │  ├── /api/planes (Hangar Militar - 44 Cazas, Upgrades 2.0, i18n)            │
    │  ├── /api/admin (Gestión Miembros: avg_tokens, weeks_evaluated, perf_status)│
    │  ├── /api/owner (Auditoría C4ISR, Backups Transaccionales, Purga)           │
    │  └── /api/presence, /api/profile, /api/settings, /api/normativas            │
@@ -86,7 +86,7 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
   - `performance-form.html`: Formulario con selector de pilotos (`#performanceTarget`) y advertencia de modo oficial.
   - `admin-panel.html`: Panel de oficiales con filtros dinámicos, `avg_tokens`, `weeks_evaluated` y `perf_status`.
   - `owner-panel.html`: Consola C4ISR para el Comandante en Jefe con auditoría de seguridad y respaldos.
-  - `planes-view.html`: Hangar de aeronaves con soporte para los 23 cazas de combate y Upgrades 2.0.
+  - `planes-view.html`: Hangar de aeronaves con arquitectura dual (Vista 1 Grid Táctico y Vista 2 Pantalla Dedicada), catálogo de 44 cazas oficiales y Upgrades 2.0.
   - `profile-view.html`: Expediente militar, insignia de estado de escuadrón (`squadStatus`), telemetría y hangares personales.
   - `forgot-password-modal.html`: Modal de recuperación asistida por correo táctico.
 - **`/css/`:** Sistema de diseño militar modular:
@@ -213,9 +213,9 @@ Para facilitar la carga de datos en misiones o eventos por parte de la jerarquí
 
 ---
 
-## 5. Starform Upgrades 2.0 & Hangar Militar (Flota de 23 Cazas)
+## 5. Starform Upgrades 2.0 & Hangar Militar Rediseñado (Flota de 44 Cazas)
 
-El sistema soporta la gestión completa de la flota militar compuesta por **23 modelos de cazas** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, etc.) junto con la actualización técnica de subsistemas mecánicos y de combate:
+El sistema soporta la gestión completa de la flota militar compuesta por **44 modelos de cazas** oficiales (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, etc.) junto con la actualización técnica de subsistemas mecánicos y de combate:
 
 ### Subsistemas Mejorables (Niveles 0 a 8)
 1. **Fuselaje (`nivel_fuselaje`):** Resistencia al daño, reducción de firma de radar e integridad física.
@@ -300,13 +300,16 @@ Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel a
 [Frontend modal Stats]
 ```
 
-### 7.4 Columnas Nuevas en plane_models
+### 7.4 Columnas de Wiki e i18n en plane_models
 
 | Columna | Tipo | Descripción |
 |---------|------|-------------|
-| `descripcion` | TEXT | Descripción in-game del avión |
-| `historia` | TEXT | Trivia multi-párrafo (con \n\n entre párrafos) |
-| `recomendaciones` | JSONB | Objeto con keys: Trait Tips, Ability Tips, Passive Tips |
+| `descripcion` | TEXT | Descripción in-game del avión (EN) |
+| `descripcion_es` | TEXT | Descripción in-game traducida (ES) |
+| `historia` | TEXT | Trivia multi-párrafo (EN) |
+| `historia_es` | TEXT | Trivia histórica multi-párrafo traducida (ES) |
+| `recomendaciones` | JSONB | Objeto con keys: Trait Tips, Ability Tips, Passive Tips (EN) |
+| `recomendaciones_es` | JSONB | Objeto de tips tácticos traducidos (ES) |
 | `loadout_wiki` | JSONB | Objeto con canones y misiles detallados |
 | `paints` | JSONB | Array de { Name, Image, Rarity, Decal Support, Unlock requirement } |
 | `canopies` | JSONB | Array de { Name, Image, Rarity, Unlock Level, Gold Tier Unlock } |
@@ -351,9 +354,72 @@ El modal `#aircraftDeepModal` usa un grid responsive de cards con
 
 - **Iconos:** Servidos desde Cloudinary con transformación `w_256,h_256,c_fill,f_webp,q_auto`.
 
-### 7.8 Limitaciones Conocidas
-- **Idioma:** Los datos están en inglés (idioma original de la Wiki). La traducción al español está planificada como Fase 3D.
-- **Frecuencia:** La Wiki se actualiza manualmente. Los datos quedan desactualizados hasta la próxima extracción.
-- **Trivia faltante:** 3 aviones no tienen sección de trivia en la Wiki (KF-21 Boramae, A-6 Intruder, A-10 Thunderbolt).
+### 7.8 Estado de Datos y Limitaciones
+- **Frecuencia:** La Wiki se sincroniza bajo demanda. Los datos quedan estables hasta la próxima extracción.
+- **Trivia faltante:** 3 aviones no poseen sección de trivia en la Wiki oficial (KF-21 Boramae, A-6 Intruder, A-10 Thunderbolt II).
+- **Cobertura de Traducción:** 100% de los 44 cazas disponen de traducción al español con fallback automático al inglés si alguna clave no está presente.
+
+---
+
+## 8. Arquitectura del Hangar Rediseñado & Motor i18n (v3.9.8)
+
+### 8.1 Arquitectura de Dos Vistas del Hangar (`js/views.js`)
+
+Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el Hangar Militar implementa un flujo desacoplado en dos capas:
+
+```text
+       ┌────────────────────────────────────────────────────────┐
+       │                   VISTA 1: GRID TÁCTICO                 │
+       │  - Tarjetas interactivas de aeronaves en grid CSS      │
+       │  - overrideCarouselCardClick() intercepta selección    │
+       │  - Indicador de nivel, rol, silueta y acción directa   │
+       └───────────────────────────┬────────────────────────────┘
+                                   │ Click en Caza
+                                   ▼ openAircraftDetailView(planeId)
+       ┌────────────────────────────────────────────────────────┐
+       │              VISTA 2: PANTALLA DEDICADA                │
+       │  - Modo .aircraft-detail-mode en contenedor principal  │
+       │  - Botón Sticky "← VOLVER AL HANGAR"                   │
+       │  - Telemetría profunda de combate y armamento wiki     │
+       │  - Botones "IR A EDICIÓN DE [SECCIÓN]" ──► Upgrades 2.0│
+       │  - Habilidades especiales y pasivas con imágenes       │
+       │  - Motor i18n con DeepL y fallback a inglés            │
+       └────────────────────────────────────────────────────────┘
+```
+
+1. **Vista 1 — Grid Táctico de Tarjetas (`overrideCarouselCardClick`):**
+   - Transforma el flujo secuencial en una cuadrícula táctica orientada al combate.
+   - Cada tarjeta actúa como selector directo evitando desplazamientos forzados.
+2. **Vista 2 — Pantalla Dedicada (`openAircraftDetailView`):**
+   - Reutiliza y amplía el modal profundo dotándolo de un contenedor a pantalla completa.
+   - Inyecta el botón de retroceso (`← VOLVER AL HANGAR`) que remueve `.aircraft-detail-mode` y restaura el scroll y estado del catálogo sin re-renderizar la vista.
+   - Vincula cada subsistema mecánico (Fuselaje, Motor, Aviónica, Armas) mediante botones de enlace directo a la edición en Upgrades 2.0.
+
+### 8.2 Motor de Traducción Integral (i18n)
+
+1. **Pipeline en Base de Datos:**
+   - La tabla `plane_models` almacena en paralelo el texto original en inglés y su versión traducida al español rioplatense táctico: `descripcion` / `descripcion_es`, `historia` / `historia_es`, `recomendaciones` / `recomendaciones_es`.
+2. **Lógica de Fallback Reactivo:**
+   ```javascript
+   const historia = plane.historia_es || plane.historia || 'Sin información histórica.';
+   const descripcion = plane.descripcion_es || plane.descripcion || '';
+   const recomendaciones = plane.recomendaciones_es || plane.recomendaciones || {};
+   ```
+3. **Diccionario de Traits Oficiales (`TRAITS_ES`):**
+   - Mapeo determinístico de los 13 traits de combate:
+     - `Armor Plating` $\to$ **Blindaje Reforzado**
+     - `Cool Engines` $\to$ **Motores Fríos**
+     - `Cruising Altitude` $\to$ **Altitud de Crucero**
+     - `Delta Wing` $\to$ **Ala Delta**
+     - `Expert Cannons` $\to$ **Cañones Expertos**
+     - `Full Authority` $\to$ **Autoridad Total**
+     - `Look And Shoot` $\to$ **Dispara y Olvida**
+     - `Loyal Wingman` $\to$ **Ala Leal**
+     - `Stealth` $\to$ **Sigilo**
+     - `Swing Wing` $\to$ **Ala Variable**
+     - `Thrust Reverser` $\to$ **Inversor de Empuje**
+     - `Unstable Cannons` $\to$ **Cañones Inestables**
+     - `Unstable Engines` $\to$ **Motores Inestables**
+   - Resuelto mediante la función `translateTrait(trait)` en `js/views.js`.
 
 

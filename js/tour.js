@@ -1,23 +1,31 @@
 /**
- * PARAGUAY-FFAA | METALSTORM - Sistema de Ayuda & Tour Interactivo
+ * PARAGUAY-FFAA | METALSTORM - Sistema de Ayuda & Tour Interactivo (v3.9.8)
  */
 
 const TOUR_STEPS = [
   {
     title: '👋 ¡Bienvenido a PARAGUAY FFAA [PRY]!',
-    content: 'Este sistema te permite gestionar tu rendimiento en eventos de escuadrón, administrar tus hangares de aeronaves, revisar normativas y seguir tu historial militar.'
+    content: 'Sistema oficial C4ISR del escuadrón paraguayo en MetalStorm (v3.9.8). Gestioná tu rendimiento en combate, administrá tus hangares, revisá normativas y seguí tu historial militar.'
   },
   {
     title: '📊 Panel de Rendimiento (Dashboard)',
-    content: 'Consulta tus tokens promedio, estado operativo (VERDE, NARANJA, ROJO, NEGRO), eventos abiertos y métricas de escuadrón en tiempo real.'
+    content: 'Consultá tus tokens promedio, estado del semáforo militar (VERDE, NARANJA, ROJO, NEGRO), eventos abiertos de escuadrón y métricas operacionales en tiempo real.'
   },
   {
-    title: '✈️ Carga de Rendimiento y Hangares',
-    content: 'Registra tus vuelos y tokens durante la ventana activa de eventos y mantén tus aviones configurados con habilidades y modificaciones de combate.'
+    title: '✈️ Hangar Rediseñado & 44 Aeronaves',
+    content: 'Explorá el catálogo de 44 cazas en la cuadrícula táctica (Vista 1). Al hacer clic en un avión, accedé a la pantalla dedicada (Vista 2) con botón de retorno y enlaces directos a edición de subsistemas.'
   },
   {
-    title: '⚙️ Personalización y Soporte',
-    content: 'Puedes alternar entre los temas Militar, Operaciones Tácticas o Clásico, configurar notificaciones y acceder a la ayuda en cualquier momento.'
+    title: '🌐 Inteligencia Balística en Español (i18n)',
+    content: 'Fichas técnicas enriquecidas con descripciones in-game, historia de combate, recomendaciones de vuelo y los 13 rasgos tácticos oficiales (traits) traducidos íntegramente al español.'
+  },
+  {
+    title: '⚡ Upgrades 2.0 & Operaciones Black Market',
+    content: 'Calibrá fuselaje, motor, aviónica y armas con 10 mods oficiales. Participá de los eventos de 5 días de Black Market para acumular puntos y desbloquear hasta 50% de descuento en cazas exclusivos.'
+  },
+  {
+    title: '📲 PWA Offline & Soporte Táctico',
+    content: 'Instalá la aplicación como PWA en Android, iOS o PC para operar sin conexión con el Service Worker v3.9.8. Accedé al Centro de Ayuda o al menú de atajos en cualquier momento.'
   }
 ];
 
@@ -40,7 +48,7 @@ function initHelpSystem() {
 }
 
 function startTourIfFirstTime() {
-  const hasSeen = localStorage.getItem('hasSeenTour_v3');
+  const hasSeen = localStorage.getItem('hasSeenTour_v3_9_8') || localStorage.getItem('hasSeenTour_v3');
   if (!hasSeen) {
     startTour();
   }
@@ -100,7 +108,7 @@ function prevTourStep() {
 }
 
 function finishTour() {
-  localStorage.setItem('hasSeenTour_v3', 'true');
+  localStorage.setItem('hasSeenTour_v3_9_8', 'true');
   closeTour();
   if (typeof showToast === 'function') {
     showToast('🎖️ ¡Tour completado! Listo para el despegue.', 'success');
