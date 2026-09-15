@@ -82,13 +82,53 @@ export async function requireAuth(req, res, next) {
       });
     }
 
+    // ==========================================
+    // BLOQUEO DE CUENTA INACTIVA (con mensaje enriquecido)
+    // ==========================================
     const uStatus = (user.status || '').toUpperCase();
     if (uStatus === 'INACTIVE' || uStatus === 'INACTIVO') {
+      // Intentar obtener quién y cuándo inactivó (best-effort, no bloqueante)
+      let inactiveBy = 'el Comando Central';
+      let inactiveDate = null;
+
+      try {
+        if (supabase && user.id) {
+          const { data: auditEntry } = await supabase
+            .from('audit_logs')
+            .select('nick, created_at')
+            .eq('entity', 'users')
+            .eq('entity_id', user.id)
+            .in('action', ['USER_DEACTIVATED', 'USER_INACTIVATED', 'USER_STATUS_CHANGE'])
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (auditEntry && auditEntry.length > 0) {
+            if (auditEntry[0].nick) {
+              inactiveBy = `el Comandante ${auditEntry[0].nick}`;
+            }
+            inactiveDate = auditEntry[0].created_at;
+          }
+        }
+      } catch (auditErr) {
+        // Silencioso: si falla, se usa el mensaje por defecto
+        console.warn('⚠️ [Auth Middleware] No se pudo obtener auditoría de inactivación:', auditErr.message);
+      }
+
+      const dateMsg = inactiveDate
+        ? ` el ${new Date(inactiveDate).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+        : '';
+
       return res.status(403).json({
-        error: '⚠️ Tu cuenta ha sido desactivada. Contacta a un administrador.',
-        code: 'USER_INACTIVE'
+        error: `⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por ${inactiveBy}${dateMsg}. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.`,
+        code: 'USER_INACTIVE',
+        details: {
+          inactive_by: inactiveBy,
+          inactive_at: inactiveDate,
+          contact: 'comando.central@ffaa.py'
+        }
       });
     }
+    // ==========================================
 
     // Attach user to request (without password_hash)
     const { password_hash, ...safeUser } = user;
