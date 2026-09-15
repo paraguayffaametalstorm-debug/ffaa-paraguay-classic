@@ -6478,3 +6478,123 @@ function overrideCarouselCardClick() {
 window.openAircraftDetailView = openAircraftDetailView;
 window.closeAircraftDetailView = closeAircraftDetailView;
 window.overrideCarouselCardClick = overrideCarouselCardClick;
+
+/* ============================================================================
+   FUNCIONES AUXILIARES DEL CENTRO DE AYUDA (help-view.html / help-modal.html)
+   ============================================================================ */
+
+/**
+ * Navega a una sección específica del Centro de Ayuda.
+ * Hace scroll suave y actualiza el estado activo del sidebar y pills mobile.
+ * @param {string} sectionId - ID de la sección (ej: 'help-sec-auth')
+ */
+function goToHelpSection(sectionId) {
+  if (!sectionId) return;
+
+  const section = document.getElementById(sectionId);
+  if (!section) {
+    console.warn('[Help] Sección no encontrada:', sectionId);
+    return;
+  }
+
+  // 1) Si la vista de ayuda no está visible, mostrarla
+  const helpView = document.getElementById('helpView');
+  if (helpView && helpView.style.display === 'none') {
+    if (typeof showView === 'function') showView('helpView');
+  }
+
+  // 2) Scroll suave a la sección
+  setTimeout(() => {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+
+  // 3) Marcar el link del sidebar como activo
+  document.querySelectorAll('.help-sidebar-link').forEach(link => {
+    const target = link.getAttribute('data-target');
+    link.classList.toggle('active', target === sectionId);
+  });
+
+  // 4) Marcar el pill mobile como activo
+  document.querySelectorAll('.help-mobile-pill').forEach(pill => {
+    const onclick = pill.getAttribute('onclick') || '';
+    pill.classList.toggle('active', onclick.includes(sectionId));
+  });
+}
+
+/**
+ * Abre o cierra un acordeón del Centro de Ayuda.
+ * @param {HTMLElement} header - El elemento .help-accordion-header clickeado
+ */
+function toggleHelpAccordion(header) {
+  if (!header) return;
+  const item = header.closest('.help-accordion-item');
+  if (!item) return;
+  item.classList.toggle('open');
+}
+
+/**
+ * Expande todos los acordeones del Centro de Ayuda.
+ */
+function expandAllHelp() {
+  document.querySelectorAll('.help-accordion-item').forEach(item => {
+    item.classList.add('open');
+  });
+}
+
+/**
+ * Colapsa todos los acordeones del Centro de Ayuda.
+ */
+function collapseAllHelp() {
+  document.querySelectorAll('.help-accordion-item').forEach(item => {
+    item.classList.remove('open');
+  });
+}
+
+/**
+ * Filtra las secciones del Centro de Ayuda por texto de búsqueda.
+ * @param {string} query - Texto a buscar
+ */
+function filterHelp(query) {
+  const q = String(query || '').trim().toLowerCase();
+  const sections = document.querySelectorAll('.help-main-content .help-section');
+  const resultCountEl = document.getElementById('helpSearchResultCount');
+  let visibleCount = 0;
+
+  if (!q) {
+    sections.forEach(sec => { sec.style.display = ''; });
+    if (resultCountEl) resultCountEl.textContent = '';
+    return;
+  }
+
+  sections.forEach(sec => {
+    const text = (sec.textContent || '').toLowerCase();
+    const match = text.includes(q);
+    sec.style.display = match ? '' : 'none';
+    if (match) visibleCount++;
+  });
+
+  if (resultCountEl) {
+    resultCountEl.textContent = visibleCount > 0
+      ? `${visibleCount} sección(es) encontrada(s)`
+      : 'Sin resultados';
+  }
+}
+
+/**
+ * Abre el modal de contacto con soporte (fallback si no existe).
+ */
+function contactSupportModal() {
+  if (typeof showToast === 'function') {
+    showToast('📞 Contactá a los oficiales por los canales oficiales (WhatsApp/Discord)', 'info');
+  } else {
+    alert('Contactá a los oficiales por los canales oficiales (WhatsApp/Discord)');
+  }
+}
+
+// Exponer globalmente para los onclick del HTML
+window.goToHelpSection      = goToHelpSection;
+window.toggleHelpAccordion  = toggleHelpAccordion;
+window.expandAllHelp        = expandAllHelp;
+window.collapseAllHelp      = collapseAllHelp;
+window.filterHelp           = filterHelp;
+window.contactSupportModal  = contactSupportModal;
