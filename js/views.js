@@ -16,6 +16,40 @@ window.escapeHTML = function(str) {
 };
 const escapeHTML = window.escapeHTML;
 
+
+/**
+ * Mapeo de traits EN → ES
+ * Los traits vienen en inglés desde la wiki de MetalStorm.
+ */
+const TRAITS_ES = {
+  'Armor Plating':     'Blindaje Reforzado',
+  'Cool Engines':      'Motores Fríos',
+  'Cruising Altitude': 'Altitud de Crucero',
+  'Delta Wing':        'Ala Delta',
+  'Expert Cannons':    'Cañones Expertos',
+  'Full Authority':    'Autoridad Total',
+  'Look And Shoot':    'Dispara y Olvida',
+  'Loyal Wingman':     'Ala Leal',
+  'Stealth':           'Sigilo',
+  'Swing Wing':        'Ala Variable',
+  'Thrust Reverser':   'Inversor de Empuje',
+  'Unstable Cannons':  'Cañones Inestables',
+  'Unstable Engines':  'Motores Inestables'
+};
+
+/**
+ * Traduce un trait de EN a ES.
+ * Si no está en el mapeo, devuelve el original.
+ */
+function translateTrait(trait) {
+  if (!trait) return '';
+  const nombre = typeof trait === 'string' ? trait : (trait.name || '');
+  return TRAITS_ES[nombre] || nombre;
+}
+
+window.TRAITS_ES = TRAITS_ES;
+window.translateTrait = translateTrait;
+
 /**
  * Obtener la clase CSS según el tipo de avión
  * @param {string} tipo - Tipo del avión (Ligero, Mediano, Pesado, Interceptor, Ataque)
@@ -2489,17 +2523,23 @@ async function openAircraftDeepModal(planeId) {
   // Cargar traits
   const traitsEl = document.getElementById('deepTraitsList');
   if (traitsEl) {
-    const traits = plane?.traits || [];
-    if (traits.length > 0) {
-      traitsEl.innerHTML = traits.map(t => `
-        <div class="trait-card">
-          <div class="trait-header">
-            <span class="trait-icon">${t.icon || '🎯'}</span>
-            <span class="trait-name">${escapeHtml(t.name || t)}</span>
-          </div>
-          <div class="trait-description">${escapeHtml(t.description || '')}</div>
+const traits = plane?.traits || [];
+if (traits.length > 0) {
+  traitsEl.innerHTML = traits.map(t => {
+    const nombreOriginal = typeof t === 'string' ? t : (t.name || '');
+    const nombreTraducido = translateTrait(nombreOriginal);
+    const icono = (typeof t === 'object' && t.icon) ? t.icon : '🎯';
+    const descripcion = (typeof t === 'object' && t.description) ? t.description : '';
+    return `
+      <div class="trait-card">
+        <div class="trait-header">
+          <span class="trait-icon">${icono}</span>
+          <span class="trait-name">${escapeHtml(nombreTraducido)}</span>
         </div>
-      `).join('');
+        ${descripcion ? `<div class="trait-description">${escapeHtml(descripcion)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
     } else {
       traitsEl.innerHTML = '<div style="color:var(--steel-gray);font-style:italic;">Sin traits especiales</div>';
     }
@@ -2668,18 +2708,24 @@ async function openAircraftDeepModal(planeId) {
       statsData = await statsRes.value.json();
       window.currentStatsData = statsData;
       updateDeepModalStats(plane, statsData);
-      if (statsData?.plane?.traits && traitsEl) {
-        const serverTraits = statsData.plane.traits;
-        if (serverTraits.length > 0) {
-          traitsEl.innerHTML = serverTraits.map(t => `
-            <div class="trait-card">
-              <div class="trait-header">
-                <span class="trait-icon">${t.icon || '🎯'}</span>
-                <span class="trait-name">${escapeHtml(t.name || t)}</span>
-              </div>
-              <div class="trait-description">${escapeHtml(t.description || '')}</div>
-            </div>
-          `).join('');
+if (statsData?.plane?.traits && traitsEl) {
+  const serverTraits = statsData.plane.traits;
+  if (serverTraits.length > 0) {
+    traitsEl.innerHTML = serverTraits.map(t => {
+      const nombreOriginal = typeof t === 'string' ? t : (t.name || '');
+      const nombreTraducido = translateTrait(nombreOriginal);
+      const icono = (typeof t === 'object' && t.icon) ? t.icon : '🎯';
+      const descripcion = (typeof t === 'object' && t.description) ? t.description : '';
+      return `
+        <div class="trait-card">
+          <div class="trait-header">
+            <span class="trait-icon">${icono}</span>
+            <span class="trait-name">${escapeHtml(nombreTraducido)}</span>
+          </div>
+          ${descripcion ? `<div class="trait-description">${escapeHtml(descripcion)}</div>` : ''}
+        </div>
+      `;
+    }).join('');
         } else {
           traitsEl.innerHTML = '<div style="color:var(--steel-gray);font-style:italic;">Sin traits especiales</div>';
         }
