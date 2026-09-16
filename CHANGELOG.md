@@ -6,6 +6,48 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [Fase 0.2] - 2026-09-16
+
+### 🔍 Verificación de Jerarquía y Decisión de Negocio (ADMIN max 5)
+
+#### 📊 Estado detectado en Supabase
+
+| Rol | Cantidad | Límite Documentado | Estado |
+|---|---|---|---|
+| OWNER | 1 | 1 | ✅ OK |
+| ADMIN | 5 | 3 | 🔴 EXCEDIDO |
+| VETERANO | 6 | 8 | ✅ OK |
+
+#### 🔍 Análisis
+
+- Los 5 ADMIN (ASTARTES, FURTIVO, GENNOMAX, RUBEN, BARBA19) fueron creados el **2026-02-16**, mismo día que el OWNER (PJPIROVANI).
+- Todos están ACTIVE, sin modificaciones posteriores (`updated_at` = `created_at`).
+- **Conclusión:** la regla "máximo 3 ADMIN" documentada en v3.1.0 nunca se aplicó operativamente. Los 5 ADMIN son staff fundacional.
+
+#### 🎯 Decisión del OWNER (Comandante PJPIROVANI)
+
+**Actualizar la cuota de ADMIN: de 3 a 5.**
+
+**Justificación:**
+- Los 5 ADMIN son staff fundacional operativamente necesario.
+- El límite de 3 era arbitrario y no reflejaba la estructura real del escuadrón.
+- Decisión oficial registrada en este changelog.
+
+**Límites finales confirmados:**
+- OWNER: 1
+- ADMIN: 5 (actualizado desde 3)
+- VETERANO: 8
+
+#### 🐛 Hallazgos derivados
+
+- **HALL-053** — Cuota de ADMIN inconsistente entre documentación y realidad.
+- **HALL-054** — Límites de roles hardcodeados en múltiples ubicaciones de `admin.controller.js` sin constante centralizada.
+
+Ambos se resolverán en **Fase 3 — Consistencia de Lógica de Negocio**.
+
+---
+
+
 ## 📌 [Fase 0.1] - 2026-09-16
 
 ### 🔒 Contención de Emergencia — Mitigación Parcial de HALL-001

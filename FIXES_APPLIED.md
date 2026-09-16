@@ -19,6 +19,87 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 
 ## 🛠️ Detalle de Fixes Implementados
 
+### 🟠 HALL-053 — Cuota de ADMIN Inconsistente (Documentación vs. Realidad)
+
+**Fecha:** 2026-09-16  
+**Fase:** 0.2 — Verificación de Jerarquía  
+**Archivos afectados:** Ninguno (resuelto por decisión de negocio)  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO POR DECISIÓN DEL OWNER
+
+**Problema Detectado:**  
+La documentación (CHANGELOG v3.1.0) especificaba máximo 3 ADMIN, pero la base de datos contenía 5 usuarios con rol ADMIN. La validación en código nunca se aplicó o fue bypasseada desde la fundación del escuadrón.
+
+**Evidencia:**
+
+- Los 5 ADMIN (ASTARTES, FURTIVO, GENNOMAX, RUBEN, BARBA19) fueron creados el **2026-02-16**, mismo día que el OWNER.
+- Todos están ACTIVE, sin modificaciones posteriores.
+- Los IDs son `user_id: 2, 3, 4, 5, 8`.
+
+**Resolución (Decisión del OWNER):**  
+Se aprueba aumentar la cuota de ADMIN de **3 → 5**.
+
+**Justificación:**
+
+- Los 5 ADMIN son staff fundacional operativamente necesario.
+- El límite de 3 era arbitrario y no reflejaba la estructura real del escuadrón.
+
+**Acciones pendientes:**
+
+- [ ] **Fase 3:** Actualizar `>= 3` a `>= 5` en `src/controllers/admin.controller.js` (2 ubicaciones).
+- [ ] **Fase 3:** Actualizar mensaje de error "Máximo 3 Administradores" → "Máximo 5 Administradores".
+- [ ] **Fase 6:** Sincronizar documentación (`ARCHITECTURE.md`, `API_REFERENCE.md`, `POLITICA_INACTIVACION.md`, `USER_MANUAL.md`).
+
+**Estado:** ✅ Decisión registrada — Pendiente implementación en código (Fase 3)
+
+---
+
+### 🟡 HALL-054 — Límites de Roles Hardcodeados
+
+**Fecha:** 2026-09-16  
+**Fase:** 0.2 — Verificación de Jerarquía  
+**Archivos afectados:** `src/controllers/admin.controller.js`  
+**Severidad:** 🟡 MEDIA  
+**Estado:** 🔍 DETECTADO — Pendiente de refactor
+
+**Problema Detectado:**  
+Los límites de roles están hardcodeados con valores literales (3, 8, 1) en múltiples funciones del mismo archivo, sin constante centralizada. Cambiar un límite requiere editar N ubicaciones, con alto riesgo de inconsistencia.
+
+**Ubicaciones detectadas:**
+
+1. **`updateUserRole()`** — función de cambio de rol:
+   - `>= 3` para validar límite de ADMIN.
+   - `>= 8` para validar límite de VETERANO.
+   - `>= 1` para OWNER (lógica de transferencia).
+
+2. **`addMember()`** — función de creación de nuevo piloto:
+   - `>= 3` para validar límite de ADMIN.
+   - `>= 8` para validar límite de VETERANO.
+
+**Impacto:**  
+Con la decisión de HALL-053 (ADMIN 3 → 5), hay que modificar **2 ubicaciones** con el número 3. Un error tipográfico en una sola dejaría el sistema inconsistente.
+
+**Solución recomendada (Fase 3):**  
+Crear constante centralizada al inicio del archivo:
+
+`const ROLE_LIMITS = { OWNER: 1, ADMIN: 5, VETERANO: 8 };`
+
+Y reemplazar los 4 hardcodes por `ROLE_LIMITS.ADMIN`, `ROLE_LIMITS.VETERANO`, `ROLE_LIMITS.OWNER`.
+
+**Nota:** el valor ADMIN es 5 (actualizado desde 3 por decisión del OWNER, 2026-09-16).
+
+**Acciones pendientes:**
+
+- [ ] **Fase 3:** Crear constante `ROLE_LIMITS`.
+- [ ] **Fase 3:** Reemplazar hardcodes en `updateUserRole()`.
+- [ ] **Fase 3:** Reemplazar hardcodes en `addMember()`.
+- [ ] **Fase 3:** Actualizar mensajes de error para que usen `ROLE_LIMITS.ADMIN`.
+
+**Estado:** 🔍 DETECTADO — Pendiente refactor en Fase 3
+
+---
+
+
 ### 🚨 Mitigación de Emergencia — HALL-001 (JWT_SECRET en Fly.io)
 
 **Fecha:** 2026-09-16  
