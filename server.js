@@ -95,8 +95,8 @@ app.use(
         imgSrc: [
           "'self'",
           "data:",
-          "https://res.cloudinary.com",
-          "https://*.supabase.co"
+          "blob:",
+          "https:"
         ],
         connectSrc: [
           "'self'",
