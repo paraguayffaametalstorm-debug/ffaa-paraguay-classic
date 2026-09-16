@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.9.8 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.9.9 del núcleo táctico.**
 
 ---
 
@@ -20,7 +20,7 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 {
   "success": false,
   "error": "Mensaje descriptivo del error en español táctico",
-  "code": "AUTH_TOKEN_EXPIRED | ROLE_LIMIT_REACHED | USER_NOT_FOUND",
+  "code": "AUTH_TOKEN_EXPIRED | ROLE_LIMIT_REACHED | USER_NOT_FOUND | USER_INACTIVE",
   "details": "Información técnica complementaria (opcional)"
 }
 ```
@@ -187,9 +187,19 @@ Genera un token criptográfico seguro de un solo uso con vigencia estricta de 15
   ```json
   {
     "success": true,
-    "message": "Si el correo está registrado, se enviaron las instrucciones de restablecimiento."
+    "message": "Si el correo está registrado en el escuadrón, se enviaron las instrucciones de restablecimiento (válidas por 15 minutos).",
+    "data": {
+      "expiresInMinutes": 15,
+      "simulated": false
+    }
   }
   ```
+
+- **Notas Operativas:**
+  - `simulated: false` indica que el correo se envió por SMTP real.
+  - `simulated: true` indica que el SMTP no está configurado (solo se loguea en consola).
+  - Se registra en `security_events` con `PASSWORD_RESET_REQUESTED`.
+  - **⚠️ Limitación:** Solo funciona para pilotos con Gmail real vinculado (`email = @gmail.com` + `google_linked = true`). Ver subsección "Limitación Crítica del Reset por Email" más abajo.
 
 ### `POST /api/auth/reset-password`
 Restablece la contraseña militar del usuario empleando el token de 15 minutos recibido por correo electrónico. Al completarse, incrementa `token_version` para cerrar cualquier otra sesión activa.
@@ -201,13 +211,29 @@ Restablece la contraseña militar del usuario empleando el token de 15 minutos r
     "newPassword": "NuevaPasswordFuerte2026!"
   }
   ```
+- **Procesamiento y Efectos Colaterales:**
+  1. Valida que el token exista en `password_resets`, no esté usado y no haya expirado.
+  2. Genera un nuevo hash con `bcrypt.hash(newPassword, 10)`.
+  3. Marca el token como consumido: `password_resets.used = true`.
+  4. Actualiza el usuario en `users`:
+     - `password_hash` = nuevo hash bcrypt
+     - `token_version` incrementado en `+1`
+     - `must_change_password = false`
+     - `updated_at = NOW()`
+  5. Registra un evento de seguridad con `PASSWORD_RESET_SUCCESS`.
+  6. Invalida cualquier JWT previo del usuario (por el incremento de `token_version`).
+
 - **Response Exitosa (200 OK):**
   ```json
   {
     "success": true,
-    "message": "Contraseña actualizada exitosamente. Todas las sesiones activas han sido cerradas."
+    "message": "Contraseña táctica actualizada exitosamente. Ya puedes iniciar sesión con tu nueva clave."
   }
   ```
+
+- **Errores Posibles:**
+  - `400 Bad Request`: Token inválido, ya usado, expirado, o nueva contraseña no cumple complejidad.
+  - `404 Not Found`: Usuario asociado al token no encontrado.
 
 ### `POST /api/auth/change-password`
 Permite a los combatientes actualizar su contraseña militar, tanto en el flujo forzado de primer acceso (o tras un reseteo administrativo) como de manera voluntaria desde el expediente de perfil.
@@ -282,6 +308,40 @@ Permite a los combatientes actualizar su contraseña militar, tanto en el flujo 
   - `401 Unauthorized`: Token de autorización faltante o expirado, o la contraseña actual proporcionada no coincide con el hash almacenado.
   - `404 Not Found`: Combatiente no localizado en el registro militar de Supabase.
   - `500 Internal Server Error`: Falla de conectividad o error interno del servicio de base de datos.
+
+### ⚠️ Limitación Crítica del Reset por Email
+
+Aunque el flujo `forgot-password` → `reset-password` está 100% operativo end-to-end a nivel técnico, existe una limitación real de infraestructura de correo:
+
+- **Solo ~2% de los pilotos** tienen un Gmail real vinculado a su cuenta (únicamente el usuario `PJPIROVANI`, OWNER).
+- **El 98% restante** posee correos institucionales `@ffaa.py` ficticios que rebotan en el envío SMTP.
+- **Método principal de recuperación:** reset administrativo desde el Panel Admin (`POST /api/admin/users/:id/reset-password`), que genera una clave temporal `MS-XXXX-XXXX` entregable por canal seguro (WhatsApp/Discord).
+- **Estado del SMTP:** Configurado con Gmail (`paraguayffaa.metalstorm@gmail.com`, `smtp.gmail.com:587`, `EMAIL_SECURE=false`) y operativo. La limitación es la cobertura de correos válidos, no la infraestructura.
+
+---
+
+### 🚫 Mensaje Enriquecido al Bloquear Cuenta Inactiva
+
+Cuando un piloto con `status = 'INACTIVE'` intenta autenticarse en cualquier endpoint protegido, el middleware `auth.js` intercepta la solicitud y devuelve un payload JSON enriquecido con trazabilidad de la baja:
+
+```json
+{
+  "error": "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante [NICK] el [FECHA]. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.",
+  "code": "USER_INACTIVE",
+  "details": {
+    "inactive_by": "el Comandante [NICK]",
+    "inactive_at": "2026-09-10T01:15:00.000Z",
+    "contact": "comando.central@ffaa.py"
+  }
+}
+```
+
+- **Origen:** Fix aplicado en el middleware `auth.js` (commit `f44326f`).
+- **Objetivo:** Reemplazar la respuesta genérica por un mensaje táctico claro que indique al piloto:
+  1. Que su cuenta fue inactivada (no que su token expiró).
+  2. Quién ejecutó la baja y cuándo.
+  3. Canal de contacto oficial para apelar la decisión.
+- **Nota:** Si no existe registro en `audit_logs` con la acción de inactivación, el mensaje dice genéricamente "el Comando Central".
 
 ---
 
@@ -419,7 +479,7 @@ Aplica una mejora tecnológica de subsistema a un caza registrado según Starfor
 ### `GET /api/planes/:id/details`
 
 Devuelve la telemetría completa de una aeronave del hangar, incluyendo
-campos extendidos extraídos de la Wiki de Metalstorm y localizados al español rioplatense (v3.9.8).
+campos extendidos extraídos de la Wiki de Metalstorm y localizados al español rioplatense (v3.9.9).
 
 - **Acceso:** Autenticado (`requireAuth`).
 - **Parámetros de ruta:** `:id` = ID del avión del jugador (numérico).
@@ -553,7 +613,7 @@ campos extendidos extraídos de la Wiki de Metalstorm y localizados al español 
 ```
 
 **Notas:**
-- Los campos `descripcion`, `historia`, `recomendaciones`, `loadout_wiki`, `paints`, `canopies`, `general_info_wiki`, `wiki_url` provienen de la Wiki de Metalstorm (extracción 2026-09-12).
+- Los campos `descripcion`, `historia`, `recomendaciones`, `loadout_wiki`, `paints`, `canopies`, `general_info_wiki`, `wiki_url` provienen de la Wiki de Metalstorm (extracción 2026-09-12, traducción DeepL consolidada 2026-09-15).
 - Si un avión no tiene datos de Wiki, los campos vienen como `null`.
 - Los array de `paints` y `canopies` incluyen un campo `Image` con la URL de la imagen servida desde `metalstorm.wiki.gg`.
 
