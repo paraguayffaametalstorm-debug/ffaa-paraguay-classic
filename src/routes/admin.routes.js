@@ -2,9 +2,11 @@ import { Router } from 'express';
 import {
   getUsers,
   getMembers,
+  getInactiveUsers,
   addMember,
   updateUserStatus,
   updateUserRole,
+  updateInactiveReason,
   bulkUploadEvent,
   activateBlackMarket
 } from '../controllers/admin.controller.js';
@@ -27,9 +29,12 @@ router.use(requireRole('ADMIN', 'OWNER'));
 router.get('/users', getUsers);
 router.get('/members', getMembers);
 router.get('/members/active', getActiveMembers);
+router.get('/users/inactive', getInactiveUsers);
 
 router.post('/members', addMember);
 router.post('/users', addMember);
+
+router.patch('/users/:id/inactive-reason', updateInactiveReason);
 
 router.put('/users/:id/status', updateUserStatus);
 router.patch('/users/:id/status', updateUserStatus);
