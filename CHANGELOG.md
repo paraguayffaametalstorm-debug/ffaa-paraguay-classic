@@ -6,6 +6,24 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [Fase 0.3] - 2026-09-16
+
+### 📢 Comunicación al Escuadrón
+
+Se envió comunicado oficial al Comando Central y miembros del escuadrón
+informando el inicio del ciclo de mejoras técnicas (Plan de Mejora
+Continua v1.0).
+
+**Canales utilizados:** WhatsApp y/o Discord oficial del escuadrón.
+
+**Impacto operativo informado:**
+- Reinicio único del servicio (ya ejecutado).
+- Reautenticación única de usuarios.
+- Sin cambios visibles en funcionalidad.
+
+---
+
+
 ## 📌 [Fase 0.2] - 2026-09-16
 
 ### 🔍 Verificación de Jerarquía y Decisión de Negocio (ADMIN max 5)
