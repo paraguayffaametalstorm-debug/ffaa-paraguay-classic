@@ -6,9 +6,10 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.9.8-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v3.9.9-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.fly.dev/)
 
 ---
 
@@ -23,14 +24,16 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 - **Cuadro de Mando Operacional (Dashboard C4ISR):** Telemetría en tiempo real, seguimiento de la meta semanal del escuadrón (175 tokens promedio), panel de miembros en riesgo, gráfico de tendencia histórica y clasificación Top 5 de pilotos.
 - **Registro Táctico de Rendimiento & Selector de Pilotos:** Validación estricta con esquemas Zod (máximo 300 tokens por evento, control de 0 a 7 días de vuelo y combate en escuadrilla), incluyendo selector táctico de combatientes (`#performanceTarget`) exclusivo para oficiales `ADMIN` y `OWNER` con banner de modo oficial.
 - **Panel de Administración Militar Avanzado:** Gestión de combatientes con cálculo en tiempo real de `avg_tokens`, `weeks_evaluated` y distintivos de semáforo militar `perf_status` conforme a las normativas del escuadrón.
-- **Catálogo & Hangar Militar Rediseñado (v3.9.8):** Flota de 44 aeronaves de combate oficiales. Arquitectura dual de navegación: **Vista 1 (Grid Táctico de Tarjetas)** para selección rápida y **Vista 2 (Pantalla Dedicada / Detalle Completo)** con botón de retroceso "← VOLVER AL HANGAR", accesos directos de edición a **Upgrades 2.0** (Fuselaje, Motor, Aviónica, Armas niveles 0-8), telemetría balística y mods.
-- **Sistema de Traducción Integral (i18n) (v3.9.8):** Traducción automatizada con DeepL de historias, recomendaciones tácticas y descripciones (`historia_es`, `descripcion_es`, `recomendaciones_es` en base de datos) con fallback inteligente al inglés original si no existe traducción. Mapeo en frontend de los 13 traits únicos de combate (`TRAITS_ES`).
+- **Catálogo & Hangar Militar Rediseñado (v3.9.9):** Flota de 44 aeronaves de combate oficiales. Arquitectura dual de navegación: **Vista 1 (Grid Táctico de Tarjetas)** para selección rápida y **Vista 2 (Pantalla Dedicada / Detalle Completo)** con botón de retroceso "← VOLVER AL HANGAR", accesos directos de edición a **Upgrades 2.0** (Fuselaje, Motor, Aviónica, Armas niveles 0-8), telemetría balística y mods.
+- **Sistema de Traducción Integral (i18n) (v3.9.9):** Traducción automatizada con DeepL de historias, recomendaciones tácticas y descripciones (`historia_es`, `descripcion_es`, `recomendaciones_es` en base de datos) con fallback inteligente al inglés original si no existe traducción. Mapeo en frontend de los 13 traits únicos de combate (`TRAITS_ES`).
 - **Control de Mando RBAC & Cuotas Institucionales:** Restricción jerárquica estricta (1 Comandante en Jefe `OWNER`, máximo 3 Oficiales `ADMIN` y máximo 8 `VETERANO`).
 - **Seguridad Criptográfica & Anti-Sesión Fantasma:** Contraseñas temporales aleatorias de alta entropía (`MS-XXXX-XXXX`), invalidación instantánea de JWT mediante `token_version` y hashing con `bcryptjs`.
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
-- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.9.8 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
-- **Integración con Wiki de Metalstorm (v3.9.8):** Sincronización oficial de los 44 aviones, 310+ pinturas (paints), 176 cabinas (canopies), loadouts balísticos y los 10 mods tácticos oficiales con efectos numéricos exactos y costos de mejora. Visualización completa en el visor de telemetría con layout de cards responsive.
+- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.9.9 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **Integración con Wiki de Metalstorm (v3.9.9):** Sincronización oficial de los 44 aviones, 310+ pinturas (paints), 176 cabinas (canopies), loadouts balísticos y los 10 mods tácticos oficiales con efectos numéricos exactos y costos de mejora. Visualización completa en el visor de telemetría con layout de cards responsive.
+- **Recuperación de Contraseña por Email (v3.9.9):** Flujo completo de restablecimiento con token criptográfico de 15 minutos (`password_resets`) y envío de correo HTML militar C4ISR vía SMTP Gmail. Limitación documentada: solo ~2% de los pilotos tienen Gmail real vinculado.
+- **Mensaje Enriquecido al Bloquear Inactivos (v3.9.9):** El middleware `requireAuth` devuelve un mensaje detallado con el nombre del comandante que inactivó al piloto, fecha y contacto del Comando Central.
 
 ---
 
@@ -52,6 +55,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 | **Persistencia** | Supabase (PostgreSQL) | `^2.112.4` | Base de datos relacional con RLS e índices |
 | **Validación de Datos** | Zod | `^4.5.4` | Validación de esquemas y tipos en runtime |
 | **Criptografía & Auth** | JSON Web Token (JWT) | `^9.0.3` | Firma de tokens con control de `token_version` |
+| **Correo Transaccional** | Nodemailer (SMTP Gmail) | `^6.x` | Envío de correos HTML militar C4ISR (reset password) |
 | **Hashing de Claves** | Bcryptjs | `^3.0.3` | Hashing con salt rounds factor 10 |
 | **Seguridad HTTP** | Helmet | `^8.3.0` | Cabeceras HTTP seguras (adaptado para iframe/PWA) |
 | **Rate Limiting** | express-rate-limit | `^8.7.0` | Limitador de tráfico (Auth, API, Bulk) |
@@ -135,7 +139,8 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 │   └── views.js                  # Enrutador cliente y orquestador de vistas
 │
 ├── sql/
-│   └── upgrades_2_0.sql          # Migración DDL para sistemas Upgrades 2.0
+│   ├── upgrades_2_0.sql          # Migración DDL para sistemas Upgrades 2.0
+│   └── password_resets.sql       # Migración DDL para tabla de reset de contraseña
 │
 └── src/                          # Núcleo del servidor Backend (ES Modules)
     ├── config/
@@ -162,6 +167,12 @@ La plataforma centraliza las operaciones del escuadrón mediante:
     ├── routes/                   # Enrutadores Express modulares
     ├── scripts/                  # Utilidades CLI de diagnóstico y mantenimiento
     └── utils/                    # Seguridad, auditoría, esquemas y sanitización CSV
+        ├── email.js              # Nodemailer + SMTP Gmail (reset password)
+        ├── modEffects.js         # Cálculo de multiplicadores de mods
+        ├── upgradeNodes.js       # Consulta de upgrade_nodes_v2
+        ├── csv.js                # Sanitización contra CSV Injection
+        ├── security.js           # Generación de claves temporales MS-XXXX-XXXX
+        └── audit.js              # Registro de auditoría C4ISR
 ```
 
 ---
@@ -339,7 +350,7 @@ El sistema cuenta con un flujo seguro y robusto para la incorporación de nuevos
 
 ---
 
-## ✈️ Sistema de Aviones (Hangar Militar Rediseñado - v3.9.8)
+## ✈️ Sistema de Aviones (Hangar Militar Rediseñado - v3.9.9)
 
 ### Catálogo de Aeronaves Oficial
 
@@ -442,7 +453,7 @@ El Hangar Militar abandona el modelo rígido tradicional en favor de una arquite
 
 ---
 
-### 🌐 Sistema de Traducción Integral (i18n) - v3.9.8
+### 🌐 Sistema de Traducción Integral (i18n) - v3.9.9
 
 La plataforma incorpora un motor integral de internacionalización y localización al español rioplatense/militar:
 
@@ -620,6 +631,7 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 
 ## 📜 Licencia y Confidencialidad
 
-© 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.  
+© 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.
+*Versión: v3.9.9 · Actualizado: 15 Septiembre 2026*  
 *Uso exclusivo y reservado para los miembros del escuadrón militar.*
 
