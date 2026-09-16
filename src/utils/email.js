@@ -25,10 +25,10 @@ export function getEmailTransporter() {
             auth: {
                 user: ENV.EMAIL_USER,
                 pass: ENV.EMAIL_PASS
-            },
-            tls: {
-                rejectUnauthorized: false
             }
+            // HALL-023: se eliminó tls.rejectUnauthorized: false
+            // TLS se maneja con valores por defecto (rejectUnauthorized: true)
+            // Gmail tiene certificados válidos → sin impacto operativo.
         });
 
         console.log(`✅ [Email] Transporte Nodemailer conectado a ${ENV.EMAIL_HOST}:${port} (SSL/TLS: ${isSecure})`);
