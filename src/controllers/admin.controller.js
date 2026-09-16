@@ -39,11 +39,30 @@ export async function getUsers(req, res, next) {
 
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, user_id, nick, email, role, status, last_activity, avg_tokens, weeks_evaluated, perf_status, created_at, updated_at')
+      .select('id, user_id, nick, email, role, status, last_activity, avg_tokens, weeks_evaluated, perf_status, created_at, updated_at, inactive_reason, inactive_at, inactive_by')
       .order('nick', { ascending: true });
 
     if (error) {
       throw error;
+    }
+
+    // Resolver inactive_by_nick en batch para usuarios inactivos
+    const inactiveByIds = [...new Set((users || []).map(u => u.inactive_by).filter(Boolean))];
+    const nickMap = {};
+    if (inactiveByIds.length > 0) {
+      try {
+        const { data: actors } = await supabase
+          .from('users')
+          .select('id, nick')
+          .in('id', inactiveByIds);
+        if (actors) {
+          actors.forEach(a => {
+            if (a.id) nickMap[a.id] = a.nick;
+          });
+        }
+      } catch (nickErr) {
+        console.warn('⚠️ [Admin getUsers] No se pudieron obtener los nicks de inactive_by:', nickErr.message);
+      }
     }
 
     // Obtener métricas de performances
@@ -121,7 +140,11 @@ export async function getUsers(req, res, next) {
         weeks_evaluated: weeksEvaluated,
         perf_status: (perfStatus || 'PENDIENTE').toUpperCase(),
         created_at: u.created_at || null,
-        updated_at: u.updated_at || null
+        updated_at: u.updated_at || null,
+        inactive_reason: u.inactive_reason || null,
+        inactive_at: u.inactive_at || null,
+        inactive_by: u.inactive_by || null,
+        inactive_by_nick: (u.inactive_by && nickMap[u.inactive_by]) || null
       };
     });
 
@@ -285,10 +308,48 @@ export const updateMemberRole = updateUserRole;
 export async function updateUserStatus(req, res, next) {
   try {
     const id = req.params.id;
-    const body = UpdateMemberStatusSchema.parse(req.body);
-    const newStatus = body.status.toUpperCase();
-    const supabase = getSupabase();
 
+    // Parseo defensivo: validar status manualmente sin depender de Zod
+    const rawBody = req.body || {};
+    const rawStatus = (rawBody.status || '').toUpperCase();
+    if (rawStatus !== 'ACTIVE' && rawStatus !== 'INACTIVE') {
+      return res.status(400).json({
+        error: 'Estado inválido. Debe ser ACTIVE o INACTIVE',
+        code: 'INVALID_STATUS'
+      });
+    }
+    const newStatus = rawStatus;
+
+    // Validar motivo según el estado
+    let reason = rawBody.reason !== undefined && rawBody.reason !== null
+      ? String(rawBody.reason).trim()
+      : null;
+
+    if (newStatus === 'INACTIVE') {
+      if (reason === null || reason === '') {
+        // Fallback por backward compatibility con clientes legacy
+        reason = 'Sin motivo especificado';
+      } else if (reason.length < 10) {
+        return res.status(400).json({
+          error: 'El motivo de inactivación es obligatorio y debe tener al menos 10 caracteres',
+          code: 'REASON_REQUIRED'
+        });
+      } else if (reason.length > 500) {
+        return res.status(400).json({
+          error: 'El motivo de inactivación no puede exceder 500 caracteres',
+          code: 'REASON_TOO_LONG'
+        });
+      }
+    } else if (newStatus === 'ACTIVE') {
+      if (reason && reason.length > 300) {
+        return res.status(400).json({
+          error: 'El motivo de reactivación no puede exceder 300 caracteres',
+          code: 'REASON_TOO_LONG'
+        });
+      }
+    }
+
+    const supabase = getSupabase();
     if (!supabase) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
@@ -304,26 +365,66 @@ export async function updateUserStatus(req, res, next) {
     const targetUser = targetData[0];
     const targetRole = (targetUser.role || 'MIEMBRO').toUpperCase();
     const actorRole = (req.user.role || 'MIEMBRO').toUpperCase();
-    const actorId = req.user.user_id || req.user.id;
+    const actorId = req.user.id || req.user.user_id;
+    const actorUserId = req.user.user_id;
     const actorNick = req.user.nick || req.user.email;
-
-    // 2. Proteger al OWNER
-    if (targetRole === 'OWNER') {
-      return res.status(403).json({ error: 'No se puede desactivar la cuenta del Comandante General (OWNER)' });
-    }
-
-    if (targetRole === 'ADMIN' && actorRole !== 'OWNER') {
-      return res.status(403).json({ error: 'Solo el Comandante General (OWNER) puede desactivar a un Administrador' });
-    }
-
-    // 3. Actualizar status (CONSULTA TIPADA)
     const targetUserId = targetUser.id || targetUser.user_id;
+
+    // 2. Validar permisos del actor (ADMIN u OWNER)
+    if (actorRole !== 'OWNER' && actorRole !== 'ADMIN') {
+      return res.status(403).json({
+        error: 'Permiso denegado: Se requiere rol de Administración o Comandancia',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+
+    // 3. Bloquear auto-modificación (Nadie puede inactivarse/reactivarse a sí mismo)
+    const isSelf = (actorId && (String(actorId) === String(targetUser.id) || String(actorId) === String(targetUser.user_id))) ||
+                   (actorUserId && (String(actorUserId) === String(targetUser.user_id) || String(actorUserId) === String(targetUser.id)));
+
+    if (isSelf) {
+      return res.status(403).json({
+        error: 'No tienes permiso para modificar tu propio estado',
+        code: 'SELF_MODIFICATION_FORBIDDEN'
+      });
+    }
+
+    // 4. Proteger al OWNER (Nadie puede inactivar al OWNER)
+    if (targetRole === 'OWNER') {
+      return res.status(403).json({
+        error: 'No se puede desactivar la cuenta del Comandante General (OWNER)',
+        code: 'OWNER_PROTECTED'
+      });
+    }
+
+    // 5. Validar jerarquía (ADMIN solo puede tocar MIEMBRO y VETERANO)
+    if (actorRole === 'ADMIN' && (targetRole === 'ADMIN' || targetRole === 'OWNER')) {
+      return res.status(403).json({
+        error: 'Los Administradores solo pueden modificar el estado de Miembros y Veteranos',
+        code: 'HIERARCHY_FORBIDDEN'
+      });
+    }
+
+    // 6. Actualizar status y campos de inactivación (CONSULTA TIPADA)
+    const nowIso = new Date().toISOString();
+    const updatePayload = {
+      status: newStatus,
+      updated_at: nowIso
+    };
+
+    if (newStatus === 'INACTIVE') {
+      updatePayload.inactive_reason = reason;
+      updatePayload.inactive_by = req.user.id || null;
+      updatePayload.inactive_at = nowIso;
+    } else {
+      updatePayload.inactive_reason = null;
+      updatePayload.inactive_by = null;
+      updatePayload.inactive_at = null;
+    }
+
     let updateQuery = supabase
       .from('users')
-      .update({
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      });
+      .update(updatePayload);
 
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
     const isNumeric = /^\d+$/.test(String(id));
@@ -342,7 +443,18 @@ export async function updateUserStatus(req, res, next) {
       throw updateError;
     }
 
-    // 4. Registrar en auditoría
+    // 7. Registrar en auditoría
+    const auditDetails = {
+      previous_status: targetUser.status || 'ACTIVE',
+      new_status: newStatus,
+      actor_role: actorRole
+    };
+    if (newStatus === 'INACTIVE' && reason) {
+      auditDetails.inactive_reason = reason;
+    } else if (newStatus === 'ACTIVE' && reason && reason !== 'Sin motivo especificado') {
+      auditDetails.reactivation_reason = reason;
+    }
+
     await logAuditChange({
       supabase,
       actorId,
@@ -350,18 +462,17 @@ export async function updateUserStatus(req, res, next) {
       targetId: targetUserId,
       targetNick: targetUser.nick,
       action: newStatus === 'ACTIVE' ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
-      details: {
-        previous_status: targetUser.status || 'ACTIVE',
-        new_status: newStatus,
-        actor_role: actorRole
-      }
+      details: auditDetails
     });
 
     res.json({
       success: true,
       message: `Estado de ${targetUser.nick} actualizado a ${newStatus}`,
       status: newStatus,
-      user_id: targetUserId
+      user_id: targetUserId,
+      inactive_reason: updatePayload.inactive_reason,
+      inactive_at: updatePayload.inactive_at,
+      inactive_by: updatePayload.inactive_by
     });
 
   } catch (err) {
@@ -601,6 +712,188 @@ export async function activateBlackMarket(req, res, next) {
     await supabase.from('events').insert(bmEvent);
 
     res.json({ message: 'Operación Black Market activada exitosamente', event_id: bmEvent.id });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ============================================================
+// 7. LISTAR PILOTOS INACTIVOS
+// ============================================================
+export async function getInactiveUsers(req, res, next) {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database client unavailable' });
+    }
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, user_id, nick, email, role, status, last_activity, created_at, updated_at, inactive_reason, inactive_at, inactive_by')
+      .eq('status', 'INACTIVE')
+      .order('inactive_at', { ascending: false, nullsFirst: false })
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    // Resolver inactive_by_nick con batch query
+    const actorIds = [...new Set((users || []).map(u => u.inactive_by).filter(Boolean))];
+    const nickMap = {};
+    if (actorIds.length > 0) {
+      try {
+        const { data: actors } = await supabase
+          .from('users')
+          .select('id, nick')
+          .in('id', actorIds);
+        if (actors) {
+          actors.forEach(a => {
+            if (a.id) nickMap[a.id] = a.nick;
+          });
+        }
+      } catch (nickErr) {
+        console.warn('⚠️ [Admin getInactiveUsers] No se pudieron obtener los nicks de inactive_by:', nickErr.message);
+      }
+    }
+
+    const safeUsers = (users || []).map(u => ({
+      id: u.id || u.user_id,
+      user_id: Number.isInteger(u.user_id) ? Number(u.user_id) : (Number.isInteger(Number(u.user_id)) && !isNaN(Number(u.user_id)) ? Number(u.user_id) : null),
+      nick: u.nick || u.email?.split('@')[0] || 'Sin Nick',
+      email: u.email || '',
+      role: (u.role || 'MIEMBRO').toUpperCase(),
+      status: (u.status || 'INACTIVE').toUpperCase(),
+      last_activity: u.last_activity || u.updated_at || u.created_at || null,
+      created_at: u.created_at || null,
+      updated_at: u.updated_at || null,
+      inactive_reason: u.inactive_reason || null,
+      inactive_at: u.inactive_at || null,
+      inactive_by: u.inactive_by || null,
+      inactive_by_nick: (u.inactive_by && nickMap[u.inactive_by]) || null
+    }));
+
+    res.json({
+      success: true,
+      message: 'Lista de pilotos inactivos obtenida con éxito',
+      data: safeUsers,
+      users: safeUsers,
+      total: safeUsers.length
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ============================================================
+// 8. ACTUALIZAR / COMPLETAR MOTIVO DE INACTIVACIÓN
+// ============================================================
+export async function updateInactiveReason(req, res, next) {
+  try {
+    const id = req.params.id;
+    const actorRole = (req.user?.role || 'MIEMBRO').toUpperCase();
+
+    // Solo ADMIN/OWNER (si no → 403 INSUFFICIENT_PERMISSIONS)
+    if (actorRole !== 'OWNER' && actorRole !== 'ADMIN') {
+      return res.status(403).json({
+        error: 'Permiso denegado: Se requiere rol de Administración o Comandancia',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+
+    // Body: { reason }
+    // Validar: reason mín 10, máx 500
+    const reason = (req.body?.reason || '').trim();
+    if (!reason || reason.length < 10) {
+      return res.status(400).json({
+        error: 'El motivo de inactivación es obligatorio y debe tener al menos 10 caracteres',
+        code: 'REASON_REQUIRED'
+      });
+    }
+    if (reason.length > 500) {
+      return res.status(400).json({
+        error: 'El motivo de inactivación no puede exceder 500 caracteres',
+        code: 'REASON_TOO_LONG'
+      });
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database client unavailable' });
+    }
+
+    // Buscar usuario objetivo
+    let userQuery = buildUserQuery(supabase, id, 'id, user_id, nick, email, role, status, inactive_reason, inactive_at, inactive_by');
+    const { data: targetData, error: targetErr } = await userQuery.limit(1);
+
+    if (targetErr || !targetData || targetData.length === 0) {
+      return res.status(404).json({ error: 'Piloto no encontrado', code: 'USER_NOT_FOUND' });
+    }
+
+    const targetUser = targetData[0];
+    const targetStatus = (targetUser.status || '').toUpperCase();
+
+    // Solo permitir si el user objetivo tiene status === 'INACTIVE' (si no → 400 USER_NOT_INACTIVE)
+    if (targetStatus !== 'INACTIVE' && targetStatus !== 'INACTIVO') {
+      return res.status(400).json({
+        error: 'Solo se puede actualizar el motivo de un piloto con estado INACTIVE',
+        code: 'USER_NOT_INACTIVE'
+      });
+    }
+
+    const nowIso = new Date().toISOString();
+    const updatePayload = {
+      inactive_reason: reason,
+      inactive_at: targetUser.inactive_at || nowIso,
+      inactive_by: targetUser.inactive_by || req.user.id,
+      updated_at: nowIso
+    };
+
+    let updateQuery = supabase.from('users').update(updatePayload);
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+    const isNumeric = /^\d+$/.test(String(id));
+
+    if (isUUID) {
+      updateQuery = updateQuery.eq('id', id);
+    } else if (isNumeric) {
+      updateQuery = updateQuery.eq('user_id', Number(id));
+    } else {
+      updateQuery = updateQuery.eq('id', id);
+    }
+
+    const { error: updateError } = await updateQuery;
+    if (updateError) {
+      throw updateError;
+    }
+
+    const targetUserId = targetUser.id || targetUser.user_id;
+
+    // Registrar en logAuditChange con action 'USER_INACTIVE_REASON_UPDATED'
+    await logAuditChange({
+      supabase,
+      actorId: req.user.user_id || req.user.id,
+      actorNick: req.user.nick || req.user.email,
+      targetId: targetUserId,
+      targetNick: targetUser.nick,
+      action: 'USER_INACTIVE_REASON_UPDATED',
+      details: {
+        previous_reason: targetUser.inactive_reason || null,
+        new_reason: reason,
+        actor_role: actorRole
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Motivo de inactivación de ${targetUser.nick} actualizado con éxito`,
+      data: {
+        id: targetUserId,
+        user_id: targetUser.user_id,
+        nick: targetUser.nick,
+        ...updatePayload
+      }
+    });
   } catch (err) {
     next(err);
   }

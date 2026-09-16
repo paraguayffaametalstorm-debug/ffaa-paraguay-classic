@@ -87,33 +87,54 @@ export async function requireAuth(req, res, next) {
     // ==========================================
     const uStatus = (user.status || '').toUpperCase();
     if (uStatus === 'INACTIVE' || uStatus === 'INACTIVO') {
-      // Intentar obtener quién y cuándo inactivó (best-effort, no bloqueante)
       let inactiveBy = 'el Comando Central';
-      let inactiveDate = null;
+      let inactiveDate = user.inactive_at || null;
+      let inactiveReason = user.inactive_reason || null;
 
-      try {
-        if (supabase && user.id) {
-          const { data: auditEntry } = await supabase
-            .from('audit_logs')
-            .select('nick, created_at')
-            .eq('entity', 'users')
-            .eq('entity_id', user.id)
-            .in('action', ['USER_DEACTIVATED', 'USER_INACTIVATED', 'USER_STATUS_CHANGE'])
-            .order('created_at', { ascending: false })
+      // 1. Si user.inactive_by está poblado, consultar el nick del comandante
+      if (user.inactive_by && supabase) {
+        try {
+          const { data: actorData } = await supabase
+            .from('users')
+            .select('nick')
+            .eq('id', user.inactive_by)
             .limit(1);
 
-          if (auditEntry && auditEntry.length > 0) {
-            if (auditEntry[0].nick) {
-              inactiveBy = `el Comandante ${auditEntry[0].nick}`;
-            }
-            inactiveDate = auditEntry[0].created_at;
+          if (actorData && actorData.length > 0 && actorData[0].nick) {
+            inactiveBy = `el Comandante ${actorData[0].nick}`;
           }
+        } catch (actorErr) {
+          console.warn('⚠️ [Auth Middleware] No se pudo obtener el nick de inactive_by:', actorErr.message);
         }
-      } catch (auditErr) {
-        // Silencioso: si falla, se usa el mensaje por defecto
-        console.warn('⚠️ [Auth Middleware] No se pudo obtener auditoría de inactivación:', auditErr.message);
       }
 
+// 2. Si no están poblados (inactivos históricos), hacer FALLBACK a audit_logs
+if ((!user.inactive_by || !user.inactive_at) && supabase && user.id) {
+  try {
+    const { data: auditEntry } = await supabase
+      .from('audit_logs')
+      .select('actor_nick, created_at, details')
+      .eq('target_id', user.id)
+      .in('action', ['USER_DEACTIVATED', 'USER_INACTIVATED', 'USER_STATUS_CHANGE'])
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (auditEntry && auditEntry.length > 0) {
+      if (auditEntry[0].actor_nick && inactiveBy === 'el Comando Central') {
+        inactiveBy = `el Comandante ${auditEntry[0].actor_nick}`;
+      }
+      if (!inactiveDate && auditEntry[0].created_at) {
+        inactiveDate = auditEntry[0].created_at;
+      }
+      if (!inactiveReason && auditEntry[0].details?.inactive_reason) {
+        inactiveReason = auditEntry[0].details.inactive_reason;
+      }
+    }
+  } catch (auditErr) {
+    // Silencioso: si falla, se usa el mensaje por defecto
+    console.warn('⚠️ [Auth Middleware] No se pudo obtener auditoría de inactivación:', auditErr.message);
+  }
+}
       const dateMsg = inactiveDate
         ? ` el ${new Date(inactiveDate).toLocaleDateString('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
         : '';
@@ -124,6 +145,7 @@ export async function requireAuth(req, res, next) {
         details: {
           inactive_by: inactiveBy,
           inactive_at: inactiveDate,
+          inactive_reason: inactiveReason || user.inactive_reason || null,
           contact: 'comando.central@ffaa.py'
         }
       });
