@@ -338,7 +338,7 @@ Cuando un piloto con `status = 'INACTIVE'` intenta autenticarse en cualquier end
 }
 ```
 
-- **Origen:** Fix aplicado en el middleware `auth.js` (commit `f44326f`).
+- **Origen:** Fix aplicado en el middleware `auth.js` (commit `d4a3881`).
 - **Objetivo:** Reemplazar la respuesta genérica por un mensaje táctico claro que indique al piloto:
   1. Que su cuenta fue inactivada (no que su token expiró).
   2. Quién ejecutó la baja y cuándo.
