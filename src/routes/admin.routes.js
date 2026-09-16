@@ -70,7 +70,7 @@ router.get('/events', async (req, res) => {
 });
 router.post('/events/activate-bm', activateBlackMarket);
 
-// ========== 3. RESETEAR CONTRASEÑA DE USUARIO (CORREGIDO) ==========
+// ========== 3. RESETEAR CONTRASEÑA DE USUARIO (CON VALIDACIÓN DE JERARQUÍA — HALL-022) ==========
 router.post('/users/:userId/reset-password', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -83,7 +83,7 @@ router.post('/users/:userId/reset-password', async (req, res) => {
                 // ✅ CONSULTA TIPADA: determinar si es UUID o INTEGER
                 let userQuery = supabase
                     .from('users')
-                    .select('id, user_id, nick, email, token_version');
+                    .select('id, user_id, nick, email, role, token_version');
 
                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(targetId));
                 const isNumeric = /^\d+$/.test(String(targetId));
@@ -109,6 +109,39 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
+
+        // ========== VALIDACIÓN DE JERARQUÍA (HALL-022) ==========
+        const actorRole = (req.user.role || 'MIEMBRO').toUpperCase();
+        const targetRole = (user.role || 'MIEMBRO').toUpperCase();
+        const actorUserId = req.user.user_id || req.user.id;
+        const targetUserId = user.user_id || user.id;
+
+        // 1. Bloquear auto-reseteo (el propio usuario debe usar /change-password)
+        if (String(actorUserId) === String(targetUserId) || String(actorUserId) === String(user.id)) {
+            return res.status(403).json({
+                error: 'No puedes resetear tu propia contraseña por esta vía. Usa el cambio de contraseña personal.',
+                code: 'SELF_RESET_FORBIDDEN'
+            });
+        }
+
+        // 2. Proteger al OWNER: nadie excepto el propio OWNER puede resetear su contraseña
+        if (targetRole === 'OWNER' && actorRole !== 'OWNER') {
+            return res.status(403).json({
+                error: 'No se puede resetear la contraseña del Comandante General (OWNER)',
+                code: 'OWNER_PROTECTED'
+            });
+        }
+
+        // 3. ADMIN solo puede resetear a MIEMBRO y VETERANO
+        if (actorRole === 'ADMIN' && (targetRole === 'ADMIN' || targetRole === 'OWNER')) {
+            return res.status(403).json({
+                error: 'Los Administradores solo pueden resetear contraseñas de Miembros y Veteranos',
+                code: 'HIERARCHY_FORBIDDEN'
+            });
+        }
+
+        // 4. OWNER puede resetear a todos excepto a sí mismo (ya validado arriba)
+        // ============================================================
 
         const tempPassword = generateTemporaryPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
@@ -139,7 +172,8 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             userAgent: req.headers['user-agent'],
             metadata: { 
                 reset_by: req.user.nick,
-                reset_by_role: req.user.role
+                reset_by_role: req.user.role,
+                target_role: targetRole
             }
         });
 
