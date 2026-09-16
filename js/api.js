@@ -488,6 +488,41 @@ async function uploadEventBulk() {
   }
 }
 
+// [ADMIN MEJORA] Cambio de estado de usuario con soporte de motivo (ACTIVE / INACTIVE)
+async function changeUserStatus(userId, newStatus, nick, reason = '') {
+  try {
+    const body = { status: newStatus };
+    if (reason && typeof reason === 'string' && reason.trim().length > 0) {
+      body.reason = reason.trim();
+    }
+
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al actualizar estado');
+    }
+
+    showToast(`✅ ${data.message || `Estado de ${nick} actualizado a ${newStatus}`}`, 'success');
+    if (typeof loadAdminPanel === 'function') {
+      loadAdminPanel();
+    }
+    return data;
+  } catch (err) {
+    console.error('Error actualizando estado:', err);
+    showToast('❌ ' + err.message, 'error');
+    throw err;
+  }
+}
+
 // [ADMIN MEJORA] Cambio de estado de miembro (ACTIVE / INACTIVE)
 async function toggleMemberStatus(userId, newStatus, nick) {
   const label = newStatus === 'INACTIVE' ? 'inactivar' : 'reactivar';
@@ -510,13 +545,20 @@ async function toggleMemberStatus(userId, newStatus, nick) {
     showToast(`✅ Piloto ${nick} ${accion} correctamente`, 'success');
 
     // Recargar lista para reflejar el cambio
-    loadMembersList();
+    if (typeof loadMembersList === 'function') {
+      loadMembersList();
+    } else if (typeof loadAdminPanel === 'function') {
+      loadAdminPanel();
+    }
 
   } catch (err) {
     console.error('Error cambiando estado de miembro:', err);
     showToast('❌ ' + err.message, 'error');
   }
 }
+
+window.changeUserStatus = changeUserStatus;
+window.toggleMemberStatus = toggleMemberStatus;
 
 // ========== EXPORTACIONES ==========
 async function exportPlanesXLSX() {

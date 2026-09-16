@@ -4395,11 +4395,15 @@ function resetNormativasFilters() {
 // ========== 2. PANEL DE COMANDANCIA & ADMINISTRACIÓN ==========
 // ============================================================
 let adminMembersCache = [];
+let currentMembersTab = 'all';  // 'active' | 'inactive' | 'all'
+let adminMembersCacheFiltered = [];  // filtro aplicado por pestaña + filtros existentes
 
 async function loadAdminPanel() {
   const tableBody = document.getElementById('membersTableBody');
   if (tableBody && (!adminMembersCache || adminMembersCache.length === 0)) {
-    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#a0aec0;">⏳ Sincronizando registros militares de la escuadra...</td></tr>';
+    const isInactiveTab = currentMembersTab === 'inactive';
+    const colspan = isInactiveTab ? 9 : 7;
+    tableBody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;padding:2rem;color:#a0aec0;">⏳ Sincronizando registros militares de la escuadra...</td></tr>`;
   }
 
   try {
@@ -4419,7 +4423,7 @@ async function loadAdminPanel() {
     adminMembersCache = members;
     renderAdminStats(members);
     renderPilotsByStatus(members);
-    renderAdminMembersTable(members);
+    filterMembers();
 
     const updateEl = document.getElementById('lastUpdate');
     if (updateEl) updateEl.textContent = new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -4566,13 +4570,77 @@ function formatLastActivity(dateStr) {
   }
 }
 
+function formatInactiveDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch (e) {
+    return '';
+  }
+}
+
 function renderAdminMembersTable(members) {
   const tableBody = document.getElementById('membersTableBody');
   const noResultsMsg = document.getElementById('noResultsMessage');
 
+  // Actualizar contadores de las pestañas desde el caché completo
+  const totalActive = adminMembersCache.filter(m => (m.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
+  const totalInactive = adminMembersCache.filter(m => (m.status || '').toUpperCase() === 'INACTIVE').length;
+  const totalAll = adminMembersCache.length;
+
+  const tabActiveCount = document.getElementById('tabActiveCount');
+  if (tabActiveCount) tabActiveCount.textContent = `(${totalActive})`;
+
+  const tabInactiveCount = document.getElementById('tabInactiveCount');
+  if (tabInactiveCount) tabInactiveCount.textContent = `(${totalInactive})`;
+
+  const tabAllCount = document.getElementById('tabAllCount');
+  if (tabAllCount) tabAllCount.textContent = `(${totalAll})`;
+
   // Limpiar cualquier tabla redundante previa
   const existingDynamicTable = document.getElementById('adminMembersTable');
   if (existingDynamicTable) existingDynamicTable.remove();
+
+  const isInactiveTab = currentMembersTab === 'inactive';
+  const table = tableBody?.closest('table');
+  const thead = table ? table.querySelector('thead') : null;
+  if (thead) {
+    if (isInactiveTab) {
+      thead.innerHTML = `
+        <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
+          <th style="padding:10px 8px;">Piloto</th>
+          <th style="padding:10px 8px;">Email</th>
+          <th style="padding:10px 8px;">Rol</th>
+          <th style="padding:10px 8px;">Estado</th>
+          <th style="padding:10px 8px;">Últ. Actividad</th>
+          <th style="padding:10px 8px;">Prom. Tokens</th>
+          <th style="padding:10px 8px;min-width:180px;">Motivo de Baja</th>
+          <th style="padding:10px 8px;min-width:130px;">Inactivado por</th>
+          <th style="padding:10px 8px;text-align:center;">Gestión & Acciones</th>
+        </tr>
+      `;
+    } else {
+      thead.innerHTML = `
+        <tr style="border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;">
+          <th style="padding:10px 8px;">Piloto</th>
+          <th style="padding:10px 8px;">Email</th>
+          <th style="padding:10px 8px;">Rol</th>
+          <th style="padding:10px 8px;">Estado</th>
+          <th style="padding:10px 8px;">Últ. Actividad</th>
+          <th style="padding:10px 8px;">Prom. Tokens</th>
+          <th style="padding:10px 8px;text-align:center;">Gestión & Acciones</th>
+        </tr>
+      `;
+    }
+  }
 
   if (!members || members.length === 0) {
     if (tableBody) tableBody.innerHTML = '';
@@ -4594,6 +4662,48 @@ function renderAdminMembersTable(members) {
       (m.email && m.email.toLowerCase() === (currentUser.email || '').toLowerCase())
     );
     const perfStatus = (m.perf_status || 'VERDE').toUpperCase();
+
+    let extraColumnsHtml = '';
+    if (isInactiveTab) {
+      // Columna 1: Motivo de Baja
+      let reasonHtml = '';
+      if (m.inactive_reason && m.inactive_reason.trim().length > 0) {
+        const fullReason = escapeHTML(m.inactive_reason);
+        const isLong = m.inactive_reason.length > 60;
+        const truncated = escapeHTML(isLong ? m.inactive_reason.substring(0, 60) + '...' : m.inactive_reason);
+        reasonHtml = `<span title="${fullReason}" style="color:#cbd5e1;font-size:0.8rem;cursor:${isLong ? 'help' : 'default'};">${truncated}</span>`;
+      } else {
+        reasonHtml = `
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="color:#94a3b8;font-size:0.75rem;font-style:italic;">⚠️ Sin motivo registrado</span>
+            <button type="button" onclick="promptCompleteReason('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-secondary" style="padding:2px 6px;font-size:0.7rem;cursor:pointer;border-radius:4px;border:1px solid #64748b;" title="Completar motivo de inactivación">✏️ Completar</button>
+          </div>
+        `;
+      }
+
+      // Columna 2: Inactivado por
+      const actorNick = m.inactive_by_nick ? escapeHTML(m.inactive_by_nick) : null;
+      const formattedDate = formatInactiveDate(m.inactive_at);
+
+      let inactiveByHtml = '<span style="color:#64748b;">—</span>';
+      if (actorNick && formattedDate) {
+        inactiveByHtml = `
+          <div>
+            <span style="font-weight:600;color:#cbd5e1;font-size:0.82rem;">${actorNick}</span>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">${formattedDate}</div>
+          </div>
+        `;
+      } else if (actorNick) {
+        inactiveByHtml = `<span style="font-weight:600;color:#cbd5e1;font-size:0.82rem;">${actorNick}</span>`;
+      } else if (formattedDate) {
+        inactiveByHtml = `<span style="font-size:0.75rem;color:#94a3b8;">${formattedDate}</span>`;
+      }
+
+      extraColumnsHtml = `
+        <td style="padding:10px 8px;max-width:240px;">${reasonHtml}</td>
+        <td style="padding:10px 8px;min-width:130px;">${inactiveByHtml}</td>
+      `;
+    }
 
     return `
       <tr style="border-bottom:1px solid rgba(148,163,184,0.1);background:${!isActive ? 'rgba(231,76,60,0.05)' : 'transparent'};">
@@ -4629,11 +4739,12 @@ function renderAdminMembersTable(members) {
             <span class="status-badge status-${perfStatus.toLowerCase()}" style="font-size:0.7rem;padding:1px 6px;">${perfStatus}</span>
           </div>
         </td>
+        ${extraColumnsHtml}
         <td style="padding:10px 8px;text-align:center;">
           <div style="display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
             ${isActive 
-              ? `<button onclick="changeUserStatus('${userId}', 'INACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
-              : `<button onclick="changeUserStatus('${userId}', 'ACTIVE', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
+              ? `<button type="button" onclick="promptInactivateUser('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-danger" style="padding:3px 8px;font-size:0.72rem;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Desactivar piloto">🔴 Inactivar</button>`
+              : `<button type="button" onclick="promptReactivateUser('${userId}', '${escapeHTML(m.nick || '')}')" class="btn-success" style="padding:3px 8px;font-size:0.72rem;background:#2ecc71;color:#fff;border:none;border-radius:4px;cursor:pointer;" title="Activar piloto">🟢 Activar</button>`
             }
             <button onclick="resetPilotPassword('${userId}', '${escapeHTML(m.nick || '')}', '${escapeHTML(m.email || '')}')" class="btn-secondary" style="padding:3px 8px;font-size:0.72rem;cursor:pointer;" title="Resetear contraseña institucional">🔑 Clave</button>
           </div>
@@ -4651,6 +4762,9 @@ function renderAdminMembersTable(members) {
     const tableDiv = document.createElement('div');
     tableDiv.id = 'adminMembersTable';
     tableDiv.style.marginTop = '15px';
+    const extraHeaders = isInactiveTab 
+      ? '<th style="padding:10px 8px;min-width:180px;">Motivo de Baja</th><th style="padding:10px 8px;min-width:130px;">Inactivado por</th>' 
+      : '';
     tableDiv.innerHTML = `
       <div style="overflow-x:auto;">
         <table class="data-table" style="width:100%;border-collapse:collapse;">
@@ -4662,6 +4776,7 @@ function renderAdminMembersTable(members) {
               <th style="padding:10px 8px;">Estado</th>
               <th style="padding:10px 8px;">Últ. Actividad</th>
               <th style="padding:10px 8px;">Prom. Tokens</th>
+              ${extraHeaders}
               <th style="padding:10px 8px;text-align:center;">Gestión & Acciones</th>
             </tr>
           </thead>
@@ -4702,19 +4817,28 @@ async function changeUserRole(userId, newRole, nick) {
   }
 }
 
-async function changeUserStatus(userId, newStatus, nick) {
-  const actionText = newStatus === 'ACTIVE' ? 'ACTIVAR' : 'DESACTIVAR';
-  if (!confirm(`¿Confirmas ${actionText} la cuenta de "${nick}"?`)) {
-    return;
+async function changeUserStatus(userId, newStatus, nick, reason = '') {
+  // Si no se especifica motivo y se inactiva fuera del modal (fallback legacy):
+  if (!reason && newStatus === 'INACTIVE') {
+    const actionText = 'DESACTIVAR';
+    if (!confirm(`¿Confirmas ${actionText} la cuenta de "${nick}"?`)) {
+      return;
+    }
   }
+
   try {
+    const body = { status: newStatus };
+    if (reason && typeof reason === 'string' && reason.trim().length > 0) {
+      body.reason = reason.trim();
+    }
+
     const res = await fetch(`${API_BASE}/api/admin/users/${userId}/status`, {
       method: 'PUT',
       headers: {
         ...getAuthHeaders(),
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ status: newStatus })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
     if (!res.ok) {
@@ -4722,9 +4846,11 @@ async function changeUserStatus(userId, newStatus, nick) {
     }
     showToast(`✅ ${data.message || `Estado de ${nick} actualizado a ${newStatus}`}`, 'success');
     loadAdminPanel();
+    return data;
   } catch (err) {
     console.error('Error actualizando estado:', err);
     showToast('❌ ' + err.message, 'error');
+    throw err;
   }
 }
 
@@ -5334,6 +5460,55 @@ async function uploadEventBulk() {
   }
 }
 
+function switchMembersTab(tabName) {
+  if (!['active', 'inactive', 'all'].includes(tabName)) {
+    tabName = 'all';
+  }
+  currentMembersTab = tabName;
+
+  const tabs = {
+    active: document.getElementById('tabActive'),
+    inactive: document.getElementById('tabInactive'),
+    all: document.getElementById('tabAll')
+  };
+
+  const activeStyles = {
+    active: {
+      background: 'rgba(46,204,113,0.15)',
+      border: '1.5px solid #2ecc71',
+      color: '#2ecc71'
+    },
+    inactive: {
+      background: 'rgba(231,76,60,0.15)',
+      border: '1.5px solid #e74c3c',
+      color: '#e74c3c'
+    },
+    all: {
+      background: 'rgba(148,163,184,0.15)',
+      border: '1.5px solid #94a3b8',
+      color: '#cbd5e1'
+    }
+  };
+
+  Object.keys(tabs).forEach(key => {
+    const tabEl = tabs[key];
+    if (!tabEl) return;
+    if (key === tabName) {
+      tabEl.classList.add('active');
+      tabEl.style.background = activeStyles[key].background;
+      tabEl.style.border = activeStyles[key].border;
+      tabEl.style.color = activeStyles[key].color;
+    } else {
+      tabEl.classList.remove('active');
+      tabEl.style.background = 'transparent';
+      tabEl.style.border = '1.5px solid #334155';
+      tabEl.style.color = '#94a3b8';
+    }
+  });
+
+  filterMembers();
+}
+
 function filterMembers() {
   const search = (document.getElementById('memberSearch')?.value || '').toLowerCase().trim();
   const role = document.getElementById('roleFilter')?.value || '';
@@ -5341,7 +5516,16 @@ function filterMembers() {
   const perfStatus = document.getElementById('perfStatusFilter')?.value || '';
   const status = document.getElementById('statusFilter')?.value || '';
 
-  const filtered = adminMembersCache.filter(m => {
+  // 1. Filtrar primero según la pestaña activa
+  let baseList = adminMembersCache;
+  if (currentMembersTab === 'active') {
+    baseList = adminMembersCache.filter(m => (m.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
+  } else if (currentMembersTab === 'inactive') {
+    baseList = adminMembersCache.filter(m => (m.status || '').toUpperCase() === 'INACTIVE');
+  }
+
+  // 2. Aplicar los filtros secundarios existentes
+  const filtered = baseList.filter(m => {
     const nick = (m.nick || '').toLowerCase();
     const email = (m.email || '').toLowerCase();
     if (search && !nick.includes(search) && !email.includes(search)) return false;
@@ -5358,6 +5542,7 @@ function filterMembers() {
     return true;
   });
 
+  adminMembersCacheFiltered = filtered;
   renderAdminMembersTable(filtered);
 }
 
@@ -5366,7 +5551,213 @@ function resetMemberFilters() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  renderAdminMembersTable(adminMembersCache);
+  filterMembers();
+}
+
+// ========== GESTIÓN DE MODALES DE INACTIVACIÓN / REACTIVACIÓN ==========
+
+function promptInactivateUser(userId, nick) {
+  try {
+    const modal = document.getElementById('inactivateUserModal');
+    if (!modal || typeof showModal !== 'function') {
+      if (confirm(`¿Confirmas DESACTIVAR la cuenta de "${nick}"?`)) {
+        changeUserStatus(userId, 'INACTIVE', nick, 'Baja administrativa');
+      }
+      return;
+    }
+
+    const idInput = document.getElementById('inactivateUserId');
+    const nickInput = document.getElementById('inactivateUserNick');
+    const nickDisplay = document.getElementById('inactivateUserNickDisplay');
+    const reasonSelect = document.getElementById('inactivateReasonSelect');
+    const reasonText = document.getElementById('inactivateReasonText');
+    const counter = document.getElementById('inactivateReasonCounter');
+
+    if (idInput) idInput.value = userId;
+    if (nickInput) nickInput.value = nick;
+    if (nickDisplay) nickDisplay.textContent = nick || '-';
+    if (reasonSelect) reasonSelect.value = '';
+    if (reasonText) reasonText.value = '';
+    if (counter) counter.textContent = '0 / 500';
+
+    showModal('inactivateUserModal');
+  } catch (err) {
+    console.error('Error abriendo modal de inactivación:', err);
+    if (confirm(`¿Confirmas DESACTIVAR la cuenta de "${nick}"?`)) {
+      changeUserStatus(userId, 'INACTIVE', nick, 'Baja administrativa');
+    }
+  }
+}
+
+async function confirmInactivateUser() {
+  const userId = document.getElementById('inactivateUserId')?.value;
+  const nick = document.getElementById('inactivateUserNick')?.value || '';
+  const select = document.getElementById('inactivateReasonSelect');
+  const textarea = document.getElementById('inactivateReasonText');
+
+  const selectVal = (select?.value || '').trim();
+  const textVal = (textarea?.value || '').trim();
+
+  let finalReason = '';
+  if (selectVal === 'Otro (especificar)') {
+    finalReason = textVal;
+  } else if (selectVal && textVal) {
+    finalReason = `${selectVal}: ${textVal}`;
+  } else if (selectVal) {
+    finalReason = selectVal;
+  } else {
+    finalReason = textVal;
+  }
+
+  if (!finalReason || finalReason.length < 10) {
+    showToast('⚠️ El motivo debe tener al menos 10 caracteres', 'warning');
+    if (textarea) textarea.focus();
+    return;
+  }
+
+  if (finalReason.length > 500) {
+    showToast('⚠️ El motivo no puede exceder 500 caracteres', 'warning');
+    if (textarea) textarea.focus();
+    return;
+  }
+
+  try {
+    await changeUserStatus(userId, 'INACTIVE', nick, finalReason);
+    closeModal('inactivateUserModal');
+  } catch (err) {
+    // Error ya manejado por toast en changeUserStatus
+  }
+}
+
+function promptReactivateUser(userId, nick) {
+  try {
+    const modal = document.getElementById('reactivateUserModal');
+    if (!modal || typeof showModal !== 'function') {
+      if (confirm(`¿Confirmas ACTIVAR la cuenta de "${nick}"?`)) {
+        changeUserStatus(userId, 'ACTIVE', nick, '');
+      }
+      return;
+    }
+
+    const idInput = document.getElementById('reactivateUserId');
+    const nickInput = document.getElementById('reactivateUserNick');
+    const nickDisplay = document.getElementById('reactivateUserNickDisplay');
+    const reasonText = document.getElementById('reactivateReasonText');
+    const counter = document.getElementById('reactivateReasonCounter');
+
+    if (idInput) idInput.value = userId;
+    if (nickInput) nickInput.value = nick;
+    if (nickDisplay) nickDisplay.textContent = nick || '-';
+    if (reasonText) reasonText.value = '';
+    if (counter) counter.textContent = '0 / 300';
+
+    showModal('reactivateUserModal');
+  } catch (err) {
+    console.error('Error abriendo modal de reactivación:', err);
+    if (confirm(`¿Confirmas ACTIVAR la cuenta de "${nick}"?`)) {
+      changeUserStatus(userId, 'ACTIVE', nick, '');
+    }
+  }
+}
+
+async function confirmReactivateUser() {
+  const userId = document.getElementById('reactivateUserId')?.value;
+  const nick = document.getElementById('reactivateUserNick')?.value || '';
+  const textarea = document.getElementById('reactivateReasonText');
+  const reason = (textarea?.value || '').trim();
+
+  if (reason && reason.length > 300) {
+    showToast('⚠️ El motivo de reactivación no puede exceder 300 caracteres', 'warning');
+    if (textarea) textarea.focus();
+    return;
+  }
+
+  try {
+    await changeUserStatus(userId, 'ACTIVE', nick, reason);
+    closeModal('reactivateUserModal');
+  } catch (err) {
+    // Error ya manejado por toast en changeUserStatus
+  }
+}
+
+function promptCompleteReason(userId, nick) {
+  try {
+    const idInput = document.getElementById('completeReasonUserId');
+    const nickInput = document.getElementById('completeReasonUserNick');
+    const nickDisplay = document.getElementById('completeReasonUserNickDisplay');
+    const reasonText = document.getElementById('completeReasonText');
+    const counter = document.getElementById('completeReasonCounter');
+
+    if (idInput) idInput.value = userId;
+    if (nickInput) nickInput.value = nick;
+    if (nickDisplay) nickDisplay.textContent = nick || '-';
+    if (reasonText) reasonText.value = '';
+    if (counter) counter.textContent = '0 / 500';
+
+    showModal('completeReasonModal');
+  } catch (err) {
+    console.error('Error abriendo modal de completar motivo:', err);
+  }
+}
+
+async function confirmCompleteReason() {
+  const userId = document.getElementById('completeReasonUserId')?.value;
+  const nick = document.getElementById('completeReasonUserNick')?.value || '';
+  const textarea = document.getElementById('completeReasonText');
+  const reason = (textarea?.value || '').trim();
+
+  if (!reason || reason.length < 10) {
+    showToast('⚠️ El motivo debe tener al menos 10 caracteres', 'warning');
+    if (textarea) textarea.focus();
+    return;
+  }
+
+  if (reason.length > 500) {
+    showToast('⚠️ El motivo no puede exceder 500 caracteres', 'warning');
+    if (textarea) textarea.focus();
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/inactive-reason`, {
+      method: 'PATCH',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error al guardar motivo');
+    }
+
+    showToast(`✅ ${data.message || `Motivo de baja registrado para ${nick}`}`, 'success');
+    closeModal('completeReasonModal');
+    loadAdminPanel();
+  } catch (err) {
+    console.error('Error guardando motivo de inactivación:', err);
+    showToast('❌ ' + err.message, 'error');
+  }
+}
+
+function updateInactivateReasonCounter() {
+  const text = document.getElementById('inactivateReasonText')?.value || '';
+  const counter = document.getElementById('inactivateReasonCounter');
+  if (counter) counter.textContent = `${text.length} / 500`;
+}
+
+function updateReactivateReasonCounter() {
+  const text = document.getElementById('reactivateReasonText')?.value || '';
+  const counter = document.getElementById('reactivateReasonCounter');
+  if (counter) counter.textContent = `${text.length} / 300`;
+}
+
+function updateCompleteReasonCounter() {
+  const text = document.getElementById('completeReasonText')?.value || '';
+  const counter = document.getElementById('completeReasonCounter');
+  if (counter) counter.textContent = `${text.length} / 500`;
 }
 
 function toggleMembersSection() {
@@ -5554,6 +5945,17 @@ window.renderNormativas = renderNormativas;
 window.applyNormativasFilters = applyNormativasFilters;
 window.resetNormativasFilters = resetNormativasFilters;
 window.loadAdminPanel = loadAdminPanel;
+window.currentMembersTab = currentMembersTab;
+window.switchMembersTab = switchMembersTab;
+window.promptInactivateUser = promptInactivateUser;
+window.promptReactivateUser = promptReactivateUser;
+window.promptCompleteReason = promptCompleteReason;
+window.confirmInactivateUser = confirmInactivateUser;
+window.confirmReactivateUser = confirmReactivateUser;
+window.confirmCompleteReason = confirmCompleteReason;
+window.updateInactivateReasonCounter = updateInactivateReasonCounter;
+window.updateReactivateReasonCounter = updateReactivateReasonCounter;
+window.updateCompleteReasonCounter = updateCompleteReasonCounter;
 window.renderAdminStats = renderAdminStats;
 window.renderPilotsByStatus = renderPilotsByStatus;
 window.renderAdminMembersTable = renderAdminMembersTable;
