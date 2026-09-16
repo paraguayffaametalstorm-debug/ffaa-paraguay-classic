@@ -6,6 +6,24 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [Fase 0.1] - 2026-09-16
+
+### 🔒 Contención de Emergencia — Mitigación Parcial de HALL-001
+
+#### 🛡️ Configuración de JWT_SECRET en Fly.io
+
+- **Hallazgo abordado:** HALL-001 — JWT_SECRET Fallback Hardcodeado (mitigación parcial).
+- **Acción ejecutada:** `fly secrets set JWT_SECRET="$(openssl rand -base64 48)" -a paraguay-ffaa-metalstorm`
+- **Valor generado:** 48 bytes aleatorios en base64.
+- **Digest Fly.io:** `c851b45ed89bc61e` (estado: `Deployed`).
+- **Rolling deploy:** 2/2 máquinas actualizadas sin downtime.
+- **Verificación:** Health check `servicecheck-00-http-3000` passing, Supabase Diagnostic OK, logs sin errores.
+- **Impacto operativo:** Tokens JWT previos invalidados. Los usuarios deberán iniciar sesión nuevamente (una sola vez).
+- **Rollback:** `fly secrets unset JWT_SECRET -a paraguay-ffaa-metalstorm` (⚠️ NO recomendado).
+- **Contexto:** Inicio del Plan de Mejora Continua v1.0. Fix definitivo agendado en Fase 1, Tarea 1.1.
+
+---
+
 ## 📌 [4.0.0] - 2026-09-16
 
 ### 🛡️ Sistema Táctico Integral de Gestión de Pilotos Inactivos (Fases A, B y C)
