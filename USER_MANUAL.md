@@ -133,7 +133,7 @@ Cuando un oficial con rango **`ADMIN`** o **`OWNER`** accede al formulario de re
 - **Aislamiento y Trazabilidad:** Esto permite a los mandos registrar o ajustar las marcas de pilotos ausentes sin perder la trazabilidad de la auditoría.
 - **Acceso Regular:** Para pilotos `MIEMBRO` o `VETERANO`, el selector permanece restringido a su propia identidad para garantizar la privacidad y prevenir registros cruzados no autorizados.
 
-### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0 (Rediseño v3.9.8)
+### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0 (Rediseño v3.9.9)
 El módulo de Hangar te permite registrar y calibrar tus cazas seleccionando entre el **catálogo oficial de 44 aeronaves de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, Mirage 2000, etc.) y gestionar sus especificaciones:
 
 #### Árbol de Nodos de Upgrades 2.0
@@ -306,13 +306,13 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.9.8.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.9.9.
 
 **¿Puedo ver la historia y las curiosidades de mi avión?**  
 Sí. En la pantalla dedicada o modal de cualquier aeronave encontrarás la sección "📜 Historia de la Aeronave" con la trivia completa traducida al español.
 
 **¿En qué idioma están disponibles la Historia, Recomendaciones y Rasgos de combate?**  
-A partir de la versión v3.9.8, las descripciones in-game, historias y recomendaciones tácticas han sido traducidas al español rioplatense mediante DeepL (`_es`), con fallback automático al inglés si faltara algún registro. Además, los 13 rasgos tácticos de combate (*traits*) disponen de terminología militar estandarizada en español (`TRAITS_ES`).
+A partir de la versión v3.9.9, las descripciones in-game, historias y recomendaciones tácticas han sido traducidas al español rioplatense mediante DeepL (`_es`), con fallback automático al inglés si faltara algún registro. Además, los 13 rasgos tácticos de combate (*traits*) disponen de terminología militar estandarizada en español (`TRAITS_ES`).
 
 ---
 
