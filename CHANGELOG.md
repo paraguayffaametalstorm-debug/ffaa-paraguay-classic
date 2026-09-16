@@ -6,6 +6,64 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.0.0] - 2026-09-16
+
+### 🛡️ Sistema Táctico Integral de Gestión de Pilotos Inactivos (Fases A, B y C)
+
+#### 🗄️ Migración de Base de Datos (Supabase PostgreSQL)
+- **3 columnas nuevas en tabla `users`:**
+  - `inactive_reason` (`TEXT`, `NULL`): Motivo oficial de la baja/inactivación.
+  - `inactive_by` (`UUID`, `NULL`, FK a `users.id` con `ON DELETE SET NULL`): Identificador del oficial de mando que ejecutó la baja.
+  - `inactive_at` (`TIMESTAMPTZ`, `NULL`): Timestamp exacto de la inactivación.
+- Al reactivar a un piloto (`status = 'ACTIVE'`), estos tres campos se limpian a `NULL`.
+
+#### ⚙️ FASE A (Backend — Commit `d4a3881`)
+- **`src/controllers/admin.controller.js`:**
+  - `updateUserStatus()` actualizado para recibir `{ status, reason }`:
+    - Valida motivo obligatorio al inactivar (10 a 500 caracteres; código de error `REASON_REQUIRED` o `REASON_TOO_LONG`).
+    - Permite motivo opcional al reactivar (máximo 300 caracteres).
+    - Persiste `inactive_reason`, `inactive_by` (`req.user.id`) y `inactive_at` (`NOW()`) en Supabase al inactivar.
+    - Limpia los 3 campos a `NULL` al reactivar.
+    - Jerarquía de permisos estricta: `OWNER` puede modificar a cualquier usuario excepto a sí mismo (`SELF_MODIFICATION_FORBIDDEN`); `ADMIN` solo puede modificar a `MIEMBRO` y `VETERANO` (`HIERARCHY_FORBIDDEN`).
+    - Registra con redundancia en `audit_logs` (`USER_DEACTIVATED` / `USER_ACTIVATED`) y `security_events`.
+    - Retrocompatibilidad asegurada: si no se envía `reason`, asigna `"Sin motivo especificado"`.
+  - `getInactiveUsers()`: nuevo controlador que retorna exclusivamente pilotos con `status = 'INACTIVE'`, ordenados por `inactive_at DESC` y `updated_at DESC`, resolviendo `inactive_by_nick` en batch.
+  - `updateInactiveReason()`: nuevo controlador para completar o corregir el motivo de pilotos inactivos (requiere 10 a 500 caracteres, registra `USER_INACTIVE_REASON_UPDATED` en auditoría).
+  - `getUsers()`: ampliado para proyectar `inactive_reason`, `inactive_by`, `inactive_at` y resolver `inactive_by_nick` en batch.
+- **`src/routes/admin.routes.js`:**
+  - Nueva ruta `GET /users/inactive` (protegida por `requireAuth` y `requireRole(['ADMIN', 'OWNER'])`).
+  - Nueva ruta `PATCH /users/:id/inactive-reason` (protegida por `requireAuth` y `requireRole(['ADMIN', 'OWNER'])`).
+- **`src/middlewares/auth.js`:**
+  - `requireAuth` optimizado para consultar primero `users.inactive_reason`, `users.inactive_by` y `users.inactive_at`.
+  - Fallback a `audit_logs` con columnas correctas (`target_id`, `actor_nick`) para inactivos históricos con campos `NULL`.
+  - Retorna 403 enriquecido con objeto `details: { inactive_by, inactive_at, inactive_reason, contact }`.
+
+#### 🖥️ FASE B (Frontend — Commit `b1023fd`)
+- **`components/admin-panel.html`:**
+  - Pestañas tácticas de filtrado de dotación: `🟢 Activos`, `🔴 Inactivos` y `📋 Todos` con contadores dinámicos `#tabCountActive`, `#tabCountInactive`, `#tabCountAll`.
+  - Modal táctico de inactivación `#inactivateUserModal` con selector de causas predefinidas (Baja temporal, Bajo rendimiento, Inactividad prolongada, Expulsión disciplinaria, Renuncia voluntaria), campo de texto libre obligatorio y contador de caracteres en vivo (10/500).
+  - Modal táctico de reactivación `#reactivateUserModal` con textarea opcional de motivo y contador (0/300).
+  - Modal `#completeReasonModal` para regularizar motivos en inactivos históricos.
+- **`js/views.js`:**
+  - Estado de pestaña activa `currentMembersTab` (`'all'`, `'active'`, `'inactive'`) y función `switchMembersTab()`.
+  - `filterMembers()` actualizado para aplicar primero el filtro de pestaña de estado y luego los filtros combinados existentes.
+  - `renderAdminMembersTable()` enriquecido con columnas dinámicas para la pestaña de inactivos: *"Motivo de Baja"* (con truncado a 40 caracteres, tooltip y botón `✏️ Completar` si no tiene motivo) e *"Inactivado por"* (indicativo del comandante y fecha/hora `DD/MM/YYYY HH:mm`).
+  - Funciones tácticas `promptInactivateUser()`, `confirmInactivateUser()`, `promptReactivateUser()`, `confirmReactivateUser()`, `promptCompleteReason()`, `confirmCompleteReason()`.
+  - `changeUserStatus()` frontend actualizado para aceptar 4to parámetro `reason` y consumir modales tácticos con fallback seguro a `confirm()`.
+- **`js/api.js`:**
+  - Integración de llamada a `PATCH /api/admin/users/:id/inactive-reason` y soporte de motivo en `changeUserStatus()`.
+
+#### 📚 FASE C (Documentación y Limpieza)
+- **Depuración de código:**
+  - Eliminación de función redundante `changeUserStatus` y export `window.changeUserStatus` en `js/api.js`.
+  - Eliminación de asignación residual `window.currentMembersTab` en `js/views.js`.
+- **Nueva directiva oficial:**
+  - Creación de `POLITICA_INACTIVACION.md` con las 12 secciones normativas reglamentarias.
+- **Actualización de documentación:**
+  - Sincronización completa de los 9 manuales y guías del repositorio a la versión v4.0.0.
+
+---
+
 ## 📌 [3.9.9] - 2026-09-15
 
 ### 🔐 Flujo de Recuperación de Contraseña por Email & Mensaje Enriquecido de Inactivos

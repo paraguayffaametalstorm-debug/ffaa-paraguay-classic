@@ -1,8 +1,8 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-15  
-> **Versión Activa:** v3.9.9  
+> **Fecha de Congelamiento:** 2026-09-16  
+> **Versión Activa:** v4.0.0  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -10,12 +10,42 @@
 
 ## 🎯 Resumen Ejecutivo
 
-El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v3.9.9). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
+El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v4.0.0). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
 
-Específicamente, en la versión v3.9.9 se ha consolidado:
+Específicamente, en las versiones v3.9.9 y v4.0.0 se ha consolidado:
 1. **Rediseño Completo del Hangar Militar:** Migración de carrusel rígido a doble arquitectura: **Vista 1 (Grid Táctico de Tarjetas)** para navegación ágil y **Vista 2 (Pantalla Dedicada / Detalle Completo de Aeronave)** con botón "← VOLVER AL HANGAR", accesos directos a calibración de Upgrades 2.0 y telemetría de combate profunda.
 2. **Sistema Integral de Traducción (i18n):** Extracción, traducción mediante DeepL y persistencia en Supabase de `descripcion_es`, `historia_es` y `recomendaciones_es`, con degradación elegante a inglés y diccionario cliente de los 13 traits oficiales (`TRAITS_ES`).
 3. **Catálogo Oficial Consolidado a 44 Aeronaves:** 44 cazas normalizados con armas y subsistemas específicos validados.
+4. **Sistema Táctico de Gestión de Pilotos Inactivos (v4.0.0):** Registro obligatorio de motivo al inactivar, trazabilidad de oficial y fecha, resolución batch de comandantes, mensaje enriquecido de bloqueo en autenticación y pestañas tácticas con modales dedicados en el panel de administración militar.
+
+---
+
+## 🛡️ Sistema Táctico de Gestión de Pilotos Inactivos (v4.0.0)
+
+### Infraestructura de Base de Datos
+- **3 columnas agregadas a `users`:**
+  - `inactive_reason` (`TEXT`): Motivo detallado de la baja (10-500 caracteres).
+  - `inactive_by` (`UUID` FK a `users.id` con `ON DELETE SET NULL`): Oficial de mando que ejecutó la baja.
+  - `inactive_at` (`TIMESTAMPTZ`): Timestamp exacto de la baja.
+- Limpieza automática a `NULL` al reactivar (`status = 'ACTIVE'`).
+
+### Estado Actual del Padrón Militar (2026-09-15)
+- **Total de Usuarios:** 61
+- **Pilotos Activos:** 28
+- **Pilotos Inactivos:** 33
+
+### Endpoints Operativos
+- `PUT/PATCH /api/admin/users/:id/status`: Inactivación con motivo obligatorio (10-500 chars), reactivación con motivo opcional (hasta 300 chars).
+- `GET /api/admin/users/inactive`: Nómina exclusiva de inactivos con `inactive_by_nick` resuelto en batch.
+- `PATCH /api/admin/users/:id/inactive-reason`: Regularización de motivos históricos.
+
+### Control de Acceso & Fallback
+- `requireAuth` consulta primero `users` (`inactive_reason`, `inactive_by`, `inactive_at`). Si están en `NULL` (inactivos históricos), consulta `audit_logs` (`target_id = user.id`, `action IN ('USER_DEACTIVATED', 'USER_INACTIVATED', 'USER_STATUS_CHANGE')`) y resuelve `actor_nick`. Retorna 403 enriquecido.
+
+### Panel de Administración Táctico
+- Pestañas `🟢 Activos (N)`, `🔴 Inactivos (N)`, `📋 Todos (N)` con recuento dinámico en vivo.
+- Columnas dinámicas en pestaña inactivos: *"Motivo de Baja"* (con botón `✏️ Completar` si está vacío) e *"Inactivado por"*.
+- Modales tácticos con selectores de motivos reglamentarios y contadores de caracteres.
 
 ---
 

@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v3.9.9-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v4.0.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.fly.dev/)
@@ -30,10 +30,10 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 - **Seguridad Criptográfica & Anti-Sesión Fantasma:** Contraseñas temporales aleatorias de alta entropía (`MS-XXXX-XXXX`), invalidación instantánea de JWT mediante `token_version` y hashing con `bcryptjs`.
 - **Auditoría & Trazabilidad Militar:** Registro de eventos de seguridad (`security_events`) y cambios administrativos (`audit_logs`) con monitoreo IP y User-Agent.
 - **Exportación Segura Sanitizada:** Descarga de reportes CSV con protección activa contra inyecciones de fórmulas (`=`, `+`, `-`, `@`, `\t`, `%`).
-- **PWA de Alto Rendimiento (Offline First):** Service Worker v3.9.9 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
+- **PWA de Alto Rendimiento (Offline First):** Service Worker v4.0.0 con precaché de componentes tácticos, fallback de red y capacidad de instalación standalone en Android, iOS y Desktop.
 - **Integración con Wiki de Metalstorm (v3.9.9):** Sincronización oficial de los 44 aviones, 310+ pinturas (paints), 176 cabinas (canopies), loadouts balísticos y los 10 mods tácticos oficiales con efectos numéricos exactos y costos de mejora. Visualización completa en el visor de telemetría con layout de cards responsive.
 - **Recuperación de Contraseña por Email (v3.9.9):** Flujo completo de restablecimiento con token criptográfico de 15 minutos (`password_resets`) y envío de correo HTML militar C4ISR vía SMTP Gmail. Limitación documentada: solo ~2% de los pilotos tienen Gmail real vinculado.
-- **Mensaje Enriquecido al Bloquear Inactivos (v3.9.9):** El middleware `requireAuth` devuelve un mensaje detallado con el nombre del comandante que inactivó al piloto, fecha y contacto del Comando Central.
+- **Sistema Táctico de Gestión de Pilotos Inactivos (v4.0.0):** Registro obligatorio de motivo documentado al pasar a retiro a un piloto (10-500 caracteres), trazabilidad del oficial ejecutor y fecha en Supabase, reincorporación con limpieza automática, resolución batch de comandantes, mensaje enriquecido de denegación en login con motivo y fecha, y pestañas de filtrado (Activos, Inactivos, Todos) con modales tácticos y contadores en vivo en el Panel de Administración militar.
 
 ---
 
@@ -625,6 +625,7 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 - 🚀 **[Guía de Despliegue en Producción (Fly.io / Docker)](./DEPLOYMENT_GUIDE.md)**
 - 📖 **[Manual de Usuario y Operaciones de Vuelo](./USER_MANUAL.md)**
 - 📱 **[Configuración PWA, Service Worker y Modo Offline](./PWA_SETUP.md)**
+- 🛡️ **[Política Oficial de Inactivación y Retiro Militar](./POLITICA_INACTIVACION.md)**
 - 📝 **[Registro Histórico de Cambios (Changelog)](./CHANGELOG.md)**
 
 ---
@@ -632,6 +633,6 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 ## 📜 Licencia y Confidencialidad
 
 © 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.
-*Versión: v3.9.9 · Actualizado: 15 Septiembre 2026*  
+*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*  
 *Uso exclusivo y reservado para los miembros del escuadrón militar.*
 

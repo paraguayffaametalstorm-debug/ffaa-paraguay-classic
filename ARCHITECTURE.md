@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.9.9).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.0.0).**
 
 ---
 
@@ -12,10 +12,10 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
 
 ```
                   ┌──────────────────────────────────────────────────────────┐
-                  │              NAVEGADOR / PWA CLIENT (v3.9.9)             │
+                  │              NAVEGADOR / PWA CLIENT (v4.0.0)             │
                   │  - Vanilla ES6+ SPA & Responsive Tactical Design         │
                   │  - Dynamic Component Loader (17+ Vistas & Modales)       │
-                  │  - Service Worker Cache-First (sw.js v3.9.9)             │
+                  │  - Service Worker Cache-First (sw.js v4.0.0)             │
                   │  - Terminal de Vinculación Google (/link-account)        │
                   │  - Terminal de Restablecimiento (/reset-password)        │
                   └────────────┬─────────────────────────────┬───────────────┘
@@ -50,7 +50,7 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
    │  │   ├── /history, /stats & /all (Historial & Consulta de Escuadrón)        │
    │  │   └── /export (Exportación CSV Militar Sanitizado contra Inyecciones)    │
    │  ├── /api/planes (Hangar Militar - 44 Cazas, Upgrades 2.0, i18n)            │
-   │  ├── /api/admin (Gestión Miembros: avg_tokens, weeks_evaluated, perf_status)│
+   │  ├── /api/admin (Gestión Miembros: status con motivo, listado de inactivos) │
    │  ├── /api/owner (Auditoría C4ISR, Backups Transaccionales, Purga)           │
    │  └── /api/presence, /api/profile, /api/settings, /api/normativas            │
    │                                                                             │
@@ -176,6 +176,49 @@ el backend de Express con tráfico de assets estáticos.
                  │                 - Valida credenciales existentes
                  │                 - Asocia google_id y email en Supabase
                  │                 - Emite JWT oficial ──▶ Acceso al Dashboard
+```
+
+
+### 3.1 Flujo de Bloqueo de Cuenta Inactiva (v4.0.0)
+
+```text
+[Piloto intenta login]
+       │
+       ▼
+[requireAuth valida JWT]
+       │
+       ▼
+[Busca user en users por email/user_id/id]
+       │
+       ▼
+[¿user.status === 'INACTIVE' o 'INACTIVO'?]
+       │
+       ├── NO → continúa a la vista solicitada
+       │
+       └── SÍ → Bloquea con 403 USER_INACTIVE
+               │
+               ├─ 1. Lee inactive_reason, inactive_at, inactive_by directo de users
+               │
+               ├─ 2. Si inactive_by está poblado → consulta nick del comandante
+               │
+               ├─ 3. Si faltan datos (inactivos históricos) → fallback a audit_logs:
+               │     - .eq('target_id', user.id)
+               │     - .in('action', ['USER_DEACTIVATED', 'USER_INACTIVATED', 'USER_STATUS_CHANGE'])
+               │     - extrae actor_nick y created_at
+               │
+               ├─ 4. Construye mensaje enriquecido con actor, fecha y motivo
+               │
+               └─ 5. Retorna 403 con details ampliados:
+                  {
+                    error: "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por ...",
+                    code: "USER_INACTIVE",
+                    details: {
+                      inactive_by: "el Comandante [NICK]",
+                      inactive_at: "ISO timestamp",
+                      inactive_reason: "motivo o null",
+                      contact: "comando.central@ffaa.py"
+                    }
+                  }
 ```
 
 ---
@@ -392,29 +435,31 @@ El sistema implementa un flujo criptográficamente seguro para el restablecimien
 
 ### 6.7 Mensaje Enriquecido al Bloquear Usuarios Inactivos
 
-A partir de la versión v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) implementa un mensaje detallado cuando un piloto con `status = 'INACTIVE'` intenta acceder al sistema.
+En la versión v4.0.0, el middleware `requireAuth` (`src/middlewares/auth.js`) implementa un mensaje detallado y enriquecido cuando un piloto con `status = 'INACTIVE'` intenta acceder al sistema.
 
 **Comportamiento:**
 1. Detecta `status = INACTIVE` o `INACTIVO`.
-2. Consulta `audit_logs` para buscar la última acción `USER_DEACTIVATED` o `USER_STATUS_CHANGE` sobre ese usuario.
-3. Si existe registro, extrae el `nick` del comandante y la fecha.
-4. Construye un mensaje enriquecido con la información.
+2. Lee primero los campos propios de la tabla `users`: `inactive_reason`, `inactive_at` e `inactive_by`.
+3. Si `inactive_by` está poblado, consulta el `nick` del comandante en `users`.
+4. Si faltan datos (pilotos inactivados antes de la v4.0.0), realiza un fallback consultando `audit_logs` para buscar la última acción `USER_DEACTIVATED`, `USER_INACTIVATED` o `USER_STATUS_CHANGE` sobre ese usuario, extrayendo `actor_nick` y fecha.
+5. Construye un mensaje enriquecido con la información del comandante, fecha y motivo reglamentario.
 
-**Ejemplo de respuesta:**
+**Ejemplo de respuesta (403 Forbidden):**
 
 ```json
 {
-  "error": "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante [NICK] el [FECHA]. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.",
+  "error": "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante PJPIROVANI el 16/09/2026. Motivo: Inactividad prolongada sin justificación. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.",
   "code": "USER_INACTIVE",
   "details": {
-    "inactive_by": "el Comandante [NICK]",
-    "inactive_at": "2026-09-10T01:15:00.000Z",
+    "inactive_by": "el Comandante PJPIROVANI",
+    "inactive_at": "2026-09-16T02:00:00.000Z",
+    "inactive_reason": "Inactividad prolongada: más de 60 días sin conexión al simulador.",
     "contact": "comando.central@ffaa.py"
   }
 }
 ```
 
-**Nota:** Si no existe registro en `audit_logs`, el mensaje dice genéricamente "el Comando Central".
+**Nota:** Si no existe registro en `audit_logs` ni en `users`, el mensaje dice por omisión "el Comando Central".
 
 ### 6.8 Limitación Crítica del Reset por Email
 
@@ -430,6 +475,27 @@ El flujo de recuperación de contraseña por email (`/forgot-password`) **solo f
 **Método principal de recuperación:** Reset administrativo desde el Panel Admin (`POST /api/admin/users/:userId/reset-password`), que genera una clave temporal `MS-XXXX-XXXX` y la entrega por canal seguro (WhatsApp/Discord).
 
 **Plan a futuro:** Campaña de vinculación de Gmail para todos los pilotos.
+
+### 6.9 Sistema Táctico de Gestión de Pilotos Inactivos (v4.0.0)
+
+A partir de la versión v4.0.0 se formaliza el subsistema de gestión integral de bajas y reactivaciones del personal militar:
+
+1. **Persistencia Estructural (`users`):**
+   - `inactive_reason` (`TEXT`): Motivo reglamentario documentado de la baja (10-500 caracteres).
+   - `inactive_by` (`UUID` FK): Oficial de comando que ordenó o procesó la inactivación.
+   - `inactive_at` (`TIMESTAMPTZ`): Fecha y hora exacta de efectividad de la baja militar.
+   - Al reactivar a un piloto (`status = 'ACTIVE'`), las tres columnas se limpian automáticamente a `NULL`.
+2. **Endpoints Administrativos:**
+   - `PUT/PATCH /api/admin/users/:id/status`: Valida motivo obligatorio en inactivaciones, jerarquía RBAC y protección de OWNER.
+   - `GET /api/admin/users/inactive`: Retorna nómina exclusiva de combatientes inactivos resolviendo en batch los nicks de los oficiales ejecutores (`inactive_by_nick`).
+   - `PATCH /api/admin/users/:id/inactive-reason`: Permite regularizar motivos de baja en combatientes inactivos sin alterar su estado operacional.
+3. **Control de Jerarquía Militar:**
+   - El rango `OWNER` es intocable (no puede ser inactivado por nadie, ni siquiera por sí mismo).
+   - Los rangos `ADMIN` solo pueden inactivar a `MIEMBRO` y `VETERANO`. Cualquier intento sobre `ADMIN` u `OWNER` es repelido con `HIERARCHY_FORBIDDEN`.
+4. **Capa Frontend Táctica:**
+   - Pestañas con contadores en vivo: `🟢 Activos (N)`, `🔴 Inactivos (N)`, `📋 Todos (N)`.
+   - Modales operacionales con selectores de motivos reglamentarios predefinidos (inasistencia, bajo rendimiento, baja voluntaria, sanción) y campo de texto libre con contador de caracteres (mínimo 10).
+   - Trazabilidad visual directa en la tabla de inactivos con botones para regularizar motivos pendientes.
 
 ---
 
@@ -586,5 +652,9 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
      - `Unstable Cannons` $\to$ **Cañones Inestables**
      - `Unstable Engines` $\to$ **Motores Inestables**
    - Resuelto mediante la función `translateTrait(trait)` en `js/views.js`.
+
+---
+
+*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*
 
 

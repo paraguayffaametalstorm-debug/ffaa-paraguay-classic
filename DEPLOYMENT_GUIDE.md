@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v3.9.9).**  
+> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v4.0.0).**  
 > **Destino Operacional:** Fly.io (Región `gru` - São Paulo) & Supabase PostgreSQL Cloud.
 
 ---
@@ -115,7 +115,7 @@ primary_region = "gru"
 
 ## 5. 🗄️ Validación de Esquema de Base de Datos (Supabase)
 
-Antes de autorizar tráfico operativo en v3.9.9, verificar que las siguientes tablas y columnas existan en Supabase:
+Antes de autorizar tráfico operativo en v4.0.0, verificar que las siguientes tablas y columnas existan en Supabase:
 
 1. **Tabla `plane_models`:**
    - Asegurar columnas de texto e internacionalización: `descripcion_es` (TEXT), `historia_es` (TEXT), `recomendaciones_es` (JSONB).
@@ -123,6 +123,10 @@ Antes de autorizar tráfico operativo en v3.9.9, verificar que las siguientes ta
 2. **Tabla `users`:**
    - Dualidad `id` (UUID PK) y `user_id` (INTEGER UNIQUE).
    - `token_version` (INTEGER DEFAULT 1) y `must_change_password` (BOOLEAN DEFAULT true).
+   - **Campos de Inactivación Táctica (v4.0.0):**
+     - `inactive_reason` (TEXT NULL)
+     - `inactive_by` (UUID REFERENCES users(id) ON DELETE SET NULL)
+     - `inactive_at` (TIMESTAMPTZ NULL)
 3. **Tablas de Hangar:**
    - `planes` (cazas registrados por piloto).
    - `plane_upgrades` (auditoría de mejoras de Fuselaje, Motor, Aviónica, Armas).
@@ -132,16 +136,16 @@ Antes de autorizar tráfico operativo en v3.9.9, verificar que las siguientes ta
 
 ---
 
-## 6. 📱 Política de Cache Invalidation y PWA (v3.9.9)
+## 6. 📱 Política de Cache Invalidation y PWA (v4.0.0)
 
 Al desplegar una nueva versión mayor o menor:
 1. **Actualizar el identificador de cache en `sw.js`:**
    ```javascript
-   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.9';
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.0.0';
    ```
 2. **Comportamiento del Service Worker:**
    - Durante la fase de `install`, cachea los activos estáticos y vistas HTML.
-   - En la fase de `activate`, purga automáticamente caches anteriores (`v3.7.0`, `v3.7.1`, etc.).
+   - En la fase de `activate`, purga automáticamente caches anteriores (`v3.9.9`, `v3.9.8`, etc.).
    - Al navegar, si el cliente detecta nuevo SW, forzará la recarga suave en el siguiente reinicio de sesión táctica.
 
 ---
@@ -165,3 +169,7 @@ Si se detecta una anomalía crítica tras el despliegue:
    fly deploy --image <IMAGEN_PREVIA_ESTABLE>
    ```
 3. Notificar al Alto Mando en el canal de oficiales.
+
+---
+
+*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*
