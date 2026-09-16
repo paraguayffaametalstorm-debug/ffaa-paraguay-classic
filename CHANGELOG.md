@@ -40,14 +40,14 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 #### 🖥️ FASE B (Frontend — Commit `b1023fd`)
 - **`components/admin-panel.html`:**
-  - Pestañas tácticas de filtrado de dotación: `🟢 Activos`, `🔴 Inactivos` y `📋 Todos` con contadores dinámicos `#tabCountActive`, `#tabCountInactive`, `#tabCountAll`.
+  - Pestañas tácticas de filtrado de dotación: `🟢 Activos`, `🔴 Inactivos` y `📋 Todos` con contadores dinámicos `#tabActiveCount`, `#tabInactiveCount`, `#tabAllCount`.
   - Modal táctico de inactivación `#inactivateUserModal` con selector de causas predefinidas (Baja temporal, Bajo rendimiento, Inactividad prolongada, Expulsión disciplinaria, Renuncia voluntaria), campo de texto libre obligatorio y contador de caracteres en vivo (10/500).
   - Modal táctico de reactivación `#reactivateUserModal` con textarea opcional de motivo y contador (0/300).
   - Modal `#completeReasonModal` para regularizar motivos en inactivos históricos.
 - **`js/views.js`:**
   - Estado de pestaña activa `currentMembersTab` (`'all'`, `'active'`, `'inactive'`) y función `switchMembersTab()`.
   - `filterMembers()` actualizado para aplicar primero el filtro de pestaña de estado y luego los filtros combinados existentes.
-  - `renderAdminMembersTable()` enriquecido con columnas dinámicas para la pestaña de inactivos: *"Motivo de Baja"* (con truncado a 40 caracteres, tooltip y botón `✏️ Completar` si no tiene motivo) e *"Inactivado por"* (indicativo del comandante y fecha/hora `DD/MM/YYYY HH:mm`).
+  - `renderAdminMembersTable()` enriquecido con columnas dinámicas para la pestaña de inactivos: *"Motivo de Baja"* (con truncado a 60 caracteres, tooltip y botón `✏️ Completar` si no tiene motivo) e *"Inactivado por"* (indicativo del comandante y fecha/hora `DD/MM/YYYY HH:mm`).
   - Funciones tácticas `promptInactivateUser()`, `confirmInactivateUser()`, `promptReactivateUser()`, `confirmReactivateUser()`, `promptCompleteReason()`, `confirmCompleteReason()`.
   - `changeUserStatus()` frontend actualizado para aceptar 4to parámetro `reason` y consumir modales tácticos con fallback seguro a `confirm()`.
 - **`js/api.js`:**
