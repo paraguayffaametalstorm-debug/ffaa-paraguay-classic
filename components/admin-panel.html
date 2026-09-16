@@ -51,6 +51,22 @@
     </div>
 
     <div id="membersSectionBody" style="margin-top:1.2rem;">
+      <!-- Pestañas de Estado de Pilotos -->
+      <div id="membersTabsContainer" style="display:flex;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap;">
+        <button type="button" id="tabActive" class="tab-btn" onclick="switchMembersTab('active')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:transparent;border:1.5px solid #334155;border-radius:6px;color:#94a3b8;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s ease;">
+          <span>🟢 Activos</span>
+          <span id="tabActiveCount" style="background:rgba(46,204,113,0.2);color:#2ecc71;padding:1px 6px;border-radius:10px;font-size:0.75rem;">(0)</span>
+        </button>
+        <button type="button" id="tabInactive" class="tab-btn" onclick="switchMembersTab('inactive')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:transparent;border:1.5px solid #334155;border-radius:6px;color:#94a3b8;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s ease;">
+          <span>🔴 Inactivos</span>
+          <span id="tabInactiveCount" style="background:rgba(231,76,60,0.2);color:#e74c3c;padding:1px 6px;border-radius:10px;font-size:0.75rem;">(0)</span>
+        </button>
+        <button type="button" id="tabAll" class="tab-btn active" onclick="switchMembersTab('all')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(148,163,184,0.15);border:1.5px solid #94a3b8;border-radius:6px;color:#cbd5e1;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s ease;">
+          <span>📋 Todos</span>
+          <span id="tabAllCount" style="background:rgba(148,163,184,0.25);color:#cbd5e1;padding:1px 6px;border-radius:10px;font-size:0.75rem;">(0)</span>
+        </button>
+      </div>
+
       <!-- Filters -->
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.2rem;align-items:end;">
         <div>
@@ -154,6 +170,126 @@
   <div class="card">
     <h3 style="margin-bottom:1rem;">📅 Registro de Eventos del Escuadrón</h3>
     <div id="adminEventsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
+  </div>
+</div>
+
+<!-- Modal Inactivar Piloto -->
+<div id="inactivateUserModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(231,76,60,0.3);">
+      <div>
+        <h3 style="color:#e74c3c;margin:0;">🔴 Inactivar Piloto</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="inactivateUserNickDisplay" style="color:#f8fafc;">-</strong></p>
+      </div>
+      <span class="close-btn" onclick="closeModal('inactivateUserModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inactivateUserId" />
+      <input type="hidden" id="inactivateUserNick" />
+
+      <div style="padding:10px 12px;background:rgba(231,76,60,0.1);border-left:3px solid #e74c3c;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fca5a5;line-height:1.4;">
+        ⚠️ El piloto perderá acceso inmediato a la plataforma. Todos sus datos se conservan.
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="inactivateReasonSelect" style="display:block;margin-bottom:6px;font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+          Motivo Principal <span style="color:#e74c3c;">*</span>
+        </label>
+        <select id="inactivateReasonSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;">
+          <option value="">Seleccioná un motivo...</option>
+          <option value="Baja temporal">Baja temporal</option>
+          <option value="Bajo rendimiento">Bajo rendimiento</option>
+          <option value="Inactividad prolongada">Inactividad prolongada</option>
+          <option value="Expulsión disciplinaria">Expulsión disciplinaria</option>
+          <option value="Renuncia voluntaria">Renuncia voluntaria</option>
+          <option value="Otro (especificar)">Otro (especificar)</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="inactivateReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+            Detalle del Motivo <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(mínimo 10 caracteres)</span>
+          </label>
+          <span id="inactivateReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 500</span>
+        </div>
+        <textarea id="inactivateReasonText" rows="4" maxlength="500" placeholder="Detalle del motivo (mínimo 10 caracteres)..." oninput="updateInactivateReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="closeModal('inactivateUserModal')" class="btn-secondary">Cancelar</button>
+      <button type="button" onclick="confirmInactivateUser()" class="btn-danger" style="background:#e74c3c;border-color:#c0392b;">🔴 Confirmar Inactivación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reactivar Piloto -->
+<div id="reactivateUserModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(46,204,113,0.3);">
+      <div>
+        <h3 style="color:#2ecc71;margin:0;">🟢 Reactivar Piloto</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="reactivateUserNickDisplay" style="color:#f8fafc;">-</strong></p>
+      </div>
+      <span class="close-btn" onclick="closeModal('reactivateUserModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reactivateUserId" />
+      <input type="hidden" id="reactivateUserNick" />
+
+      <div style="padding:10px 12px;background:rgba(46,204,113,0.1);border-left:3px solid #2ecc71;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#86efac;line-height:1.4;">
+        ℹ️ Al reactivar, el motivo de baja se limpia y el piloto recupera acceso.
+      </div>
+
+      <div class="form-group" style="margin-bottom:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="reactivateReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+            Motivo de Reactivación <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(opcional)</span>
+          </label>
+          <span id="reactivateReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 300</span>
+        </div>
+        <textarea id="reactivateReasonText" rows="3" maxlength="300" placeholder="Motivo de reactivación (opcional)..." oninput="updateReactivateReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="closeModal('reactivateUserModal')" class="btn-secondary">Cancelar</button>
+      <button type="button" onclick="confirmReactivateUser()" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;color:#2ecc71;">🟢 Confirmar Reactivación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Completar Motivo Histórico -->
+<div id="completeReasonModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(212,175,55,0.3);">
+      <div>
+        <h3 style="color:#d4af37;margin:0;">✏️ Completar Motivo de Inactivación</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="completeReasonUserNickDisplay" style="color:#f8fafc;">-</strong></p>
+      </div>
+      <span class="close-btn" onclick="closeModal('completeReasonModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="completeReasonUserId" />
+      <input type="hidden" id="completeReasonUserNick" />
+
+      <div style="padding:10px 12px;background:rgba(212,175,55,0.1);border-left:3px solid #d4af37;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fde047;line-height:1.4;">
+        ℹ️ Registrá el motivo histórico de la baja para mantener el legajo militar completo.
+      </div>
+
+      <div class="form-group" style="margin-bottom:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="completeReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+            Motivo Histórico <span style="font-size:0.75rem;color:#e74c3c;font-weight:normal;">*(mínimo 10 caracteres)</span>
+          </label>
+          <span id="completeReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 500</span>
+        </div>
+        <textarea id="completeReasonText" rows="4" maxlength="500" placeholder="Motivo histórico (mínimo 10 caracteres)..." oninput="updateCompleteReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="closeModal('completeReasonModal')" class="btn-secondary">Cancelar</button>
+      <button type="button" onclick="confirmCompleteReason()" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;">💾 Guardar Motivo</button>
+    </div>
   </div>
 </div>
 
