@@ -532,12 +532,14 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 
 | Columna | Tipo | Propósito |
 |---------|------|-----------|
-| `id` | INTEGER | PK auto-incremental (`nextval('recovery_codes_id_seq')`) |
-| `user_id` | INTEGER | FK al combatiente (`users.user_id`) |
+| `id` | UUID | PK con `gen_random_uuid()` |
+| `user_id` | UUID | FK a `users.id` |
+| `code_hash` | TEXT | Hash criptográfico seguro del código de emergencia |
+| `created_at` | TIMESTAMPTZ | Fecha de generación del código (default `now()`) |
 | `expires_at` | TIMESTAMPTZ | Fecha/hora límite de expiración táctica del código |
 | `used_at` | TIMESTAMPTZ | Fecha/hora de consumo (`NULL` si no ha sido utilizado) |
-| `code_hash` | TEXT | Hash criptográfico seguro del código de emergencia *(no verificado / probable)* |
-| `created_at` | TIMESTAMPTZ | Fecha de generación del código *(no verificado / probable)* |
+| `created_by` | UUID | Identificador del oficial que generó el código (nullable) |
+| `note` | TEXT | Nota o comentario del oficial (nullable) |
 
 **Índices:**
 - `recovery_codes_pkey` (`id`)
@@ -546,7 +548,7 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 - `idx_recovery_codes_used_at` (`used_at`)
 
 **Relaciones FK:**
-- `user_id` → `users.user_id` (`INTEGER` referencial).
+- `user_id` → `users.id` (UUID).
 
 **Notas operativas:**
 - Provee un canal de contingencia militar cuando los pilotos pierden acceso a sus correos o credenciales primarias.
@@ -560,35 +562,34 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 
 | Columna | Tipo | Propósito |
 |---------|------|-----------|
-| `id` | INTEGER | PK auto-incremental (`nextval('user_settings_id_seq')`) |
-| `user_id` | INTEGER | FK al piloto (`users.user_id`, `UNIQUE`) |
-| `theme` | TEXT | Perfil visual táctico (`'militar'`, `'ops'`, `'clasico'`) *(no verificado / probable)* |
-| `language` | TEXT | Lenguaje de interfaz (`'es'`, `'en'`, `'pt'`) *(no verificado / probable)* |
-| `notif_email` | BOOLEAN | Alertas por correo institucional *(no verificado / probable)* |
-| `notif_whatsapp` | BOOLEAN | Alertas directas vía canal WhatsApp *(no verificado / probable)* |
-| `notif_status` | BOOLEAN | Notificaciones de cambio de estado operativo *(no verificado / probable)* |
-| `notif_reminder` | BOOLEAN | Recordatorios de torneos y misiones *(no verificado / probable)* |
-| `notif_announcements` | BOOLEAN | Anuncios oficiales de comandancia *(no verificado / probable)* |
-| `created_at` | TIMESTAMPTZ | Fecha de creación del registro *(no verificado)* |
-| `updated_at` | TIMESTAMPTZ | Última sincronización de preferencias *(no verificado)* |
+| `id` | UUID | PK con `gen_random_uuid()` |
+| `user_id` | UUID | FK a `users.id` (UNIQUE) |
+| `theme` | TEXT | Perfil visual táctico (default `'militar'`) |
+| `language` | TEXT | Lenguaje de interfaz (default `'es'`) |
+| `notif_email` | BOOLEAN | Alertas por correo institucional (default `false`) |
+| `notif_whatsapp` | BOOLEAN | Alertas directas vía canal WhatsApp (default `false`) |
+| `notif_status` | BOOLEAN | Notificaciones de cambio de estado operativo (default `true`) |
+| `notif_reminder` | BOOLEAN | Recordatorios de torneos y misiones (default `true`) |
+| `notif_announcements` | BOOLEAN | Anuncios oficiales de comandancia (default `true`) |
+| `created_at` | TIMESTAMPTZ | Fecha de creación del registro (default `now()`) |
+| `updated_at` | TIMESTAMPTZ | Última sincronización de preferencias (default `now()`) |
 
 **Índices:**
 - `user_settings_pkey` (`id`)
 - `user_settings_user_id_idx` (`user_id`, UNIQUE)
 
 **Relaciones FK:**
-- `user_id` → `users.user_id` (`INTEGER`, relación 1:1 estricta garantizada por el índice único).
+- `user_id` → `users.id` (UUID).
 
 **Notas operativas:**
 - Utilizada en producción por `src/controllers/settings.controller.js` con soporte para creación/actualización mediante `upsert`.
 - Garantiza que cada piloto mantenga sus configuraciones operativas sincronizadas en todos los dispositivos de despliegue.
-
 ---
 
 ### ⚠️ Regla crítica de FKs (UUID vs INTEGER)
 
 - **Tablas Black Market** (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`), `recovery_codes`, `security_events` y `password_resets` usan `user_id → users.id` (UUID).
-- **Excepciones:** `planes.user_id → users.user_id` (INTEGER) y `user_settings.user_id → users.user_id` (INTEGER).
+- **Excepción:** `planes.user_id → users.user_id` (INTEGER). Es la única tabla que usa el user_id entero.
 - Al escribir consultas SQL o código backend, respetar esta distinción para evitar errores de cast.
 
 ---
@@ -603,45 +604,62 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
                      ┌───────────────────────────┐
                      │           users           │
                      │───────────────────────────│
-                     │ PK id (UUID)              │
-                     │ UQ user_id (INTEGER)      │◄──────────┐
-                     │    email                  │           │
-                     │    nick                   │           │
-                     │    role                   │           │
-                     └─────────────┬─────────────┘           │
-                                   │ 1:1                     │ 1:N
-                                   ▼                         │
+                     │ PK id (UUID)              │◄──────────┐
+                     │ UQ user_id (INTEGER)      │◄─┐        │
+                     │    email                  │  │        │
+                     │    nick                   │  │        │
+                     │    role                   │  │        │
+                     └─────────────┬─────────────┘  │        │
+                                   │ 1:1            │ 1:N    │ 1:N
+                                   ▼                │        │
+                     ┌───────────────────────────┐  │        │
+                     │       user_settings       │  │        │
+                     │───────────────────────────│  │        │
+                     │ PK id (UUID)              │  │        │
+                     │ FK user_id (UUID, UQ) ────┼──┘        │
+                     │    theme, language        │ (UUID)    │
+                     │    notif_* (BOOLEAN)      │           │
+                     └───────────────────────────┘           │
+                                                             │
                      ┌───────────────────────────┐           │
-                     │       user_settings       │           │
+                     │      recovery_codes       │           │
                      │───────────────────────────│           │
-                     │ PK id (INTEGER)           │           │
-                     │ FK user_id (INTEGER, UQ) ─┼───────────┘ (FK users.user_id)
-                     │    theme                  │
-                     │    language               │
-                     │    notif_* (BOOLEAN)      │
-                     └───────────────────────────┘
-                                   ▲
-                                   │
-                                   │ (Seguridad / Contingencia)
-                                   │
-                     ┌───────────────────────────┐
-                     │      recovery_codes       │
-                     │───────────────────────────│
-                     │ PK id (INTEGER)           │
-                     │ FK user_id (INTEGER) ─────┼───────────► (FK users.user_id)
-                     │    expires_at (TIMESTAMPTZ)│
-                     │    used_at (TIMESTAMPTZ)  │
+                     │ PK id (UUID)              │           │
+                     │ FK user_id (UUID) ────────┼───────────┤
+                     │    code_hash (TEXT)       │           │
+                     │    expires_at, used_at    │           │
+                     │    created_by (UUID)      │           │
+                     │    note (TEXT)            │           │
+                     └───────────────────────────┘           │
+                                                             │
+                     ┌───────────────────────────┐           │
+                     │      password_resets      │           │
+                     │───────────────────────────│           │
+                     │ PK id (UUID)              │           │
+                     │ FK user_id (UUID) ────────┼───────────┘
+                     │    token (TEXT UNIQUE)    │ (UUID)
+                     │    expires_at, used       │
                      └───────────────────────────┘
 
   ┌────────────────────────────────┐       ┌────────────────────────────────┐
   │           error_logs           │       │           normativas           │
   │────────────────────────────────│       │────────────────────────────────│
-  │ PK id (INTEGER)                │       │ PK id (INTEGER)                │
+  │ PK id (BIGINT)                 │       │ PK id (INTEGER)                │
   │    level (TEXT)                │       │ UQ codigo (TEXT)               │
   │    route (TEXT)                │       │    titulo                      │
   │    created_at (TIMESTAMPTZ)    │       │    categoria                   │
   │    (Auditoría Desacoplada)     │       │    (Doctrina Institucional)    │
   └────────────────────────────────┘       └────────────────────────────────┘
+
+  ┌────────────────────────────────┐
+  │        upgrade_nodes_v2        │
+  │────────────────────────────────│
+  │ PK id (INTEGER)                │
+  │    avion_id (TEXT)             │
+  │    sistema_web, nivel, ruta    │
+  │    effects, stats_afectadas    │
+  │    (3.072 filas)               │
+  └────────────────────────────────┘
 ```
 
 ---
@@ -936,7 +954,7 @@ Para prevenir que futuras tareas de mantenimiento o despliegues automáticos alt
 | Paints | 310+ | Promedio de 7 por avión |
 | Canopies | 176 | 4 por avión (uniforme) |
 
-### Modal Stats y Pantalla Dedicada — Estado de Secciones (v3.9.8)
+### Modal Stats y Pantalla Dedicada — Estado de Secciones (v3.9.9)
 
 | Sección | Fuente | Idioma | Estado |
 |---------|--------|:---:|:---:|
