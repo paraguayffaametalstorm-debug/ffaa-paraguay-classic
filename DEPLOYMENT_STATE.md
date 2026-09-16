@@ -2,7 +2,7 @@
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
 > **Fecha de Congelamiento:** 2026-09-15  
-> **Versión:** v3.9.8  
+> **Versión:** v3.9.9  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - AUDITADO Y PROBADO
 
@@ -10,7 +10,7 @@
 
 ## 📑 Resumen Ejecutivo del Despliegue
 
-Este documento maestro consolida la arquitectura en ejecución, el esquema de base de datos validado, el flujo crítico de registro y cambio de contraseña con autenticación dual y el historial de correcciones de tipos (UUID vs INTEGER) aplicadas en la versión v3.7.0 del sistema **PARAGUAY-FFAA | METALSTORM**.
+Este documento maestro consolida la arquitectura en ejecución, el esquema de base de datos validado, el flujo crítico de registro y cambio de contraseña con autenticación dual y el historial de correcciones de tipos (UUID vs INTEGER) aplicadas en la versión v3.9.9 del sistema **PARAGUAY-FFAA | METALSTORM**.
 
 ### Indicadores de Salud Operativa
 - **Core de Autenticación:** ✅ Operativo (Login Dual, Google OAuth 2.0 y JWT criptográfico con `token_version`).
@@ -154,6 +154,7 @@ CREATE TABLE users (
 | `mod_type` | TEXT | Tipo / Familia (Agilidad, Defensa, Motor, Señuelos, Arma) |
 | `level` | INTEGER | Nivel del mod (1-5) |
 | `effects` | JSONB | Efectos cuantitativos y descriptivos |
+| `is_active` | BOOLEAN | Indicador de mod activo (default `true`) |
 | `created_at` | TIMESTAMP | Fecha de inserción |
 | `updated_at` | TIMESTAMP | Última actualización |
 
@@ -331,7 +332,7 @@ CREATE TABLE users (
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Fixes Aplicados (2026-09-10 / 2026-09-11)
+### Fixes Aplicados (2026-09-10 / 2026-09-15)
 
 | # | Fix | Archivo | Estado |
 |---|-----|---------|--------|
@@ -342,6 +343,7 @@ CREATE TABLE users (
 | 5 | Upgrade Planner | `aircraft-stats-modal.html` | ✅ IMPLEMENTADO |
 | 6 | Efectos de Mods (10 mods x 5 niveles) | `modEffects.js`, `planes.controller.js` | ✅ IMPLEMENTADO |
 | 7 | Validación de sistemas disponibles (42 aviones) | `plane_models`, `planes.controller.js` | ✅ IMPLEMENTADO |
+| 8 | Mensaje enriquecido al bloquear usuarios inactivos | `src/middlewares/auth.js` | ✅ RESUELTO (2026-09-15) |
 
 ### Validación de Sistemas en `updatePlaneSystem`
 
@@ -384,13 +386,15 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 
 | Columna | Tipo | Propósito |
 |---------|------|-----------|
-| `id` | INTEGER | PK auto-incremental (`nextval('error_logs_id_seq')`) |
-| `level` | TEXT | Nivel de severidad (`info`, `warn`, `error`, `fatal`) |
+| `id` | BIGINT | PK auto-incremental (`nextval('error_logs_id_seq')`) |
+| `level` | TEXT | Nivel de severidad (default `'error'`) |
+| `message` | TEXT | Detalle o mensaje de error capturado (NOT NULL) |
+| `stack` | TEXT | Traza de ejecución / stack trace técnico |
 | `route` | TEXT | Ruta/endpoint donde ocurrió la incidencia táctica |
-| `created_at` | TIMESTAMPTZ | Marca temporal del incidente (`default now()`) |
-| `message` | TEXT | Detalle o mensaje de error capturado *(no verificado)* |
-| `stack` | TEXT | Traza de ejecución / stack trace técnico *(no verificado)* |
-| `metadata` | JSONB | Contexto de cabeceras, payload o IP *(no verificado)* |
+| `user_id` | TEXT | Identificador del usuario (texto, no UUID) |
+| `nick` | TEXT | Indicativo del combatiente afectado |
+| `meta` | JSONB | Contexto de cabeceras, payload o IP |
+| `created_at` | TIMESTAMPTZ | Marca temporal del incidente (default `now()`) |
 
 **Índices:**
 - `error_logs_pkey` (`id`)
@@ -414,17 +418,33 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | Columna | Tipo | Propósito |
 |---------|------|-----------|
 | `id` | INTEGER | PK auto-incremental (`nextval('normativas_id_seq')`) |
-| `codigo` | TEXT | Código táctico único de la normativa (ej: `CIRC-001`, `REG-001`, `UNIQUE`) |
-| `titulo` | TEXT | Título oficial del documento *(no verificado / probable)* |
-| `tipo_documento` | TEXT | Tipo documental (`Reglamento`, `Protocolo`, `Circular`) *(no verificado)* |
-| `categoria` | TEXT | Categoría de operación o disciplina (`Operativa`, `Evaluación`, etc.) *(no verificado)* |
-| `ambito_aplicacion` | TEXT | Alcance del reglamento (ej: `Escuadrón General`, `Todos los Pilotos`) *(no verificado)* |
-| `fecha_aprobacion` | DATE / TEXT | Fecha formal de homologación por comandancia *(no verificado)* |
-| `fecha_entrada_vigor` | DATE / TEXT | Entrada en vigor reglamentaria *(no verificado)* |
-| `resumen` | TEXT | Resumen ejecutivo del reglamento *(no verificado)* |
-| `nivel_confidencialidad` | TEXT | Clasificación táctica (`PUBLICO`, `RESTRINGIDO`, `SECRETO`) *(no verificado)* |
-| `archivo_url` | TEXT | URL o ruta de almacenamiento del archivo PDF adjunto *(no verificado)* |
-| `created_at` | TIMESTAMPTZ | Fecha de publicación en plataforma *(no verificado)* |
+| `titulo` | TEXT | Título oficial del documento |
+| `codigo` | TEXT | Código táctico único (ej: `CIRC-001`, `REG-001`, UNIQUE) |
+| `tipo_documento` | TEXT | Tipo documental (`Reglamento`, `Protocolo`, `Circular`) |
+| `categoria` | TEXT | Categoría de operación o disciplina |
+| `version` | TEXT | Versión del documento |
+| `version_anterior_id` | INTEGER | FK referencial a versión previa |
+| `es_version_vigente` | BOOLEAN | Indicador de vigencia actual |
+| `fecha_aprobacion` | DATE / TEXT | Fecha formal de homologación |
+| `fecha_entrada_vigor` | DATE / TEXT | Entrada en vigor reglamentaria |
+| `fecha_vencimiento` | DATE / TEXT | Fecha de vencimiento del documento |
+| `archivo_nombre` | TEXT | Nombre original del archivo adjunto |
+| `archivo_extension` | TEXT | Extensión del archivo |
+| `archivo_tamano` | INTEGER | Tamaño del archivo en bytes |
+| `archivo_url` | TEXT | URL o ruta del archivo PDF adjunto |
+| `archivo_hash` | TEXT | Hash de integridad del archivo |
+| `emitido_por` | TEXT | Autoridad emisora |
+| `aprobado_por` | TEXT | Autoridad aprobadora |
+| `ambito_aplicacion` | TEXT | Alcance del reglamento |
+| `resumen` | TEXT | Resumen ejecutivo del reglamento |
+| `palabras_clave` | JSONB | Palabras clave de búsqueda |
+| `referencias_legales` | JSONB | Referencias a otras normativas |
+| `observaciones` | TEXT | Observaciones adicionales |
+| `requiere_firma_digital` | BOOLEAN | Indicador de firma digital requerida |
+| `nivel_confidencialidad` | TEXT | Clasificación táctica (`PUBLICO`, `RESTRINGIDO`, `SECRETO`) |
+| `created_at` | TIMESTAMPTZ | Fecha de publicación en plataforma |
+| `updated_at` | TIMESTAMPTZ | Última actualización del documento |
+| `created_by` | UUID / TEXT | Identificador del creador |
 
 **Índices:**
 - `normativas_pkey` (`id`)
@@ -437,6 +457,72 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 **Notas operativas:**
 - Sirve como repositorio legal y normativo consultado por el componente `normativas-view` y administrado vía `normativas.controller.js`.
 - La unicidad en `codigo` impide colisiones en la nomenclatura militar de circulares y órdenes de escuadrón.
+
+---
+
+### 📋 Tabla `password_resets`
+
+**Propósito:** Almacenamiento de tokens criptográficos de un solo uso para el restablecimiento de contraseñas vía correo electrónico (vigencia estricta de 15 minutos).
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | UUID | PK auto-generada (`gen_random_uuid()`) |
+| `user_id` | UUID | FK a `users.id` (`ON DELETE CASCADE`) |
+| `token` | TEXT | Token único criptográfico (`crypto.randomBytes(32)`) |
+| `expires_at` | TIMESTAMPTZ | Fecha/hora de expiración (15 min desde creación) |
+| `used` | BOOLEAN | Indicador de consumo del token (default `false`) |
+| `created_at` | TIMESTAMPTZ | Fecha de generación (default `now()`) |
+
+**Índices:**
+- `idx_password_resets_token` (`token`)
+- `idx_password_resets_user_id` (`user_id`)
+- `idx_password_resets_expires_at` (`expires_at`)
+- `idx_password_resets_used` (`used`)
+
+**Relaciones FK:**
+- `user_id` → `users.id` (UUID, `ON DELETE CASCADE`)
+
+**Seguridad RLS:**
+- Política `no_public_access`: solo `service_role` puede leer/escribir.
+- Bloquea cualquier acceso anónimo o autenticado estándar.
+
+**Notas operativas:**
+- Creada el 2026-09-15 para reparar el flujo de "¿Olvidaste tu clave?".
+- Usada por `forgotPassword()` y `resetPassword()` en `src/controllers/auth.controller.js`.
+
+---
+
+### 📋 Tabla `upgrade_nodes_v2`
+
+**Propósito:** Catálogo maestro del árbol de nodos de mejoras **Starform Upgrades 2.0**. Almacena las configuraciones de nodos técnicos que definen la progresión de Fuselaje, Motor, Aviónica y Armas (niveles 0 a 8).
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | PK auto-incremental (`nextval('upgrade_nodes_v2_id_seq'::regclass)`) |
+| `avion_id` | TEXT | FK referencial a `plane_models.id` |
+| `sistema_web` | TEXT | Sistema base (fuselaje, motor, avionica, armas) |
+| `sistema_categoria` | TEXT | Categoría específica (canones, misiles_ir, etc.) |
+| `nivel` | INTEGER | Nivel del nodo (0-8) |
+| `ruta` | TEXT | Ruta A/B (niveles 5-8) o null |
+| `node_name` | TEXT | Nombre táctico del nodo |
+| `requirement_level` | INTEGER | Nivel de aeronave requerido |
+| `effects` | JSONB | Efectos cuantitativos del nodo |
+| `stats_afectadas` | JSONB | Stats impactadas (velocidad, agilidad, etc.) |
+| `cost_piezas` | INTEGER | Costo en piezas estándar |
+| `cost_avanzadas` | INTEGER | Costo en componentes avanzados |
+| `created_at` | TIMESTAMP | Fecha de inserción (sin timezone, default `now()`) |
+
+**Índices:**
+- `upgrade_nodes_v2_pkey` (`id`, UNIQUE)
+
+**Uso en código:**
+- `src/utils/upgradeNodes.js` (consulta con caché TTL 5 min + fallback)
+- `src/controllers/planes.controller.js` (cálculo de Upgrades 2.0)
+
+**Notas operativas:**
+- Consultada con caché en memoria (TTL 5 min) para evitar sobrecarga.
+- Fallback automático si Supabase falla.
+- 3072 filas en base de datos.
 
 ---
 
@@ -499,6 +585,14 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 
 ---
 
+### ⚠️ Regla crítica de FKs (UUID vs INTEGER)
+
+- **Tablas Black Market** (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`), `recovery_codes`, `security_events` y `password_resets` usan `user_id → users.id` (UUID).
+- **Excepciones:** `planes.user_id → users.user_id` (INTEGER) y `user_settings.user_id → users.user_id` (INTEGER).
+- Al escribir consultas SQL o código backend, respetar esta distinción para evitar errores de cast.
+
+---
+
 ### 🗺️ Diagrama de Relaciones de Tablas Adicionales
 
 ```text
@@ -554,29 +648,32 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 
 ### 📊 Resumen Consolidado de Tablas del Sistema
 
-| Tabla | Categoría | Registros Estimados | Estado |
-|-------|-----------|---------------------|--------|
-| users | Core | ~5 | ✅ Documentada |
-| performances | Core | - | ✅ Documentada |
-| plane_models | Hangar | 44 | ✅ Documentada |
-| plane_mods | Hangar | 10 | ✅ Documentada |
-| mod_effects | Hangar | 50 | ✅ Documentada |
-| planes | Hangar | ~121 | ✅ Documentada |
-| plane_upgrades | Hangar | - | ✅ Documentada |
-| upgrade_effects | Hangar | ~20+ | ✅ Documentada |
-| upgrade_effects_history | Auditoría | - | ✅ Documentada |
-| events | Eventos | - | ✅ Documentada |
-| bm_events | Black Market | - | ✅ Documentada |
-| bm_missions | Black Market | - | ✅ Documentada |
-| bm_progress | Black Market | - | ✅ Documentada |
-| bm_discounts | Black Market | - | ✅ Documentada |
-| security_events | Auditoría | - | ✅ Documentada |
-| audit_logs | Auditoría | - | ✅ Documentada |
-| password_resets | Seguridad | - | ✅ Documentada |
-| error_logs | Diagnóstico | - | 🆕 NUEVA |
-| normativas | Institucional | - | 🆕 NUEVA |
-| recovery_codes | Seguridad | - | 🆕 NUEVA |
-| user_settings | Configuración | - | 🆕 NUEVA |
+| Tabla | Categoría | Registros | Estado |
+|-------|-----------|-----------|--------|
+| `users` | Core | 61 | ✅ Documentada |
+| `planes` | Hangar | 122 | ✅ Documentada |
+| `plane_models` | Hangar | 44 | ✅ Documentada |
+| `plane_mods` | Hangar | 10 | ✅ Documentada |
+| `mod_effects` | Hangar | 50 | ✅ Documentada |
+| `upgrade_effects` | Hangar | 44 | ✅ Documentada |
+| `upgrade_nodes_v2` | Hangar | 3072 | ✅ Documentada |
+| `performances` | Core | 26 | ✅ Documentada |
+| `events` | Eventos | 1 | ✅ Documentada |
+| `security_events` | Auditoría | 214 | ✅ Documentada |
+| `audit_logs` | Auditoría | 6 | ✅ Documentada |
+| `error_logs` | Diagnóstico | 3 | ✅ Documentada |
+| `normativas` | Institucional | 1 | ✅ Documentada |
+| `password_resets` | Seguridad | 0 | ✅ Documentada |
+| `bm_events` | Black Market | 0 | ✅ Documentada |
+| `bm_missions` | Black Market | 0 | ✅ Documentada |
+| `bm_progress` | Black Market | 0 | ✅ Documentada |
+| `bm_discounts` | Black Market | 0 | ✅ Documentada |
+| `plane_upgrades` | Hangar | 0 | ✅ Documentada |
+| `recovery_codes` | Seguridad | 0 | ✅ Documentada |
+| `user_settings` | Configuración | 0 | ✅ Documentada |
+| `upgrade_effects_history` | Auditoría | 0 | ✅ Documentada |
+
+**Nota:** Las tablas del Black Market (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`) están vacías porque aún no se ha lanzado el primer evento BM. Están funcionales y listas para operar.
 
 ---
 
