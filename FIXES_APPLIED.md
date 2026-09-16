@@ -1,8 +1,8 @@
 # 🔧 Historial de Fixes Aplicados - PARAGUAY-FFAA | METALSTORM
 
 > **Bitácora Técnica de Correcciones Críticas y Refactorizaciones de Tipos.**  
-> **Fecha de Consolidación:** 2026-09-09  
-> **Versión Relacionada:** v3.7.0
+> **Fecha de Consolidación:** 2026-09-16  
+> **Versión Relacionada:** v4.0.0
 
 ---
 
@@ -11,6 +11,8 @@
 ```bash
 fc657f0 refactor: implement helper functions for typed queries
 0e10c46 fix(auth): make password update identifier dynamic
+d4a3881 feat(admin): backend - inactive users management with mandatory reason and audit
+b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals and live counters
 ```
 
 ---
@@ -529,20 +531,64 @@ Asegurar que el callback de respuesta de `/api/planes/:id/details` actualice de 
 
 ---
 
+### 🔹 Fix #17: Sistema Integral de Gestión de Pilotos Inactivos (2026-09-16)
+
+**Fecha:** 2026-09-16  
+**Archivos:** `src/controllers/admin.controller.js`, `src/routes/admin.routes.js`, `src/middlewares/auth.js`, `js/api.js`, `js/views.js`, `components/admin-panel.html`  
+**Severidad:** 🛡️ Alta (Trazabilidad militar, control de bajas y disciplina del escuadrón)  
+**Versión:** v4.0.0 (Fases A, B y C)  
+
+**Problema Detectado:**
+1. Las bajas de pilotos carecían de motivo documentado en base de datos; al inactivar un piloto solo se alteraba `status = 'INACTIVE'`, perdiendo trazabilidad sobre la causa del retiro o sanción disciplinaria.
+2. Al intentar acceder al sistema, el piloto inactivo recibía un mensaje genérico o incompleto sin saber el motivo formal de su exclusión.
+3. En el panel de administración militar, la tabla listaba a todos los combatientes mezclados sin filtrado táctico por estado ni contadores de dotación activa vs retirados.
+4. Existía código duplicado en `js/api.js` (`changeUserStatus` declarado dos veces) y una asignación global inútil en `js/views.js` (`window.currentMembersTab`).
+
+**Solución Implementada:**
+1. **Fase A (Backend - commit `d4a3881`):**
+   - Migración SQL en `users`: 3 columnas nuevas (`inactive_reason` TEXT, `inactive_by` UUID FK, `inactive_at` TIMESTAMPTZ).
+   - `updateUserStatus()`: Exige `reason` (10-500 caracteres) al inactivar; limpia los tres campos a `NULL` al reactivar (con motivo opcional hasta 300 caracteres).
+   - `getInactiveUsers()`: Endpoint `GET /api/admin/users/inactive` con resolución batch de comandantes ejecutores (`inactive_by_nick`).
+   - `updateInactiveReason()`: Endpoint `PATCH /api/admin/users/:id/inactive-reason` para regularizar motivos históricos.
+   - `requireAuth` middleware: Bloqueo 403 enriquecido consultando primero `users` y luego fallback a `audit_logs`.
+2. **Fase B (Frontend - commit `b1023fd`):**
+   - Pestañas tácticas: `🟢 Activos (N)`, `🔴 Inactivos (N)`, `📋 Todos (N)` con contadores en tiempo real.
+   - Modales tácticos: Modal de inactivación con motivos reglamentarios predefinidos y validación de 10-500 caracteres; modal de reactivación con confirmación de reincorporación; modal de edición de motivo.
+   - Columnas condicionales en la tabla militar: "Motivo de Baja" e "Inactivado por".
+3. **Fase C (Limpieza de Código y Documentación):**
+   - Eliminación de la declaración y exportación duplicada de `changeUserStatus` en `js/api.js`.
+   - Eliminación de la variable inútil `window.currentMembersTab` en `js/views.js`.
+   - Redacción de la directiva oficial `POLITICA_INACTIVACION.md` y actualización exhaustiva de los 9 manuales tácticos del escuadrón.
+
+**Resultado:**
+- ✅ Trazabilidad 100% auditable de bajas y reincorporaciones.
+- ✅ Mensajes de bloqueo transparentes e informativos para pilotos sancionados o retirados.
+- ✅ Panel de administración táctico con filtrado ergonómico y contadores en vivo.
+- ✅ Código JavaScript limpio y validado sintácticamente (`node --check`).
+
+**Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN (v4.0.0)
+
+---
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |
 |---|---|:---:|
 | `src/controllers/auth.controller.js` | Lógica tipada, control de `token_version` y password hashing | 🟢 ESTABLE |
-| `src/routes/admin.routes.js` | Parámetros de ruta dinámicos (UUID / INTEGER) | 🟢 ESTABLE |
-| `src/controllers/admin.controller.js` | Modificación de rangos militares y estado de cuenta | 🟢 ESTABLE |
+| `src/middlewares/auth.js` | Validación JWT y mensaje enriquecido con motivo/actor de baja (403) | 🟢 ESTABLE |
+| `src/routes/admin.routes.js` | Parámetros dinámicos, rutas `/users/inactive` y `/users/:id/inactive-reason` | 🟢 ESTABLE |
+| `src/controllers/admin.controller.js` | Gestión de bajas con motivo obligatorio, resolución batch de inactivos y roles | 🟢 ESTABLE |
 | `src/controllers/profile.controller.js` | Persistencia de datos personales y teléfono de alertas | 🟢 ESTABLE |
 | `src/controllers/performances.controller.js` | Historial de tokens y sincronización de semáforo | 🟢 ESTABLE |
 | `src/controllers/planes.controller.js` | Habilidades, Upgrades 2.0, cálculo de mods, recomendaciones, telemetría i18n y validación de sistemas disponibles | 🟢 ESTABLE |
 | `src/utils/upgradeEffects.js` | Lógica y fallback de bonificaciones por niveles de subsistemas (0-8) | 🟢 ESTABLE |
 | `src/utils/modEffects.js` | Lógica, caché y cálculo de multiplicadores de los 10 mods tácticos | 🟢 ESTABLE |
 | `src/utils/audit.js` | Resolución de UUIDs en eventos de seguridad y auditoría | 🟢 ESTABLE |
+| `components/admin-panel.html` | Pestañas tácticas Activos/Inactivos/Todos y modales de motivo de baja | 🟢 ESTABLE |
+| `js/api.js` | Cliente API RESTful (limpieza de duplicados v4.0.0) | 🟢 ESTABLE |
+| `js/views.js` | Renderizado de vistas, modales de inactivos y controladores tácticos | 🟢 ESTABLE |
 | `components/aircraft-stats-modal.html` | Modal de datos profundos y markup de Upgrade Planner 2.0 | 🟢 ESTABLE |
 | `planes (Supabase)` | Normalización 1NF (UNIQUE, FK, CHECKs, habilidades) | 🟢 ESTABLE |
 | `plane_models (Supabase)` | Catálogo oficial de 44 modelos con `sistemas_disponibles` y columnas i18n (`_es`) | 🟢 ESTABLE |
+| `users (Supabase)` | Padrón militar con columnas `inactive_reason`, `inactive_by` e `inactive_at` | 🟢 ESTABLE |
 | `components/change-password-modal.html` | Modal de actualización táctica (Workaround: ENTER) | 🟡 FIX UI PENDIENTE |

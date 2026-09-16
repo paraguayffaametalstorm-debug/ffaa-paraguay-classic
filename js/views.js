@@ -5945,7 +5945,6 @@ window.renderNormativas = renderNormativas;
 window.applyNormativasFilters = applyNormativasFilters;
 window.resetNormativasFilters = resetNormativasFilters;
 window.loadAdminPanel = loadAdminPanel;
-window.currentMembersTab = currentMembersTab;
 window.switchMembersTab = switchMembersTab;
 window.promptInactivateUser = promptInactivateUser;
 window.promptReactivateUser = promptReactivateUser;

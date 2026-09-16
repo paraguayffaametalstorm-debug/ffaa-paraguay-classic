@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v3.9.9 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.0.0 del núcleo táctico.**
 
 ---
 
@@ -20,7 +20,7 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 {
   "success": false,
   "error": "Mensaje descriptivo del error en español táctico",
-  "code": "AUTH_TOKEN_EXPIRED | ROLE_LIMIT_REACHED | USER_NOT_FOUND | USER_INACTIVE",
+  "code": "AUTH_TOKEN_EXPIRED | ROLE_LIMIT_REACHED | USER_NOT_FOUND | USER_INACTIVE | USER_NOT_INACTIVE | REASON_REQUIRED | REASON_TOO_LONG | OWNER_PROTECTED | SELF_MODIFICATION_FORBIDDEN | HIERARCHY_FORBIDDEN | INVALID_STATUS",
   "details": "Información técnica complementaria (opcional)"
 }
 ```
@@ -80,7 +80,9 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Settings** | `/api/settings` o `/me` | `PUT` | Autenticado | Modificar tema (militar/ops/clasico) y alertas |
 | **Admin** | `/api/admin/users` o `/members` | `GET` | `ADMIN` / `OWNER` | Listado completo de miembros del escuadrón |
 | **Admin** | `/api/admin/members` | `POST` | `ADMIN` / `OWNER` | Dar de alta a un nuevo piloto |
-| **Admin** | `/api/admin/users/:id/status` | `PUT`/`PATCH` | `ADMIN` / `OWNER` | Activar o desactivar cuenta de piloto |
+| **Admin** | `/api/admin/users/:id/status` | `PUT`/`PATCH` | `ADMIN` / `OWNER` | Activar o desactivar cuenta de piloto con motivo |
+| **Admin** | `/api/admin/users/inactive` | `GET` | `ADMIN` / `OWNER` | Listar solo pilotos inactivos con motivo, actor y fecha |
+| **Admin** | `/api/admin/users/:id/inactive-reason` | `PATCH` | `ADMIN` / `OWNER` | Completar o corregir motivo de baja de un piloto |
 | **Admin** | `/api/admin/users/:id/role` | `PUT`/`PATCH` | `ADMIN` / `OWNER` | Ascenso militar con validación de cuota |
 | **Admin** | `/api/admin/bulk-upload` | `POST` | `ADMIN` / `OWNER` | Carga masiva de tokens (máx 20/15m) |
 | **Admin** | `/api/admin/events/activate-bm`| `POST` | `ADMIN` / `OWNER` | Activar evento Black Market |
@@ -628,6 +630,10 @@ Lista exhaustiva de combatientes con métricas dinámicas para el panel de admin
   - `avg_tokens`: Promedio de tokens acumulado de todas las misiones registradas.
   - `weeks_evaluated`: Cantidad de semanas operativas evaluadas.
   - `perf_status`: Semáforo militar calculado según la normativa institucional (Art. 26: VERDE $\ge 175$, NARANJA $\ge 130$, ROJO $\ge 100$, NEGRO $< 100$, o PENDIENTE).
+  - `inactive_reason`: Motivo oficial de inactivación si el piloto está de baja (`null` si está activo).
+  - `inactive_by`: UUID del oficial que ejecutó la inactivación (`null` si está activo).
+  - `inactive_at`: Marca de tiempo ISO de la baja militar (`null` si está activo).
+  - `inactive_by_nick`: Callsign resuelto del oficial ejecutor de la baja.
 - **Response Exitosa (200 OK):**
   ```json
   {
@@ -635,7 +641,7 @@ Lista exhaustiva de combatientes con métricas dinámicas para el panel de admin
     "message": "Lista de pilotos obtenida con éxito",
     "data": [
       {
-        "id": 14,
+        "id": "3658df3a-3d15-4669-a595-dca33ec86fd3",
         "user_id": 14,
         "nick": "Viper_PY",
         "email": "viper@ffaa.py",
@@ -644,12 +650,112 @@ Lista exhaustiva de combatientes con métricas dinámicas para el panel de admin
         "last_activity": "2026-09-08T15:30:00Z",
         "avg_tokens": 192,
         "weeks_evaluated": 14,
-        "perf_status": "VERDE"
+        "perf_status": "VERDE",
+        "inactive_reason": null,
+        "inactive_by": null,
+        "inactive_at": null,
+        "inactive_by_nick": null
       }
     ],
     "total": 1
   }
   ```
+
+### `PUT /api/admin/users/:id/status` (o `PATCH`)
+Modifica el estado operacional de un piloto militar entre `ACTIVE` e `INACTIVE` con registro obligatorio de motivo al inactivar.
+- **Acceso:** Autenticado (`ADMIN`, `OWNER`).
+- **Jerarquía de Mando:**
+  - `OWNER`: Puede modificar a cualquier piloto excepto a sí mismo (`SELF_MODIFICATION_FORBIDDEN`).
+  - `ADMIN`: Solo puede modificar a combatientes con rango `MIEMBRO` o `VETERANO`. Prohibido modificar a `ADMIN` u `OWNER` (`HIERARCHY_FORBIDDEN`).
+- **Validación de Motivo:**
+  - **Inactivación (`status = 'INACTIVE'`):** El campo `reason` es obligatorio (10 a 500 caracteres).
+  - **Reactivación (`status = 'ACTIVE'`):** El campo `reason` es opcional (máximo 300 caracteres). Limpia `inactive_reason`, `inactive_by` e `inactive_at` a `null`.
+- **Request Body (Inactivación):**
+  ```json
+  {
+    "status": "INACTIVE",
+    "reason": "Bajo rendimiento: 3 semanas consecutivas con semáforo rojo sin justificación médica o laboral."
+  }
+  ```
+- **Request Body (Reactivación):**
+  ```json
+  {
+    "status": "ACTIVE",
+    "reason": "Piloto reincorporado tras superar período de licencia justificada."
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Estado de Viper_PY actualizado a INACTIVE",
+    "user": {
+      "id": "3658df3a-3d15-4669-a595-dca33ec86fd3",
+      "user_id": 14,
+      "nick": "Viper_PY",
+      "status": "INACTIVE",
+      "inactive_reason": "Bajo rendimiento: 3 semanas consecutivas con semáforo rojo...",
+      "inactive_by": "00000000-0000-0000-0000-000000000001",
+      "inactive_at": "2026-09-16T02:00:00.000Z"
+    }
+  }
+  ```
+- **Errores Posibles:**
+  - `400 BAD REQUEST`: `REASON_REQUIRED` (motivo ausente o <10 chars), `REASON_TOO_LONG` (>500 chars), `INVALID_STATUS`.
+  - `403 FORBIDDEN`: `SELF_MODIFICATION_FORBIDDEN`, `HIERARCHY_FORBIDDEN`, `OWNER_PROTECTED`.
+  - `404 NOT FOUND`: `USER_NOT_FOUND`.
+
+### `GET /api/admin/users/inactive`
+Lista exclusivamente a los pilotos que se encuentran en situación de baja (`status = 'INACTIVE'`), ordenados cronológicamente por fecha de baja descendente.
+- **Acceso:** Autenticado (`ADMIN`, `OWNER`).
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "count": 33,
+    "users": [
+      {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "user_id": 25,
+        "nick": "Phantom_Ghost",
+        "email": "phantom@ffaa.py",
+        "role": "MIEMBRO",
+        "status": "INACTIVE",
+        "inactive_reason": "Inactividad prolongada: más de 60 días sin conexión al simulador.",
+        "inactive_by": "3658df3a-3d15-4669-a595-dca33ec86fd3",
+        "inactive_at": "2026-09-10T18:45:00.000Z",
+        "inactive_by_nick": "PJPIROVANI",
+        "created_at": "2026-01-15T10:00:00.000Z"
+      }
+    ]
+  }
+  ```
+
+### `PATCH /api/admin/users/:id/inactive-reason`
+Permite regularizar, completar o rectificar el motivo de baja de un piloto inactivo (especialmente útil para pilotos inactivados antes de la v4.0.0 con motivo pendiente).
+- **Acceso:** Autenticado (`ADMIN`, `OWNER`).
+- **Restricción:** El piloto debe tener `status = 'INACTIVE'` (si está activo retorna error `USER_NOT_INACTIVE`).
+- **Request Body:**
+  ```json
+  {
+    "reason": "Baja temporal: Solicitud de licencia por razones de fuerza mayor documentada en WhatsApp."
+  }
+  ```
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Motivo de baja de Phantom_Ghost actualizado",
+    "user": {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "nick": "Phantom_Ghost",
+      "inactive_reason": "Baja temporal: Solicitud de licencia por razones de fuerza mayor documentada en WhatsApp."
+    }
+  }
+  ```
+- **Errores Posibles:**
+  - `400 BAD REQUEST`: `REASON_REQUIRED` (motivo ausente o <10 chars), `REASON_TOO_LONG` (>500 chars), `USER_NOT_INACTIVE`.
+  - `404 NOT FOUND`: `USER_NOT_FOUND`.
 
 ### `PUT /api/admin/users/:id/role`
 Modifica el rango militar de un piloto aplicando **cuotas institucionales estrictas**.
@@ -1017,5 +1123,9 @@ Tabla de clasificación ordenada por puntos acumulados en el Black Market activo
     ]
   }
   ```
+
+---
+
+*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*
 
 

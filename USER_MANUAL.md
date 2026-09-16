@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.9.9).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v4.0.0).**
 
 ---
 
@@ -205,13 +205,22 @@ El sistema de Upgrades 2.0 se apoya en un árbol de nodos técnicos almacenado e
 
 ### 2.7 🛡️ Panel de Administración Militar (Oficiales ADMIN y OWNER)
 La consola de administración permite supervisar y gestionar a toda la dotación militar del escuadrón:
+- **Pestañas Tácticas de Estado (v4.0.0):**
+  - `🟢 Activos (N)`: Lista exclusivamente a los pilotos operativos en servicio activo.
+  - `🔴 Inactivos (N)`: Padrón de pilotos dados de baja con visualización directa del motivo, comandante ejecutor y fecha.
+  - `📋 Todos (N)`: Dotación militar total consolidada del escuadrón.
+  - Los contadores numéricos se actualizan en vivo con cada cambio de estado.
 - **Métricas C4ISR en Tiempo Real:** Cada piloto cuenta con:
   - **Promedio de Tokens (`avg_tokens`):** Promedio acumulado de todas las semanas evaluadas.
   - **Semanas Evaluadas (`weeks_evaluated`):** Total de eventos en los que el combatiente ha reportado tokens.
   - **Estado Semáforo Militar (`perf_status`):** Distintivo en tiempo real (`VERDE`, `NARANJA`, `ROJO`, `NEGRO` o `PENDIENTE`) calculado conforme al Artículo 26 del Reglamento.
+- **Gestión Reglamentaria de Bajas y Reactivaciones (v4.0.0):**
+  - **Dar de Baja / Inactivar:** Al pulsar el botón de baja, el sistema despliega el **Modal Táctico de Inactivación**. Es obligatorio registrar un motivo justificado (mínimo 10 caracteres, máximo 500) seleccionando una causa reglamentaria estándar (baja voluntaria, bajo rendimiento reiterado, inactividad prolongada, sanción disciplinaria) o ingresando una descripción personalizada. *(Ver detalles y protocolos en `POLITICA_INACTIVACION.md`)*.
+  - **Reincorporar / Reactivar:** Al pulsar reactivar, se abre el **Modal Táctico de Reactivación** donde se puede registrar un motivo opcional de retorno (hasta 300 caracteres). Al confirmar, el piloto recupera inmediatamente el acceso a la plataforma.
+  - **Regularización de Motivos Históricos:** En la pestaña de Inactivos, si un piloto veterano no cuenta con motivo documentado, se resalta la advertencia `⚠️ Sin motivo` junto a un botón `✏️ Completar` que permite asentar el motivo correspondiente en su legajo.
+  - **Protección de Jerarquía:** El `OWNER` está blindado contra toda inactivación; los `ADMIN` solo pueden gestionar a `MIEMBRO` y `VETERANO`.
 - **Filtros Operativos:** Filtrado instantáneo por Rango (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`) y por Estado del Semáforo.
-- **Acciones Rápidas:**
-  - **Activar / Desactivar Piloto:** Cambiar el estado operativo entre `ACTIVE` e `INACTIVE`.
+- **Acciones Rápidas Complementarias:**
   - **Reseteo Táctico de Clave:** Generación de clave temporal `MS-XXXX-XXXX` criptosegura.
   - **Ascensos y Descensos de Rango:** Ajuste jerárquico sujeto a cuotas militares.
 
@@ -306,7 +315,10 @@ Verifica que estás respetando las mayúsculas y el guión (ej: `MS-XXXX-XXXX`).
 Por la directiva de seguridad anti-sesión fantasma: cada cambio de clave revoca todos los tokens JWT previos en todos los dispositivos para evitar accesos no autorizados.
 
 **¿Puedo instalar la aplicación en mi teléfono Android o iPhone?**  
-Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v3.9.9.
+Sí. En Chrome para Android presiona el menú de 3 puntos y pulsa **"Instalar aplicación"**. En Safari para iOS presiona el botón **Compartir** y pulsa **"Agregar a la pantalla de inicio"**. La app funcionará en pantalla completa y en modo offline gracias al Service Worker v4.0.0.
+
+**¿Qué ocurre si mi cuenta militar es inactivada?**  
+Si tu cuenta es pasada a situación de inactividad, al intentar ingresar el sistema bloqueará el acceso y te informará qué comandante ejecutó la baja militar, la fecha exacta y el motivo reglamentario asentado en tu legajo militar, junto con los canales de contacto de la Comandancia para solicitar audiencia de reincorporación.
 
 **¿Puedo ver la historia y las curiosidades de mi avión?**  
 Sí. En la pantalla dedicada o modal de cualquier aeronave encontrarás la sección "📜 Historia de la Aeronave" con la trivia completa traducida al español.
@@ -317,4 +329,4 @@ A partir de la versión v3.9.9, las descripciones in-game, historias y recomenda
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.9.9 · Actualizado: 15 Septiembre 2026*
+*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*

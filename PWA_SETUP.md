@@ -1,6 +1,6 @@
 # 📱 Configuración PWA y Modo Offline - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v3.9.8.**
+> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v4.0.0.**
 
 ---
 
@@ -19,13 +19,13 @@ La plataforma **PARAGUAY-FFAA | METALSTORM** implementa un diseño PWA militar d
   - `background_color`: `#0B132B` (Azul Táctico Nocturno)
 - **Iconografía:** Íconos adaptativos en resoluciones 72x72, 96x96, 128x128, 144x144, 152x152, 192x192, 384x384 y 512x512 con propósito `any maskable`.
 
-### 1.2 Estrategia de Caché del Service Worker (`sw.js` v3.9.8)
-El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v3.9.8` con estrategias diferenciadas por tipo de tráfico:
+### 1.2 Estrategia de Caché del Service Worker (`sw.js` v4.0.0)
+El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v4.0.0` con estrategias diferenciadas por tipo de tráfico:
 
 | Tipo de Recurso | Estrategia de Caché | Justificación Técnica |
 |---|:---:|---|
 | **Navegación (`index.html`)** | **Network-First** con Fallback | Prioriza servir siempre la última versión desplegada. Si el dispositivo está sin cobertura, entrega la versión en caché local. |
-| **Activos Estáticos (`CSS`, `JS`, `Imágenes`)** | **Cache-First** con clonado | Carga instantánea de hojas de estilo, scripts de vistas (incluyendo el Hangar rediseñado y diccionario `TRAITS_ES`) y componentes HTML modulares. |
+| **Activos Estáticos (`CSS`, `JS`, `Imágenes`)** | **Cache-First** con clonado | Carga instantánea de hojas de estilo, scripts de vistas (incluyendo el panel táctico de inactivos, modales reglamentarios y diccionario `TRAITS_ES`) y componentes HTML modulares. |
 | **Llamadas a la API (`/api/*`) y Supabase** | **Network-Only** (Pass-Through) | Las peticiones dinámicas de combate y autenticación nunca son bloqueadas ni servidas con datos rancios del caché. |
 
 ### 1.3 Precaché de Activos Críticos (`STATIC_ASSETS`)
@@ -60,17 +60,17 @@ El evento `install` descarga y almacena de forma preventiva 26 recursos táctico
 
 ## 3. Procedimiento de Actualización y Despliegue de Versión
 
-Cuando se despliega una nueva versión del sistema (v3.9.8):
+Cuando se despliega una nueva versión del sistema (v4.0.0):
 1. **Actualizar Identificador en `sw.js`:**
    ```javascript
-   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.8';
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.0.0';
    ```
 2. **Ciclo de Activación:**
    - El evento `activate` detecta automáticamente que el nombre de caché cambió.
-   - Elimina de forma inmediata todas las versiones obsoletas (`PARAGUAY-FFAA-METALSTORM-v3.9.0`, etc.) liberando memoria en el dispositivo.
+   - Elimina de forma inmediata todas las versiones obsoletas (`PARAGUAY-FFAA-METALSTORM-v3.9.9`, etc.) liberando memoria en el dispositivo.
    - Invoca `self.clients.claim()` para tomar el control de todas las pestañas abiertas sin necesidad de recargar manualmente.
 3. **Cache-Busting en `index.html`:**
-   - Todas las hojas de estilo cuentan con el sufijo `?v=3.9.8` para forzar la invalidación inmediata de caché en proxies y navegadores de dispositivos móviles.
+   - Todas las hojas de estilo cuentan con el sufijo `?v=4.0.0` para forzar la invalidación inmediata de caché en proxies y navegadores de dispositivos móviles.
 
 ---
 
@@ -78,6 +78,10 @@ Cuando se despliega una nueva versión del sistema (v3.9.8):
 
 1. En tu navegador de escritorio, presiona `F12` para abrir las herramientas de desarrollador.
 2. Ve a la pestaña **Application** $\rightarrow$ **Service Workers**.
-3. Confirma que el Service Worker se encuentra en estado `Activated and is running` con versión `PARAGUAY-FFAA-METALSTORM-v3.9.8`.
+3. Confirma que el Service Worker se encuentra en estado `Activated and is running` con versión `PARAGUAY-FFAA-METALSTORM-v4.0.0`.
 4. Marca la casilla **Offline** (o desconecta la red Wi-Fi en un teléfono móvil).
 5. Recarga la página: La aplicación cargará al 100% de manera instantánea desde la memoria local en caché.
+
+---
+
+*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*

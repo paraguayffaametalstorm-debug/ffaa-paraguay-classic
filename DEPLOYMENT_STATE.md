@@ -1,8 +1,8 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
-> **Fecha de Congelamiento:** 2026-09-15  
-> **Versión:** v3.9.9  
+> **Fecha de Congelamiento:** 2026-09-16  
+> **Versión:** v4.0.0  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - AUDITADO Y PROBADO
 
@@ -10,13 +10,14 @@
 
 ## 📑 Resumen Ejecutivo del Despliegue
 
-Este documento maestro consolida la arquitectura en ejecución, el esquema de base de datos validado, el flujo crítico de registro y cambio de contraseña con autenticación dual y el historial de correcciones de tipos (UUID vs INTEGER) aplicadas en la versión v3.9.9 del sistema **PARAGUAY-FFAA | METALSTORM**.
+Este documento maestro consolida la arquitectura en ejecución, el esquema de base de datos validado, el flujo crítico de registro y cambio de contraseña con autenticación dual y el historial de correcciones de tipos (UUID vs INTEGER) aplicadas en la versión v4.0.0 del sistema **PARAGUAY-FFAA | METALSTORM**.
 
 ### Indicadores de Salud Operativa
 - **Core de Autenticación:** ✅ Operativo (Login Dual, Google OAuth 2.0 y JWT criptográfico con `token_version`).
 - **Registro de Pilotos por Mando:** ✅ Operativo con auto-asignación incremental de `user_id` entero y hash temporal `MS-XXXX-XXXX`.
 - **Cambio de Contraseña Forzado:** ✅ Operativo con resolución tipada dinámica (`UUID`, `INTEGER` o `email`).
 - **Inactivación de Sesiones Fantasma:** ✅ Operativa mediante incremento secuencial de `token_version`.
+- **Gestión Táctica de Inactivos:** ✅ Operativo con motivo obligatorio, trazabilidad de oficial/fecha, resolución batch y mensaje enriquecido de bloqueo.
 - **Persistencia en Supabase:** ✅ Operativa con RLS e integridad referencial íntegra.
 
 ---
@@ -47,6 +48,9 @@ CREATE TABLE users (
     avg_tokens INTEGER DEFAULT 0,
     weeks_evaluated INTEGER DEFAULT 0,
     perf_status TEXT DEFAULT 'VERDE',
+    inactive_reason TEXT,
+    inactive_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    inactive_at TIMESTAMPTZ,
     last_activity TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -62,6 +66,9 @@ CREATE TABLE users (
 | `must_change_password` | `BOOLEAN` (`DEFAULT true`) | Al crearse un usuario o resetearse administrativamente, se fuerza a `true`. |
 | `token_version` | `INTEGER` (`DEFAULT 1`) | Se incrementa (`+1`) en cada cambio o reseteo de clave para invalidar tokens JWT antiguos. |
 | `password_hash` | `TEXT` (`NOT NULL`) | Generado mediante `bcrypt` con factor de coste (salt rounds) 10. |
+| `inactive_reason` | `TEXT` (`NULL`) | Motivo obligatorio al inactivar (10-500 chars). Se limpia a `NULL` al reactivar. |
+| `inactive_by` | `UUID` (`NULL`, FK a `users.id`) | Identificador del oficial ejecutor de la baja militar. Se limpia a `NULL` al reactivar. |
+| `inactive_at` | `TIMESTAMPTZ` (`NULL`) | Marca temporal de la inactivación. Se limpia a `NULL` al reactivar. |
 
 ---
 
