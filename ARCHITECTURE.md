@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.9.8).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v3.9.9).**
 
 ---
 
@@ -8,14 +8,14 @@
 
 El sistema táctico **PARAGUAY-FFAA | METALSTORM** implementa un modelo de arquitectura **Cliente-Servidor Full-Stack desacoplado y orientado a servicios RESTful**, optimizado para el entorno militar del escuadrón `[PRY]`.
 
-La capa de presentación opera como una Single Page Application (SPA) táctica modular y ligera sin frameworks pesados, con soporte PWA offline-first, pantallas especializadas de vinculación (`/link-account`) y restablecimiento (`/reset-password`). El backend está construido sobre **Express.js v5.2.1** ejecutándose en un contenedor optimizado **Node.js 22 Alpine**, respaldado por **Supabase (PostgreSQL Cloud)**, soporte de autenticación federada **Google OAuth 2.0 (Passport.js)** y un motor de resiliencia con degradación elegante (*in-memory fallback*).
+La capa de presentación opera como una Single Page Application (SPA) táctica modular y ligera sin frameworks pesados, con soporte PWA offline-first, pantallas especializadas de vinculación (`/link-account`) y restablecimiento (`/reset-password`). El backend está construido sobre **Express.js v5.2.1** ejecutándose en un contenedor optimizado **Node.js 22 Alpine**, respaldado por **Supabase (PostgreSQL Cloud)**, soporte de autenticación federada **Google OAuth 2.0 (Passport.js)**, motor de envío de correo **Nodemailer con SMTP Gmail** y un motor de resiliencia con degradación elegante (*in-memory fallback*).
 
 ```
                   ┌──────────────────────────────────────────────────────────┐
-                  │              NAVEGADOR / PWA CLIENT (v3.9.8)             │
+                  │              NAVEGADOR / PWA CLIENT (v3.9.9)             │
                   │  - Vanilla ES6+ SPA & Responsive Tactical Design         │
                   │  - Dynamic Component Loader (17+ Vistas & Modales)       │
-                  │  - Service Worker Cache-First (sw.js v3.9.8)             │
+                  │  - Service Worker Cache-First (sw.js v3.9.9)             │
                   │  - Terminal de Vinculación Google (/link-account)        │
                   │  - Terminal de Restablecimiento (/reset-password)        │
                   └────────────┬─────────────────────────────┬───────────────┘
@@ -68,6 +68,7 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
         │ - Performances & Events    │         │ - Default Datasets        │
         │ - Starform Upgrades 2.0    │         │ - Graceful Degradation    │
         │ - Password Resets (15 min) │         └───────────────────────────┘
+        │ - Upgrade Nodes v2 (3072)  │
         │ - Audit Logs & Security    │
         └────────────────────────────┘
 ```
@@ -217,6 +218,32 @@ Para facilitar la carga de datos en misiones o eventos por parte de la jerarquí
 
 El sistema soporta la gestión completa de la flota militar compuesta por **44 modelos de cazas** oficiales (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, etc.) junto con la actualización técnica de subsistemas mecánicos y de combate:
 
+### Arquitectura de Datos del Árbol de Nodos (`upgrade_nodes_v2`)
+
+El sistema implementa el árbol de mejoras **Starform Upgrades 2.0** mediante la tabla `upgrade_nodes_v2` (3.072 filas), que modela las bifurcaciones de ruta A/B en los niveles 5-8.
+
+**Esquema de `upgrade_nodes_v2`:**
+
+| Columna | Tipo | Propósito |
+|---------|------|-----------|
+| `id` | INTEGER | PK auto-incremental |
+| `avion_id` | TEXT | FK referencial a `plane_models.id` |
+| `sistema_web` | TEXT | Sistema base (fuselaje, motor, avionica, armas) |
+| `sistema_categoria` | TEXT | Categoría específica (canones, misiles_ir, etc.) |
+| `nivel` | INTEGER | Nivel del nodo (0-8) |
+| `ruta` | TEXT | Ruta A/B (niveles 5-8) o null |
+| `node_name` | TEXT | Nombre táctico del nodo |
+| `requirement_level` | INTEGER | Nivel de aeronave requerido |
+| `effects` | JSONB | Efectos cuantitativos del nodo |
+| `stats_afectadas` | JSONB | Stats impactadas |
+| `cost_piezas` | INTEGER | Costo en piezas estándar |
+| `cost_avanzadas` | INTEGER | Costo en componentes avanzados |
+| `created_at` | TIMESTAMP | Fecha de inserción |
+
+**Consumo en código:**
+- `src/utils/upgradeNodes.js`: Consulta con caché en memoria (TTL 5 min) y fallback.
+- `src/controllers/planes.controller.js`: Cálculo de efectos de Upgrades 2.0.
+
 ### Subsistemas Mejorables (Niveles 0 a 8)
 1. **Fuselaje (`nivel_fuselaje`):** Resistencia al daño, reducción de firma de radar e integridad física.
 2. **Motor (`nivel_motor`):** Velocidad máxima, aceleración con posquemador y maniobrabilidad a baja cota.
@@ -266,6 +293,144 @@ Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel a
 6. **Mitigación de CSV Formula Injection:**
    - Función `sanitizeCSVField()` que neutraliza fórmulas maliciosas (`=`, `+`, `-`, `@`, `\t`, `%`) anteponiendo apóstrofes (`'`).
 
+### 6.6 Flujo Completo de Recuperación de Contraseña por Email (Forgot Password)
+
+El sistema implementa un flujo criptográficamente seguro para el restablecimiento de contraseñas vía correo electrónico, con vigencia estricta de 15 minutos.
+
+**Pipeline completo:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│         FLUJO DE RECUPERACIÓN DE CONTRASEÑA POR EMAIL (v3.9.9)          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 1: Piloto solicita reset desde el login                            │
+│                                                                         │
+│   Frontend: Click en "¿Olvidaste tu clave?"                             │
+│   Endpoint: POST /api/auth/forgot-password                              │
+│   Datos: { email: "piloto@gmail.com" }                                  │
+│                                                                         │
+│   ✅ Backend busca usuario por email O email_institucional              │
+│   ✅ Genera token: crypto.randomBytes(32).toString('hex')               │
+│   ✅ Calcula expires_at = NOW() + 15 minutos                            │
+│   ✅ INSERT en password_resets                                          │
+│   ✅ Registra security_event: PASSWORD_RESET_REQUESTED                  │
+│                                                                         │
+│   Respuesta: { success: true, expiresInMinutes: 15 }                    │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 2: Backend envía correo vía SMTP Gmail                             │
+│                                                                         │
+│   Función: sendPasswordResetEmail() en src/utils/email.js               │
+│   SMTP: smtp.gmail.com:587 (cuenta: paraguayffaa.metalstorm@gmail.com)  │
+│                                                                         │
+│   ✅ HTML militar C4ISR con colores institucionales                     │
+│   ✅ Enlace: https://paraguay-ffaa-metalstorm.fly.dev/                  │
+│              reset-password?token=<TOKEN>                               │
+│   ✅ Asunto: 🔑 [PARAGUAY-FFAA] Restablecimiento de Credenciales        │
+│                                                                         │
+│   ⚠️ Si el email NO es real (ej: @ffaa.py), rebota.                     │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 3: Piloto click en el enlace del correo                            │
+│                                                                         │
+│   Redirige a: /reset-password?token=<TOKEN>                             │
+│   Frontend: Terminal /reset-password.html                               │
+│                                                                         │
+│   ✅ Piloto ingresa nueva contraseña                                    │
+│   ✅ Requisitos: mín 8 chars, 1 mayús, 1 minús, 1 número                │
+│   ✅ Confirma la nueva contraseña                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 4: Backend valida token y actualiza clave                          │
+│                                                                         │
+│   Endpoint: POST /api/auth/reset-password                               │
+│   Datos: { token, newPassword }                                         │
+│                                                                         │
+│   ✅ SELECT de password_resets WHERE token = ?                          │
+│   ✅ Verifica: used = false AND expires_at > NOW()                      │
+│   ✅ Valida complejidad de nueva contraseña                             │
+│   ✅ bcrypt.hash(newPassword, 10)                                       │
+│   ✅ UPDATE users SET:                                                  │
+│        - password_hash = nuevo hash                                     │
+│        - token_version = token_version + 1 (invalida sesiones)          │
+│        - must_change_password = false                                   │
+│        - updated_at = NOW()                                             │
+│   ✅ UPDATE password_resets SET used = true                             │
+│   ✅ Registra security_event: PASSWORD_RESET_SUCCESS                    │
+│                                                                         │
+│   Respuesta: { success: true }                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ PASO 5: Piloto login con nueva contraseña                               │
+│                                                                         │
+│   Endpoint: POST /api/auth/login                                        │
+│   Datos: { email, password: "nueva_contraseña" }                        │
+│                                                                         │
+│   ✅ 200 OK con nuevo JWT (token_version actualizado)                   │
+│   ✅ Sesiones previas quedan invalidadas (anti-sesión fantasma)         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Endpoints involucrados:**
+
+| Endpoint | Método | Auth | Descripción |
+|---|---|:---:|---|
+| `/api/auth/forgot-password` | POST | Público | Genera token y envía correo |
+| `/api/auth/reset-password` | POST | Público | Valida token y actualiza clave |
+
+**Auditoría:** Todos los eventos se registran en `security_events` (`PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET_SUCCESS`).
+
+### 6.7 Mensaje Enriquecido al Bloquear Usuarios Inactivos
+
+A partir de la versión v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) implementa un mensaje detallado cuando un piloto con `status = 'INACTIVE'` intenta acceder al sistema.
+
+**Comportamiento:**
+1. Detecta `status = INACTIVE` o `INACTIVO`.
+2. Consulta `audit_logs` para buscar la última acción `USER_DEACTIVATED` o `USER_STATUS_CHANGE` sobre ese usuario.
+3. Si existe registro, extrae el `nick` del comandante y la fecha.
+4. Construye un mensaje enriquecido con la información.
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "error": "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante [NICK] el [FECHA]. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.",
+  "code": "USER_INACTIVE",
+  "details": {
+    "inactive_by": "el Comandante [NICK]",
+    "inactive_at": "2026-09-10T01:15:00.000Z",
+    "contact": "comando.central@ffaa.py"
+  }
+}
+```
+
+**Nota:** Si no existe registro en `audit_logs`, el mensaje dice genéricamente "el Comando Central".
+
+### 6.8 Limitación Crítica del Reset por Email
+
+**⚠️ Advertencia operativa importante:**
+
+El flujo de recuperación de contraseña por email (`/forgot-password`) **solo funciona para pilotos con Gmail real vinculado** (`email = @gmail.com` + `google_linked = true`).
+
+**Estado actual (2026-09-15):**
+- Solo `PJPIROVANI` (OWNER) cumple esta condición (~2% del escuadrón).
+- El 98% restante tiene emails `@ffaa.py` ficticios que rebotan (el dominio no existe en internet).
+- Los correos enviados a `@ffaa.py` son rechazados por Google con error `DNS Error: Domain name not found`.
+
+**Método principal de recuperación:** Reset administrativo desde el Panel Admin (`POST /api/admin/users/:userId/reset-password`), que genera una clave temporal `MS-XXXX-XXXX` y la entrega por canal seguro (WhatsApp/Discord).
+
+**Plan a futuro:** Campaña de vinculación de Gmail para todos los pilotos.
+
 ---
 
 ## 7. Integración con la Wiki de Metalstorm
@@ -273,7 +438,7 @@ Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel a
 ### 7.1 Fuente de Datos
 - **URL:** https://metalstorm.wiki.gg/wiki/Aircraft
 - **Método:** Script de extracción en consola del navegador (JS vanilla) + consolidación con Node.js.
-- **Fecha de extracción:** 2026-09-12
+- **Fecha de extracción:** 2026-09-12 (Traducción DeepL consolidada 2026-09-15)
 - **Frecuencia:** Manual, bajo demanda (cuando la Wiki se actualiza).
 
 ### 7.2 Volumen de Datos
@@ -361,7 +526,7 @@ El modal `#aircraftDeepModal` usa un grid responsive de cards con
 
 ---
 
-## 8. Arquitectura del Hangar Rediseñado & Motor i18n (v3.9.8)
+## 8. Arquitectura del Hangar Rediseñado & Motor i18n (v3.9.9)
 
 ### 8.1 Arquitectura de Dos Vistas del Hangar (`js/views.js`)
 
