@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.9.8).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v3.9.9).**
 
 ---
 
@@ -50,6 +50,7 @@ Si prefieres ingresar con correo y contraseña:
 
 ### 1.5 Recuperación Autónoma de Contraseña (15 Minutos)
 Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo mediante canal seguro:
+
 1. En el modal de inicio de sesión, pulsa en el enlace **"¿Olvidaste tu clave?"**.
 2. Ingresa tu correo electrónico registrado (puedes utilizar tu correo institucional `@ffaa.py` o tu Gmail vinculado).
 3. Presiona **"Enviar Enlace Táctico"**.
@@ -57,7 +58,41 @@ Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo med
 5. Abre el enlace (te llevará a `/reset-password?token=...`), introduce tu nueva contraseña (mínimo 8 caracteres), confírmala y presiona **"Actualizar Contraseña"**.
 6. **Seguridad Anti-Sesión Fantasma:** Al completarse el restablecimiento, todas las sesiones activas previas quedarán invalidadas inmediatamente.
 
-### 1.6 Asistencia de Mando y Reseteo Administrativo
+> **⚠️ LIMITACIÓN CRÍTICA — LEER ANTES DE USAR:**
+> Este flujo **solo funciona si tu cuenta tiene un Gmail real vinculado** (`email = @gmail.com` + `google_linked: true`).
+>
+> - **Si vinculaste tu Gmail:** Podrás recibir el correo y restablecer tu clave por ti mismo.
+> - **Si NO vinculaste tu Gmail:** El sistema intentará enviar el correo a tu dirección `@ffaa.py`, pero rebotará porque el dominio no existe. **No podrás recuperar tu clave por email.**
+>
+> **En ese caso, el camino es:**
+> - Contactar a un oficial `ADMIN` u `OWNER` por WhatsApp/Discord.
+> - El oficial te entregará una clave temporal `MS-XXXX-XXXX`.
+> - Deberás cambiarla al ingresar (ver §1.4).
+>
+> **Recomendación:** Vinculá tu Gmail real cuanto antes desde `/link-account` para poder recuperar tu clave por ti mismo en el futuro.
+
+### 1.6 Si tu cuenta fue inactivada
+
+Si un oficial `ADMIN` u `OWNER` ha inactivado tu cuenta, **no podrás ingresar al sistema por ningún medio** (login tradicional, Google OAuth, vinculación, ni sesiones JWT vigentes).
+
+Al intentar ingresar, verás un mensaje detallado:
+
+> *"⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante [NICK] el [FECHA]. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información."*
+
+**El mensaje incluye:**
+- 👤 El indicativo del oficial que ejecutó la baja.
+- 📅 La fecha de inactivación.
+- 📧 El canal de contacto oficial: `comando.central@ffaa.py`.
+
+**¿Qué hacer si tu cuenta fue inactivada?**
+1. **Contactar al Comando Central** por los canales oficiales (WhatsApp/Discord del escuadrón).
+2. **Solicitar la reactivación** explicando el motivo.
+3. Un oficial `ADMIN` u `OWNER` evaluará tu caso y, si corresponde, reactivará tu cuenta.
+4. **Al reactivarse, todos tus datos se conservan** (hangar, historial, rango, tokens). No perdés nada.
+
+**Nota:** Si tu cuenta fue inactivada por error, contactá inmediatamente al Comando Central para corregirlo.
+
+### 1.7 Asistencia de Mando y Reseteo Administrativo
 1. Si no tienes acceso a tu correo electrónico, contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o Discord.
 2. El oficial ingresará al panel administrativo y ejecutará el comando de reseteo (`Reset Pass`).
 3. El sistema generará una contraseña temporal única `MS-XXXX-XXXX` que el oficial te entregará por canal privado.
@@ -68,6 +103,9 @@ Si has olvidado tu contraseña de combate, puedes restablecerla por ti mismo med
 ## 2. Guía Operativa de Módulos y Vistas
 
 ### 2.1 📊 Cuadro de Mando Táctico (Dashboard C4ISR)
+
+> **Nota:** Si tu cuenta fue inactivada por un oficial, verás el mensaje enriquecido descripto en §1.6 y no podrás acceder al Dashboard hasta que el Comando Central reactive tu cuenta.
+
 - **Semáforo Operacional:** Tu distintivo militar actual (`VERDE`, `NARANJA`, `ROJO`, `NEGRO`).
 - **Promedio Personal:** Promedio acumulado de tokens en las últimas semanas evaluadas.
 - **Meta del Escuadrón:** Barra de progreso hacia la cuota institucional de **175 tokens promedio** por piloto.
@@ -97,6 +135,28 @@ Cuando un oficial con rango **`ADMIN`** o **`OWNER`** accede al formulario de re
 
 ### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0 (Rediseño v3.9.8)
 El módulo de Hangar te permite registrar y calibrar tus cazas seleccionando entre el **catálogo oficial de 44 aeronaves de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, Mirage 2000, etc.) y gestionar sus especificaciones:
+
+#### Árbol de Nodos de Upgrades 2.0
+
+El sistema de Upgrades 2.0 se apoya en un árbol de nodos técnicos almacenado en la tabla `upgrade_nodes_v2` (3.072 configuraciones). Cada nodo define:
+
+- **Sistema base:** Fuselaje, Motor, Aviónica o Armas.
+- **Nivel:** de 0 a 8.
+- **Ruta:** A o B (a partir del nivel 5).
+- **Efectos cuantitativos:** bonus aplicados a stats (velocidad, agilidad, blindaje, etc.).
+- **Costo:** piezas estándar + componentes avanzados.
+
+**Cómo se refleja en tu Hangar:**
+- Al seleccionar una aeronave, el sistema consulta los nodos disponibles en `upgrade_nodes_v2`.
+- Los sliders del **Upgrade Planner** te permiten simular subidas de nivel y ver el impacto en stats.
+- Los bonos se aplican automáticamente a la telemetría de combate (`GET /api/planes/:id/stats`).
+
+**Ejemplo de nodo:**
+- Sistema: Motor
+- Nivel: 6
+- Ruta: B
+- Efecto: +15% aceleración con postcombustión
+- Costo: 1.800 piezas + 100 componentes avanzados
 
 #### Rediseño de Navegación del Hangar:
 - **Vista 1 — Cuadrícula Táctica de Cazas (Grid View):**
@@ -257,4 +317,4 @@ A partir de la versión v3.9.8, las descripciones in-game, historias y recomenda
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v3.9.8 · Actualizado: 15 Septiembre 2026*
+*Versión: v3.9.9 · Actualizado: 15 Septiembre 2026*
