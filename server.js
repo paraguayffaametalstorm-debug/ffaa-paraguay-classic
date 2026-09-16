@@ -65,12 +65,73 @@ app.get('/api/health', (req, res) => {
 // SECURITY & PERFORMANCE MIDDLEWARES
 // ============================================================
 
-// Helmet HTTP Security Headers (Allowing AI Studio iframe embedding)
+// Helmet HTTP Security Headers
+// HALL-003: frameguard + contentSecurityPolicy activados.
+// Se mantiene AI Studio iframe embedding en frame-ancestors.
 app.use(
   helmet({
-    frameguard: false,
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false
+    frameguard: false, // AI Studio iframe depende de esto
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://unpkg.com",
+          "https://cdn.jsdelivr.net",
+          "https://cdnjs.cloudflare.com"
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com"
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+          "data:"
+        ],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://res.cloudinary.com",
+          "https://*.supabase.co"
+        ],
+        connectSrc: [
+          "'self'",
+          "https://*.supabase.co",
+          "https://api.cloudinary.com",
+          "https://res.cloudinary.com",
+          "https://fonts.googleapis.com",
+          "https://fonts.gstatic.com",
+          "https://unpkg.com",
+          "https://cdn.jsdelivr.net",
+          "https://cdnjs.cloudflare.com",
+          "wss://*.supabase.co"
+        ],
+        mediaSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameSrc: [
+          "'self'",
+          "https://*.fly.dev",
+          "https://aistudio.google.com",
+          "https://*.google.com"
+        ],
+        frameAncestors: [
+          "*",
+          "https://*.fly.dev",
+          "https://aistudio.google.com",
+          "https://*.google.com"
+        ],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        workerSrc: ["'self'", "blob:"]
+      }
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    referrerPolicy: { policy: 'no-referrer' }
   })
 );
 
