@@ -6,6 +6,77 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [3.9.9] - 2026-09-15
+
+### 🔐 Flujo de Recuperación de Contraseña por Email & Mensaje Enriquecido de Inactivos
+
+#### 🔐 Recuperación de Contraseña por Email (Forgot Password)
+
+- **Tabla `password_resets` creada en Supabase:**
+  - Esquema: `id` (UUID PK), `user_id` (UUID FK a `users.id` con `ON DELETE CASCADE`), `token` (TEXT UNIQUE), `expires_at` (TIMESTAMPTZ), `used` (BOOLEAN default `false`), `created_at` (TIMESTAMPTZ default `now()`).
+  - Índices: `idx_password_resets_token`, `idx_password_resets_user_id`, `idx_password_resets_expires_at`, `idx_password_resets_used`.
+  - RLS habilitado con política `no_public_access` (solo `service_role` puede leer/escribir).
+- **SMTP Gmail configurado en Fly.io:**
+  - Cuenta emisora: `paraguayffaa.metalstorm@gmail.com`.
+  - Secrets configurados: `EMAIL_HOST` (`smtp.gmail.com`), `EMAIL_PORT` (`587`), `EMAIL_SECURE` (`false`), `EMAIL_USER`, `EMAIL_PASS` (contraseña de aplicación de 16 caracteres), `EMAIL_FROM`.
+  - Contraseña de aplicación guardada en Bitwarden.
+- **Flujo de reset operativo end-to-end:**
+  - `POST /api/auth/forgot-password`: genera token criptográfico (`crypto.randomBytes(32)`), calcula `expires_at = NOW() + 15 min`, inserta en `password_resets`, envía correo HTML militar C4ISR vía Nodemailer y registra `PASSWORD_RESET_REQUESTED` en `security_events`.
+  - `POST /api/auth/reset-password`: valida token (`used = false` + vigencia), verifica complejidad de nueva contraseña, actualiza `password_hash`, incrementa `token_version` (+1), setea `must_change_password = false`, marca `password_resets.used = true` y registra `PASSWORD_RESET_SUCCESS`.
+  - Correos se envían con diseño militar C4ISR (colores institucionales #0038A8, #D52B1E, #0B132B).
+  - Token expira estrictamente a los 15 minutos.
+- **Prueba end-to-end exitosa:**
+  - `simulated: false` en respuesta del endpoint (SMTP funcionando).
+  - Correo recibido con enlace funcional.
+  - Reset completado: `token_version` incrementado de `1` a `2`, `used: true` en `password_resets`.
+
+#### ⚠️ Limitación Crítica Documentada
+
+- **Solo ~2% de los pilotos tienen Gmail real vinculado** (únicamente `PJPIROVANI`).
+- El 98% restante tiene emails `@ffaa.py` ficticios que rebotan (el dominio no existe en internet).
+- **Método principal de recuperación:** reset administrativo desde el Panel Admin (genera clave temporal `MS-XXXX-XXXX`).
+- Campaña de vinculación de Gmail planificada a futuro.
+
+#### 🔒 Mensaje Enriquecido al Bloquear Usuarios Inactivos
+
+- **Cambio en `src/middlewares/auth.js`:**
+  - Cuando un piloto con `status = 'INACTIVE'` intenta acceder, el backend devuelve un mensaje detallado.
+  - Consulta `audit_logs` para obtener la última acción `USER_DEACTIVATED` o `USER_STATUS_CHANGE` sobre el usuario.
+  - Extrae el `nick` del comandante y la fecha de inactivación.
+  - Construye un mensaje con información de contacto al Comando Central.
+- **Ejemplo de respuesta:**
+  ```json
+  {
+    "error": "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante [NICK] el [FECHA]. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.",
+    "code": "USER_INACTIVE",
+    "details": {
+      "inactive_by": "el Comandante [NICK]",
+      "inactive_at": "2026-09-10T01:15:01.048Z",
+      "contact": "comando.central@ffaa.py"
+    }
+  }
+  ```
+- **Fallback:** Si no existe registro en `audit_logs`, el mensaje dice genéricamente "el Comando Central".
+
+#### 📚 Documentación Actualizada
+
+- **`DEPLOYMENT_STATE.md`:** Documentadas las tablas `password_resets` y `upgrade_nodes_v2`. Corregidos esquemas de `normativas` (28 columnas), `error_logs` (`meta` en vez de `metadata`, `user_id`, `nick`). Formalizada la regla de FKs (UUID para BM/recovery/security/password_resets, INTEGER para planes/user_settings). Agregada columna `mod_effects.is_active`. Actualizado listado consolidado con conteos reales.
+- **`ARCHITECTURE.md`:** Agregada sección §6.6 (Flujo completo de recuperación de contraseña por email), §6.7 (Mensaje enriquecido al bloquear inactivos), §6.8 (Limitación crítica del reset por email). Ampliada sección §5 con arquitectura de `upgrade_nodes_v2`.
+- **`API_REFERENCE.md`:** Confirmados endpoints de recuperación operativos. Agregado código `USER_INACTIVE` al formato de errores.
+- **`USER_MANUAL.md`:** Agregada subsección §1.5 con limitación del reset. Nueva §1.6 "Si tu cuenta fue inactivada". Ampliada §2.3 con `upgrade_nodes_v2`.
+- **`CHANGELOG.md`:** Esta entrada.
+
+#### ✈️ Catálogo y Hangar
+
+- **`upgrade_nodes_v2` documentada:** Tabla con 3.072 filas, 13 columnas, catálogo maestro del árbol de mejoras Starform Upgrades 2.0.
+- **`plane_mods` confirmada con 10 filas:** Los 10 mods tácticos oficiales están correctamente poblados en Supabase.
+
+#### 🔧 Correcciones
+
+- **Verificación de datos:** Corregido el conteo real de tablas tras falsos positivos de `pg_stat_user_tables`.
+
+---
+
 ## 📌 [3.9.8] - 2026-09-15
 
 ### ✈️ Rediseño del Hangar Militar (Grid + Pantalla Dedicada) & Sistema i18n

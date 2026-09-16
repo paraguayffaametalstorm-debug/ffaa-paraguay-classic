@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-15  
-> **Versión Activa:** v3.9.8  
+> **Versión Activa:** v3.9.9  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -10,12 +10,80 @@
 
 ## 🎯 Resumen Ejecutivo
 
-El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v3.9.8). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
+El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v3.9.9). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
 
-Específicamente, en la versión v3.9.8 se ha consolidado:
+Específicamente, en la versión v3.9.9 se ha consolidado:
 1. **Rediseño Completo del Hangar Militar:** Migración de carrusel rígido a doble arquitectura: **Vista 1 (Grid Táctico de Tarjetas)** para navegación ágil y **Vista 2 (Pantalla Dedicada / Detalle Completo de Aeronave)** con botón "← VOLVER AL HANGAR", accesos directos a calibración de Upgrades 2.0 y telemetría de combate profunda.
 2. **Sistema Integral de Traducción (i18n):** Extracción, traducción mediante DeepL y persistencia en Supabase de `descripcion_es`, `historia_es` y `recomendaciones_es`, con degradación elegante a inglés y diccionario cliente de los 13 traits oficiales (`TRAITS_ES`).
 3. **Catálogo Oficial Consolidado a 44 Aeronaves:** 44 cazas normalizados con armas y subsistemas específicos validados.
+
+---
+
+## 🔐 Flujo de Recuperación de Contraseña por Email (v3.9.9)
+
+### Infraestructura
+
+- **Tabla `password_resets` en Supabase:**
+  - `id` (UUID PK), `user_id` (UUID FK), `token` (TEXT UNIQUE), `expires_at` (TIMESTAMPTZ), `used` (BOOLEAN default false), `created_at` (TIMESTAMPTZ default now()).
+  - Índices: `idx_password_resets_token`, `idx_password_resets_user_id`, `idx_password_resets_expires_at`, `idx_password_resets_used`.
+  - RLS habilitado con política `no_public_access`.
+
+- **SMTP Gmail configurado en Fly.io:**
+  - Cuenta: `paraguayffaa.metalstorm@gmail.com`
+  - Secrets: `EMAIL_HOST`, `EMAIL_PORT` (587), `EMAIL_SECURE` (false), `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`.
+  - Contraseña de aplicación de 16 caracteres generada en [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+  - Contraseña guardada en Bitwarden.
+
+### Flujo
+
+1. Piloto hace clic en **"¿Olvidaste tu clave?"** en el login.
+2. `POST /api/auth/forgot-password` → genera token con `crypto.randomBytes(32)`.
+3. `INSERT` en `password_resets` con `expires_at = NOW() + 15 min`.
+4. Backend envía correo HTML militar C4ISR vía Nodemailer con enlace:
+   `https://paraguay-ffaa-metalstorm.fly.dev/reset-password?token=<TOKEN>`
+5. Piloto hace clic en el enlace → va a `/reset-password.html`.
+6. Ingresa nueva contraseña (mín 8 chars, 1 mayúscula, 1 minúscula, 1 número).
+7. `POST /api/auth/reset-password` → valida token, actualiza `password_hash`, incrementa `token_version`, marca `used = true`.
+8. Piloto hace login con nueva contraseña.
+
+### Auditoría
+
+Todos los eventos se registran en `security_events`:
+- `PASSWORD_RESET_REQUESTED`
+- `PASSWORD_RESET_SUCCESS`
+
+---
+
+## ⚠️ Limitación Crítica: Correos Reales
+
+**Este es un punto crítico de la operación actual:**
+
+- **Solo ~2% de los pilotos tienen Gmail real vinculado** (únicamente `PJPIROVANI`, OWNER).
+- **El 98% restante tiene emails `@ffaa.py` ficticios** que rebotan (el dominio no existe en internet).
+- **Consecuencia:** El flujo de "¿Olvidaste tu clave?" solo funciona para quienes tienen Gmail real.
+- **Método principal de recuperación:** Reset administrativo desde el Panel Admin (genera clave temporal `MS-XXXX-XXXX`).
+- **Plan a futuro:** Campaña de vinculación de Gmail para todos los pilotos.
+
+---
+
+## 🔒 Mensaje Enriquecido al Bloquear Inactivos (v3.9.9)
+
+A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) implementa un mensaje detallado cuando un piloto con `status = 'INACTIVE'` intenta acceder.
+
+**Ejemplo de respuesta:**
+```json
+{
+  "error": "⚠️ ACCESO DENEGADO: Su cuenta ha sido inactivada por el Comandante [NICK] el [FECHA]. No tiene acceso a la plataforma del escuadrón. Comuníquese con el Comando Central para más información.",
+  "code": "USER_INACTIVE",
+  "details": {
+    "inactive_by": "el Comandante [NICK]",
+    "inactive_at": "2026-09-10T01:15:01.048Z",
+    "contact": "comando.central@ffaa.py"
+  }
+}
+```
+
+**Fallback:** Si no existe registro en `audit_logs`, el mensaje dice genéricamente "el Comando Central".
 
 ---
 
@@ -52,7 +120,7 @@ Específicamente, en la versión v3.9.8 se ha consolidado:
 
 ---
 
-## 🛡️ Estado de Módulos (Actualizado 2026-09-15 - v3.9.8)
+## 🛡️ Estado de Módulos (Actualizado 2026-09-15 - v3.9.9)
 
 | Módulo | Estado | Detalle |
 |--------|--------|---------|
@@ -82,6 +150,7 @@ Específicamente, en la versión v3.9.8 se ha consolidado:
 El sistema de aviones fue normalizado, calibrado y dotado de validación técnica de armamento:
 
 - ✅ 44 modelos en el catálogo maestro con armas y subsistemas específicos (`sistemas_disponibles` en JSONB)
+- ✅ **`upgrade_nodes_v2` documentada:** Tabla con 3.072 filas que modela el árbol de mejoras Starform Upgrades 2.0
 - ✅ Validación previa en `updatePlaneSystem` (`src/controllers/planes.controller.js`) que impide calibrar sistemas no soportados (ej: cañones en F-111 / J-20)
 - ✅ 10 mods disponibles con efectos numéricos (m1..m10 en 5 niveles)
 - ✅ 4 subsistemas mejorables (Fuselaje, Motor, Aviónica, Armas/Cañones según disponibilidad)
@@ -117,7 +186,7 @@ Cada modelo en `plane_models` define detalladamente su arquitectura:
 
 ---
 
-## 🎨 9. Datos de la Wiki e i18n Integrados (v3.9.8)
+## 🎨 9. Datos de la Wiki e i18n Integrados (v3.9.9)
 - **Fuente:** https://metalstorm.wiki.gg/wiki/Aircraft
 - **Fecha de extracción:** 2026-09-12 (Traducción DeepL consolidada 2026-09-15)
 - **Volumen:**

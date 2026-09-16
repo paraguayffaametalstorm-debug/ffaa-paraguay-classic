@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v3.9.8).**  
+> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v3.9.9).**  
 > **Destino Operacional:** Fly.io (Región `gru` - São Paulo) & Supabase PostgreSQL Cloud.
 
 ---
@@ -41,10 +41,12 @@ GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxx
 GOOGLE_CALLBACK_URL=https://ffaa-paraguay-classic.fly.dev/api/auth/google/callback
 
 # Notificaciones y Correo Táctico (Reseteo de 15 Minutos)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=notificaciones@ffaa.py
-SMTP_PASS=app_password_militar_16_caracteres
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=paraguayffaa.metalstorm@gmail.com
+EMAIL_PASS=tu_contraseña_de_aplicacion_de_16_caracteres
+EMAIL_FROM="PARAGUAY-FFAA | METALSTORM" <paraguayffaa.metalstorm@gmail.com>
 ```
 
 ---
@@ -113,7 +115,7 @@ primary_region = "gru"
 
 ## 5. 🗄️ Validación de Esquema de Base de Datos (Supabase)
 
-Antes de autorizar tráfico operativo en v3.9.8, verificar que las siguientes tablas y columnas existan en Supabase:
+Antes de autorizar tráfico operativo en v3.9.9, verificar que las siguientes tablas y columnas existan en Supabase:
 
 1. **Tabla `plane_models`:**
    - Asegurar columnas de texto e internacionalización: `descripcion_es` (TEXT), `historia_es` (TEXT), `recomendaciones_es` (JSONB).
@@ -125,15 +127,17 @@ Antes de autorizar tráfico operativo en v3.9.8, verificar que las siguientes ta
    - `planes` (cazas registrados por piloto).
    - `plane_upgrades` (auditoría de mejoras de Fuselaje, Motor, Aviónica, Armas).
    - `plane_mods` (10 mods oficiales) y `mod_effects` (50 filas de niveles).
+   - `upgrade_nodes_v2` (3.072 filas del árbol de mejoras Starform Upgrades 2.0).
+   - `password_resets` (tokens de restablecimiento de contraseña con vigencia de 15 min).
 
 ---
 
-## 6. 📱 Política de Cache Invalidation y PWA (v3.9.8)
+## 6. 📱 Política de Cache Invalidation y PWA (v3.9.9)
 
 Al desplegar una nueva versión mayor o menor:
 1. **Actualizar el identificador de cache en `sw.js`:**
    ```javascript
-   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.8';
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.9';
    ```
 2. **Comportamiento del Service Worker:**
    - Durante la fase de `install`, cachea los activos estáticos y vistas HTML.
