@@ -77,12 +77,12 @@ app.use(
 // Gzip / Deflate Compression
 app.use(compression());
 
-// CORS Whitelist Protection
-const allowedOriginPatterns = [
-  'https://paraguay-ffaa-metalstorm.fly.dev',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
-];
+// CORS Whitelist Protection (HALL-002: whitelist estricta)
+// Los orígenes permitidos se definen en src/config/env.js vía ALLOWED_ORIGINS
+// (o el default hardcodeado que incluye la app de producción y localhost de dev).
+const allowedOrigins = new Set(
+  ENV.ALLOWED_ORIGINS.map(o => o.replace(/\/+$/, '').toLowerCase())
+);
 
 app.use(
   cors({
@@ -90,23 +90,14 @@ app.use(
       // Allow requests with no origin (e.g. mobile apps, curl, same-origin, PWA)
       if (!origin) return callback(null, true);
 
-      const normalizedOrigin = origin.replace(/\/+$/, '');
-      const isAllowed =
-        ENV.ALLOWED_ORIGINS.some(o => o.replace(/\/+$/, '') === normalizedOrigin) ||
-        allowedOriginPatterns.includes(normalizedOrigin) ||
-        normalizedOrigin.includes('paraguay-ffaa-metalstorm.fly.dev') ||
-        normalizedOrigin.endsWith('.fly.dev') ||
-        normalizedOrigin.endsWith('.run.app') ||
-        normalizedOrigin.endsWith('.google.com') ||
-        normalizedOrigin.includes('localhost') ||
-        normalizedOrigin.includes('127.0.0.1');
+      const normalizedOrigin = origin.replace(/\/+$/, '').toLowerCase();
 
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        console.warn(`⚠️ [CORS] Origen bloqueado: ${origin}`);
-        callback(new Error(`Acceso CORS bloqueado para el origen: ${origin}`));
+      if (allowedOrigins.has(normalizedOrigin)) {
+        return callback(null, true);
       }
+
+      console.warn(`⚠️ [CORS] Origen bloqueado: ${origin}`);
+      return callback(new Error(`Acceso CORS bloqueado para el origen: ${origin}`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
