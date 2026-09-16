@@ -19,6 +19,46 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 
 ## 🛠️ Detalle de Fixes Implementados
 
+### 🚨 Mitigación de Emergencia — HALL-001 (JWT_SECRET en Fly.io)
+
+**Fecha:** 2026-09-16  
+**Fase:** 0.1 — Contención de Emergencia  
+**Archivos afectados:** Ninguno (configuración externa en Fly.io)  
+**Severidad:** 🔴 CRÍTICA (mitigada parcialmente)  
+**Estado:** 🟡 MITIGADO PARCIALMENTE — Fix definitivo en Fase 1, Tarea 1.1
+
+**Problema Detectado:**  
+El archivo `src/config/env.js` define un fallback hardcodeado para el secreto JWT. Si la variable de entorno no está definida, el servidor arranca con un secreto públicamente conocido en el repositorio, permitiendo a un atacante forjar tokens JWT válidos y suplantar a cualquier usuario del escuadrón (incluyendo OWNER).
+
+**Mitigación Aplicada:**  
+Se configuró `JWT_SECRET` como secret en Fly.io con un valor aleatorio criptográficamente seguro:
+
+`fly secrets set JWT_SECRET="$(openssl rand -base64 48)" -a paraguay-ffaa-metalstorm`
+
+**Evidencia de Validación:**
+
+- `fly secrets list` → `JWT_SECRET | c851b45ed89bc61e | Deployed`
+- Rolling deploy: `✔ [1/2]` y `✔ [2/2]` — sin downtime.
+- Health check `servicecheck-00-http-3000` passing.
+- Supabase Diagnostic OK (users / performances / events).
+- Logs sin errores nuevos tras reinicio.
+
+**Impacto Operativo:**  
+- Tokens JWT previos invalidados. Los usuarios deberán iniciar sesión nuevamente (una sola vez).
+- Sin downtime durante el rolling deploy.
+
+**Rollback:**  
+`fly secrets unset JWT_SECRET -a paraguay-ffaa-metalstorm`  
+> ⚠️ NO recomendado. Revertir deja el sistema vulnerable al fallback público.
+
+**Pendiente (Fase 1, Tarea 1.1):**  
+Eliminar el fallback hardcodeado en `src/config/env.js` para que el servidor NO arranque si `NODE_ENV=production` y `JWT_SECRET` está vacío.
+
+**Estado:** ✅ MITIGADO — Pendiente fix definitivo en Fase 1
+
+---
+
+
 ### 🔹 Fix #1: Desacoplamiento UUID vs INTEGER en `changePassword()`
 - **Fecha:** 2026-09-09
 - **Archivo Principal:** `src/controllers/auth.controller.js`
