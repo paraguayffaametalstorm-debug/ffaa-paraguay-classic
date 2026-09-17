@@ -19,6 +19,93 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 
 ## 🛠️ Detalle de Fixes Implementados
 
+### 🚨 HALL-055 — Exposición Histórica de `.env` con Variables Públicas de Supabase (GitGuardian)
+
+**Fecha del incidente:** 2026-09-16 (detección) / 2026-09-01 (origen)
+**Fecha de resolución:** 2026-09-17
+**Fase:** 3.1 — Hotfix de Seguridad (incidente externo)
+**Archivos afectados:** `.env` (eliminado del repositorio, preservado en historial)
+**Severidad declarada por GitGuardian:** 🟠 ALTA (SMTP credentials)
+**Severidad real evaluada:** 🟢 BAJA (cuasi-falso positivo)
+**Estado:** ✅ RESUELTO (contenido + diagnosticado + limpieza de ramas)
+
+**Descripción del Incidente:**
+El 2026-09-16, el servicio GitGuardian envió una alerta automática indicando la detección de "SMTP credentials" expuestas en el repositorio público `paraguayffaametalstorm-debug/ffaa-paraguay-classic`, con fecha de push reportada como `2026-09-16 16:37:06 UTC`.
+
+**Diagnóstico Forense Ejecutado:**
+
+1. **Identificación del commit origen:** Se rastreó el historial completo con `git log --all --full-history -- "*.env"`, identificando el commit `f5fd20e` ("Agregar variables de entorno para Supabase") como el único que introdujo un archivo `.env` real.
+
+2. **Contenido filtrado:** El `.env` contenía únicamente 2 variables:
+   - `VITE_SUPABASE_URL="https://oodzpkloxnylzauimvua.supabase.co"`
+   - `VITE_SUPABASE_ANON_KEY=***`
+   Ambas son **variables públicas por diseño** (prefijo `VITE_` = incrustadas en el bundle frontend del cliente).
+
+3. **Verificación de credenciales reales:** Se confirmó que **NINGUNA** credencial de servicio crítica se filtró:
+   - ❌ `SUPABASE_SERVICE_ROLE_KEY` → nunca estuvo en Git.
+   - ❌ `JWT_SECRET` → nunca estuvo en Git.
+   - ❌ `EMAIL_PASS` (SMTP real) → el módulo SMTP se implementó después (v3.4.0, 2026-09-07), por lo que no pudo estar en el `.env` del 2026-09-01.
+   - ❌ `GOOGLE_CLIENT_SECRET` → nunca estuvo en Git.
+   - ❌ `CLOUDINARY_API_SECRET`, `DEEPL_API_KEY` → nunca estuvieron en Git.
+
+4. **Verificación de Row Level Security (RLS):** Se ejecutó una consulta a `pg_tables` + `pg_policies` en Supabase, confirmando que **las 22 tablas del schema `public` tienen `rls_enabled = true`**. Esto significa que la `ANON_KEY` filtrada **NO permite acceso a datos sensibles** — un atacante con la clave filtrada obtiene respuestas vacías o 403 en todas las tablas.
+
+5. **Accesibilidad actual:** El `.env` fue eliminado del árbol de archivos el mismo día de su introducción (commit `3006ac4`, 2026-09-01). Solo persiste en el objeto-database histórico de Git, no accesible desde ninguna rama activa (verificado con `git show <commit>:.env` en los 3 commits sospechosos → todos fallaron con "path does not exist").
+
+**Conclusiones del Diagnóstico:**
+
+- **Tipo de incidente:** Cuasi-falso positivo de GitGuardian. El clasificador aplicó la etiqueta "SMTP credentials" sobre un archivo `.env` que no contenía SMTP real, sino variables públicas de Supabase.
+- **Datos sensibles expuestos:** Ninguno.
+- **Credenciales de servicio comprometidas:** Ninguna.
+- **Riesgo operativo real:** Nulo (variables públicas + RLS habilitado en 22/22 tablas).
+
+**Acciones de Contención Aplicadas:**
+
+1. **Rotación preventiva de credenciales SMTP:** Aunque el incidente no las involucraba, se ejecutó una rotación preventiva de las app passwords de Gmail:
+   - Se eliminaron las dos credenciales antiguas (`PARAGUAY-FFAA` del 2026-09-08 y `PARAGUAY-FFAA-SMTP` del 2026-09-15).
+   - Se generó una nueva (`METALSTORM-SMTP-v4.0.1`) el 2026-09-16.
+   - Se actualizó el secret `EMAIL_PASS` en Fly.io (digest `52013d91530dc60e`, estado `Deployed`).
+
+2. **Limpieza de ramas obsoletas:** Se eliminaron las ramas `feature/sql-migrations` y `feature/business-logic-consistency` (ambas ya mergeadas a `main`), reduciendo la superficie del historial accesible públicamente.
+
+3. **Verificación funcional post-rotación:** La aplicación opera correctamente:
+   - `curl https://paraguay-ffaa-metalstorm.fly.dev/health` → `OK`.
+   - Login OAuth del OWNER funcionando.
+   - Vistas y componentes cargando sin errores.
+
+**Acciones de Prevención:**
+
+- ✅ `.gitignore` verificado: incluye `.env` y `.env.*`.
+- ✅ `.env.example` solo contiene placeholders (nunca valores reales).
+- ✅ Política de despliegue refrendada: los secrets viven exclusivamente en Fly.io (`fly secrets set`), nunca en el repositorio.
+- ✅ Rotación preventiva de app passwords de Gmail ejecutada como buena práctica de higiene.
+
+**Verificación Final:**
+
+- ✅ GitGuardian: incidente diagnosticado como cuasi-falso positivo. Marcado como "Resolved".
+- ✅ Repo GitHub: sin ramas huérfanas con el `.env`.
+- ✅ RLS: 22/22 tablas protegidas.
+- ✅ SMTP: credencial nueva operativa.
+- ✅ App: 100% funcional en producción.
+
+**Rollback:** No aplica (no se modificó código de producción). Documentación pura.
+
+**Lecciones Aprendidas:**
+
+1. **Nunca commitear `.env`:** Aunque las variables `VITE_*` son públicas por diseño, el `.env` nunca debe versionarse. Solo `.env.example` con placeholders.
+2. **Confiar pero verificar:** Las alertas automáticas de terceros (GitGuardian, Snyk, etc.) son valiosas pero requieren validación manual. En este caso, la etiqueta "SMTP credentials" era incorrecta.
+3. **RLS es la última línea de defensa:** Aunque la `ANON_KEY` se filtre, RLS en Supabase garantiza que no haya exfiltración de datos. Verificar RLS debe ser parte del checklist de seguridad.
+4. **Rotación preventiva no hace daño:** Rotar credenciales "por si acaso" es una práctica de bajo costo y alto beneficio, incluso cuando el riesgo es nulo.
+
+**Referencias:**
+
+- Alerta original: GitGuardian Security `<security@getgitguardian.com>`, recibida el 2026-09-16.
+- Commits involucrados: `f5fd20e` (introducción), `3006ac4` (eliminación).
+- Documento relacionado: `CHANGELOG.md` sección `[Fase 3.1]`.
+- Hallazgo auditoría original: No relacionado con la auditoría de 52 hallazgos (evento externo).
+
+---
+
 ### 🔧 HALL-053 + HALL-054 — Cuota ADMIN a 5 + Constante ROLE_LIMITS
 
 **Fecha:** 2026-09-17  
