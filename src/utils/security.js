@@ -44,45 +44,39 @@ export function generateRecoveryCode() {
 }
 
 /**
- * Obtiene el siguiente user_id entero incremental consultando el valor máximo actual en la tabla users
+ * Obtiene el siguiente user_id entero incremental de forma ATÓMICA
+ * consultando la secuencia PostgreSQL `user_id_seq` vía RPC.
+ *
+ * HALL-024: Elimina race condition (ya no hace SELECT max + INSERT).
+ * HALL-025: Lanza excepción en error (ya no retorna 1).
+ *
+ * Depende de:
+ *   - Secuencia `user_id_seq` en Supabase (creada en sql/025_user_id_sequence.sql).
+ *   - Función RPC `get_next_user_id()` en Supabase.
+ *
  * @param {import('@supabase/supabase-js').SupabaseClient} supabase - Cliente de Supabase
- * @returns {Promise<number>} Siguiente user_id correlativo entero
+ * @returns {Promise<number>} Siguiente user_id correlativo entero (atómico)
+ * @throws {Error} Si Supabase no está disponible o la RPC falla
  */
 export async function getNextUserId(supabase) {
     if (!supabase) {
         throw new Error('Cliente Supabase no disponible para generar user_id');
     }
 
-    try {
-        const { data, error } = await supabase
-            .from('users')
-            .select('user_id')
-            .not('user_id', 'is', null);
+    const { data, error } = await supabase.rpc('get_next_user_id');
 
-        if (error) {
-            console.error('⚠️ [getNextUserId] Error consultando user_id máximo:', error.message);
-            return 1;
-        }
-
-        let maxUserId = 0;
-        if (Array.isArray(data)) {
-            for (const row of data) {
-                const val = row?.user_id;
-                // Verificar que sea estrictamente un entero numérico o string numérico puro (ej. "12", no UUIDs)
-                if (typeof val === 'number' && Number.isInteger(val)) {
-                    if (val > maxUserId) maxUserId = val;
-                } else if (typeof val === 'string' && /^\d+$/.test(val.trim())) {
-                    const parsed = parseInt(val.trim(), 10);
-                    if (Number.isInteger(parsed) && parsed > maxUserId) {
-                        maxUserId = parsed;
-                    }
-                }
-            }
-        }
-
-        return Number.isInteger(maxUserId) && maxUserId >= 0 ? maxUserId + 1 : 1;
-    } catch (err) {
-        console.error('⚠️ [getNextUserId] Excepción al obtener siguiente user_id:', err);
-        return 1;
+    if (error) {
+        console.error('❌ [getNextUserId] Error invocando RPC get_next_user_id:', error.message);
+        throw new Error(`No se pudo obtener el siguiente user_id: ${error.message}`);
     }
+
+    // La RPC devuelve un entero; validación defensiva por si el driver lo envuelve en string
+    const nextId = typeof data === 'number' ? data : parseInt(data, 10);
+
+    if (!Number.isInteger(nextId) || nextId <= 0) {
+        console.error('❌ [getNextUserId] RPC devolvió un valor inválido:', data);
+        throw new Error(`Valor inválido recibido de get_next_user_id(): ${data}`);
+    }
+
+    return nextId;
 }
