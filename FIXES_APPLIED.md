@@ -18,6 +18,50 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 ---
 
 ## 🛠️ Detalle de Fixes Implementados
+### 🗄️ HALL-048 — Infraestructura como Código (SQL Migrations)
+
+**Fecha:** 2026-09-16  
+**Fase:** 2 — Infraestructura como Código  
+**Archivos:** `sql/*.sql` (26 archivos), `sql/README.md`, `DEPLOYMENT_GUIDE.md`  
+**Commits:** `41fda3b`, `7918b22`, `d0d0af7`, `b74ba6b`, `1a7ef90`, `de0bd4f`, `eb5255b`, `04d42e7`, `e730291`  
+**Severidad:** 🟠 ALTA (infraestructura / reproducibilidad)  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+Solo existía `sql/upgrades_2_0.sql` en el repositorio, pero Supabase tenía 22 tablas activas. Las 21 tablas restantes no tenían archivos de migración versionados, violando el principio de infraestructura como código. Era imposible recrear la base de datos desde cero en un proyecto nuevo de Supabase.
+
+**Solución Aplicada:**
+
+1. **Dump de referencia** (`sql/000_full_schema_dump.sql`): Índice con las 22 tablas, sus columnas clave y punteros a los archivos individuales.
+2. **Reorganización** de los 4 archivos existentes con prefijos numéricos y archivo obsoleto movido a `sql/legacy/`.
+3. **22 archivos DDL** creados (001 a 022) con esquema idempotente (`CREATE TABLE IF NOT EXISTS`).
+4. **Migraciones compuestas** preservadas: `023_upgrades_2_0.sql` (Upgrades 2.0) y `024_fix_users_null_user_id.sql` (fix de datos).
+5. **Guía de migraciones** (`sql/README.md`): orden de ejecución, procedimiento de recreación, notas de idempotencia y BM.
+6. **Documentación de despliegue** (`DEPLOYMENT_GUIDE.md`, sección 5.1): procedimiento completo de recreación desde cero.
+
+**Verificación:**
+
+- 26 archivos en `sql/` con prefijos numéricos correctos.
+- `sql/README.md` describe el orden de ejecución.
+- `DEPLOYMENT_GUIDE.md` sección 5.1 documenta el procedimiento completo.
+- Archivos obsoletos movidos a `sql/legacy/`.
+- Todos los commits aplicados sin conflictos.
+
+**Tareas Pendientes Documentadas:**
+
+- [ ] **Fase 3:** Corregir FK `plane_upgrades.user_id` (INT → UUID).
+- [ ] **Fase posterior:** Rediseñar el módulo Black Market (`bm_*`).
+- [ ] **Verificación funcional:** Ejecutar los 24 archivos en un Supabase de prueba.
+
+**Rollback:**  
+Revertir la rama `feature/sql-migrations` completa o `git revert` de los commits específicos. No afecta a producción (solo agrega archivos).
+
+**Impacto:**  
+- Infraestructura 100% versionada.
+- Recreación de BD desde cero documentada y reproducible.
+- Base para auditorías futuras y transferencia de propiedad.
+
+---
 
 ### 🔴 HALL-001 (Definitivo) — Eliminación del Fallback de JWT_SECRET
 
