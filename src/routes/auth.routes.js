@@ -11,7 +11,7 @@ import {
     googleCallback, 
     googleStatus 
 } from '../controllers/auth.controller.js';
-import { requireAuth } from '../middlewares/auth.js';
+import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
@@ -19,7 +19,7 @@ const router = Router();
 router.post('/login', authLimiter, login);
 router.get('/verify', requireAuth, verifyMe);
 router.get('/me', requireAuth, verifyMe);
-router.post('/register', register);
+router.post('/register', authLimiter, requireAuth, requireRole('ADMIN', 'OWNER'), register);
 router.post('/change-password', requireAuth, changePassword);
 router.put('/change-password', requireAuth, changePassword);
 router.post('/forgot-password', authLimiter, forgotPassword);
