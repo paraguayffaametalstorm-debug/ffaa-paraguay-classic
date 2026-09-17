@@ -18,7 +18,7 @@ router.post('/offline', requireAuth, (req, res) => {
   res.json({ success: true, count: onlineUsers.size });
 });
 
-router.get('/active', (req, res) => {
+router.get('/active', requireAuth, (req, res) => {
   res.json({ count: onlineUsers.size });
 });
 
