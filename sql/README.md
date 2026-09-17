@@ -2,7 +2,7 @@
 
 > **Documentación oficial del versionado del esquema de base de datos en Supabase PostgreSQL.**  
 > **Fase:** 2 (Infraestructura como Código) · **Hallazgo:** HALL-048  
-> **Última actualización:** 2026-09-17 (v1.1 — agregados archivos 025, 026, 027)
+> **Última actualización:** 2026-09-17 (v1.2 — agregados archivos 028, 029)
 
 ---
 
@@ -38,6 +38,8 @@
 | 025 | `025_user_id_sequence.sql` | Secuencia atómica `user_id_seq` + RPC `get_next_user_id()` |
 | 026 | `026_fix_user_settings_fk.sql` | Corrección de FK de `user_settings` a `public.users` |
 | 027 | `027_backups_table.sql` | Tabla `backups` con RLS `no_public_access` |
+| 028 | `028_events_master.sql` | Tabla unificada de eventos (SQ, BM, futuros) — Rediseño |
+| 029 | `029_event_participations.sql` | Tabla unificada de participaciones — Rediseño |
 
 **Archivos legacy (no ejecutar):** `legacy/updates_v3.4.0.sql` — versión obsoleta de `password_resets` con tipos incorrectos. Conservado como referencia histórica.
 
@@ -74,6 +76,8 @@ Los archivos deben ejecutarse **en orden numérico ascendente** (001, 002, 003, 
 25. `025_user_id_sequence.sql` (crear secuencia y RPC para `user_id`)
 26. `026_fix_user_settings_fk.sql` (corregir FK de `user_settings`)
 27. `027_backups_table.sql` (tabla de backups, independiente)
+28. `028_events_master.sql` (tabla unificada de eventos)
+29. `029_event_participations.sql` (depende de `events_master` y `users`)
 
 ---
 
@@ -83,7 +87,7 @@ Los archivos deben ejecutarse **en orden numérico ascendente** (001, 002, 003, 
 
 1. **Crear un proyecto nuevo en Supabase.**
 2. **Abrir el SQL Editor** del proyecto.
-3. **Ejecutar los archivos en orden** (001, 002, ..., 027):
+3. **Ejecutar los archivos en orden** (001, 002, ..., 029):
    - Copiar el contenido de cada archivo.
    - Pegar en el SQL Editor.
    - Presionar **RUN**.
@@ -95,7 +99,7 @@ Los archivos deben ejecutarse **en orden numérico ascendente** (001, 002, 003, 
 5. **Ejecutar el script de verificación de tablas:**
 
 ```sql
--- Verificar que las 23 tablas existen
+-- Verificar que las 25 tablas existen
 SELECT table_name 
 FROM information_schema.tables 
 WHERE table_schema = 'public' 
@@ -103,7 +107,7 @@ AND table_type = 'BASE TABLE'
 ORDER BY table_name;
 ```
 
-**Resultado esperado:** 23 tablas listadas.
+**Resultado esperado:** 25 tablas listadas.
 
 6. **Verificar las políticas RLS:**
 
@@ -189,6 +193,8 @@ sql/
 ├── 025_user_id_sequence.sql          # Secuencia atómica de user_id
 ├── 026_fix_user_settings_fk.sql      # Fix de FK de user_settings
 ├── 027_backups_table.sql             # Tabla de backups con RLS
+├── 028_events_master.sql             # Tabla unificada de eventos (rediseño)
+├── 029_event_participations.sql      # Participaciones unificadas (rediseño)
 ├── README.md                          # Este archivo
 └── legacy/
     └── updates_v3.4.0.sql            # (Histórico, no ejecutar)
@@ -215,8 +221,9 @@ sql/
 |---|---|---|
 | **v1.0** | 2026-09-16 | Creación inicial (Fase 2 — HALL-048) con 24 archivos (000-024). |
 | **v1.1** | 2026-09-17 | Agregados archivos 025, 026, 027. Notas de idempotencia ampliadas. Sección de estructura de directorio. Referencias actualizadas. |
+| **v1.2** | 2026-09-17 | Agregados archivos 028, 029 (rediseño de eventos). |
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-**Guía de Migraciones v1.1 · 2026-09-17 · Documento vivo**
+**Guía de Migraciones v1.2 · 2026-09-17 · Documento vivo**
