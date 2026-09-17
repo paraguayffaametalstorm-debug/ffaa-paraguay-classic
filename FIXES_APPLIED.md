@@ -19,6 +19,153 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 
 ## 🛠️ Detalle de Fixes Implementados
 
+### 🔒 HALL-033 — Endpoint `/api/presence/active` Protegido
+
+**Fecha:** 2026-09-17  
+**Fase:** 4 — Seguridad Secundaria  
+**Archivo:** `src/routes/presence.routes.js`  
+**Commit:** `a781cb3`  
+**Severidad:** 🟡 MEDIA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+El endpoint `GET /api/presence/active` exponía **el contador de usuarios en línea del escuadrón sin autenticación**. Cualquier persona podía monitorear la actividad operativa del escuadrón en tiempo real.
+
+**Nota adicional:** el contador está basado en un `Set` en memoria (`onlineUsers`), que es inconsistente con múltiples instancias de Fly.io. Ese problema (HALL-032) se resolverá en Fase 6 con migración a Supabase.
+
+**Solución Aplicada:**  
+Se agregó `requireAuth` al endpoint `/active` (los endpoints `/online` y `/offline` ya lo tenían):
+
+```javascript
+// Antes
+router.get('/active', (req, res) => {
+  res.json({ count: onlineUsers.size });
+});
+
+// Después
+router.get('/active', requireAuth, (req, res) => {
+  res.json({ count: onlineUsers.size });
+});
+```
+
+---
+
+### 🔒 HALL-036 + HALL-037 — Backups Persistentes con Sanitización de PII
+
+**Fecha:** 2026-09-17  
+**Fase:** 4 — Seguridad Secundaria  
+**Archivos:** `src/controllers/owner.controller.js`, `src/routes/owner.routes.js`, `sql/027_backups_table.sql`  
+**Commit:** `e02d2a3`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**
+
+- **HALL-036 (backups efímeros):** El sistema de backups del OWNER almacenaba solo **metadatos en un array en memoria** (`backupsHistory = []`). El JSON del backup **nunca se persistía**. Consecuencias: pérdida con cada reinicio/deploy, inconsistencia entre las 2 máquinas de Fly.io, imposibilidad de descargar el contenido.
+
+- **HALL-037 (sanitización incompleta):** El backup solo eliminaba `password_hash` y `password`. Los usuarios tenían más campos sensibles expuestos: `token_version`, `google_id`, `google_linked`, y PII completa (`email`, `email_institucional`, `email_personal`, `phone`).
+
+**Solución Aplicada:**
+
+**1. Nueva tabla `backups` (`sql/027_backups_table.sql`):**
+- `content JSONB` con el payload completo.
+- `hash_sha256` para integridad criptográfica.
+- `created_by UUID` + `created_by_nick` (desnormalizado).
+- Conteos: `users_count`, `performances_count`, `events_count`.
+- `tables_included TEXT[]`, `notes TEXT`, `version TEXT`.
+- Índices en `created_at DESC` y `created_by`.
+- RLS con política `no_public_access` (solo `service_role`).
+
+**2. Controlador refactorizado (`owner.controller.js`):**
+- **Constantes:** `MAX_BACKUPS = 30`, `BACKUP_VERSION = '4.1.0'`, `SENSITIVE_USER_FIELDS_DROP`, `SENSITIVE_USER_FIELDS_OBFUSCATE`.
+- **Helpers:** `obfuscateEmail()`, `obfuscatePhone()`, `sanitizeUser()`, `computeSha256()`, `pruneOldBackups()`.
+- **Sanitización:**
+  - Elimina: `password_hash`, `password`, `token_version`, `google_id`, `google_linked`.
+  - Ofusca: `email` → `p***@dominio.com`, `phone` → `+595***3456`.
+- **Endpoints:**
+  - `runManualBackup` → persiste + hash + prune + audita.
+  - `getBackupList` → consulta Supabase (solo metadatos).
+  - **NUEVO** `downloadBackup` → descarga con verificación de hash.
+  - **NUEVO** `deleteBackup` → eliminación manual.
+- **Auditoría:** eventos `BACKUP_CREATED`, `BACKUP_DOWNLOADED`, `BACKUP_DELETED`.
+
+**3. Rutas (`owner.routes.js`):**
+
+```javascript
+router.get('/backup/download/:id', downloadBackup);
+router.delete('/backup/:id', deleteBackup);
+```
+
+**Verificación:**
+- `node --check` OK en ambos archivos.
+- Diff: +379 inserciones, -29 eliminaciones.
+- Tests locales sin token: 4 endpoints → todos `401`.
+- Smoke test producción: `backup/list` y `backup/run` sin auth → `401`.
+
+**Nota:** Tests funcionales con token se omitieron por decisión operativa (evitar exponer tokens). Verificación post-deploy vía SQL en Supabase.
+
+**Rollback:** `git revert e02d2a3` + `DROP TABLE IF EXISTS backups;`
+
+---
+
+### 🔒 HALL-018 + HALL-019 + HALL-034 — Política Público/Privado en Endpoints GET
+
+**Fecha:** 2026-09-17  
+**Fase:** 4 — Seguridad Secundaria  
+**Archivos:** `src/routes/plane-models.routes.js`, `src/routes/bm.routes.js`  
+**Commit:** `16d64f0`  
+**Severidad:** 🟠 ALTA (HALL-019), 🟡 MEDIA (HALL-018, HALL-034)  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+Múltiples endpoints GET exponían información interna del escuadrón sin autenticación:
+
+- **HALL-019:** 5 endpoints de BM (`/events`, `/events/active`, `/events/:id`, `/stats`, `/leaderboard`) públicos. El `/leaderboard` exponía **nicks de pilotos del escuadrón, posiciones y actividad**.
+- **HALL-034:** 2 endpoints de plane-models (`/` y `/:id`) públicos. Incluían `?include_inactive=true`.
+- **HALL-018:** Catálogo de aviones `/api/planes/catalog/*` público — decisión de diseño: son datos del juego, no del escuadrón.
+
+**Solución Aplicada:**  
+Se agregó `requireAuth` a los 5 endpoints GET de BM y a los 2 endpoints GET de plane-models. El catálogo público `/api/planes/catalog/*` se mantiene público.
+
+**Verificación:**
+- `node --check` OK en ambos archivos.
+- Tests locales sin token: 6 endpoints → todos `401`.
+- Catálogo público: `200` (sin regresión).
+
+**Rollback:** `git revert 16d64f0`
+
+---
+
+### 🔒 HALL-004 + HALL-009 — Protección de `/register` + Rate Limiting
+
+**Fecha:** 2026-09-17  
+**Fase:** 4 — Seguridad Secundaria  
+**Archivo:** `src/routes/auth.routes.js`  
+**Commit:** `20934e2`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+- **HALL-004:** El endpoint `POST /api/auth/register` estaba **completamente expuesto sin autenticación**.
+- **HALL-009:** El endpoint `/register` no tenía rate limiting.
+
+**Solución Aplicada:**  
+Se modificaron 2 líneas en `src/routes/auth.routes.js`:
+
+- Import: `import { requireAuth, requireRole } from '../middlewares/auth.js';`
+- Endpoint: `router.post('/register', authLimiter, requireAuth, requireRole('ADMIN', 'OWNER'), register);`
+
+**Verificación:**
+- `node --check` OK.
+- Test local sin token: `401` con `code: AUTH_TOKEN_REQUIRED`.
+- Headers `RateLimit-*` presentes.
+- Test producción: `401`.
+- Login OAuth funcional.
+
+**Rollback:** `git revert 20934e2`
+
+---
+
 ### 🚨 HALL-055 — Exposición Histórica de `.env` con Variables Públicas de Supabase (GitGuardian)
 
 **Fecha del incidente:** 2026-09-16 (detección) / 2026-09-01 (origen)
