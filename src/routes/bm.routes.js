@@ -34,14 +34,14 @@ const router = Router();
 // 1. RUTAS DE EVENTOS BM
 // ============================================================
 
-// Listar eventos BM (público / autenticado)
-router.get('/events', getBmEvents);
+// Listar eventos BM (autenticado)
+router.get('/events', requireAuth, getBmEvents);
 
 // Evento activo actual
-router.get('/events/active', getBmActiveEvent);
+router.get('/events/active', requireAuth, getBmActiveEvent);
 
 // Detalle de evento por ID
-router.get('/events/:id', getBmEventById);
+router.get('/events/:id', requireAuth, getBmEventById);
 
 // Rutas de administración de eventos (ADMIN / OWNER)
 router.post('/events', requireAuth, requireRole('ADMIN', 'OWNER'), createBmEvent);
@@ -81,9 +81,9 @@ router.get('/discount', requireAuth, getBmDiscount);
 router.post('/discount/purchase', requireAuth, purchaseBmDiscount);
 
 // Estadísticas globales del evento
-router.get('/stats', getBmStats);
+router.get('/stats', requireAuth, getBmStats);
 
 // Tabla de posiciones de combatientes en Black Market
-router.get('/leaderboard', getBmLeaderboard);
+router.get('/leaderboard', requireAuth, getBmLeaderboard);
 
 export default router;
