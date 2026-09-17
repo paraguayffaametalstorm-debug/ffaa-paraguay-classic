@@ -1,8 +1,8 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-16  
-> **Versión Activa:** v4.0.0  
+> **Fecha de Congelamiento:** 2026-09-17  
+> **Versión Activa:** v4.0.1 (Fase 3 completada)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -173,7 +173,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Integración Wiki (Historia)** | ✅ Funcional | 44 aviones con trivia (traducida al español) |
 | **Integración Wiki (Paints)** | ✅ Funcional | 310+ paints en galería |
 | **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
-| **Integración Wiki (Loadout)** | ✅ Funcional | Stats detalladas por arma |
+| **Jerarquía Reforzada (Fase 3)** | ✅ Funcional | `ROLE_LIMITS`, validación tipada, secuencia atómica |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 

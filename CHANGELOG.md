@@ -6,6 +6,98 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [Fase 3] - 2026-09-17
+
+### 🔧 Consistencia de Lógica de Negocio — 9 hallazgos resueltos + 2 derivados
+
+#### Objetivo Cumplido
+
+Resolver inconsistencias en la lógica de negocio, eliminar fuentes de verdad duales y reforzar la jerarquía militar en los controladores del backend. Cerrar la brecha de reproducibilidad de Fase 2.
+
+#### Hallazgos Resueltos
+
+| Hallazgo | Descripción | Commit |
+|---|---|---|
+| HALL-053 | Cuota ADMIN actualizada de 3 → 5 (decisión del OWNER) | `5c7bfc1` |
+| HALL-054 | Constante centralizada `ROLE_LIMITS` | `5c7bfc1` |
+| HALL-013 | Validación de jerarquía en `savePerformance` | `20e02cb` |
+| HALL-028 | Validación estricta de `user_id` en `PerformanceSchema` | `77ebba8` |
+| HALL-024 | Race condition resuelta con secuencia PostgreSQL | `e4fa2d5` |
+| HALL-025 | `getNextUserId` lanza excepción en error (antes: `return 1`) | `e4fa2d5` |
+| HALL-044 | Validación tipada en `getSettings` / `updateSettings` | `b1f9c71` |
+| HALL-045 | `onConflict: 'user_id'` en upsert de settings | `b1f9c71` |
+| HALL-050 | Sincronización de valores m1-m10 en `DEPLOYMENT_STATE.md` | `d69d363` |
+| HALL-051 | Verificado: `Expert Cannons` ya presente en `TRAITS_ES` | (no requería cambio) |
+| HALL-052 | Alineación del schema `plane_upgrades` con producción | `968e34f` |
+
+#### Hallazgos Derivados (descubiertos durante Fase 3)
+
+| Derivado | Descripción | Commit |
+|---|---|---|
+| FK `user_settings` | FK mal apuntada a `auth.users` corregida a `public.users` | `b1f9c71` |
+| Schema `plane_upgrades` | 6 bugs en `sql/023_upgrades_2_0.sql` corregidos (columna fantasma, FK rota, índices inexistentes, CHECK faltantes) | `968e34f` |
+
+#### Archivos SQL Versionados
+
+- ➕ `sql/025_user_id_sequence.sql` — Secuencia atómica `user_id_seq` + RPC `get_next_user_id()` (HALL-024/025)
+- ➕ `sql/026_fix_user_settings_fk.sql` — Corrección de FK a `public.users` (HALL-044 derivado)
+- ✏️ `sql/023_upgrades_2_0.sql` — Alineado con producción (eliminadas columnas fantasma, CHECK constraints agregados, secuencia explícita)
+
+#### Archivos de Código Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `src/controllers/admin.controller.js` | Constante `ROLE_LIMITS` + cuota ADMIN 5 + mensajes dinámicos |
+| `src/controllers/performances.controller.js` | Validación de jerarquía en `savePerformance` |
+| `src/controllers/settings.controller.js` | Validación tipada UUID/INTEGER + `onConflict` + resolución de UUID real |
+| `src/utils/schemas.js` | Validación estricta de `user_id` en `PerformanceSchema` |
+| `src/utils/security.js` | `getNextUserId` refactorizado para usar RPC atómica |
+| `DEPLOYMENT_STATE.md` | Valores de mods m1-m10 sincronizados con la Wiki oficial |
+
+#### Verificación en Producción
+
+- ✅ **Deploy a Fly.io exitoso** (2 máquinas, rolling strategy, sin downtime, 60 MB de imagen).
+- ✅ **Smoke test 8/8 PASS:**
+  - Dashboard `GET /api/dashboard/summary` → OK
+  - Settings `GET/PUT /api/settings` → OK (persistencia verificada)
+  - Admin `GET /api/admin/users` → 61 usuarios (28 activos, 33 inactivos)
+  - Admin `GET /api/admin/users/inactive` → 33 inactivos
+  - Performances `GET /api/performances/pilots` → 28 pilotos
+- ✅ **Tests locales previos:**
+  - `PerformanceSchema`: 8/8 casos PASS (4 válidos, 4 inválidos)
+  - `getNextUserId` integrado: devolvió `1007` (tipo `number`)
+  - `settings` upsert: UUID resuelto + upsert + verificación de no-duplicados
+
+#### ✅ Criterios de Cierre Cumplidos
+
+- ✅ HALL-013: Validación de jerarquía en `savePerformance`.
+- ✅ HALL-024: Race condition eliminada por diseño (secuencia atómica).
+- ✅ HALL-025: Excepción en lugar de `return 1`.
+- ✅ HALL-028: Validación estricta de `user_id`.
+- ✅ HALL-044: Validación tipada en settings.
+- ✅ HALL-045: `onConflict` especificado.
+- ✅ HALL-050/051/052: Documentación sincronizada.
+- ✅ HALL-053/054: Cuota ADMIN 5 + constante centralizada.
+- ✅ Smoke test en producción (8/8 PASS).
+- ✅ Deploy exitoso sin downtime.
+
+### 🎯 Entregable
+
+Rama `feature/business-logic-consistency` mergeada a `main` (fast-forward) y desplegada en producción.
+
+Commits de Fase 3:
+- `5c7bfc1` — HALL-053/054: ROLE_LIMITS + cuota ADMIN 5
+- `20e02cb` — HALL-013: jerarquía en savePerformance
+- `77ebba8` — HALL-028: validación user_id en PerformanceSchema
+- `e4fa2d5` — HALL-024/025: secuencia PostgreSQL atómica
+- `b1f9c71` — HALL-044/045: settings tipado + onConflict + FK fix
+- `d69d363` — HALL-050: sincronización de mods
+- `968e34f` — HALL-052: alineación de plane_upgrades
+
+**Total:** 7 commits, 9 archivos modificados, 215 inserciones, 66 eliminaciones.
+
+---
+
 ## 📌 [Fase 2] - 2026-09-16
 
 ### 🗄️ Infraestructura como Código — HALL-048 resuelto
