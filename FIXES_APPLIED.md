@@ -19,6 +19,188 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 
 ## 🛠️ Detalle de Fixes Implementados
 
+### 🔴 HALL-001 (Definitivo) — Eliminación del Fallback de JWT_SECRET
+
+**Fecha:** 2026-09-16  
+**Fase:** 1.1 — Seguridad Crítica  
+**Archivo:** `src/config/env.js`  
+**Commit:** `8215fcb`  
+**Severidad:** 🔴 CRÍTICA  
+**Estado:** ✅ RESUELTO DEFINITIVAMENTE
+
+**Problema Detectado:**  
+El código usaba `process.env.JWT_SECRET || 'ffaa_pry_metalstorm_jwt_super_secret_key_2026'`. Si la variable de entorno no estaba definida, el servidor arrancaba con un secret públicamente conocido, permitiendo a un atacante forjar tokens JWT válidos.
+
+**Solución Aplicada:**  
+Se agregó un bloque de validación al inicio del archivo:
+
+```javascript
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET no definido en producción. Abortando.');
+  process.exit(1);
+}
+```
+
+Y se cambió el fallback a `'dev-only-insecure-secret-change-me'` (solo para desarrollo).
+
+**Verificación:**  
+- `node --check src/config/env.js` → OK.
+- Test `NODE_ENV=production` + sin `JWT_SECRET` → el servidor **aborta** con mensaje de error.
+- Test `NODE_ENV=production` + con `JWT_SECRET` → el servidor arranca normalmente.
+- Producción: health checks passing, login operativo.
+
+**Rollback:**  
+`git revert 8215fcb`
+
+---
+
+### 🟠 HALL-022 — Validación de Jerarquía en Reset-Password
+
+**Fecha:** 2026-09-16  
+**Fase:** 1.2 — Seguridad Crítica  
+**Archivo:** `src/routes/admin.routes.js`  
+**Commit:** `2fdb862`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+Un ADMIN podía resetear la contraseña de otro ADMIN o incluso del OWNER, escalando privilegios sin autorización.
+
+**Solución Aplicada:**  
+Se añadieron 3 validaciones de jerarquía después de obtener el usuario objetivo:
+
+1. **Auto-reseteo bloqueado:** el actor no puede resetear su propia contraseña por esta vía (`SELF_RESET_FORBIDDEN`).
+2. **OWNER protegido:** nadie excepto el propio OWNER puede resetear su contraseña (`OWNER_PROTECTED`).
+3. **ADMIN limitado:** solo puede resetear a MIEMBRO y VETERANO (`HIERARCHY_FORBIDDEN`).
+
+**Además:** se registra `target_role` en `security_events` para auditoría.
+
+**Verificación:**  
+- Como ADMIN → resetear a MIEMBRO: ✅ funciona.
+- Como ADMIN → resetear a VETERANO: ✅ funciona.
+- Como ADMIN → resetear a otro ADMIN: ✅ 403 HIERARCHY_FORBIDDEN.
+- Como ADMIN → resetear al OWNER: ✅ 403 OWNER_PROTECTED.
+- Como OWNER → resetear a cualquiera (excepto a sí mismo): ✅ funciona.
+- Como OWNER → resetear a sí mismo: ✅ 403 SELF_RESET_FORBIDDEN.
+
+**Rollback:**  
+`git revert 2fdb862`
+
+---
+
+### 🟢 HALL-016 — Columna `rutas_sistemas` en Tabla `planes`
+
+**Fecha:** 2026-09-16  
+**Fase:** 1.3 — Seguridad Crítica  
+**Archivos:** `sql/upgrades_2_0.sql` + Supabase  
+**Commits:** `edadf11` + `ba4ff8a`  
+**Severidad:** 🟡 MEDIA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+El código de `updatePlaneSystems` intentaba persistir las rutas A/B elegidas por el piloto en una columna `rutas_sistemas` que no existía en la tabla `planes`. El fallback silencioso hacía que la funcionalidad no operara.
+
+**Solución Aplicada:**  
+Se añadió el bloque 1.0 al inicio de `sql/upgrades_2_0.sql`:
+
+`ALTER TABLE planes ADD COLUMN IF NOT EXISTS rutas_sistemas JSONB DEFAULT '{}'::jsonb;`
+
+Y se aplicó en Supabase.
+
+**Verificación:**  
+- `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'planes' AND column_name = 'rutas_sistemas'` → `rutas_sistemas | jsonb | '{}'::jsonb | YES`.
+- Verificación de datos: aviones existentes ya tienen `{}` como default.
+- (Pendiente) Test funcional de `PUT /api/planes/:id/systems` con rutas A/B → smoke test en producción.
+
+**Rollback:**  
+`ALTER TABLE planes DROP COLUMN IF EXISTS rutas_sistemas;`
+
+---
+
+### 🟠 HALL-002 — CORS Restringido a Whitelist Estricta
+
+**Fecha:** 2026-09-16  
+**Fase:** 1.4 — Seguridad Crítica  
+**Archivo:** `server.js`  
+**Commit:** `5ba274b`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+La lógica de CORS era extremadamente permisiva:
+- `endsWith('.fly.dev')` → permitía cualquier app Fly.io del mundo.
+- `endsWith('.run.app')` → permitía cualquier app Google Cloud Run.
+- `endsWith('.google.com')` → permitía cualquier subdominio de Google.
+- `includes('localhost')` → permitía `localhost.malicioso.com`.
+- `includes('127.0.0.1')` → permitía `127.0.0.1.malicioso.com`.
+
+**Solución Aplicada:**  
+Se reemplazó la lógica por validación estricta contra `ENV.ALLOWED_ORIGINS` con `Set`.
+
+**Verificación:**  
+- Login desde `paraguay-ffaa-metalstorm.fly.dev`: ✅ funciona.
+- Login desde `http://localhost:3000`: ✅ funciona (dev).
+- `curl` sin `Origin`: ✅ funciona.
+- Consola del navegador: cero errores de CORS.
+
+**Rollback:**  
+`git revert 5ba274b`
+
+---
+
+### 🟠 HALL-003 — Helmet con `frameguard` + `contentSecurityPolicy`
+
+**Fecha:** 2026-09-16  
+**Fase:** 1.5 — Seguridad Crítica  
+**Archivo:** `server.js`  
+**Commits:** `bb8cb9b` + `840168f`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+`helmet()` estaba configurado con `frameguard: false` y `contentSecurityPolicy: false`. Esto dejaba la app vulnerable a clickjacking y XSS.
+
+**Solución Aplicada:**  
+Se activó CSP con directivas específicas para `defaultSrc`, `scriptSrc`, `styleSrc`, `fontSrc`, `imgSrc`, `connectSrc`, `frameSrc`, `frameAncestors`, `workerSrc`.
+
+**Iteración:** el `imgSrc` inicial con 9 orígenes específicos fue reemplazado por `https:` tras detectar imágenes bloqueadas de origen no identificado.
+
+**Verificación:**  
+- `node --check server.js` → OK.
+- Smoke test en local: 12 vistas cargadas, cero errores de CSP.
+- Producción: cero errores de CSP tras deploy.
+
+**Rollback:**  
+`git revert 840168f bb8cb9b`
+
+---
+
+### 🟢 HALL-023 — Eliminación de `tls.rejectUnauthorized: false`
+
+**Fecha:** 2026-09-16  
+**Fase:** 1.6 — Seguridad Crítica  
+**Archivo:** `src/utils/email.js`  
+**Commit:** `acd7cef`  
+**Severidad:** 🟡 MEDIA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+El transporter de Nodemailer tenía `tls: { rejectUnauthorized: false }`, lo que desactivaba la validación de certificados TLS. Esto permitía ataques MITM.
+
+**Solución Aplicada:**  
+Se eliminó el bloque `tls: { rejectUnauthorized: false }`. Nodemailer usa `rejectUnauthorized: true` por defecto.
+
+**Verificación:**  
+- `node --check src/utils/email.js` → OK.
+- Gmail SMTP tiene certificados válidos → sin impacto operativo.
+
+**Rollback:**  
+`git revert acd7cef`
+
+---
+
 ### 🟠 HALL-053 — Cuota de ADMIN Inconsistente (Documentación vs. Realidad)
 
 **Fecha:** 2026-09-16  
@@ -98,7 +280,6 @@ Y reemplazar los 4 hardcodes por `ROLE_LIMITS.ADMIN`, `ROLE_LIMITS.VETERANO`, `R
 **Estado:** 🔍 DETECTADO — Pendiente refactor en Fase 3
 
 ---
-
 
 ### 🚨 Mitigación de Emergencia — HALL-001 (JWT_SECRET en Fly.io)
 

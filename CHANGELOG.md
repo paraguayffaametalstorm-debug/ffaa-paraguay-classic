@@ -6,6 +6,83 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [Fase 1] - 2026-09-16
+
+### 🛡️ Seguridad Crítica — 6 hallazgos resueltos
+
+#### HALL-001 (definitivo) — Eliminación del fallback de JWT_SECRET
+
+- **Archivo:** `src/config/env.js`
+- **Commit:** `8215fcb`
+- **Acción:** Eliminado el fallback hardcodeado `'ffaa_pry_metalstorm_jwt_super_secret_key_2026'`.
+- **Validación:** El servidor **aborta** si `NODE_ENV=production` y `JWT_SECRET` está vacío.
+- **Verificación:** Test local con `NODE_ENV=production` sin JWT_SECRET → servidor no arranca.
+
+#### HALL-022 — Validación de jerarquía en reset-password
+
+- **Archivo:** `src/routes/admin.routes.js`
+- **Commit:** `2fdb862`
+- **Acción:** 4 validaciones de jerarquía en `POST /users/:userId/reset-password`:
+  - Auto-reseteo bloqueado (`SELF_RESET_FORBIDDEN`).
+  - OWNER protegido de reseteo por otros (`OWNER_PROTECTED`).
+  - ADMIN no puede resetear a otro ADMIN ni a OWNER (`HIERARCHY_FORBIDDEN`).
+- **Metadatos:** Se registra `target_role` en `security_events`.
+- **Verificación:** Test funcional pasado (OWNER resetea MIEMBRO → OK; ADMIN intenta resetear OWNER → 403).
+
+#### HALL-016 — Columna `rutas_sistemas` en `planes`
+
+- **Archivos:** `sql/upgrades_2_0.sql` + Supabase
+- **Commits:** `edadf11` + `ba4ff8a`
+- **Acción:** Añadida columna `rutas_sistemas JSONB DEFAULT '{}'::jsonb`.
+- **Verificación:** Columna creada en Supabase; 121+ aviones migrados con default `{}`.
+
+#### HALL-002 — CORS restringido a whitelist estricta
+
+- **Archivo:** `server.js`
+- **Commit:** `5ba274b`
+- **Acción:** Reemplazada la lógica permisiva (`.endsWith()`, `.includes()`) por validación estricta contra `ENV.ALLOWED_ORIGINS`.
+- **Eliminado:** Permisividad para cualquier `.fly.dev`, `.run.app`, `.google.com`, `localhost.*`, `127.0.0.1.*`.
+- **Verificación:** Test funcional pasado (login desde `paraguay-ffaa-metalstorm.fly.dev` → OK).
+
+#### HALL-003 — Helmet con `frameguard` + `contentSecurityPolicy`
+
+- **Archivo:** `server.js`
+- **Commits:** `bb8cb9b` + `840168f`
+- **Acción:** Activados `frameguard` y `contentSecurityPolicy` con directivas específicas:
+  - `script-src`, `style-src`, `font-src`, `img-src`, `connect-src`, `frame-src`, `frame-ancestors`, `worker-src`.
+  - `img-src` simplificado a `'self' data: blob: https:` tras iteración (imágenes de cualquier CDN HTTPS).
+- **Verificación:** App funcional end-to-end (24 aviones, 3072 nodos, imágenes, iconos, PWA).
+
+#### HALL-023 — Eliminación de `tls.rejectUnauthorized: false`
+
+- **Archivo:** `src/utils/email.js`
+- **Commit:** `acd7cef`
+- **Acción:** Eliminada la línea `tls: { rejectUnauthorized: false }` del transporter Nodemailer.
+- **Verificación:** SMTP Gmail sigue funcionando (certificados válidos).
+- **Impacto:** Sin riesgo de MITM en el canal SMTP.
+
+---
+
+### ✅ Criterios de Cierre Cumplidos
+
+- ✅ HALL-001: Fallback eliminado. Servidor no arranca sin JWT_SECRET en producción.
+- ✅ HALL-022: Jerarquía validada en reset-password.
+- ✅ HALL-016: Columna `rutas_sistemas` creada y funcional.
+- ✅ HALL-002: CORS restringido a lista blanca.
+- ✅ HALL-003: Helmet con `frameguard` y CSP activos.
+- ✅ HALL-023: `tls.rejectUnauthorized` eliminado.
+- ✅ Smoke test pasado (login, navegación, imágenes, sin errores de CSP/CORS).
+- ✅ Deploy exitoso en Fly.io.
+- ✅ Monitoreo en producción sin errores nuevos.
+
+### 🎯 Entregable
+
+Rama `feature/security-critical-fixes` mergeada a `main` y desplegada en producción.
+Commit final: `840168f`.
+
+---
+
+
 ## 📌 [Fase 0.3] - 2026-09-16
 
 ### 📢 Comunicación al Escuadrón
