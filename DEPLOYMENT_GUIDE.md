@@ -136,6 +136,111 @@ Antes de autorizar tráfico operativo en v4.0.0, verificar que las siguientes ta
 
 ---
 
+## 5.1. 🏗️ Recreación de Base de Datos desde Cero (SQL Migrations)
+
+A partir de la **Fase 2 del Plan de Mejora Continua (HALL-048)**, el esquema completo de la base de datos está versionado en el repositorio bajo el directorio `sql/`. Esto permite recrear la base de datos desde cero en un proyecto Supabase nuevo.
+
+### 📂 Estructura del Directorio `sql/`
+sql/
+├── 000_full_schema_dump.sql # Índice de referencia de las 22 tablas
+├── 001_users.sql # Padrón militar de combatientes
+├── 002_performances.sql # Registro semanal de rendimiento
+├── 003_events.sql # Eventos operativos (Squadron)
+├── 004_normativas.sql # Reglamentos y circulares
+├── 005_plane_models.sql # Catálogo de 44 modelos de combate
+├── 006_plane_mods.sql # Catálogo de 10 mods oficiales
+├── 007_mod_effects.sql # Efectos numéricos de mods (50 filas)
+├── 008_planes.sql # Hangar personal de pilotos
+├── 009_plane_upgrades.sql # Auditoría de mejoras Upgrades 2.0
+├── 010_upgrade_nodes_v2.sql # Árbol de nodos Starform 2.0 (3072 filas)
+├── 011_upgrade_effects.sql # Efectos consolidados de upgrades
+├── 012_upgrade_effects_history.sql # Historial de cambios de efectos
+├── 013_password_resets.sql # Tokens de reset de contraseña (15 min)
+├── 014_recovery_codes.sql # Códigos de recuperación alternativos
+├── 015_user_settings.sql # Preferencias de usuario
+├── 016_security_events.sql # Eventos de seguridad (login, resets)
+├── 017_audit_logs.sql # Auditoría de cambios administrativos
+├── 018_error_logs.sql # Logs de errores del sistema
+├── 019_bm_events.sql # Black Market - Eventos
+├── 020_bm_missions.sql # Black Market - Misiones
+├── 021_bm_progress.sql # Black Market - Progreso
+├── 022_bm_discounts.sql # Black Market - Descuentos
+├── 023_upgrades_2_0.sql # Migración compuesta: Upgrades 2.0
+├── 024_fix_users_null_user_id.sql # Fix de datos: user_id a usuarios NULL
+├── README.md # Guía completa de migraciones
+└── legacy/
+└── updates_v3.4.0.sql # (Histórico, no ejecutar)
+
+### 🔄 Procedimiento de Recreación desde Cero
+
+**Cuándo usar este procedimiento:**
+- Al crear un proyecto Supabase nuevo (ej: entorno de staging).
+- Al recuperarse de una corrupción completa de la base de datos.
+- Al transferir el sistema a otro propietario.
+
+**Pasos:**
+
+1. **Crear un proyecto nuevo en Supabase:**
+   - Ir a [https://supabase.com/dashboard](https://supabase.com/dashboard).
+   - Crear un proyecto con región São Paulo (gru) para baja latencia.
+   - Anotar la `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY`.
+
+2. **Ejecutar los archivos SQL en orden:**
+   - Abrir el **SQL Editor** del proyecto.
+   - Para cada archivo del `001` al `024`:
+     - Copiar el contenido completo del archivo.
+     - Pegar en el editor.
+     - Presionar **RUN**.
+     - Verificar que no haya errores.
+   - **NO ejecutar los archivos en `legacy/`** (son históricos).
+
+3. **Verificar la creación de las 22 tablas:**
+
+~~~sql
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+~~~
+
+   **Resultado esperado:** 22 tablas listadas.
+
+4. **Verificar las políticas RLS:**
+   - Tabla `password_resets`: debe tener RLS habilitado con política `no_public_access`.
+   - Ejecutar:
+
+~~~sql
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE schemaname = 'public' AND rowsecurity = true;
+~~~
+
+5. **Configurar los secrets en Fly.io:**
+   - Actualizar `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` con los valores del nuevo proyecto:
+
+~~~bash
+fly secrets set SUPABASE_URL="https://nuevo-proyecto.supabase.co" -a paraguay-ffaa-metalstorm
+fly secrets set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..." -a paraguay-ffaa-metalstorm
+~~~
+
+6. **Restaurar los datos (si aplica):**
+   - Los archivos SQL recrean el **esquema** pero no los datos.
+   - Para datos de producción, usar respaldos previos (`pg_dump` con `--data-only`).
+   - Para datos mínimos de prueba (catálogo de aviones, mods, normativas), usar los scripts de importación documentados en `FIXES_APPLIED.md` (Fix #10, #13).
+
+### ⚠️ Notas Importantes
+
+1. **Idempotencia:** Todos los archivos usan `CREATE TABLE IF NOT EXISTS` e `CREATE INDEX IF NOT EXISTS`, por lo que pueden ejecutarse múltiples veces sin error. Los `ALTER TABLE ... ADD CONSTRAINT` no son idempotentes y pueden fallar en la segunda ejecución.
+
+2. **Black Market (BM):** Las tablas `bm_*` están marcadas con `TODO: REDISEÑO BM PENDIENTE`. El módulo se reescribirá en una fase posterior.
+
+3. **Bug de tipos detectado:** En `023_upgrades_2_0.sql`, la FK `plane_upgrades.user_id INT REFERENCES users(id)` apunta a `users.id` (que es UUID). Este bug debe corregirse en una fase posterior.
+
+4. **Documentación completa:** Para más detalles, ver `sql/README.md`.
+
+---
+
 ## 6. 📱 Política de Cache Invalidation y PWA (v4.0.0)
 
 Al desplegar una nueva versión mayor o menor:
