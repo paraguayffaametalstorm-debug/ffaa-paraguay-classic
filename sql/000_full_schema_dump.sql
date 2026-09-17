@@ -1,0 +1,460 @@
+-- ============================================================
+-- PARAGUAY-FFAA | METALSTORM
+-- ÍNDICE DE REFERENCIA DEL ESQUEMA DE BASE DE DATOS
+-- Fecha: 2026-09-16
+-- Fase: 2 (Infraestructura como Código)
+-- Hallazgo: HALL-048
+--
+-- PROPÓSITO:
+--   Este archivo es un MAPA DE REFERENCIA del schema `public`
+--   de Supabase. Contiene la lista de las 22 tablas activas
+--   con sus columnas principales y punteros a los archivos
+--   individuales de migración (001-022).
+--
+-- PARA EL DDL COMPLETO DE CADA TABLA:
+--   Ver los archivos sql/001_*.sql a sql/022_*.sql
+--
+-- PARA RECREAR LA BASE DE DATOS DESDE CERO:
+--   1. Ejecutar los archivos en orden numérico (001, 002, ...)
+--   2. Verificar las políticas RLS
+--   3. Ver sql/README.md para el procedimiento completo
+-- ============================================================
+
+
+-- ============================================================
+-- LISTA DE LAS 22 TABLAS ACTIVAS
+-- ============================================================
+
+-- Core (Usuarios y Autenticación)
+-- | #  | Tabla             | Archivo                 | Registros |
+-- |----|-------------------|-------------------------|-----------|
+-- | 1  | users             | 001_users.sql           | 61        |
+-- | 2  | user_settings     | 015_user_settings.sql   | 0         |
+-- | 3  | password_resets   | 013_password_resets.sql | 0         |
+-- | 4  | recovery_codes    | 014_recovery_codes.sql  | 0         |
+
+-- Rendimiento y Eventos
+-- | #  | Tabla             | Archivo                 | Registros |
+-- |----|-------------------|-------------------------|-----------|
+-- | 5  | performances      | 002_performances.sql    | 26        |
+-- | 6  | events            | 003_events.sql          | 1         |
+
+-- Normativas
+-- | #  | Tabla             | Archivo                 | Registros |
+-- |----|-------------------|-------------------------|-----------|
+-- | 7  | normativas        | 004_normativas.sql      | 1         |
+
+-- Hangar y Catálogo de Aeronaves
+-- | #  | Tabla                   | Archivo                           | Registros |
+-- |----|-------------------------|-----------------------------------|-----------|
+-- | 8  | plane_models            | 005_plane_models.sql              | 44        |
+-- | 9  | plane_mods              | 006_plane_mods.sql                | 10        |
+-- | 10 | mod_effects             | 007_mod_effects.sql               | 50        |
+-- | 11 | planes                  | 008_planes.sql                    | 122       |
+-- | 12 | plane_upgrades          | 009_plane_upgrades.sql            | 0         |
+-- | 13 | upgrade_nodes_v2        | 010_upgrade_nodes_v2.sql          | 3072      |
+-- | 14 | upgrade_effects         | 011_upgrade_effects.sql           | 44        |
+-- | 15 | upgrade_effects_history | 012_upgrade_effects_history.sql   | 0         |
+
+-- Auditoría y Logs
+-- | #  | Tabla             | Archivo                 | Registros |
+-- |----|-------------------|-------------------------|-----------|
+-- | 16 | audit_logs        | 017_audit_logs.sql      | 6         |
+-- | 17 | security_events   | 016_security_events.sql | 214       |
+-- | 18 | error_logs        | 018_error_logs.sql      | 3         |
+
+-- Black Market (BM)
+-- | #  | Tabla             | Archivo                 | Registros |
+-- |----|-------------------|-------------------------|-----------|
+-- | 19 | bm_events         | 019_bm_events.sql       | 0         |
+-- | 20 | bm_missions       | 020_bm_missions.sql     | 0         |
+-- | 21 | bm_progress       | 021_bm_progress.sql     | 0         |
+-- | 22 | bm_discounts      | 022_bm_discounts.sql    | 0         |
+
+
+-- ============================================================
+-- RESUMEN DE COLUMNAS CLAVE POR TABLA
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- 001_users.sql — Tabla `users`
+-- ------------------------------------------------------------
+-- Columnas clave:
+--   id                    UUID PRIMARY KEY (gen_random_uuid())
+--   user_id               INTEGER UNIQUE NOT NULL (secuencial)
+--   email                 TEXT UNIQUE
+--   email_institucional   TEXT
+--   nick                  TEXT NOT NULL
+--   password_hash         TEXT NOT NULL (bcrypt)
+--   role                  TEXT DEFAULT 'MIEMBRO'
+--   status                TEXT DEFAULT 'ACTIVE'
+--   must_change_password  BOOLEAN DEFAULT true
+--   token_version         INTEGER DEFAULT 1
+--   google_linked         BOOLEAN DEFAULT false
+--   google_id             TEXT
+--   full_name             TEXT
+--   email_personal        TEXT
+--   phone                 TEXT
+--   bio                   TEXT
+--   notifications_enabled BOOLEAN DEFAULT false
+--   avg_tokens            INTEGER DEFAULT 0
+--   weeks_evaluated       INTEGER DEFAULT 0
+--   perf_status           TEXT DEFAULT 'VERDE'
+--   inactive_reason       TEXT (v4.0.0)
+--   inactive_by           UUID FK -> users.id ON DELETE SET NULL (v4.0.0)
+--   inactive_at           TIMESTAMPTZ (v4.0.0)
+--   last_activity         TIMESTAMP
+--   created_at            TIMESTAMP DEFAULT NOW()
+--   updated_at            TIMESTAMP DEFAULT NOW()
+
+-- ------------------------------------------------------------
+-- 002_performances.sql — Tabla `performances`
+-- ------------------------------------------------------------
+-- Registros de rendimiento semanal por piloto.
+-- Vinculada a users.user_id (INTEGER).
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   user_id               INTEGER FK -> users.user_id
+--   event_id              TEXT FK -> events.id
+--   nick                  TEXT
+--   role                  TEXT
+--   tokens                INTEGER
+--   days_connected        INTEGER
+--   flew_in_group         BOOLEAN
+--   notes                 TEXT
+--   perf_status           TEXT
+--   created_at            TIMESTAMPTZ
+
+-- ------------------------------------------------------------
+-- 003_events.sql — Tabla `events`
+-- ------------------------------------------------------------
+-- Columnas clave:
+--   id                    TEXT PRIMARY KEY (ej: 'SQUADRON-2026-36')
+--   type                  TEXT DEFAULT 'SQUADRON'
+--   status                TEXT DEFAULT 'OPEN'
+--   target_members        INTEGER DEFAULT 0
+--   target_tokens         INTEGER DEFAULT 0
+--   start_date            TIMESTAMPTZ NOT NULL
+--   end_date              TIMESTAMPTZ NOT NULL
+
+-- ------------------------------------------------------------
+-- 004_normativas.sql — Tabla `normativas`
+-- ------------------------------------------------------------
+-- 28 columnas (reglamentos, circulares, protocolos).
+-- Columnas clave:
+--   id                     INTEGER PRIMARY KEY
+--   titulo                 TEXT NOT NULL
+--   codigo                 TEXT NOT NULL (UNIQUE)
+--   tipo_documento         TEXT NOT NULL
+--   categoria              TEXT NOT NULL
+--   version                TEXT NOT NULL
+--   version_anterior_id    INTEGER
+--   es_version_vigente     BOOLEAN DEFAULT true
+--   fecha_aprobacion       DATE
+--   fecha_entrada_vigor    DATE
+--   fecha_vencimiento      DATE
+--   archivo_nombre         TEXT
+--   archivo_extension      TEXT
+--   archivo_tamano         INTEGER
+--   archivo_url            TEXT
+--   archivo_hash           TEXT
+--   emitido_por            TEXT
+--   aprobado_por           TEXT
+--   ambito_aplicacion      TEXT
+--   resumen                TEXT
+--   palabras_clave         JSONB DEFAULT '[]'::jsonb
+--   referencias_legales    JSONB DEFAULT '[]'::jsonb
+--   observaciones          TEXT
+--   requiere_firma_digital BOOLEAN DEFAULT false
+--   nivel_confidencialidad TEXT DEFAULT 'PUBLICO'
+--   created_at             TIMESTAMPTZ DEFAULT now()
+--   updated_at             TIMESTAMPTZ DEFAULT now()
+--   created_by             TEXT
+
+-- ------------------------------------------------------------
+-- 005_plane_models.sql — Tabla `plane_models`
+-- ------------------------------------------------------------
+-- Catálogo maestro de 44 modelos de combate.
+-- Columnas clave:
+--   id                    TEXT PRIMARY KEY
+--   name                  TEXT
+--   type                  TEXT
+--   tier                  INTEGER
+--   is_active             BOOLEAN DEFAULT true
+--   image_url             TEXT
+--   special_name          TEXT
+--   special_levels        JSONB
+--   passive_name          TEXT
+--   passive_levels        JSONB
+--   stats_real            JSONB
+--   sistemas_disponibles  JSONB
+--   descripcion           TEXT
+--   descripcion_es        TEXT
+--   historia              TEXT
+--   historia_es           TEXT
+--   recomendaciones       JSONB
+--   recomendaciones_es    JSONB
+--   loadout_wiki          JSONB
+--   paints                JSONB
+--   canopies              JSONB
+--   general_info_wiki     JSONB
+--   wiki_url              TEXT
+--   wiki_extracted_at     TIMESTAMPTZ
+
+-- ------------------------------------------------------------
+-- 006_plane_mods.sql — Tabla `plane_mods`
+-- ------------------------------------------------------------
+-- Catálogo de los 10 mods oficiales (m1-m10).
+-- Columnas clave:
+--   id                    TEXT PRIMARY KEY (m1..m10)
+--   name                  TEXT
+--   name_en               TEXT
+--   type                  TEXT
+--   type_en               TEXT
+--   description_es        TEXT
+--   description_en        TEXT
+--   levels                JSONB
+--   upgrade_costs         JSONB
+--   image_url             TEXT
+--   wiki_url              TEXT
+--   is_active             BOOLEAN DEFAULT true
+
+-- ------------------------------------------------------------
+-- 007_mod_effects.sql — Tabla `mod_effects`
+-- ------------------------------------------------------------
+-- 50 filas (10 mods x 5 niveles) con efectos numéricos.
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   mod_id                TEXT NOT NULL (m1..m10)
+--   mod_name              TEXT NOT NULL
+--   mod_type              TEXT NOT NULL
+--   level                 INTEGER NOT NULL (1..5)
+--   effects               JSONB NOT NULL DEFAULT '{}'::jsonb
+--   is_active             BOOLEAN DEFAULT true
+--   created_at            TIMESTAMPTZ DEFAULT now()
+--   updated_at            TIMESTAMPTZ DEFAULT now()
+
+-- ------------------------------------------------------------
+-- 008_planes.sql — Tabla `planes`
+-- ------------------------------------------------------------
+-- Hangar personal de cada piloto (122 registros).
+-- Vinculada a users.user_id (INTEGER).
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   user_id               INTEGER FK -> users.user_id
+--   avion_id              TEXT FK -> plane_models.id
+--   nivel                 INTEGER (1-20)
+--   especial_nombre       TEXT
+--   especial_nivel_num    INTEGER (1-3)
+--   especial_efecto       TEXT
+--   pasiva_nombre         TEXT
+--   pasiva_nivel_num      INTEGER (1-5)
+--   pasiva_efecto         TEXT
+--   mod1_id               TEXT FK -> plane_mods.id
+--   mod1_lvl              INTEGER (1-5)
+--   mod2_id               TEXT FK -> plane_mods.id
+--   mod2_lvl              INTEGER (1-5)
+--   nivel_fuselaje        INTEGER (0-8)
+--   nivel_motor           INTEGER (0-8)
+--   nivel_avionica        INTEGER (0-8)
+--   nivel_armas           INTEGER (0-8)
+--   rutas_sistemas        JSONB DEFAULT '{}'::jsonb (v4.0.0)
+--   recursos_piezas       INTEGER
+--   recursos_avanzadas    INTEGER
+--   created_at            TIMESTAMP DEFAULT NOW()
+--   updated_at            TIMESTAMP DEFAULT NOW()
+-- Constraints: UNIQUE(user_id, avion_id)
+
+-- ------------------------------------------------------------
+-- 009_plane_upgrades.sql — Tabla `plane_upgrades`
+-- ------------------------------------------------------------
+-- Auditoría de mejoras aplicadas a aeronaves.
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   plane_id              INTEGER FK -> planes.id
+--   sistema               TEXT
+--   nivel_anterior        INTEGER
+--   nivel_nuevo           INTEGER
+--   recursos_usados       INTEGER
+--   created_at            TIMESTAMPTZ
+
+-- ------------------------------------------------------------
+-- 010_upgrade_nodes_v2.sql — Tabla `upgrade_nodes_v2`
+-- ------------------------------------------------------------
+-- 3072 filas. Árbol de nodos Starform Upgrades 2.0.
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   avion_id              TEXT FK -> plane_models.id
+--   sistema_web           TEXT (fuselaje, motor, avionica, armas)
+--   sistema_categoria     TEXT
+--   nivel                 INTEGER (0-8)
+--   ruta                  TEXT ('A', 'B' o NULL)
+--   node_name             TEXT
+--   requirement_level     INTEGER
+--   effects               JSONB
+--   stats_afectadas       JSONB
+--   cost_piezas           INTEGER
+--   cost_avanzadas        INTEGER
+--   created_at            TIMESTAMP DEFAULT now()
+
+-- ------------------------------------------------------------
+-- 011_upgrade_effects.sql — Tabla `upgrade_effects`
+-- ------------------------------------------------------------
+-- 44 filas. Efectos consolidados de upgrades por nivel.
+
+-- ------------------------------------------------------------
+-- 012_upgrade_effects_history.sql — Tabla `upgrade_effects_history`
+-- ------------------------------------------------------------
+-- Historial de cambios en efectos de upgrades.
+
+-- ------------------------------------------------------------
+-- 013_password_resets.sql — Tabla `password_resets`
+-- ------------------------------------------------------------
+-- Tokens criptográficos de reset (15 min de vigencia).
+-- Columnas clave:
+--   id                    UUID PRIMARY KEY
+--   user_id               UUID FK -> users.id ON DELETE CASCADE
+--   token                 TEXT UNIQUE
+--   expires_at            TIMESTAMPTZ
+--   used                  BOOLEAN DEFAULT false
+--   created_at            TIMESTAMPTZ DEFAULT now()
+-- RLS: política `no_public_access` (solo service_role)
+
+-- ------------------------------------------------------------
+-- 014_recovery_codes.sql — Tabla `recovery_codes`
+-- ------------------------------------------------------------
+-- Códigos de recuperación alternativos.
+-- Columnas clave:
+--   id                    UUID PRIMARY KEY
+--   user_id               UUID FK -> users.id
+--   code_hash             TEXT
+--   expires_at            TIMESTAMPTZ
+--   used_at               TIMESTAMPTZ
+--   created_by            UUID
+--   note                  TEXT
+
+-- ------------------------------------------------------------
+-- 015_user_settings.sql — Tabla `user_settings`
+-- ------------------------------------------------------------
+-- Preferencias de usuario (tema, idioma, notificaciones).
+-- Columnas clave:
+--   id                    UUID PRIMARY KEY
+--   user_id               UUID FK -> users.id UNIQUE
+--   theme                 TEXT DEFAULT 'militar'
+--   language              TEXT DEFAULT 'es'
+--   notif_email           BOOLEAN DEFAULT false
+--   notif_whatsapp        BOOLEAN DEFAULT false
+--   notif_status          BOOLEAN DEFAULT true
+--   notif_reminder        BOOLEAN DEFAULT true
+--   notif_announcements   BOOLEAN DEFAULT true
+--   created_at            TIMESTAMPTZ DEFAULT now()
+--   updated_at            TIMESTAMPTZ DEFAULT now()
+
+-- ------------------------------------------------------------
+-- 016_security_events.sql — Tabla `security_events`
+-- ------------------------------------------------------------
+-- 214 filas. Eventos de seguridad (login, resets, etc).
+-- FK: user_id -> users.id (UUID)
+
+-- ------------------------------------------------------------
+-- 017_audit_logs.sql — Tabla `audit_logs`
+-- ------------------------------------------------------------
+-- 6 filas. Auditoría de cambios administrativos.
+-- Columnas clave:
+--   id                    BIGINT PRIMARY KEY (nextval)
+--   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+--   user_id               TEXT
+--   nick                  TEXT
+--   role                  TEXT
+--   action                TEXT NOT NULL
+--   entity                TEXT
+--   entity_id             TEXT
+--   details               JSONB
+--   ip                    TEXT
+--   result                TEXT NOT NULL DEFAULT 'SUCCESS'
+
+-- ------------------------------------------------------------
+-- 018_error_logs.sql — Tabla `error_logs`
+-- ------------------------------------------------------------
+-- 3 filas. Logs de errores del sistema.
+-- Columnas clave:
+--   id                    BIGINT PRIMARY KEY (nextval)
+--   level                 TEXT NOT NULL DEFAULT 'error'
+--   message               TEXT NOT NULL
+--   stack                 TEXT
+--   route                 TEXT
+--   user_id               TEXT
+--   nick                  TEXT
+--   meta                  JSONB
+--   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+
+-- ------------------------------------------------------------
+-- 019_bm_events.sql — Tabla `bm_events`
+-- ------------------------------------------------------------
+-- Eventos Black Market (0 filas actualmente).
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   name                  TEXT NOT NULL
+--   description           TEXT
+--   start_date            TIMESTAMPTZ NOT NULL
+--   end_date              TIMESTAMPTZ NOT NULL
+--   is_active             BOOLEAN DEFAULT false
+--   aircraft_id           TEXT FK -> plane_models.id
+--   created_at            TIMESTAMPTZ DEFAULT now()
+--   created_by            UUID FK -> users.id
+
+-- ------------------------------------------------------------
+-- 020_bm_missions.sql — Tabla `bm_missions`
+-- ------------------------------------------------------------
+-- Misiones del Black Market.
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   bm_event_id           INTEGER FK -> bm_events.id
+--   day                   INTEGER NOT NULL (1-5)
+--   type                  TEXT NOT NULL
+--   description           TEXT NOT NULL
+--   requirement           TEXT NOT NULL
+--   target_value          INTEGER NOT NULL
+--   points                INTEGER DEFAULT 25
+--   created_at            TIMESTAMPTZ DEFAULT now()
+
+-- ------------------------------------------------------------
+-- 021_bm_progress.sql — Tabla `bm_progress`
+-- ------------------------------------------------------------
+-- Progreso individual de cada piloto en BM.
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   user_id               UUID FK -> users.id
+--   bm_event_id           INTEGER FK -> bm_events.id
+--   day                   INTEGER NOT NULL (1-5)
+--   mission_id            INTEGER FK -> bm_missions.id
+--   completed             BOOLEAN DEFAULT false
+--   completed_at          TIMESTAMPTZ
+--   points_earned         INTEGER DEFAULT 0
+
+-- ------------------------------------------------------------
+-- 022_bm_discounts.sql — Tabla `bm_discounts`
+-- ------------------------------------------------------------
+-- Descuentos acumulados y compras en BM.
+-- Columnas clave:
+--   id                    INTEGER PRIMARY KEY
+--   user_id               UUID FK -> users.id
+--   bm_event_id           INTEGER FK -> bm_events.id
+--   total_points          INTEGER DEFAULT 0
+--   discount_percentage   INTEGER DEFAULT 0
+--   aircraft_id           TEXT FK -> plane_models.id
+--   purchased             BOOLEAN DEFAULT false
+--   purchased_at          TIMESTAMPTZ
+--   created_at            TIMESTAMPTZ DEFAULT now()
+--   updated_at            TIMESTAMPTZ DEFAULT now()
+
+-- ============================================================
+-- FIN DEL ÍNDICE DE REFERENCIA
+-- ============================================================
+
+-- Para el DDL ejecutable completo, ver:
+--   sql/001_users.sql
+--   sql/002_performances.sql
+--   ...
+--   sql/022_bm_discounts.sql
+--   sql/README.md
