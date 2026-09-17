@@ -20,14 +20,14 @@ import { requireAuth, requireRole } from '../middlewares/auth.js';
 const router = Router();
 
 // ============================================================
-// RUTAS PÚBLICAS / CONSULTA DE CATÁLOGO
+// RUTAS DE CONSULTA (AUTENTICADAS)
 // ============================================================
 
 // Listar todos los modelos (admite ?include_inactive=true)
-router.get('/', getPlaneModels);
+router.get('/', requireAuth, getPlaneModels);
 
 // Obtener modelo específico por ID
-router.get('/:id', getPlaneModelById);
+router.get('/:id', requireAuth, getPlaneModelById);
 
 // ============================================================
 // RUTAS ADMINISTRATIVAS PROTEGIDAS (ADMIN & OWNER)
