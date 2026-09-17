@@ -98,6 +98,83 @@ Commits de Fase 3:
 
 ---
 
+## 📌 [Fase 3.1] - 2026-09-17
+
+### 🚨 Hotfix de Seguridad — HALL-055 (Incidente GitGuardian)
+
+#### Objetivo Cumplido
+
+Atender, diagnosticar y contener una alerta externa de GitGuardian sobre "SMTP credentials" expuestas en el repositorio público. Se determinó que se trató de un **cuasi-falso positivo** (variables públicas de Supabase en un `.env` histórico), sin exposición real de credenciales sensibles.
+
+#### Descripción del Incidente
+
+El 2026-09-16 a las 16:37 UTC, GitGuardian envió una alerta automática indicando la detección de credenciales SMTP expuestas en el repositorio público `paraguayffaametalstorm-debug/ffaa-paraguay-classic`.
+
+#### Diagnóstico Forense
+
+| Aspecto | Resultado |
+|---|---|
+| **Commit origen** | `f5fd20e` ("Agregar variables de entorno para Supabase", 2026-09-01) |
+| **Commit de eliminación** | `3006ac4` (mismo día, 2026-09-01) |
+| **Variables filtradas** | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+| **Naturaleza** | 🟢 Públicas por diseño (prefijo `VITE_` = bundle frontend) |
+| **Credenciales SMTP reales** | ❌ NO filtradas (el SMTP se implementó en v3.4.0, 2026-09-07) |
+| **Credenciales de servicio** | ❌ Ninguna filtrada (`SERVICE_ROLE_KEY`, `JWT_SECRET`, `GOOGLE_CLIENT_SECRET`, etc.) |
+| **RLS en Supabase** | ✅ 22/22 tablas con `rls_enabled = true` |
+| **Accesibilidad actual** | ❌ No alcanzable desde ninguna rama activa |
+| **Riesgo operativo real** | 🟢 Nulo |
+
+#### Acciones de Contención Aplicadas
+
+1. **Rotación preventiva de credenciales SMTP:**
+   - Eliminadas las 2 app passwords antiguas (`PARAGUAY-FFAA` del 08/09 y `PARAGUAY-FFAA-SMTP` del 15/09).
+   - Generada nueva app password `METALSTORM-SMTP-v4.0.1` (16/09).
+   - Secret `EMAIL_PASS` actualizado en Fly.io (digest `52013d91530dc60e`, estado `Deployed`).
+
+2. **Limpieza de ramas obsoletas:**
+   - Eliminadas las ramas locales y remotas `feature/sql-migrations` y `feature/business-logic-consistency` (ambas mergeadas a `main`).
+
+3. **Verificación funcional post-contención:**
+   - `curl https://paraguay-ffaa-metalstorm.fly.dev/health` → `OK`.
+   - Login OAuth del OWNER funcionando.
+   - Rotación de app passwords de Gmail operativa.
+   - Sin errores nuevos en logs de producción.
+
+#### Acciones de Prevención
+
+- ✅ `.gitignore` verificado: incluye `.env` y `.env.*`.
+- ✅ `.env.example` solo contiene placeholders (nunca valores reales).
+- ✅ Política de despliegue refrendada: los secrets viven exclusivamente en Fly.io, nunca en el repositorio.
+- ✅ Rotación preventiva de app passwords de Gmail ejecutada como buena práctica de higiene.
+
+#### Lecciones Aprendidas
+
+1. **Nunca commitear `.env`:** Aunque las variables `VITE_*` son públicas por diseño, el `.env` nunca debe versionarse.
+2. **Confiar pero verificar:** Las alertas automáticas de terceros requieren validación manual. En este caso, la etiqueta "SMTP credentials" era incorrecta.
+3. **RLS es la última línea de defensa:** Aunque la `ANON_KEY` se filtre, RLS en Supabase garantiza que no haya exfiltración de datos.
+4. **Rotación preventiva no hace daño:** Es una práctica de bajo costo y alto beneficio.
+
+#### ✅ Criterios de Cierre Cumplidos
+
+- ✅ Incidente diagnosticado como cuasi-falso positivo.
+- ✅ Credenciales SMTP rotadas preventivamente.
+- ✅ Secret `EMAIL_PASS` activo en Fly.io.
+- ✅ Ramas obsoletas eliminadas.
+- ✅ RLS verificado: 22/22 tablas protegidas.
+- ✅ App 100% funcional en producción.
+- ✅ Documentación de HALL-055 en `FIXES_APPLIED.md`.
+
+#### 🎯 Entregable
+
+Documentación completa del incidente en `FIXES_APPLIED.md` (bloque HALL-055). Sin cambios de código de producción.
+
+**Hallazgo:** HALL-055 (incidente externo, no relacionado con la auditoría original de 52 hallazgos).
+
+**Rama:** `feature/security-secondary`.
+
+---
+
+
 ## 📌 [Fase 2] - 2026-09-16
 
 ### 🗄️ Infraestructura como Código — HALL-048 resuelto
