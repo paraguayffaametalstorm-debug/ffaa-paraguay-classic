@@ -76,6 +76,21 @@ export async function savePerformance(req, res, next) {
       if (!dbUserErr && dbUser && dbUser.length > 0) {
         targetUser = dbUser[0];
       }
+      
+      // 🛡️ HALL-013: Validación de jerarquía militar
+      // Un ADMIN solo puede registrar rendimientos de MIEMBRO y VETERANO.
+      // No puede hacerlo sobre otro ADMIN ni sobre el OWNER.
+      // El OWNER puede registrar para cualquiera.
+      const targetRole = (targetUser.role || 'MIEMBRO').toUpperCase();
+      const callerRoleSafe = (callerRole || 'MIEMBRO').toUpperCase();
+
+      if (callerRoleSafe === 'ADMIN' && (targetRole === 'ADMIN' || targetRole === 'OWNER')) {
+        return res.status(403).json({
+          success: false,
+          error: 'Los Administradores solo pueden registrar rendimientos de Miembros y Veteranos',
+          code: 'HIERARCHY_FORBIDDEN'
+        });
+      }
     }
 
     const status = calculateStatus(data.tokens, data.days_connected);
