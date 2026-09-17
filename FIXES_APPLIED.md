@@ -18,6 +18,191 @@ b1023fd feat(admin): frontend - tactical tabs, inactivation/reactivation modals 
 ---
 
 ## 🛠️ Detalle de Fixes Implementados
+
+### 🔧 HALL-053 + HALL-054 — Cuota ADMIN a 5 + Constante ROLE_LIMITS
+
+**Fecha:** 2026-09-17  
+**Fase:** 3 — Consistencia de Lógica de Negocio  
+**Archivo:** `src/controllers/admin.controller.js`  
+**Commit:** `5c7bfc1`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+La documentación especificaba máximo 3 ADMIN, pero la BD tenía 5 (staff fundacional). Los límites estaban hardcodeados en 4 ubicaciones del mismo archivo, con riesgo de inconsistencia al modificar.
+
+**Solución Aplicada:**  
+1. Creada constante centralizada `ROLE_LIMITS = { OWNER: 1, ADMIN: 5, VETERANO: 8 }`.
+2. Reemplazados 4 hardcodes (`>= 3`, `>= 8`) por referencias a `ROLE_LIMITS.ADMIN`, `ROLE_LIMITS.VETERANO`.
+3. Mensajes de error actualizados con template literals para reflejar el valor dinámico.
+
+**Verificación:**  
+- `node --check` PASS.
+- 8 ocurrencias de `ROLE_LIMITS` (1 declaración + 7 usos).
+- Sin hardcodes residuales de rol.
+- Smoke test en producción PASS.
+
+**Rollback:** `git revert 5c7bfc1`
+
+---
+
+### 🔧 HALL-013 — Validación de Jerarquía en `savePerformance`
+
+**Fecha:** 2026-09-17  
+**Fase:** 3  
+**Archivo:** `src/controllers/performances.controller.js`  
+**Commit:** `20e02cb`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+Un ADMIN podía registrar rendimientos en nombre de otro ADMIN o del OWNER, violando la jerarquía militar.
+
+**Solución Aplicada:**  
+Bloque de validación dentro del `if (String(targetUserId) !== String(callerId))`: si el caller es ADMIN y el target es ADMIN u OWNER, retorna 403 con `HIERARCHY_FORBIDDEN`.
+
+**Verificación:**  
+- `node --check` PASS.
+- `findstr HIERARCHY_FORBIDDEN` → 1 ocurrencia.
+- Smoke test en producción PASS.
+
+**Rollback:** `git revert 20e02cb`
+
+---
+
+### 🔧 HALL-028 — Validación Estricta de `user_id` en `PerformanceSchema`
+
+**Fecha:** 2026-09-17  
+**Fase:** 3  
+**Archivo:** `src/utils/schemas.js`  
+**Commit:** `77ebba8`  
+**Severidad:** 🟡 MEDIA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+El schema aceptaba cualquier string como `user_id`. Un cliente malicioso podía enviar `"'; DROP TABLE users; --"` o `"hackeame"`.
+
+**Solución Aplicada:**  
+Reemplazado `z.union([z.number().int(), z.string()])` por un `z.union` con:
+- `z.number().int().positive()`
+- `z.string().regex(/^(self|UUID válido|\d+)$/i)`
+
+**Verificación:**  
+Test local de 8 casos: 4 válidos (num, UUID, `self`, vacío) + 4 inválidos (basura, vacío, SQL injection, negativo) → **8 OK, 0 FAIL**.
+
+**Rollback:** `git revert 77ebba8`
+
+---
+
+### 🔧 HALL-024 + HALL-025 — Secuencia PostgreSQL Atómica para `user_id`
+
+**Fecha:** 2026-09-17  
+**Fase:** 3  
+**Archivos:** `src/utils/security.js`, `sql/025_user_id_sequence.sql`  
+**Commit:** `e4fa2d5`  
+**Severidad:** 🔴 CRÍTICA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+- **HALL-024:** Race condition en `getNextUserId` (SELECT max + INSERT no atómico). Colisiona bajo concurrencia y multi-instancia Fly.io.
+- **HALL-025:** Retornaba `1` en error, peligroso porque `user_id=1` es del OWNER.
+
+**Solución Aplicada:**  
+1. Creada secuencia `user_id_seq` en Supabase.
+2. Creada función RPC `get_next_user_id()` que retorna `nextval('user_id_seq')`.
+3. Refactorizado `getNextUserId()` para llamar a la RPC (O(1) atómico).
+4. Eliminado `return 1` → ahora lanza excepción.
+
+**Verificación:**  
+- Test de RPC: 3 llamadas → `1004`, `1005`, `1006` ✅.
+- Test local integrado: `getNextUserId()` → `1007` (tipo `number`) ✅.
+- Smoke test en producción PASS.
+
+**Rollback:** `git revert e4fa2d5` + `DROP SEQUENCE user_id_seq; DROP FUNCTION get_next_user_id();`
+
+---
+
+### 🔧 HALL-044 + HALL-045 — Validación Tipada y `onConflict` en Settings (+ FK derivada)
+
+**Fecha:** 2026-09-17  
+**Fase:** 3  
+**Archivos:** `src/controllers/settings.controller.js`, `sql/026_fix_user_settings_fk.sql`  
+**Commit:** `b1f9c71`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+- **HALL-044:** No había validación tipada UUID vs INTEGER. Con `user_id` INTEGER, la consulta fallaba.
+- **HALL-045:** Sin `onConflict`, el upsert creaba filas duplicadas cada vez.
+- **DERIVADO:** La FK `user_settings.user_id` apuntaba a `auth.users(id)` en lugar de `public.users(id)` → violación de FK al guardar settings para pilotos del escuadrón.
+
+**Solución Aplicada:**  
+1. **Código:** Resolución tipada del UUID real desde `user_id` INTEGER antes de consultar `user_settings`.
+2. **Código:** `onConflict: 'user_id'` en el upsert.
+3. **BD:** Corregida la FK para apuntar a `public.users(id)`.
+
+**Verificación:**  
+- Test local integrado: resolvió UUID correcto + upsert + verificación de no-duplicados → `🎉 TEST PASADO EXITOSAMENTE`.
+- Smoke test en producción: `theme: militar → ops` persistió ✅.
+
+**Rollback:** `git revert b1f9c71` + revertir FK a `auth.users`.
+
+---
+
+### 🔧 HALL-050 — Sincronización de Valores de Mods en `DEPLOYMENT_STATE.md`
+
+**Fecha:** 2026-09-17  
+**Fase:** 3  
+**Archivo:** `DEPLOYMENT_STATE.md`  
+**Commit:** `d69d363`  
+**Severidad:** 🟡 MEDIA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+La tabla de mods m1-m10 en `DEPLOYMENT_STATE.md` tenía valores viejos (ej: `m1: +4%, +8%...`) que no coincidían con `modEffects.js` ni con la Wiki oficial.
+
+**Solución Aplicada:**  
+Reemplazadas las 10 filas con los valores oficiales verificados contra la Wiki de Metalstorm (extracto 2026-09-17).
+
+**Verificación:**  
+- 4 `findstr` confirman valores correctos (m1, m7, m8, m10).
+- Diff: 10 inserciones, 10 eliminaciones.
+
+**Rollback:** `git revert d69d363`
+
+---
+
+### 🔧 HALL-052 — Alineación del Schema `plane_upgrades` con Producción
+
+**Fecha:** 2026-09-17  
+**Fase:** 3 (derivado de Fase 2)  
+**Archivo:** `sql/023_upgrades_2_0.sql`  
+**Commit:** `968e34f`  
+**Severidad:** 🟠 ALTA (reproducibilidad)  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+El archivo SQL versionado tenía **6 bugs** que no coincidían con la realidad de producción:
+1. Columna `user_id INT REFERENCES users(id)` (FK rota INT→UUID, columna inexistente en prod).
+2. Columna `piezas_usadas` (inexistente en prod).
+3. Columna `avanzadas_usadas` (inexistente en prod).
+4. Faltaba columna `recursos_usados` (sí existía en prod).
+5. Faltaba CHECK `nivel_nuevo BETWEEN 0 AND 8` (sí existía en prod).
+6. Faltaba CHECK `sistema IN (...)` (sí existía en prod).
+
+Además, índice `idx_plane_upgrades_user_id` sobre columna inexistente.
+
+**Solución Aplicada:**  
+Alineado el `CREATE TABLE` con la estructura real de producción. Agregada secuencia explícita para idempotencia.
+
+**Verificación:**  
+- 4 `findstr` confirman alineación (sin `user_id` en tabla, con `recursos_usados`, con `plane_upgrades_id_seq`, con `CHECK`).
+- Smoke test en producción PASS.
+
+**Rollback:** `git revert 968e34f`
+
+---
+
 ### 🗄️ HALL-048 — Infraestructura como Código (SQL Migrations)
 
 **Fecha:** 2026-09-16  
