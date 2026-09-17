@@ -169,16 +169,16 @@ CREATE TABLE users (
 
 | Mod ID | Nombre Oficial | Tipo | Stat Base Afectada | Tipo de Activación | Efecto por Nivel (N1 $\to$ N5) |
 |:---:|---|---|:---:|:---:|---|
-| **m1** | Giro Temerario (Daredevil Turning) | Agilidad | `agility` | ✅ Siempre activo | Giro: +4%, +8%, +12%, +16%, +20% |
-| **m2** | Maniobrabilidad Ideal (Ideal Maneuvering) | Agilidad | `agility` | ✅ Siempre activo | Eficiencia viraje: +3%, +6%, +9%, +12%, +15% |
-| **m3** | Resistencia a las Explosiones (Blast Resistance) | Defensa | `armor` | ✅ Siempre activo | Resistencia misiles: +5%, +10%, +15%, +20%, +25% |
-| **m4** | Blindaje de Ataque / Racha (Streak Armor) | Defensa | `armor` | ⚠️ Condicional (kills) | +5%, +10%, +15%, +20%, +25% HP por derribo |
-| **m5** | Quemadores Auxiliares Eficientes (Efficient Afterburners) | Motor | — | ❌ No altera stats visibles | Consumo postquemador: -8%, -16%, -24%, -32%, -40% |
-| **m6** | Máxima Propulsión (Thrust Booster) | Motor | `speed` | ⚠️ Condicional (<50% comb.) | Vel: +3..+15% / Acel: +4..+20% bajo 50% combustible |
-| **m7** | Bengalas Disruptivas (Disruptive Flares) | Señuelos | `ecm` | ✅ Siempre activo | Bloqueo enemigo / ECM: +5%, +10%, +15%, +20%, +25% |
-| **m8** | Bengalas Más Rápidas (Faster Flares) | Señuelos | — | ❌ No altera stats visibles | Cooldown bengalas: -6%, -12%, -18%, -24%, -30% |
-| **m9** | Armas Aniquiladoras (Finishing Guns) | Arma | `firepower` | ⚠️ Condicional (<30% HP enem.) | Daño: +5%, +10%, +15%, +20%, +25% contra enemigos <30% HP |
-| **m10** | Guiado Mejorado (Improved Targeting) | Arma | `radar` | ✅ Siempre activo | Lock speed: +4..+20% / Lock angle: +3..+15% |
+| **m1** | Giro Temerario (Daredevil Turning) | Agilidad | `agility` | ✅ Siempre activo | Giro: +10%, +13%, +15%, +17%, +20% |
+| **m2** | Maniobrabilidad Ideal (Ideal Maneuvering) | Agilidad | `agility` | ✅ Siempre activo | Eficiencia de viraje: +15%, +20%, +25%, +30%, +35% |
+| **m3** | Resistencia a las Explosiones (Blast Resistance) | Defensa | `armor` | ✅ Siempre activo | Resistencia a daño por misiles/cohetes: -10%, -13%, -15%, -17%, -20% |
+| **m4** | Blindaje de Ataque / Racha (Streak Armor) | Defensa | `armor` | ⚠️ Condicional (kills) | +30, +35, +40, +45, +50 HP temporal por derribo (máx 75% HP) |
+| **m5** | Quemadores Auxiliares Eficientes (Efficient Afterburners) | Motor | Consumo | ✅ Siempre activo | Consumo postquemador: -10%, -13%, -15%, -17%, -20% |
+| **m6** | Máxima Propulsión (Thrust Booster) | Motor | `speed` | ⚠️ Condicional (<50% combustible) | Vel. máx: +10% fijo / Aceleración: +10%, +15%, +20%, +25%, +30% |
+| **m7** | Bengalas Disruptivas (Disruptive Flares) | Señuelos | `ecm` | ✅ Siempre activo | Bloqueo enemigo / ECM: -30%, -38%, -45%, -52%, -60% |
+| **m8** | Bengalas Más Rápidas (Faster Flares) | Señuelos | Cooldown | ✅ Siempre activo | Cooldown bengalas: -40%, -45%, -50%, -55%, -60% |
+| **m9** | Armas Aniquiladoras (Finishing Guns) | Arma | `firepower` | ⚠️ Condicional (<30% HP enem.) | Daño cañón: +20%, +22%, +25%, +28%, +30% contra enemigos <30% HP |
+| **m10** | Guiado Mejorado (Improved Targeting) | Arma | `radar` | ✅ Siempre activo | Lock Speed +10..20% / Lock Angle +15..25% / Rocket Lead Range +15..30% |
 
 #### Flujo de Aplicación de Mods en Telemetría y Combate
 
