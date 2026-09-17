@@ -9,6 +9,15 @@ import {
 import { logAuditChange } from '../utils/audit.js';
 import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
 
+// ========== LÍMITES DE ROL CENTRALIZADOS ==========
+// HALL-053/054: Fuente única de verdad para cuotas jerárquicas.
+// ADMIN actualizado de 3 → 5 por decisión del OWNER (2026-09-16).
+const ROLE_LIMITS = {
+  OWNER: 1,
+  ADMIN: 5,
+  VETERANO: 8
+};
+
 // ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
 function buildUserQuery(supabase, id, selectFields = 'id, user_id, nick, email, role, status') {
     let query = supabase.from('users').select(selectFields);
@@ -227,9 +236,9 @@ export async function updateUserRole(req, res, next) {
         .select('id', { count: 'exact', head: true })
         .eq('role', 'ADMIN');
 
-      if ((adminCount || 0) >= 3 && currentRole !== 'ADMIN') {
+      if ((adminCount || 0) >= ROLE_LIMITS.ADMIN && currentRole !== 'ADMIN') {
         return res.status(400).json({
-          error: '⚠️ Límite alcanzado: Máximo 3 Administradores permitidos según la normativa militar.',
+          error: `⚠️ Límite alcanzado: Máximo ${ROLE_LIMITS.ADMIN} Administradores permitidos según la normativa militar.`,
           code: 'ROLE_LIMIT_REACHED'
         });
       }
@@ -239,9 +248,9 @@ export async function updateUserRole(req, res, next) {
         .select('id', { count: 'exact', head: true })
         .eq('role', 'VETERANO');
 
-      if ((vetCount || 0) >= 8 && currentRole !== 'VETERANO') {
+      if ((vetCount || 0) >= ROLE_LIMITS.VETERANO && currentRole !== 'VETERANO') {
         return res.status(400).json({
-          error: '⚠️ Límite alcanzado: Máximo 8 Veteranos permitidos según la normativa militar.',
+          error: `⚠️ Límite alcanzado: Máximo ${ROLE_LIMITS.VETERANO} Veteranos permitidos según la normativa militar.`,
           code: 'ROLE_LIMIT_REACHED'
         });
       }
@@ -512,16 +521,16 @@ export async function addMember(req, res, next) {
         .from('users')
         .select('id', { count: 'exact', head: true })
         .eq('role', 'ADMIN');
-      if ((adminCount || 0) >= 3) {
-        return res.status(400).json({ error: 'Límite alcanzado: Máximo 3 Administradores permitidos.' });
+      if ((adminCount || 0) >= ROLE_LIMITS.ADMIN) {
+        return res.status(400).json({ error: `Límite alcanzado: Máximo ${ROLE_LIMITS.ADMIN} Administradores permitidos.` });
       }
     } else if (assignedRole === 'VETERANO') {
       const { count: vetCount } = await supabase
         .from('users')
         .select('id', { count: 'exact', head: true })
         .eq('role', 'VETERANO');
-      if ((vetCount || 0) >= 8) {
-        return res.status(400).json({ error: 'Límite alcanzado: Máximo 8 Veteranos permitidos.' });
+      if ((vetCount || 0) >= ROLE_LIMITS.VETERANO) {
+        return res.status(400).json({ error: `Límite alcanzado: Máximo ${ROLE_LIMITS.VETERANO} Veteranos permitidos.` });
       }
     }
 
