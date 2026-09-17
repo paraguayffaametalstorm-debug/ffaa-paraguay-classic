@@ -16,7 +16,14 @@ export const PerformanceSchema = z.object({
   days_connected: z.number().int().min(0).max(7),
   flew_in_group: z.boolean().optional().default(false),
   notes: z.string().max(500, 'Las notas no pueden superar 500 caracteres').optional().nullable(),
-  user_id: z.union([z.number().int(), z.string()]).optional()
+  // HALL-028: Validación estricta de user_id (UUID, numérico o "self")
+  user_id: z.union([
+    z.number().int().positive('user_id numérico debe ser positivo'),
+    z.string().regex(
+      /^(self|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d+)$/i,
+      'user_id debe ser "self", un UUID válido o un número entero'
+    )
+  ]).optional()
 });
 
 export const BulkUploadSchema = z.object({
