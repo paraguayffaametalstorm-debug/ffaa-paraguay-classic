@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-17  
-> **Versión Activa:** v4.0.1 (Fase 3 completada)  
+> **Versión Activa:** v4.0.2 (Fase 4 completada)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -10,13 +10,15 @@
 
 ## 🎯 Resumen Ejecutivo
 
-El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v4.0.0). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
+El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v4.0.2). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
 
 Específicamente, en las versiones v3.9.9 y v4.0.0 se ha consolidado:
 1. **Rediseño Completo del Hangar Militar:** Migración de carrusel rígido a doble arquitectura: **Vista 1 (Grid Táctico de Tarjetas)** para navegación ágil y **Vista 2 (Pantalla Dedicada / Detalle Completo de Aeronave)** con botón "← VOLVER AL HANGAR", accesos directos a calibración de Upgrades 2.0 y telemetría de combate profunda.
 2. **Sistema Integral de Traducción (i18n):** Extracción, traducción mediante DeepL y persistencia en Supabase de `descripcion_es`, `historia_es` y `recomendaciones_es`, con degradación elegante a inglés y diccionario cliente de los 13 traits oficiales (`TRAITS_ES`).
 3. **Catálogo Oficial Consolidado a 44 Aeronaves:** 44 cazas normalizados con armas y subsistemas específicos validados.
 4. **Sistema Táctico de Gestión de Pilotos Inactivos (v4.0.0):** Registro obligatorio de motivo al inactivar, trazabilidad de oficial y fecha, resolución batch de comandantes, mensaje enriquecido de bloqueo en autenticación y pestañas tácticas con modales dedicados en el panel de administración militar.
+
+5. **Seguridad Secundaria (v4.0.2 - Fase 4):** 8 hallazgos de severidad MEDIA resueltos: `/register` protegido con auth + rate limiting, 7 endpoints GET requieren autenticación (BM y plane-models), `/api/presence/active` protegido, y sistema de backups del OWNER persistido en Supabase con sanitización de PII (ofuscación de email/teléfono) e integridad por hash SHA-256.
 
 ---
 
@@ -174,6 +176,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Integración Wiki (Paints)** | ✅ Funcional | 310+ paints en galería |
 | **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
 | **Jerarquía Reforzada (Fase 3)** | ✅ Funcional | `ROLE_LIMITS`, validación tipada, secuencia atómica |
+| **Seguridad Secundaria (Fase 4)** | ✅ Funcional | `/register` protegido, 7 endpoints con auth, backups persistentes con sanitización PII |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 
