@@ -4,7 +4,9 @@ import {
   getAuditLogs,
   getErrorLogs,
   getBackupList,
-  runManualBackup
+  runManualBackup,
+  downloadBackup,
+  deleteBackup
 } from '../controllers/owner.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 
@@ -14,10 +16,15 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRole('OWNER'));
 
+// --- Auditoría ---
 router.get('/audit-summary', getAuditSummary);
 router.get('/audit-logs', getAuditLogs);
 router.get('/error-logs', getErrorLogs);
+
+// --- Backups ---
 router.get('/backup/list', getBackupList);
 router.post('/backup/run', runManualBackup);
+router.get('/backup/download/:id', downloadBackup);
+router.delete('/backup/:id', deleteBackup);
 
 export default router;
