@@ -6,6 +6,85 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [Fase 2] - 2026-09-16
+
+### 🗄️ Infraestructura como Código — HALL-048 resuelto
+
+#### Objetivo Cumplido
+
+Versionar el esquema completo de las 22 tablas activas de Supabase en el repositorio, permitiendo recrear la base de datos desde cero.
+
+#### Acciones Ejecutadas
+
+- **Dump de referencia:** Creado `sql/000_full_schema_dump.sql` (índice de las 22 tablas con columnas clave y punteros a archivos individuales). Commit `41fda3b`.
+- **Reorganización de `sql/`:** 4 archivos existentes renombrados con prefijos numéricos y archivo obsoleto movido a `sql/legacy/`. Commit `7918b22`.
+- **22 archivos DDL creados** (`001_users.sql` a `022_bm_discounts.sql`): Cada tabla del schema `public` tiene su archivo de migración idempotente. Commits `d0d0af7` → `eb5255b`.
+- **Guía de migraciones:** Creado `sql/README.md` con índice completo, orden de ejecución y procedimiento de recreación. Commit `04d42e7`.
+- **Documentación de despliegue:** Añadida sección 5.1 en `DEPLOYMENT_GUIDE.md` con procedimiento de recreación desde cero. Commit `e730291`.
+
+#### Estructura Final de `sql/`
+sql/
+├── 000_full_schema_dump.sql # Índice de referencia
+├── 001_users.sql # Padrón militar
+├── 002_performances.sql # Rendimiento semanal
+├── 003_events.sql # Eventos operativos
+├── 004_normativas.sql # Reglamentos
+├── 005_plane_models.sql # Catálogo de 44 modelos
+├── 006_plane_mods.sql # 10 mods oficiales
+├── 007_mod_effects.sql # 50 efectos de mods
+├── 008_planes.sql # Hangar personal
+├── 009_plane_upgrades.sql # Auditoría de mejoras
+├── 010_upgrade_nodes_v2.sql # Árbol Starform 2.0
+├── 011_upgrade_effects.sql # Efectos de upgrades
+├── 012_upgrade_effects_history.sql # Historial de efectos
+├── 013_password_resets.sql # Tokens de reset (15 min)
+├── 014_recovery_codes.sql # Códigos de recuperación
+├── 015_user_settings.sql # Preferencias
+├── 016_security_events.sql # Eventos de seguridad
+├── 017_audit_logs.sql # Auditoría administrativa
+├── 018_error_logs.sql # Logs de errores
+├── 019_bm_events.sql # BM - Eventos
+├── 020_bm_missions.sql # BM - Misiones
+├── 021_bm_progress.sql # BM - Progreso
+├── 022_bm_discounts.sql # BM - Descuentos
+├── 023_upgrades_2_0.sql # Migración compuesta Upgrades 2.0
+├── 024_fix_users_null_user_id.sql # Fix de datos
+├── README.md # Guía completa
+└── legacy/
+└── updates_v3.4.0.sql # (Histórico, no ejecutar)
+
+text
+
+#### ✅ Criterios de Cierre Cumplidos
+
+- ✅ Dump completo del esquema generado (índice de las 22 tablas).
+- ✅ 22 archivos `.sql` creados (uno por tabla).
+- ✅ `sql/013_password_resets.sql` integrado (HALL-030).
+- ✅ `sql/README.md` documentado con guía completa.
+- ✅ `DEPLOYMENT_GUIDE.md` actualizado con sección 5.1.
+- ✅ Archivos obsoletos movidos a `sql/legacy/`.
+
+#### ⚠️ Tareas Pendientes Documentadas
+
+- **Rediseño BM:** Las tablas `bm_*` están marcadas con `TODO: REDISEÑO BM PENDIENTE`. El módulo Black Market se reescribirá en una fase posterior.
+- **Bug de tipos en `023_upgrades_2_0.sql`:** La FK `plane_upgrades.user_id INT REFERENCES users(id)` apunta a `users.id` (que es UUID). Debe corregirse en Fase 3.
+- **Verificación funcional:** Pendiente ejecutar los 24 archivos en un proyecto Supabase de prueba para validar la idempotencia y la recreación completa.
+
+#### 🎯 Entregable
+
+Rama `feature/sql-migrations` con 9 commits:
+- `41fda3b` — dump de referencia
+- `7918b22` — reorganización de `sql/`
+- `d0d0af7` — DDL 001-004
+- `b74ba6b` — DDL 005-008
+- `1a7ef90` — DDL 009-012
+- `de0bd4f` — DDL 014-018
+- `eb5255b` — DDL 019-022
+- `04d42e7` — `sql/README.md`
+- `e730291` — `DEPLOYMENT_GUIDE.md`
+
+---
+
 ## 📌 [Fase 1] - 2026-09-16
 
 ### 🛡️ Seguridad Crítica — 6 hallazgos resueltos
