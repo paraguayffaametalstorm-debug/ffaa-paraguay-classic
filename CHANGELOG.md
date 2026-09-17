@@ -175,6 +175,111 @@ Documentación completa del incidente en `FIXES_APPLIED.md` (bloque HALL-055). S
 ---
 
 
+## 📌 [Fase 4] - 2026-09-17
+
+### 🔐 Seguridad Secundaria — 8 hallazgos resueltos
+
+#### Objetivo Cumplido
+
+Cerrar los hallazgos de seguridad de severidad MEDIA de la auditoría, reforzando la superficie de ataque restante: protección de endpoints de escritura, rate limiting, decisión de política público/privado en endpoints GET, y persistencia + sanitización de backups del OWNER.
+
+#### Hallazgos Resueltos
+
+| Hallazgo | Descripción | Commit |
+|---|---|---|
+| HALL-004 | `/register` protegido con `requireAuth` + `requireRole('ADMIN', 'OWNER')` | `20934e2` |
+| HALL-009 | `authLimiter` aplicado a `/register` | `20934e2` |
+| HALL-018 | Catálogo público `/api/planes/catalog/*` — decisión: **mantener público** (data del juego) | `16d64f0` |
+| HALL-019 | 5 endpoints GET de BM ahora requieren `requireAuth` | `16d64f0` |
+| HALL-034 | 2 endpoints GET de plane-models ahora requieren `requireAuth` | `16d64f0` |
+| HALL-033 | `/api/presence/active` ahora requiere `requireAuth` | `a781cb3` |
+| HALL-036 | Backups del OWNER persistidos en Supabase (antes: en memoria) | `e02d2a3` |
+| HALL-037 | Sanitización ampliada de PII en backups | `e02d2a3` |
+
+#### Decisiones de Arquitectura
+
+**Política público/privado en endpoints GET:**
+
+- **Públicos (data del juego, sin info del escuadrón):**
+  - `GET /api/planes/catalog/plane-models` — catálogo oficial de 44 aviones.
+  - `GET /api/planes/catalog/plane-mods` — 10 mods oficiales.
+  - `GET /api/planes/plane-models` (alias).
+  - `GET /api/planes/plane-mods` (alias).
+
+- **Privados (requieren autenticación):**
+  - `GET /api/plane-models/` y `GET /api/plane-models/:id` (catálogo administrativo con `?include_inactive=true`).
+  - `GET /api/bm/events`, `/events/active`, `/events/:id`, `/stats`, `/leaderboard` (info interna del escuadrón).
+  - `GET /api/presence/active` (contador de pilotos en línea).
+  - `GET /api/owner/backup/list` (solo OWNER).
+
+**Sanitización de backups:**
+
+- **Campos eliminados por completo:** `password_hash`, `password`, `token_version`, `google_id`, `google_linked`.
+- **Campos ofuscados parcialmente:** `email` → `p***@dominio.com`, `phone` → `+595***3456`, `email_institucional`, `email_personal`.
+- **Preservado:** `nick`, `role`, `status`, `user_id`, `id`, timestamps.
+
+#### Infraestructura Nueva
+
+- ➕ `sql/027_backups_table.sql` — Tabla `backups` con JSONB, hash SHA-256, RLS `no_public_access`, índices en `created_at DESC` y `created_by`.
+- **Política de retención:** máximo 30 backups, auto-prune de los más antiguos.
+- **Endpoints nuevos:**
+  - `GET /api/owner/backup/download/:id` — descarga el JSON con verificación de hash.
+  - `DELETE /api/owner/backup/:id` — eliminación manual.
+- **Auditoría:** eventos `BACKUP_CREATED`, `BACKUP_DOWNLOADED`, `BACKUP_DELETED` en `audit_logs`.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `src/routes/auth.routes.js` | Import de `requireRole` + `/register` protegido |
+| `src/routes/plane-models.routes.js` | 2 endpoints GET con `requireAuth` |
+| `src/routes/bm.routes.js` | 5 endpoints GET con `requireAuth` |
+| `src/routes/presence.routes.js` | `/active` con `requireAuth` |
+| `src/controllers/owner.controller.js` | Refactor completo: persistencia + sanitización + hash + endpoints nuevos |
+| `src/routes/owner.routes.js` | 2 endpoints nuevos para backups |
+
+#### Verificación en Producción
+
+- ✅ **Deploy a Fly.io exitoso** (2 deploys incrementales: `deployment-01M2PQRWCB7TF2KQGRBSW0SEX3` y `deployment-01M2PSC0HFJ7HBQE34SY9AA4XE`).
+- ✅ **Smoke test 7/7 PASS:**
+  - `GET /health` → `200`
+  - `GET /api/owner/backup/list` sin auth → `401`
+  - `POST /api/owner/backup/run` sin auth → `401`
+  - `GET /api/presence/active` sin auth → `401`
+  - `GET /api/plane-models/` sin auth → `401`
+  - `GET /api/bm/leaderboard` sin auth → `401`
+  - `GET /api/catalog/plane-models` público → `200`
+- ✅ **Tests locales sin token:** 9 endpoints probados → todos `401` correctamente.
+- ✅ **Sin regresiones:** catálogo público sigue accesible, login OAuth funcional.
+
+#### Criterios de Cierre Cumplidos
+
+- ✅ HALL-004: `/register` protegido con auth + role.
+- ✅ HALL-009: `authLimiter` aplicado.
+- ✅ HALL-018: Decisión documentada (público).
+- ✅ HALL-019: 5 endpoints BM protegidos.
+- ✅ HALL-034: 2 endpoints plane-models protegidos.
+- ✅ HALL-033: `/active` protegido.
+- ✅ HALL-036: Backups persistidos en Supabase.
+- ✅ HALL-037: Sanitización ampliada de PII.
+- ✅ Smoke test 7/7 PASS en producción.
+- ✅ Deploy sin downtime.
+
+### 🎯 Entregable
+
+Rama `feature/security-secondary` con 5 commits mergeada a `main`.
+
+Commits de Fase 4:
+- `20934e2` — HALL-004/009: `/register` + rate limiting
+- `16d64f0` — HALL-018/019/034: política público/privado
+- `a781cb3` — HALL-033: `/api/presence/active` protegido
+- `e02d2a3` — HALL-036/037: backups persistentes + sanitización PII
+
+**Total:** 5 commits (incluye `facb3ae` de Fase 3.1), 8 hallazgos resueltos, ~50 archivos afectados.
+
+---
+
+
 ## 📌 [Fase 2] - 2026-09-16
 
 ### 🗄️ Infraestructura como Código — HALL-048 resuelto
