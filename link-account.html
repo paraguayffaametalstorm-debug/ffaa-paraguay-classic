@@ -306,9 +306,12 @@
     </div>
   </div>
 
-  <!-- HALL-059 FIX: Cargar api.js para usar apiLinkAccount() centralizado -->
-  <script src="/js/utils.js?v=4.0.4"></script>
-  <script src="/js/api.js?v=4.0.4"></script>
+  <!-- HALL-059d FIX: Definir API_BASE inline (igual que index.html:129) -->
+  <script>
+    const API_BASE = '';
+    window.API_BASE = '';
+  </script>
+  <script src="/js/api.js?v=4.0.5"></script>
 
   <script>
     // ─────────────────────────────────────────────────────────────────────────
