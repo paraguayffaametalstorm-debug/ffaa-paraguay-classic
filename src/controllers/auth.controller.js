@@ -600,7 +600,7 @@ export const linkAccount = async (req, res) => {
             .from('users')
             .update(updatePayload)
             .eq('id', user.id)
-            .select('id, email, nick, user_id, role, token_version, must_change_password, google_id, google_linked');
+            .select('id, email, nick, user_id, role, token_version, must_change_password, google_linked');
 
         if (updateError) {
             console.error('❌ Error vinculando cuenta Google en Supabase:', updateError);
