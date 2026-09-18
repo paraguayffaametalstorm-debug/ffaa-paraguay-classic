@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.0.0).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.0.5).**
 
 ---
 
@@ -116,11 +116,14 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
   - `performances.routes.js`: Rutas de rendimiento, exportación CSV y selector táctico `/api/performances/pilots`.
   - `admin.routes.js` y `owner.routes.js`: Supervisión RBAC, auditoría y administración de escuadrón.
   - `planes.routes.js`: Hangar, catálogo de cazas y mejoras Upgrades 2.0.
+  - `events-v2.routes.js`: **Módulo de Eventos Unificado (F3.1).** 12 endpoints para la gestión unificada de eventos SQ y BM (`/api/events-v2/*`). Reemplaza funcionalmente a `/api/events/*` y `/api/bm/*`.
   - **Integración Wiki (Fase 3C):** El endpoint `/api/planes/:id/details` devuelve 8 campos extraídos de la Wiki (`descripcion`, `historia`, `recomendaciones`, `loadout_wiki`, `paints`, `canopies`, `general_info_wiki`, `wiki_url`).
 - **`/src/middlewares/`:**
   - `auth.js`: Validación estricta de firma JWT y comparación de `token_version` con la base de datos para prevenir sesiones fantasma.
   - `requireRole`: Validador de rangos (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`).
   - `errorHandler.js`: Captura centralizada de excepciones que asegura respuestas estructuradas en JSON.
+
+---
 
 ### 2.3 Capa de Medios (Cloudinary)
 
@@ -132,7 +135,7 @@ el backend de Express con tráfico de assets estáticos.
 - **Estructura de carpetas:** `paraguay-ffaa/planes/` (attack, heavy, interceptor, light, medium) y `paraguay-ffaa/mods/` (10 mods tácticos)
 - **Transformaciones aplicadas:** `w_256,h_256,c_fill,f_webp,q_auto`
   - Redimensionado uniforme 256×256 px
-  - Recorte inteligente (`c_fill`)
+  - Recorte inteligente (`c_fill`)  
   - Conversión a WebP (`f_webp`)
   - Calidad automática (`q_auto`)
 - **Cobertura:** 44 aviones (fotos principales) + 10 mods (iconos)
@@ -309,6 +312,55 @@ El endpoint `PUT /api/planes/:id/system` valida el consumo de piezas y component
 
 Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel anterior, nivel nuevo y recursos empleados.
 
+### 5.1 Modelo de Datos del Sistema de Eventos (F2)
+
+El rediseño del sistema de eventos (F2) introduce dos tablas unificadas que reemplazan la lógica dual legacy.
+
+#### Tabla `events_master`
+
+| Columna | Tipo | Propósito |
+|---|---|---|
+| `id` | UUID | PK generada automáticamente |
+| `type` | TEXT | `SQUADRON` \| `BLACK_MARKET` \| `ACE_CHALLENGE` |
+| `name` | TEXT | Nombre legible del evento |
+| `start_date` | TIMESTAMPTZ | Inicio del evento |
+| `end_date` | TIMESTAMPTZ | Fin del evento |
+| `status` | TEXT | `SCHEDULED` \| `OPEN` \| `CLOSED` \| `CANCELLED` |
+| `metadata` | JSONB | Datos específicos por tipo (targets, ISO week, etc.) |
+| `legacy_event_id` | TEXT | ID del evento legacy (para migración) |
+| `closed_at` | TIMESTAMPTZ | Timestamp de cierre |
+| `closed_by` | UUID | FK a `users.id` (quién cerró) |
+| `created_at` | TIMESTAMPTZ | Fecha de creación |
+| `updated_at` | TIMESTAMPTZ | Última actualización |
+
+**Índices:**
+- `events_master_pkey` (PK `id`)
+- `idx_events_master_single_open` (UNIQUE parcial `status = 'OPEN'`)
+- `idx_events_master_type_status` (`type`, `status`)
+- `idx_events_master_dates` (`start_date`, `end_date`)
+- `idx_events_master_legacy_event_id` (UNIQUE parcial `legacy_event_id IS NOT NULL`)
+- `idx_events_master_closed_at` (parcial `closed_at IS NOT NULL`)
+
+#### Tabla `event_participations`
+
+| Columna | Tipo | Propósito |
+|---|---|---|
+| `id` | UUID | PK generada automáticamente |
+| `event_id` | UUID | FK a `events_master.id` |
+| `user_id` | UUID | FK a `users.id` |
+| `nick` | TEXT | Desnormalizado para consultas rápidas |
+| `data` | JSONB | Datos específicos (tokens, días, misiones BM, etc.) |
+| `computed_points` | INTEGER | Puntos calculados |
+| `status` | TEXT | `PENDING` \| `VALIDATED` \| `REJECTED` |
+| `created_at` | TIMESTAMPTZ | Fecha de creación |
+| `updated_at` | TIMESTAMPTZ | Última actualización |
+| `created_by` | UUID | FK a `users.id` (quién cargó) |
+
+**Constraints:**
+- `UNIQUE (event_id, user_id)` — 1 participación por piloto por evento.
+
+**Integridad:** 0 huérfanos en `event_id`, 0 huérfanos en `user_id` (verificado 2026-09-18).
+
 ---
 
 ## 6. Estrategia de Seguridad C4ISR
@@ -328,8 +380,9 @@ Todas las mejoras se auditan en la tabla `plane_upgrades` registrando el nivel a
    - Requiere cambio obligatorio de contraseña en el primer inicio (`must_change_password: true`).
 4. **Cuotas Jerárquicas Militares (RBAC Enforcement):**
    - **`OWNER`:** Máximo **1**. Al promoverse un nuevo Comandante, el anterior desciende automáticamente a `ADMIN`.
-   - **`ADMIN`:** Máximo **3**. Se bloquean ascensos adicionales con error `ROLE_LIMIT_REACHED`.
+   - **`ADMIN`:** Máximo **5** (actualizado desde 3 por decisión del OWNER, 2026-09-16). Se bloquean ascensos adicionales con error `ROLE_LIMIT_REACHED`.
    - **`VETERANO`:** Máximo **8**. Se bloquean ascensos adicionales con error `ROLE_LIMIT_REACHED`.
+   - **Constante centralizada:** `ROLE_LIMITS` en `admin.controller.js` (HALL-054).
 5. **Auditoría Dual & Trazabilidad:**
    - `security_events`: Registra autenticaciones, intentos fallidos, reseteos de credenciales con IP y User-Agent.
    - `audit_logs`: Registra modificaciones administrativas y cambios de rol.
@@ -655,6 +708,6 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
 
 ---
 
-*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*
+*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
 
 
