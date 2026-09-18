@@ -240,7 +240,6 @@
 <body>
 
   <div class="link-card" id="linkCard">
-    <!-- Header -->
     <div class="header-logo">
       <img src="/logo-escuadron.png" alt="Insignia FFAA" onerror="this.style.display='none'">
       <div class="header-titles">
@@ -249,10 +248,8 @@
       </div>
     </div>
 
-    <!-- Alert Messages -->
     <div id="alertBox" class="alert-box"></div>
 
-    <!-- Google Email Detected Badge -->
     <div class="google-badge" id="googleBadge">
       <svg viewBox="0 0 24 24">
         <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
@@ -270,9 +267,7 @@
       ⚠️ <strong>PRIMER ACCESO CON GOOGLE:</strong> Tu cuenta de Google aún no está vinculada a un perfil del escuadrón. Ingresa tu <strong>Indicativo (Callsign)</strong> y <strong>Contraseña actual</strong> para vincularlas permanentemente.
     </div>
 
-    <!-- Main Link Form -->
     <form id="linkForm" onsubmit="handleLinkAccount(event)">
-      <!-- Hidden or visible Email Input -->
       <div class="form-group" id="manualEmailGroup" style="display: none;">
         <label for="googleEmail">Correo Google (Gmail)</label>
         <input type="email" id="googleEmail" class="form-input" placeholder="usuario@gmail.com" required>
@@ -301,7 +296,6 @@
       <a href="/" class="back-link">← Cancelar y volver al Acceso Principal</a>
     </form>
 
-    <!-- Success View -->
     <div id="successView" style="display: none; text-align: center; padding: 1rem 0;">
       <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎖️</div>
       <h2 style="color: #2ECC71; font-size: 1.3rem; margin: 0 0 0.5rem; font-weight: 700;">¡VINCULACIÓN EXITOSA!</h2>
@@ -312,8 +306,20 @@
     </div>
   </div>
 
+  <!-- HALL-059 FIX: Cargar api.js para usar apiLinkAccount() centralizado -->
+  <script src="/js/api.js"></script>
+
   <script>
-    // Extraer correo de Google desde los parámetros de la URL
+    // ─────────────────────────────────────────────────────────────────────────
+    // HALL-059 FIX: Vinculación Google OAuth - Claves localStorage estandarizadas
+    // ─────────────────────────────────────────────────────────────────────────
+    // Bugs corregidos:
+    //   1. Claves de localStorage: 'auth_token' → 'authToken' (camelCase)
+    //                               'current_user' → 'currentUser' (camelCase)
+    //   2. Token ya no se expone en URL tras vinculación exitosa
+    //   3. Uso de window.apiLinkAccount() en lugar de fetch() inline
+    // ─────────────────────────────────────────────────────────────────────────
+
     const urlParams = new URLSearchParams(window.location.search);
     let targetEmail = urlParams.get('email') || '';
 
@@ -359,70 +365,53 @@
         showAlert('Se requiere la dirección de correo de Google a vincular', 'error');
         return;
       }
-
       if (!callsign) {
         showAlert('Ingresa tu indicativo de combate (Callsign)', 'error');
         return;
       }
-
       if (!password) {
         showAlert('Ingresa tu contraseña actual del escuadrón', 'error');
         return;
       }
 
-      // Bloquear botón durante la solicitud
       btnSubmit.disabled = true;
       btnText.textContent = 'Vinculando con Sistema C4ISR...';
       btnSpinner.style.display = 'inline-block';
       document.getElementById('alertBox').style.display = 'none';
 
       try {
-        const response = await fetch('/api/auth/link-account', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email,
-            callsign,
-            password
-          })
-        });
+        // HALL-059 FIX: Usar helper centralizado en js/api.js
+        const data = await window.apiLinkAccount({ email, callsign, password });
 
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          // Guardar token de sesión
-          if (data.token) {
-            localStorage.setItem('auth_token', data.token);
-            localStorage.setItem('token', data.token);
-          }
-          if (data.user) {
-            localStorage.setItem('current_user', JSON.stringify(data.user));
-          }
-
-          document.getElementById('linkForm').style.display = 'none';
-          document.getElementById('googleBadge').style.display = 'none';
-          const notice = document.querySelector('.tactical-notice');
-          if (notice) notice.style.display = 'none';
-
-          const successMsg = document.getElementById('successMessage');
-          successMsg.textContent = data.message || `¡Cuenta de Google (${email}) vinculada exitosamente!`;
-          document.getElementById('successView').style.display = 'block';
-
-          // Redirigir a la aplicación principal tras 2 segundos
-          setTimeout(() => {
-            window.location.href = `/?auth_token=${encodeURIComponent(data.token)}`;
-          }, 2000);
-        } else {
-          showAlert(data.error || 'No se pudo vincular la cuenta', 'error');
-          btnSubmit.disabled = false;
-          btnText.textContent = 'Vincular y Continuar';
-          btnSpinner.style.display = 'none';
+        // HALL-059 FIX: Guardar token con clave estandarizada (camelCase)
+        // Antes se usaba 'auth_token' y 'token' (snake_case) lo que causaba
+        // inconsistencia con js/api.js y js/auth.js que buscan 'authToken'.
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
         }
+        if (data.user) {
+          localStorage.setItem('currentUser', JSON.stringify(data.user));
+        }
+
+        document.getElementById('linkForm').style.display = 'none';
+        document.getElementById('googleBadge').style.display = 'none';
+        const notice = document.querySelector('.tactical-notice');
+        if (notice) notice.style.display = 'none';
+
+        const successMsg = document.getElementById('successMessage');
+        successMsg.textContent = data.message || `¡Cuenta de Google (${email}) vinculada exitosamente!`;
+        document.getElementById('successView').style.display = 'block';
+
+        // HALL-059 FIX: Redirigir SIN exponer el token en la URL.
+        // El token ya está guardado en localStorage, así que basta con
+        // redirigir a la raíz y la SPA detectará la sesión automáticamente.
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+
       } catch (err) {
         console.error('Error al vincular cuenta:', err);
-        showAlert('Error de conexión con el servidor táctico. Inténtalo nuevamente.', 'error');
+        showAlert(err.message || 'Error de conexión con el servidor táctico. Inténtalo nuevamente.', 'error');
         btnSubmit.disabled = false;
         btnText.textContent = 'Vincular y Continuar';
         btnSpinner.style.display = 'none';
