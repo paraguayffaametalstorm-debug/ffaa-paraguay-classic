@@ -21,9 +21,11 @@ import ownerRoutes from './src/routes/owner.routes.js';
 import profileRoutes from './src/routes/profile.routes.js';
 import settingsRoutes from './src/routes/settings.routes.js';
 import eventsRoutes from './src/routes/events.routes.js';
+import eventsV2Routes from './src/routes/events-v2.routes.js';
 import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
 import bmRoutes from './src/routes/bm.routes.js';
+import { startEventScheduler } from './src/utils/eventScheduler.js';
 
 // Global error handlers to prevent process crash
 process.on('unhandledRejection', (err) => {
@@ -191,6 +193,7 @@ app.use('/api/owner', ownerRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/events', eventsRoutes);
+app.use('/api/events-v2', eventsV2Routes);
 app.use('/api/presence', presenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/bm', bmRoutes);
@@ -240,7 +243,25 @@ app.get('*all', (req, res) => {
 // Centralized Error Handling Middleware
 app.use(errorHandler);
 
-// Start Server immediately without blocking
+// ============================================================
+// START SERVER
+// ============================================================
+
 app.listen(ENV.PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto ${ENV.PORT} (0.0.0.0:${ENV.PORT})`);
+
+  // ============================================================
+  // START EVENT SCHEDULER (F2.9)
+  // ============================================================
+  // Auto-crea eventos SQ cada jueves 00:00 UTC.
+  // Ejecuta backfill de las últimas 12 semanas al arrancar.
+  // Advisory lock garantiza que solo 1 réplica de Fly.io ejecute.
+  // ============================================================
+  try {
+    startEventScheduler();
+    console.log('✅ [Server] Event Scheduler iniciado.');
+  } catch (err) {
+    console.error('❌ [Server] Error iniciando Event Scheduler:', err.message);
+    // No bloquea el arranque del servidor.
+  }
 });
