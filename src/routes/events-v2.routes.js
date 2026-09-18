@@ -20,7 +20,11 @@ import {
   createEvent,
   updateEvent,
   changeEventStatus,
-  deleteEvent
+  deleteEvent,
+  getParticipations,
+  createParticipation,
+  updateParticipation,
+  deleteParticipation
 } from '../controllers/events-v2.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 
@@ -43,5 +47,14 @@ router.post('/', requireAuth, requireRole('ADMIN', 'OWNER'), createEvent);
 router.put('/:id', requireAuth, requireRole('ADMIN', 'OWNER'), updateEvent);
 router.patch('/:id/status', requireAuth, requireRole('ADMIN', 'OWNER'), changeEventStatus);
 router.delete('/:id', requireAuth, requireRole('ADMIN', 'OWNER'), deleteEvent);
+
+// ============================================================
+// Rutas de participaciones (autenticadas)
+// ============================================================
+
+router.get('/:id/participations', requireAuth, getParticipations);
+router.post('/:id/participations', requireAuth, createParticipation);
+router.put('/:id/participations/:uid', requireAuth, updateParticipation);
+router.delete('/:id/participations/:uid', requireAuth, deleteParticipation);
 
 export default router;
