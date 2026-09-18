@@ -29,7 +29,10 @@ import {
   CreateEventSchema,
   UpdateEventSchema,
   ChangeEventStatusSchema,
-  getMetadataSchema
+  CreateParticipationSchema,
+  UpdateParticipationSchema,
+  getMetadataSchema,
+  getParticipationDataSchema
 } from '../utils/eventSchemas.js';
 
 // ============================================================
@@ -496,6 +499,290 @@ export const deleteEvent = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ [Events-v2] Error en deleteEvent:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+// ============================================================
+// 8. GET /api/events-v2/:id/participations — Listar participaciones
+// ============================================================
+
+export const getParticipations = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable'
+      });
+    }
+
+    // Verificar que el evento existe
+    const { data: events, error: eventErr } = await supabase
+      .from('events_master')
+      .select('id, type, name')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (eventErr) throw eventErr;
+    if (!events || events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const { data: participations, error } = await supabase
+      .from('event_participations')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      event: events[0],
+      participations: participations || [],
+      count: (participations || []).length
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2] Error en getParticipations:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// ============================================================
+// 9. POST /api/events-v2/:id/participations — Crear participación
+// ============================================================
+
+export const createParticipation = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const payload = CreateParticipationSchema.parse(req.body);
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable'
+      });
+    }
+
+    // 1. Verificar que el evento existe y está OPEN
+    const { data: events, error: eventErr } = await supabase
+      .from('events_master')
+      .select('id, type, status, name')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (eventErr) throw eventErr;
+    if (!events || events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const event = events[0];
+
+    // 2. Switch: el evento debe estar OPEN
+    if (event.status !== 'OPEN') {
+      return res.status(409).json({
+        success: false,
+        error: `No se puede cargar participación en un evento ${event.status}. Solo eventos OPEN aceptan participaciones.`,
+        code: 'EVENT_NOT_OPEN'
+      });
+    }
+
+    // 3. Validar data según el tipo de evento
+    const dataSchema = getParticipationDataSchema(event.type);
+    const validatedData = dataSchema.parse(payload.data);
+
+    // 4. Determinar user_id (propio o target por ADMIN/OWNER)
+    let targetUserId = payload.user_id || req.user?.id;
+    let targetNick = payload.nick || req.user?.nick;
+
+    // 5. Insertar participación
+    const participationData = {
+      event_id: eventId,
+      user_id: targetUserId,
+      nick: targetNick,
+      data: validatedData,
+      computed_points: payload.computed_points ?? 0,
+      status: payload.status || 'PENDING',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: req.user?.id || null
+    };
+
+    const { data: created, error } = await supabase
+      .from('event_participations')
+      .insert(participationData)
+      .select()
+      .single();
+
+    if (error) {
+      // Manejar conflicto de duplicado (UNIQUE event_id + user_id)
+      if (error.code === '23505') {
+        return res.status(409).json({
+          success: false,
+          error: 'Ya existe una participación para este piloto en este evento.',
+          code: 'PARTICIPATION_EXISTS'
+        });
+      }
+      throw error;
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `Participación creada exitosamente`,
+      participation: created,
+      data: created
+    });
+  } catch (error) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Payload inválido',
+        code: 'VALIDATION_ERROR',
+        details: error.errors
+      });
+    }
+    console.error('❌ [Events-v2] Error en createParticipation:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// ============================================================
+// 10. PUT /api/events-v2/:id/participations/:uid — Editar participación
+// ============================================================
+
+export const updateParticipation = async (req, res) => {
+  try {
+    const { id: eventId, uid: userId } = req.params;
+    const payload = UpdateParticipationSchema.parse(req.body);
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable'
+      });
+    }
+
+    // Verificar que la participación existe
+    const { data: existing, error: queryErr } = await supabase
+      .from('event_participations')
+      .select('id, data, status')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (queryErr) throw queryErr;
+    if (!existing || existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Participación no encontrada',
+        code: 'PARTICIPATION_NOT_FOUND'
+      });
+    }
+
+    const updateData = {
+      ...(payload.data && { data: payload.data }),
+      ...(payload.computed_points !== undefined && { computed_points: payload.computed_points }),
+      ...(payload.status && { status: payload.status }),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: updated, error } = await supabase
+      .from('event_participations')
+      .update(updateData)
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.json({
+      success: true,
+      message: `Participación actualizada exitosamente`,
+      participation: updated,
+      data: updated
+    });
+  } catch (error) {
+    if (error.name === 'ZodError') {
+      return res.status(400).json({
+        success: false,
+        error: 'Payload inválido',
+        code: 'VALIDATION_ERROR',
+        details: error.errors
+      });
+    }
+    console.error('❌ [Events-v2] Error en updateParticipation:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// ============================================================
+// 11. DELETE /api/events-v2/:id/participations/:uid — Eliminar participación
+// ============================================================
+
+export const deleteParticipation = async (req, res) => {
+  try {
+    const { id: eventId, uid: userId } = req.params;
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable'
+      });
+    }
+
+    const { data: existing, error: queryErr } = await supabase
+      .from('event_participations')
+      .select('id, nick')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (queryErr) throw queryErr;
+    if (!existing || existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Participación no encontrada',
+        code: 'PARTICIPATION_NOT_FOUND'
+      });
+    }
+
+    const { error: deleteErr } = await supabase
+      .from('event_participations')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+
+    if (deleteErr) throw deleteErr;
+
+    return res.json({
+      success: true,
+      message: `Participación de ${existing[0].nick} eliminada exitosamente`,
+      deleted_user_id: userId
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2] Error en deleteParticipation:', error);
     return res.status(500).json({
       success: false,
       error: error.message
