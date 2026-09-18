@@ -5,6 +5,51 @@ Todas las modificaciones notables, correcciones de errores, mejoras de seguridad
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## 📌 [4.0.3] - 2026-09-17
+
+### 🚨 Hotfix — HALL-059: Inconsistencia de Claves en Vinculación Google OAuth
+
+#### Objetivo Cumplido
+
+Resolver el fallo reportado en el flujo de vinculación de cuentas Google (`/link-account`), donde aparecía un error `404` en consola sobre `/api/auth/link-account`. Tras auditoría exhaustiva, se determinó que el backend **nunca estuvo roto** y el problema real era doble:
+
+1. Inconsistencia de claves en `localStorage` (`auth_token` vs `authToken`).
+2. Falso positivo de `404` por caché obsoleta del Service Worker (`v3.9.8`).
+
+#### Descripción del Incidente
+
+**Síntoma reportado:** Error `Failed to load resource: the server responded with a status of 404 ()` en la consola del navegador durante el flujo de vinculación de cuentas Google OAuth (`/link-account`).
+
+**Diagnóstico:**
+- Endpoint backend `POST /api/auth/link-account`: ✅ **FUNCIONAL**.
+- Frontend `link-account.html`: ❌ **BUG** en claves de `localStorage`.
+- Service Worker `sw.js`: ⚠️ **Caché obsoleta** causando 404 en recursos.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `link-account.html` | Token guardado como `authToken`; eliminado paso de token por URL; uso de `window.apiLinkAccount()` |
+| `js/api.js` | Nueva función `apiLinkAccount(payload)` centralizada |
+| `sw.js` | `CACHE_NAME` actualizado `v3.9.8` → `v4.0.3` |
+
+#### Verificación
+
+- ✅ Backend sin cambios (endpoint intacto y funcional).
+- ✅ Clave `authToken` estandarizada en 5 archivos.
+- ✅ Token eliminado de URLs (mejora de seguridad).
+- ✅ Smoke test en producción: `/health` → `200 OK`.
+- 🔄 Pendiente prueba end-to-end con usuario real.
+
+#### 🎯 Entregable
+
+Rama `hotfix/hall-059-link-account` con commits:
+- `fix(hall-059): estandarizar claves localStorage en link-account.html`
+- `feat(api): agregar apiLinkAccount() como helper centralizado`
+- `chore(sw): bump cache version v3.9.8 → v4.0.3`
+- `docs(hall-059): documentar incidente en FIXES_APPLIED y CHANGELOG`
+
+---
 
 ## 📌 [Fase 3] - 2026-09-17
 
