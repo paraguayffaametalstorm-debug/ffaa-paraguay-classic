@@ -358,10 +358,16 @@ for (let i = weeksBack; i >= 1; i--) {
 export function startEventScheduler() {
   console.log('🕐 [Scheduler] Iniciando scheduler de eventos SQ...');
 
-  // Backfill inicial (async)
-  backfillRecentWeeks(12).catch(err => {
-    console.error('❌ [Scheduler] Error en backfill inicial:', err.message);
-  });
+  // ❌ Backfill DESHABILITADO (F2.9 - Opción C).
+  // Razón: no inventar eventos históricos para semanas sin actividad real.
+  // El schedulerTick se encarga solo de la semana actual/futura.
+  //
+  // Si en el futuro se necesita backfill, descomentar la línea siguiente
+  // y ajustar la lógica para cubrir solo gaps entre eventos existentes.
+  //
+  // backfillRecentWeeks(12).catch(err => {
+  //   console.error('❌ [Scheduler] Error en backfill inicial:', err.message);
+  // });
 
   // Cron: cada 1 hora en punto
   cron.schedule('0 * * * *', () => {
