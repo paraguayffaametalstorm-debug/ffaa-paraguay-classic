@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS events_master (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   created_by UUID REFERENCES users(id),
   closed_at TIMESTAMPTZ,
-  closed_by UUID REFERENCES users(id) ON DELETE SET NULL
+  closed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Índice único parcial: garantiza que solo haya UN evento OPEN a la vez.
@@ -41,8 +42,9 @@ CREATE INDEX IF NOT EXISTS idx_events_master_type_status
 CREATE INDEX IF NOT EXISTS idx_events_master_dates
   ON events_master (start_date, end_date);
 
-CREATE INDEX IF NOT EXISTS idx_events_master_legacy_event_id
-  ON events_master (legacy_event_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_events_master_legacy_event_id
+  ON events_master (legacy_event_id)
+  WHERE legacy_event_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_events_master_closed_at
   ON events_master (closed_at DESC)
@@ -56,3 +58,4 @@ COMMENT ON COLUMN events_master.metadata IS 'Datos específicos por tipo (JSONB)
 COMMENT ON COLUMN events_master.legacy_event_id IS 'ID original del evento en la tabla events (ej: 2026-XX-SEMNN-SQ)';
 COMMENT ON COLUMN events_master.closed_at IS 'Timestamp de cierre del evento (NULL si no está cerrado)';
 COMMENT ON COLUMN events_master.closed_by IS 'UUID del usuario que cerró el evento (NULL si no está cerrado)';
+COMMENT ON COLUMN events_master.updated_at IS 'Timestamp de última actualización (metadata, status, cierre)';
