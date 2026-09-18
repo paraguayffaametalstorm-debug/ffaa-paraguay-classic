@@ -2,7 +2,7 @@
 
 > **Documentación oficial del versionado del esquema de base de datos en Supabase PostgreSQL.**  
 > **Fase:** 2 (Infraestructura como Código) · **Hallazgo:** HALL-048  
-> **Última actualización:** 2026-09-17 (v1.2 — agregados archivos 028, 029)
+> **Última actualización:** 2026-09-17 (v1.3 — agregado archivo 030)
 
 ---
 
@@ -40,6 +40,7 @@
 | 027 | `027_backups_table.sql` | Tabla `backups` con RLS `no_public_access` |
 | 028 | `028_events_master.sql` | Tabla unificada de eventos (SQ, BM, futuros) — Rediseño |
 | 029 | `029_event_participations.sql` | Tabla unificada de participaciones — Rediseño |
+| 030 | `030_scheduler_locks.sql` | Advisory locks para scheduler de eventos |
 
 **Archivos legacy (no ejecutar):** `legacy/updates_v3.4.0.sql` — versión obsoleta de `password_resets` con tipos incorrectos. Conservado como referencia histórica.
 
@@ -78,6 +79,7 @@ Los archivos deben ejecutarse **en orden numérico ascendente** (001, 002, 003, 
 27. `027_backups_table.sql` (tabla de backups, independiente)
 28. `028_events_master.sql` (tabla unificada de eventos)
 29. `029_event_participations.sql` (depende de `events_master` y `users`)
+30. `030_scheduler_locks.sql` (advisory locks para el scheduler)
 
 ---
 
@@ -195,6 +197,7 @@ sql/
 ├── 027_backups_table.sql             # Tabla de backups con RLS
 ├── 028_events_master.sql             # Tabla unificada de eventos (rediseño)
 ├── 029_event_participations.sql      # Participaciones unificadas (rediseño)
+├── 030_scheduler_locks.sql           # Advisory locks del scheduler
 ├── README.md                          # Este archivo
 └── legacy/
     └── updates_v3.4.0.sql            # (Histórico, no ejecutar)
@@ -222,8 +225,9 @@ sql/
 | **v1.0** | 2026-09-16 | Creación inicial (Fase 2 — HALL-048) con 24 archivos (000-024). |
 | **v1.1** | 2026-09-17 | Agregados archivos 025, 026, 027. Notas de idempotencia ampliadas. Sección de estructura de directorio. Referencias actualizadas. |
 | **v1.2** | 2026-09-17 | Agregados archivos 028, 029 (rediseño de eventos). |
+| **v1.3** | 2026-09-17 | Agregado archivo 030 (advisory locks del scheduler). |
 
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-**Guía de Migraciones v1.2 · 2026-09-17 · Documento vivo**
+**Guía de Migraciones v1.3 · 2026-09-17 · Documento vivo**
