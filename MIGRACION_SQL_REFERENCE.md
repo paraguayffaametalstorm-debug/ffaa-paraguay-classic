@@ -295,6 +295,235 @@ Eventos sin datos de participaciones (semanas inactivas o BM sin uso):
 **Interpretación:** No es un error. Son eventos históricos sin datos.
 
 ---
+## 🔵 F2.6 — Análisis de eventos sin participaciones
+
+### Hallazgo
+
+Durante el análisis de F2.6, se detectaron **11 eventos** en `events_master` **sin participaciones asociadas**:
+
+- `2026-04 · SEM 17 - SQ`
+- `2026-06 · SEM 24, 25, 26 - SQ`
+- `2026-07 · SEM 28, 29, 30, 31 - SQ`
+- `2026-08 · SEM 32, 33, 34 - SQ`
+
+**Inicialmente se interpretó** que eran eventos faltantes (a crear).
+**Verificación posterior** reveló que estos 11 eventos **YA EXISTÍAN** en `events_master` desde F2.1.
+
+### Interpretación corregida
+
+No son eventos faltantes. Son eventos **sin participaciones cargadas** (semanas sin actividad).
+
+**Filosofía:** No inventar datos. Documentar la realidad.
+
+### Acción ejecutada
+
+```sql
+UPDATE events_master
+SET metadata = metadata || jsonb_build_object(
+  'no_data', true,
+  'backfilled', false,
+  'source', 'MIGRATION_ANALYSIS',
+  'notes', 'Evento sin participaciones cargadas. No es un error.'
+),
+updated_at = NOW()
+WHERE legacy_event_id IN (
+  '2026-04 · SEM 17 - SQ',
+  '2026-06 · SEM 24 - SQ',
+  '2026-06 · SEM 25 - SQ',
+  '2026-06 · SEM 26 - SQ',
+  '2026-07 · SEM 28 - SQ',
+  '2026-07 · SEM 29 - SQ',
+  '2026-07 · SEM 30 - SQ',
+  '2026-07 · SEM 31 - SQ',
+  '2026-08 · SEM 32 - SQ',
+  '2026-08 · SEM 33 - SQ',
+  '2026-08 · SEM 34 - SQ'
+);
+
+### Resultado verificado
+
+| Métrica | Valor |
+|---|---:|
+| `events_master` total | 35 |
+| Eventos con `no_data: true` | 11 |
+| Eventos con `backfilled: true` | 1 (BM SEM 16) |
+| Eventos `OPEN` | 1 |
+| Eventos `CLOSED` | 34 |
+| Duplicados | 0 |
+| Pérdida de datos | 0 |
+
+### Hallazgo documentado
+
+**HALLAZGO-063:** "Semanas huérfanas" son eventos sin participaciones, no eventos faltantes.
+
+---
+
+## 🔵 F2.7 — Columnas de auditoría en `events_master`
+
+### Columnas agregadas
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `closed_at` | TIMESTAMPTZ | Timestamp de cierre del evento. |
+| `closed_by` | UUID (FK `users.id`) | Usuario que cerró el evento. |
+| `updated_at` | TIMESTAMPTZ DEFAULT NOW() | Timestamp de última actualización. |
+
+### Índices agregados
+
+| Índice | Tipo | Definición |
+|---|---|---|
+| `idx_events_master_closed_at` | Parcial | `WHERE closed_at IS NOT NULL` |
+| `idx_events_master_legacy_event_id` | **UNIQUE Parcial** | `WHERE legacy_event_id IS NOT NULL` |
+
+**⚠️ Cambio importante:** El índice `legacy_event_id` pasó de `CREATE INDEX` a **`CREATE UNIQUE INDEX`** para soportar `ON CONFLICT` y garantizar unicidad.
+
+### Query ejecutada
+
+```sql
+ALTER TABLE events_master 
+  ADD COLUMN IF NOT EXISTS closed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS closed_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+DROP INDEX IF EXISTS idx_events_master_legacy_event_id;
+CREATE UNIQUE INDEX idx_events_master_legacy_event_id
+  ON events_master (legacy_event_id)
+  WHERE legacy_event_id IS NOT NULL;
+```
+
+---
+
+## 🔵 F2.8 — Scheduler de eventos SQ
+
+### Componente nuevo: `src/utils/eventScheduler.js`
+
+**Propósito:** Auto-crear eventos SQ cada jueves 00:00 UTC.
+
+**Características:**
+- Cron job cada 1 hora (`0 * * * *`).
+- Advisory Lock multi-réplica (vía RPC).
+- Idempotencia por `legacy_event_id`.
+- Sin backfill (decisión F2.9).
+
+### Funciones RPC nuevas
+
+**Archivo:** `sql/030_scheduler_locks.sql`
+
+| Función | Retorno | Propósito |
+|---|---|---|
+| `acquire_scheduler_lock()` | BOOLEAN | Adquiere advisory lock (ID 12345). |
+| `release_scheduler_lock()` | BOOLEAN | Libera advisory lock. |
+
+### Dependencia agregada
+
+- `node-cron` (^4.x) en `package.json`.
+
+### Commits
+
+| Commit | Descripción |
+|---|---|
+| `ca784ab` | feat(scheduler): crear eventScheduler |
+| `2e84e3a` | feat(scheduler): versionar advisory locks |
+
+---
+
+## 🔵 F2.9 — Integración del scheduler en `server.js`
+
+### Cambios en `server.js`
+
+**Import agregado:**
+```javascript
+import { startEventScheduler } from './src/utils/eventScheduler.js';
+```
+
+**Modificación en `app.listen`:**
+```javascript
+app.listen(ENV.PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto ${ENV.PORT}`);
+
+  // START EVENT SCHEDULER (F2.9)
+  try {
+    startEventScheduler();
+    console.log('✅ [Server] Event Scheduler iniciado.');
+  } catch (err) {
+    console.error('❌ [Server] Error iniciando Event Scheduler:', err.message);
+    // No bloquea el arranque del servidor.
+  }
+});
+```
+
+### Decisión arquitectónica: backfill DESHABILITADO
+
+**Problema detectado en test local:** El backfill original creaba eventos para semanas sin actividad real (SEM 36, SEM 37), **inventando datos históricos**.
+
+**Solución aplicada:** Backfill **deshabilitado** (`// backfillRecentWeeks(12)`). Solo el `schedulerTick` (cron) crea el evento actual/futuro.
+
+**Filosofía:** El histórico es lo que es. El scheduler respeta la realidad.
+
+### Fix aplicado a `eventExists`
+
+**Antes:** Buscaba por `metadata->>iso_week` y `metadata->>iso_year`.
+**Problema:** Los eventos migrados en F2.1 **NO tienen** esos campos en metadata.
+**Solución:** Buscar por `legacy_event_id` (único, cubre migrados y nuevos).
+
+### Commits
+
+| Commit | Descripción |
+|---|---|
+| `4b26266` | fix(scheduler): detectar migrados por legacy_event_id |
+| `d08327d` | fix(scheduler): deshabilitar backfill |
+
+### Test local verificado
+
+```
+🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto 3000
+🕐 [Scheduler] Iniciando scheduler de eventos SQ...
+✅ [Scheduler] Scheduler iniciado. Cron: cada 1 hora.
+✅ [Server] Event Scheduler iniciado.
+✅ [Supabase Diagnostic] Tabla "users" accesible.
+✅ [Supabase Diagnostic] Tabla "performances" accesible.
+✅ [Supabase Diagnostic] Tabla "events" accesible.
+```
+
+**Sin errores. Sin creación de eventos fantasmas.** ✅
+
+---
+
+## 📊 Resumen Final de F2 (Extendido)
+
+### Commits de F2
+
+| Fase | Commit | Descripción |
+|---|---|---|
+| F2.5 | `66d0221` | docs(migracion): documentar migración |
+| F2.7 | `f7b3597` | feat: columnas closed_at/closed_by |
+| F2.6+7 | `86296bb` | fix: sincronizar 028_events_master.sql |
+| F2.8 | `ca784ab` | feat: eventScheduler |
+| F2.8 | `2e84e3a` | feat: advisory locks SQL |
+| F2.9 | `4b26266` | fix: detectar migrados por legacy_event_id |
+| F2.9 | `d08327d` | fix: deshabilitar backfill |
+
+### Estado Final de la BD (al cierre de F2)
+
+| Tabla | Registros | Estado |
+|---|---:|---|
+| `events_master` | 35 | ✅ Migrado |
+| `event_participations` | 639 | ✅ Migrado |
+| `events` (legacy) | 35 | ✅ Preservada |
+| `performances` (legacy) | 639 | ✅ Preservada |
+| `bm_*` | 0 | ✅ Sin tocar |
+| `users` | 61 | ✅ Sin tocar |
+
+### Hallazgos documentados en F2
+
+- **HALL-056:** `DEPLOYMENT_STATE.md` desactualizado.
+- **HALL-057:** `009_plane_upgrades.sql` desactualizado.
+- **HALL-058:** Módulo BM duplicado.
+- **HALL-061:** 12 eventos sin participaciones.
+- **HALL-062:** `ON CONFLICT` no funciona con índices parciales.
+- **HALL-063:** "Semanas huérfanas" son eventos sin participaciones.
+
+---
 
 ## 📎 Archivos Relacionados
 
@@ -302,7 +531,8 @@ Eventos sin datos de participaciones (semanas inactivas o BM sin uso):
 |---|---|
 | `sql/028_events_master.sql` | DDL de la tabla unificada de eventos |
 | `sql/029_event_participations.sql` | DDL de la tabla unificada de participaciones |
-| `sql/README.md` | Guía de migraciones actualizada (v1.2) |
+| `sql/030_scheduler_locks.sql` | DDL de advisory locks del scheduler |
+| `sql/README.md` | Guía de migraciones actualizada (v1.3) |
 | `BACKUP_INSTRUCTIONS.md` | Guía del backup F0 |
 | `PROMPT_MAESTRO_REDISEÑO.md` | Plan completo del rediseño |
 
@@ -322,5 +552,5 @@ Migración completada con **éxito total**.
 
 ---
 
-**PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
-**Documento de migración v1.0 · 2026-09-17**
+**PARAGUAY FFAA `[PRY]` — Escuadrón Oficial Metalstorm**
+**Documento de migración v1.1 · 2026-09-17**
