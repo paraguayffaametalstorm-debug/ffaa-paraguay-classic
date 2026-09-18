@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-18  
-> **Versión Activa:** v4.0.3 (Hotfix HALL-059 completado)  
+> **Versión Activa:** v4.0.5 (Hotfix HALL-059 + HALL-060 completado)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -178,7 +178,6 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Jerarquía Reforzada (Fase 3)** | ✅ Funcional | `ROLE_LIMITS`, validación tipada, secuencia atómica |
 | **Seguridad Secundaria (Fase 4)** | ✅ Funcional | `/register` protegido, 7 endpoints con auth, backups persistentes con sanitización PII |
 | **Vinculación Google OAuth (HALL-059/HALL-060)** | ✅ Estable | Flujo end-to-end funcional. `API_BASE` definido inline en `link-account.html`; `google_id` eliminado del `.select()` en `linkAccount`. |
-| **Vinculación Google OAuth (HALL-059)** | ✅ Estable | Claves `localStorage` estandarizadas (`authToken`/`currentUser`); uso de `apiLinkAccount()` centralizado; token sin exponer en URL |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 
