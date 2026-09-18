@@ -1334,6 +1334,69 @@ Asegurar que el callback de respuesta de `/api/planes/:id/details` actualice de 
 **Estado:** ✅ RESUELTO Y PROBADO EN PRODUCCIÓN (v4.0.0)
 
 ---
+---
+
+### 🟠 HALL-059 — Inconsistencia de Claves `localStorage` en Vinculación Google OAuth
+
+**Fecha:** 2026-09-17  
+**Fase:** Hotfix Post-Fase 4 (v4.0.3)  
+**Archivos:** `link-account.html`, `js/api.js`, `sw.js`  
+**Commit:** `<hash-pendiente>`  
+**Severidad:** 🟠 ALTA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**
+
+Durante pruebas del flujo de vinculación de cuentas Google OAuth (`/link-account`) se detectó un error `404` en consola sobre `/api/auth/link-account`. Tras auditoría de los archivos involucrados (`server.js`, `auth.routes.js`, `auth.controller.js`, `link-account.html`, `js/api.js`, `js/auth.js`) se determinó que el endpoint **NUNCA estuvo roto**. El problema real eran **dos bugs independientes** en el frontend:
+
+1. **Inconsistencia de claves en `localStorage`:**
+   - `link-account.html` guardaba el token con `auth_token` (snake_case), `token`, y `current_user`.
+   - La SPA (`js/api.js` y `js/auth.js`) busca el token con `authToken` (camelCase) y `currentUser`.
+   - Consecuencia: aunque la vinculación era exitosa, quedaba una clave huérfana en `localStorage` y la sesión dependía exclusivamente del parámetro de URL `?auth_token=...`.
+
+2. **Falso positivo del 404:**
+   - El error `404` era de recursos estáticos de la SPA (componentes HTML) servidos desde caché del Service Worker con versión obsoleta (`v3.9.8`).
+   - No provenía del endpoint `/api/auth/link-account`.
+
+**Solución Aplicada:**
+
+1. **`link-account.html`:**
+   - Token guardado con clave estandarizada `authToken` (camelCase).
+   - Usuario guardado con clave `currentUser` (consistente con la SPA).
+   - Token **ya no se pasa por URL** (`?auth_token=...`) tras la vinculación: al estar en `localStorage`, la SPA detecta la sesión automáticamente.
+   - Llamada al endpoint refactorizada para usar `window.apiLinkAccount()`.
+
+2. **`js/api.js`:**
+   - Nueva función `apiLinkAccount(payload)` que centraliza la llamada al endpoint `/api/auth/link-account`.
+   - Consistente con el patrón del resto de clientes API (`apiGetBmEvents`, `apiCreatePlaneModel`, etc.).
+
+3. **`sw.js`:**
+   - Actualización de `CACHE_NAME` de `v3.9.8` → `v4.0.3`.
+   - Purga automática de cachés obsoletas en evento `activate`.
+
+**Verificación:**
+
+- ✅ Backend verificado: `server.js`, `auth.routes.js`, `auth.controller.js` sin cambios (endpoint intacto).
+- ✅ Clave única `authToken` en todo el sistema (5 archivos auditados).
+- ✅ Token ya no se expone en URL (mejora de seguridad).
+- ✅ Purga de caché forzará recarga de componentes actualizados.
+- ✅ Smoke test en producción: `/health` → `200 OK`.
+- 🔄 Pendiente: prueba end-to-end con usuario real post-deploy.
+
+**Rollback:** `git revert <hash-pendiente>` (los 3 archivos son reversibles sin afectar la BD ni el backend).
+
+**Lecciones Aprendidas:**
+
+1. **Nomenclatura consistente es crítica:** snake_case (`auth_token`) y camelCase (`authToken`) no deben coexistir para las mismas claves.
+2. **Verificar el `Network` tab, no solo la consola:** un 404 de consola puede provenir de recursos secundarios, no del endpoint sospechoso.
+3. **Service Worker versioning:** cada deploy debe actualizar `CACHE_NAME` para evitar falsos positivos por caché obsoleta.
+4. **Centralizar en `js/api.js`:** evita inconsistencias entre módulos y facilita el mantenimiento.
+
+**Referencias:**
+
+- Reporte inicial: consola del navegador durante flujo `/link-account`.
+- Archivos auditados: 6 (`server.js`, `auth.routes.js`, `auth.controller.js`, `link-account.html`, `js/api.js`, `js/auth.js`).
+- Documento relacionado: `CHANGELOG.md` sección `[4.0.3]`.
 
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
