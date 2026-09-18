@@ -5,6 +5,52 @@ Todas las modificaciones notables, correcciones de errores, mejoras de seguridad
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+## 📌 [4.0.5] - 2026-09-18
+
+### 🚨 Hotfix Definitivo — Vinculación Google OAuth operativa (HALL-059 + HALL-060)
+
+#### Objetivo Cumplido
+
+Completar la resolución del flujo de vinculación de cuentas Google OAuth (`/link-account`), que presentaba dos bugs adicionales no cubiertos por la entrada `[4.0.3]`:
+
+1. `ReferenceError: API_BASE is not defined` en el frontend (HALL-059, fix definitivo).
+2. `500 Internal Server Error` en el backend por columna `google_id` inexistente (HALL-060).
+
+#### Hallazgos Resueltos
+
+| Hallazgo | Descripción | Commit |
+|---|---|---|
+| HALL-059 | `API_BASE` no definido en `link-account.html` (definido inline en `index.html`) | `71fbda2` |
+| HALL-060 | Columna `google_id` inexistente en BD pero incluida en `.select()` | `9678d98` |
+| HALL-061 | Discrepancia entre DDL `sql/001_users.sql` y BD real | Pendiente |
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `link-account.html` | Definir `API_BASE` inline antes de `api.js` (replica `index.html:129`) |
+| `src/controllers/auth.controller.js` | Eliminar `google_id` del `.select()` en `linkAccount` |
+| `js/api.js` | Función `apiLinkAccount()` con ruta relativa |
+| `sw.js` | Cache bump `v3.9.8` → `v4.0.3` |
+
+#### Verificación en Producción
+
+- ✅ `GET /health` → `200 OK`
+- ✅ `POST /api/auth/link-account` con usuario inexistente → `404` con mensaje apropiado
+- ✅ `POST /api/auth/link-account` con usuario real (`TestPilot`) → `200 OK` y vinculación exitosa
+- ✅ Sin errores `ReferenceError` ni `500` en consola
+- ✅ Sin errores de `google_id` en logs de Fly.io
+
+#### Documentación Adicional
+
+Detalle completo del incidente en `docs/incidentes/HALL-059-HALL-060-HALL-061.md`.
+
+#### 🎯 Entregable
+
+Rama `main` con commits mergeados. Deploy exitoso `deployment-01M2SB9K4EASK5ZDNRKW171NYK`.
+
+---
+
 ## 📌 [4.0.3] - 2026-09-17
 
 ### 🚨 Hotfix — HALL-059: Inconsistencia de Claves en Vinculación Google OAuth
