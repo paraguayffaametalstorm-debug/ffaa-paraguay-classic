@@ -1,6 +1,13 @@
 // Service Worker - PARAGUAY-FFAA | METALSTORM PWA
 // ⬇️ BUMP DE VERSIÓN EN CADA DEPLOY
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v3.9.9';
+
+// ============================================================
+// HALL-059 FIX: Actualización de versión de caché (v4.0.3)
+// Purga automática de cachés obsoletas que causaban falsos 404 
+// en recursos estáticos (componentes HTML) tras redirección 
+// post-vinculación.
+// ============================================================
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.0.3';
 
 // ✅ Assets versionados
 const STATIC_ASSETS = [
@@ -45,38 +52,29 @@ const STATIC_ASSETS = [
 
 // Instalación - Precache de assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Instalando...');
+  // Forzar activación inmediata para evitar esperar a que se cierren las pestañas antiguas
+  self.skipWaiting();
+  
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[SW] Cacheando assets estáticos');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => {
-        console.log('[SW] Instalación completada');
-        return self.skipWaiting();
-      })
-      .catch((err) => {
-        console.error('[SW] Error en instalación:', err);
-        return self.skipWaiting();
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[SW] Cacheando assets estáticos v4.0.3');
+      return cache.addAll(STATIC_ASSETS);
+    })
   );
 });
 
 // Activación - Limpieza de caches antiguos
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activando...');
+  console.log('[SW] Activando y limpiando cachés obsoletas...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[SW] Eliminando cache antiguo:', name);
-            return caches.delete(name);
-          })
-      );
-    }).then(() => {
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => {
+          console.log('[SW] Eliminando cache antiguo:', k);
+          return caches.delete(k);
+        })
+      )
+    ).then(() => {
       console.log('[SW] Activación completada');
       return self.clients.claim();
     })
@@ -89,7 +87,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // No interceptar llamadas a API ni Supabase
-  if (url.pathname.includes('/api/') || 
+  if (url.pathname.includes('/api/') ||
       url.hostname.includes('supabase.co') ||
       request.method !== 'GET') {
     return;
@@ -134,7 +132,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Manejar mensajes desde la app (para skipWaiting manual)
+// Manejar mensajes desde la app (para skipWaiting manual si fuera necesario)
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();
