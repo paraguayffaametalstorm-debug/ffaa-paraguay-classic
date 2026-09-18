@@ -1,10 +1,10 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
-> **Fecha de Congelamiento:** 2026-09-16  
-> **Versión:** v4.0.0  
+> **Fecha de Congelamiento:** 2026-09-18  
+> **Versión:** v4.0.5  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
-> **Estado Operativo:** ✅ 100% OPERATIVO - AUDITADO Y PROBADO
+> **Estado Operativo:** ✅ 100% OPERATIVO - POST-F3 + REDISEÑO DE EVENTOS (F2 COMPLETADA)
 
 ---
 
@@ -671,19 +671,21 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 
 ---
 
-### 📊 Resumen Consolidado de Tablas del Sistema
+### 📊 Resumen Consolidado de Tablas del Sistema (Verificado 2026-09-18)
 
 | Tabla | Categoría | Registros | Estado |
 |-------|-----------|-----------|--------|
-| `users` | Core | 61 | ✅ Documentada |
+| `users` | Core | **61** (28 activos, 33 inactivos) | ✅ Documentada |
 | `planes` | Hangar | 122 | ✅ Documentada |
 | `plane_models` | Hangar | 44 | ✅ Documentada |
 | `plane_mods` | Hangar | 10 | ✅ Documentada |
 | `mod_effects` | Hangar | 50 | ✅ Documentada |
 | `upgrade_effects` | Hangar | 44 | ✅ Documentada |
 | `upgrade_nodes_v2` | Hangar | 3072 | ✅ Documentada |
-| `performances` | Core | 26 | ✅ Documentada |
-| `events` | Eventos | 1 | ✅ Documentada |
+| **`events_master`** | **Eventos (Nuevo)** | **36** | ✅ **Documentada (F2)** |
+| **`event_participations`** | **Eventos (Nuevo)** | **639** | ✅ **Documentada (F2)** |
+| `events` | Eventos (Legacy) | 35 | ✅ Preservada |
+| `performances` | Core (Legacy) | **639** | ✅ Preservada |
 | `security_events` | Auditoría | 214 | ✅ Documentada |
 | `audit_logs` | Auditoría | 6 | ✅ Documentada |
 | `error_logs` | Diagnóstico | 3 | ✅ Documentada |
@@ -697,8 +699,52 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | `recovery_codes` | Seguridad | 0 | ✅ Documentada |
 | `user_settings` | Configuración | 0 | ✅ Documentada |
 | `upgrade_effects_history` | Auditoría | 0 | ✅ Documentada |
+| **`backups`** | **Auditoría** | **0** | ✅ **Documentada (F4)** |
 
-**Nota:** Las tablas del Black Market (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`) están vacías porque aún no se ha lanzado el primer evento BM. Están funcionales y listas para operar.
+**Notas operativas (post-F3):**
+- **`events_master` (36 filas):** 35 migrados de `events` + 1 auto-creado por el scheduler (SEM 38, `auto_created: true`).
+- **`event_participations` (639 filas):** Migradas de `performances`. 482 VALIDATED, 52 PENDING, 105 REJECTED. Total: 98,750 tokens.
+- **`events` (35 filas) y `performances` (639 filas):** Preservadas intactas para rollback. No se tocan.
+- **`backups`:** Tabla nueva de Fase 4 (HALL-036/037). Persistencia de backups del OWNER con sanitización de PII.
+- **Tablas del Black Market:** Siguen vacías (el módulo será rediseñado en F3 del rediseño).
+
+---
+
+## 🗓️ 1.6. Scheduler de Eventos SQ (F2.8 - F2.9)
+
+A partir de la Fase 2 del rediseño, el sistema cuenta con un **scheduler automático** que garantiza la existencia de eventos SQ según el calendario oficial (jueves 00:00 UTC).
+
+### Componente: `src/utils/eventScheduler.js`
+
+**Características:**
+- Cron job cada 1 hora (`0 * * * *`).
+- Advisory Lock multi-réplica (vía RPC `acquire_scheduler_lock`).
+- Idempotencia por `legacy_event_id` (no duplica eventos).
+- Sin backfill (decisión F2.9: no inventar datos históricos).
+
+### Funciones RPC (`sql/030_scheduler_locks.sql`)
+
+| Función | Retorno | Propósito |
+|---|---|---|
+| `acquire_scheduler_lock()` | BOOLEAN | Adquiere advisory lock (ID 12345) |
+| `release_scheduler_lock()` | BOOLEAN | Libera advisory lock |
+
+### Evidencia en Producción (2026-09-17)
+
+El scheduler creó automáticamente el evento **SEM 38** el jueves 2026-09-17 a las 09:00 UTC:
+- `type`: `SQUADRON`
+- `status`: `OPEN`
+- `metadata.auto_created`: `true`
+- `metadata.source`: `SCHEDULER`
+- `legacy_event_id`: `2026-09 · SEM 38 - SQ`
+
+**El switch funcional funcionó:** al crear SEM 38, cerró automáticamente SEM 35 (`closed_reason: NORMAL`).
+
+### Documentación Relacionada
+
+- `MIGRACION_SQL_REFERENCE.md` — Secciones F2.8 y F2.9.
+- `sql/030_scheduler_locks.sql` — DDL de advisory locks.
+- `sql/031_verify_events_system.sql` — Script de verificación idempotente.
 
 ---
 
