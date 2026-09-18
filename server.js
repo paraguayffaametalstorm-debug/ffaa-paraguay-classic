@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { ENV } from './src/config/env.js';
 import { apiLimiter } from './src/middlewares/rateLimiter.js';
 import { errorHandler } from './src/middlewares/errorHandler.js';
+import { deprecationMiddleware, DEPRECATION_CONFIG } from './src/middlewares/deprecation.js';
 import passport, { configurePassport } from './src/config/passport.js';
 
 // Route imports
@@ -196,7 +197,18 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/events-v2', eventsV2Routes);
 app.use('/api/presence', presenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/bm', bmRoutes);
+// ============================================================
+// BM DEPRECADO (F3.2)
+// ============================================================
+// Los endpoints /api/bm/* están DEPRECADOS.
+// Se mantienen funcionales con headers de deprecación hasta
+// el Sunset (2026-12-16). Migrar a /api/events-v2/*.
+// ============================================================
+app.use(
+  '/api/bm',
+  deprecationMiddleware(DEPRECATION_CONFIG.BM),
+  bmRoutes
+);
 
 // Compatibility aliases
 app.use('/auth', authRoutes);
