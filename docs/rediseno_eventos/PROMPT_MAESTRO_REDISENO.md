@@ -122,6 +122,167 @@ Vas a ayudarme a **rediseñar el sistema de eventos** de la plataforma **PARAGUA
 - **No implementado** en el sistema PRY actualmente.
 
 ---
+## 🎯 RESPUESTAS A LAS 6 PREGUNTAS CRÍTICAS
+
+Estas respuestas fueron validadas por el OWNER antes de arrancar el rediseño. **Son de cumplimiento obligatorio.**
+
+### ✅ Pregunta 1 — Switch simplificado
+
+**Respuesta:** SÍ, un solo evento `OPEN` a la vez.
+
+**Reglas:**
+- Solo **1 evento `OPEN`** en todo el sistema.
+- Al activar un BM: el SQ se cierra con `closed_reason = 'BM_REPLACED'`. Se crea el BM con `status: 'OPEN'`.
+- Al terminar el BM: el OWNER lo cierra con `closed_reason = 'NORMAL'`.
+- El próximo **jueves 00:00 UTC**, el scheduler auto-crea un SQ nuevo.
+
+**Implementación:** índice UNIQUE parcial en `events_master` para forzar la regla a nivel BD.
+
+```sql
+CREATE UNIQUE INDEX idx_events_master_single_open
+ON events_master (status)
+WHERE status = 'OPEN';
+```
+
+---
+
+### ✅ Pregunta 2 — Semanas huérfanas
+
+**Respuesta:** Los datos no fueron cargados (por A o B motivo). **NO se especula.**
+
+**Decisión:**
+- Las 12 semanas huérfanas se migran como **eventos vacíos** con `metadata.no_data: true`.
+- A futuro, la auto-generación **previene** que vuelva a pasar.
+- **No se inventa** si fueron BM o inactividad.
+
+**Metadata para eventos huérfanos:**
+
+```json
+{
+  "iso_week": 16,
+  "iso_year": 2026,
+  "target_members": 27,
+  "target_tokens": 200,
+  "min_tokens_required": 175,
+  "no_data": true,
+  "backfilled": true,
+  "source": "MIGRATION_RECONSTRUCTION",
+  "historical_legacy_id": "2026-04 · SEM 16 - SQ"
+}
+```
+
+---
+
+### ✅ Pregunta 3 — Metadata del BM
+
+**Respuesta:** propuesta original + 4 campos adicionales.
+
+**Versión final (obligatoria):**
+
+```json
+{
+  "aircraft_id": "125",
+  "aircraft_name": "F-15EX Eagle II",
+  "base_price_shards": 500,
+  "max_discount_shards": 250,
+  "max_points": 250,
+  "duration_days": 5,
+  "purchase_window_hours": 24,
+  "trophy_progression": {
+    "day_1": 200,
+    "day_2": 350,
+    "day_3": 500,
+    "day_4": 650,
+    "day_5": 800
+  },
+  "announced_at": "2026-09-17T00:00:00Z",
+  "created_by": "PJPIROVANI",
+  "created_at": "2026-09-17T00:00:00Z",
+  "notes": "Opcional — notas del OWNER"
+}
+```
+
+---
+
+### ✅ Pregunta 4 — Data de participaciones en BM
+
+**Respuesta:** propuesta original + 4 campos adicionales.
+
+**Versión final:**
+
+```json
+{
+  "day_1": { "dedication": true, "skill": true, "teamwork": false },
+  "day_2": { "dedication": true, "skill": true, "teamwork": true },
+  "day_3": { "dedication": true, "skill": false, "teamwork": true },
+  "day_4": { "dedication": true, "skill": true, "teamwork": true },
+  "day_5": { "dedication": false, "skill": false, "teamwork": false },
+  "total_points": 175,
+  "discount_percentage": 35,
+  "screenshot_urls": [],
+  "verified_by": null,
+  "verified_at": null,
+  "notes": null
+}
+```
+
+---
+
+### ✅ Pregunta 5 — Metadata del SQ
+
+**Respuesta:** propuesta original + 6 campos adicionales.
+
+**Versión final:**
+
+```json
+{
+  "target_members": 27,
+  "target_tokens": 200,
+  "min_tokens_required": 175,
+  "iso_week": 38,
+  "iso_year": 2026,
+  "historical_legacy_id": "2026-09 · SEM 38 - SQ",
+  "auto_created": true,
+  "backfilled": false,
+  "no_data": false,
+  "closed_by": null,
+  "closed_at": null,
+  "notes": null
+}
+```
+
+---
+
+### ✅ Pregunta 6 — Ace Challenge (futuro)
+
+**Respuesta:** Opción (a). Soportar la estructura desde el principio.
+
+**Decisión:**
+- El `CHECK (type IN ('SQUADRON', 'BLACK_MARKET', 'ACE_CHALLENGE'))` se crea ahora.
+- El schema de metadata se documenta ahora (no se implementa lógica todavía).
+- Se activa cuando el OWNER lo decida.
+
+**Metadata documentada (no implementada):**
+
+```json
+{
+  "operation_name": "Operation Azure Sentry",
+  "difficulty": "hard",
+  "max_stars": 3,
+  "ticket_count": 3,
+  "rewards": {
+    "pilot_icon": "memento-interior-jace.png",
+    "trophy_case_memento": "memento-thumbnail-jace.png",
+    "bonus_multipliers": [
+      "time_remaining",
+      "personal_damage",
+      "allied_damage"
+    ]
+  }
+}
+```
+
+---
 
 ## 🔍 DIAGNÓSTICO DEL SISTEMA ACTUAL
 
@@ -340,6 +501,68 @@ DELETE /api/events/:id/participations/:uid  → eliminar participación
   - Botón "Cerrar evento".
 
 ---
+### Auto-generación de eventos (SQUADRON)
+
+**Problema que resuelve:** el sistema actual no crea eventos automáticamente. Depende de que alguien cargue datos. Si nadie carga, el evento activo queda desfasado (ej: "ventana cierra el 3 de septiembre, hoy es el 17").
+
+**Solución:** scheduler automático que garantiza la existencia de eventos SQ según el calendario oficial.
+
+**Componente:** `src/utils/eventScheduler.js` (nuevo).
+
+**Lógica:**
+1. Corre **cada 1 hora** (configurable).
+2. Calcula la semana ISO actual.
+3. Verifica si el evento SQ existe.
+4. Si NO existe: lo crea + cierra el anterior.
+5. Si existe: no hace nada (idempotente).
+
+**Auto-recuperación:**
+- Al arrancar el servidor, ejecuta un **backfill** de las últimas 12 semanas.
+- Crea retroactivamente los eventos faltantes con `status: 'CLOSED'` y `backfilled: true`.
+- **Nunca más habrá huecos.**
+
+**Instalación:** modificar `server.js` para llamar a `startEventScheduler()` en el arranque.
+
+**Regla del BM:** el BM **NO se auto-genera**. El OWNER lo activa manualmente cuando Starform lo anuncia.
+
+**Auditoría:** cada creación queda registrada en `audit_logs` con `action: 'SQ_EVENT_AUTO_CREATED'`.
+
+---
+
+### Regla de migraciones: IDEMPOTENTES y NO MANUALES
+
+**Regla obligatoria:** todas las migraciones, actualizaciones de esquema y cargas de datos se hacen mediante **scripts SQL idempotentes versionados en `sql/`**. **NO se permiten cambios manuales** en el SQL Editor de Supabase (salvo para verificación).
+
+**Idempotencia requerida en cada script:**
+
+- `CREATE TABLE IF NOT EXISTS`
+- `CREATE INDEX IF NOT EXISTS`
+- `CREATE SEQUENCE IF NOT EXISTS`
+- `CREATE OR REPLACE FUNCTION`
+- `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
+- Para constraints: envolver en bloque `DO $$ ... EXCEPTION WHEN duplicate_object THEN NULL; END $$;`
+- Para policies: `DROP POLICY IF EXISTS ... CREATE POLICY ...`
+
+**Ejemplo de constraint idempotente:**
+
+```sql
+DO $$
+BEGIN
+  ALTER TABLE events_master
+  ADD CONSTRAINT chk_events_master_type
+  CHECK (type IN ('SQUADRON', 'BLACK_MARKET', 'ACE_CHALLENGE'));
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+```
+
+**Orden de ejecución:**
+- Cada script se numera (`028_...sql`, `029_...sql`, etc.) y se ejecuta **una sola vez**.
+- Para re-ejecución: los scripts deben ser **seguros** para correr múltiples veces.
+
+**Beneficio:** reproducible, versionable, auditable y reversible.
+
+---
 
 ## 🔄 MIGRACIÓN DE DATOS
 
@@ -459,6 +682,10 @@ El rediseño se considerará exitoso si al finalizar cumple con:
 - [ ] La UI muestra explícitamente qué evento está activo.
 - [ ] El OWNER/ADMIN puede crear/activar/cerrar eventos desde el panel.
 - [ ] El registro de tokens SQ ya no usa el formato `SEM * N` (usa UUID + metadata).
+- [ ] El scheduler de eventos SQ corre cada 1 hora sin fallos.
+- [ ] El backfill inicial crea las 12 semanas huérfanas retroactivamente.
+- [ ] El índice UNIQUE parcial garantiza 1 solo evento `OPEN` a la vez.
+- [ ] Todas las migraciones son idempotentes (verificadas con re-ejecución en BD de prueba).
 
 ### Técnicos:
 - [ ] Los IDs son UUID (no strings manuales).
@@ -467,6 +694,7 @@ El rediseño se considerará exitoso si al finalizar cumple con:
 - [ ] No hay datos huérfanos ni inconsistencias.
 - [ ] El frontend es adaptativo por tipo de evento.
 - [ ] La migración fue validada (conteos, integridad).
+- [ ] No hay cambios manuales en el SQL Editor de Supabase (solo scripts versionados).
 
 ### De calidad:
 - [ ] El backup pre-rediseño está en Google Drive.
