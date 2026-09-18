@@ -1175,7 +1175,7 @@ window.apiGetBmLeaderboard     = apiGetBmLeaderboard;
 
 async function apiLinkAccount(payload) {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/link-account`, {
+    const res = await fetch('/api/auth/link-account', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
