@@ -72,6 +72,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-003** | 🔧 | Verificar/rediseñar semanas de escuadrón y Black Market | 💡 Idea | L (2-3 días) | Revisar cómo se cuentan las semanas, especialmente el BM. Actualmente puede quedar desincronizado. |
 | **BL-004** | 🐛 | Desincronización temporal cuando no se cargan registros | 💡 Idea | M (1 día) | Si nadie carga registros por semanas, el sistema queda desconfigurado. Verificar lógica de tiempo. |
 | **BL-005** | ✨ | Auto-login con link prellenado | 💡 Idea | M (1 día) | El link del QR prellena user + pass y auto-loguea. Complementa a BL-001. |
+| **BL-016** | 🐛 | Auditoría completa de claves `localStorage` en todo el frontend | 📋 Priorizado | S (4h) | HALL-059 reveló que existían inconsistencias puntuales. Auditar todos los archivos JS y HTML que escriben en `localStorage` para garantizar nomenclatura única y evitar futuras regresiones. |
 
 ### 🟡 Prioridad Baja (Could Have)
 
@@ -122,6 +123,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
 | **BL-000** | 🔐 | Proteger `/register` con auth + rate limiting | 2026-09-17 (Fase 4) | `20934e2` |
+| **BL-059** | 🐛 | HALL-059: Inconsistencia claves `localStorage` en vinculación Google | 2026-09-17 (Hotfix) | `<hash-pendiente>` |
 
 ---
 
@@ -129,8 +131,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 15 |
-| Items completados | 1 |
+| Items activos | 16 |
+| Items completados | 2 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
