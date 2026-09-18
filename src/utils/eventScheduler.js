@@ -175,12 +175,16 @@ async function closeCurrentOpenEvent(supabase) {
  * @returns {Promise<boolean>}
  */
 async function eventExists(supabase, isoWeek, isoYear) {
+  // Calcular el legacy_event_id esperado.
+  // Este enfoque cubre eventos migrados (que NO tienen iso_week/iso_year en metadata)
+  // y eventos nuevos (que SÍ los tienen).
+  const { start } = getSquadronEventDates(isoWeek, isoYear);
+  const legacyId = buildLegacyEventId(isoWeek, isoYear, start);
+
   const { data, error } = await supabase
     .from('events_master')
     .select('id')
-    .eq('type', 'SQUADRON')
-    .eq('metadata->>iso_week', String(isoWeek))
-    .eq('metadata->>iso_year', String(isoYear))
+    .eq('legacy_event_id', legacyId)
     .limit(1);
 
   if (error) {
@@ -317,7 +321,10 @@ export async function backfillRecentWeeks(weeksBack = 12) {
     const now = new Date();
     let createdCount = 0;
 
-    for (let i = weeksBack; i >= 0; i--) {
+    // Iterar desde weeksBack hasta 1 (NO incluir 0).
+// La semana actual (i=0) es responsabilidad del schedulerTick,
+// que la crea como 'OPEN'. El backfill solo crea semanas PASADAS ('CLOSED').
+for (let i = weeksBack; i >= 1; i--) {
       const targetDate = new Date(now);
       targetDate.setUTCDate(now.getUTCDate() - i * 7);
 
