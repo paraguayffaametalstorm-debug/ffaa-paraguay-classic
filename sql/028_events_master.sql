@@ -2,14 +2,14 @@
 -- PARAGUAY-FFAA | METALSTORM
 -- MIGRACIÓN: Tabla `events_master`
 -- Archivo: 028_events_master.sql
--- Fase: Rediseño de Eventos (F1)
+-- Fase: Rediseño de Eventos (F1 + F2.7)
 -- ============================================================
 -- PROPÓSITO:
 --   Tabla unificada de eventos. Absorbe los tipos SQUADRON,
 --   BLACK_MARKET y futuros (ACE_CHALLENGE).
 --   Reemplaza funcionalmente a `events` y `bm_events`.
 -- DEPENDENCIAS:
---   - `users` (FK created_by UUID)
+--   - `users` (FK created_by UUID, closed_by UUID)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS events_master (
@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS events_master (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   legacy_event_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by UUID REFERENCES users(id)
+  created_by UUID REFERENCES users(id),
+  closed_at TIMESTAMPTZ,
+  closed_by UUID REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Índice único parcial: garantiza que solo haya UN evento OPEN a la vez.
@@ -42,9 +44,15 @@ CREATE INDEX IF NOT EXISTS idx_events_master_dates
 CREATE INDEX IF NOT EXISTS idx_events_master_legacy_event_id
   ON events_master (legacy_event_id);
 
+CREATE INDEX IF NOT EXISTS idx_events_master_closed_at
+  ON events_master (closed_at DESC)
+  WHERE closed_at IS NOT NULL;
+
 -- Comentarios
 COMMENT ON TABLE events_master IS 'Tabla unificada de eventos (SQ, BM, futuros). Rediseño 2026-09-17.';
 COMMENT ON COLUMN events_master.type IS 'Tipo: SQUADRON, BLACK_MARKET, ACE_CHALLENGE';
 COMMENT ON COLUMN events_master.status IS 'Estado: SCHEDULED, OPEN, CLOSED, CANCELLED';
 COMMENT ON COLUMN events_master.metadata IS 'Datos específicos por tipo (JSONB)';
 COMMENT ON COLUMN events_master.legacy_event_id IS 'ID original del evento en la tabla events (ej: 2026-XX-SEMNN-SQ)';
+COMMENT ON COLUMN events_master.closed_at IS 'Timestamp de cierre del evento (NULL si no está cerrado)';
+COMMENT ON COLUMN events_master.closed_by IS 'UUID del usuario que cerró el evento (NULL si no está cerrado)';
