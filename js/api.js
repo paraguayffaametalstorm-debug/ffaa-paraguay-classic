@@ -1165,3 +1165,30 @@ window.apiPurchaseBmDiscount   = apiPurchaseBmDiscount;
 window.apiGetBmStats           = apiGetBmStats;
 window.apiGetBmLeaderboard     = apiGetBmLeaderboard;
 
+// ============================================================
+// VINCULACIÓN DE CUENTA GOOGLE (HALL-059 FIX - v4.0.3)
+// ============================================================
+// Centraliza la llamada al endpoint POST /api/auth/link-account
+// que antes se hacía con fetch() inline en link-account.html.
+// El backend NUNCA estuvo roto: el bug estaba en las claves
+// de localStorage usadas por el HTML inline.
+
+async function apiLinkAccount(payload) {
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/link-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === false) {
+      throw new Error(data.error || `Error HTTP ${res.status} al vincular cuenta Google`);
+    }
+    return data;
+  } catch (err) {
+    console.error('❌ [API] Error en apiLinkAccount:', err);
+    throw err;
+  }
+}
+
+window.apiLinkAccount = apiLinkAccount;
