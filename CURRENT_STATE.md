@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-17  
-> **Versión Activa:** v4.0.2 (Fase 4 completada)  
+> **Versión Activa:** v4.0.3 (Hotfix HALL-059 completado)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -177,6 +177,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Integración Wiki (Canopies)** | ✅ Funcional | 176 canopies en galería |
 | **Jerarquía Reforzada (Fase 3)** | ✅ Funcional | `ROLE_LIMITS`, validación tipada, secuencia atómica |
 | **Seguridad Secundaria (Fase 4)** | ✅ Funcional | `/register` protegido, 7 endpoints con auth, backups persistentes con sanitización PII |
+| **Vinculación Google OAuth (HALL-059)** | ✅ Estable | Claves `localStorage` estandarizadas (`authToken`/`currentUser`); uso de `apiLinkAccount()` centralizado; token sin exponer en URL |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 
