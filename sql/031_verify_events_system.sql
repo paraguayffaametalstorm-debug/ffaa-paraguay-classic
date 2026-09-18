@@ -110,3 +110,42 @@ SELECT
   (SELECT COUNT(*) FROM plane_models) AS plane_models_total,
   (SELECT COUNT(*) FROM events_master) AS events_master_total,
   (SELECT COUNT(*) FROM event_participations) AS event_participations_total;
+
+  -- ============================================================
+-- 9. VALORES ESPERADOS (Referencia para Validación Manual)
+-- ============================================================
+-- Al ejecutar este script, comparar los resultados con:
+--
+-- events_master:         36 totales
+--   - OPEN:               1  (SEM 38, auto_created)
+--   - CLOSED:             35
+--   - no_data:            11
+--   - backfilled:         1  (BM SEM 16)
+--
+-- event_participations:  639 totales
+--   - VALIDATED:          482
+--   - PENDING:            52
+--   - REJECTED:           105
+--   - total_points:       98,750
+--
+-- Distribución por tipo:
+--   - SQUADRON:           35  (1 OPEN, 34 CLOSED)
+--   - BLACK_MARKET:       1   (CLOSED)
+--
+-- Tablas legacy:
+--   - events:             35
+--   - performances:       639
+--
+-- Usuarios:               61  (28 activos, 33 inactivos)
+-- Planes:                 122
+-- Plane_models:           44
+--
+-- Funciones RPC:          2
+-- Índices events_master:  6
+--
+-- Integridad referencial:
+--   - Huérfanos event_id: 0
+--   - Huérfanos user_id:  0
+--
+-- Última verificación:    2026-09-18
+-- ============================================================
