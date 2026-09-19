@@ -264,7 +264,7 @@ export const createEvent = async (req, res) => {
         success: false,
         error: 'Payload inválido',
         code: 'VALIDATION_ERROR',
-        details: error.errors
+        details: error.issues
       });
     }
     console.error('❌ [Events-v2] Error en createEvent:', error);
@@ -342,7 +342,7 @@ export const updateEvent = async (req, res) => {
         success: false,
         error: 'Payload inválido',
         code: 'VALIDATION_ERROR',
-        details: error.errors
+        details: error.issues
       });
     }
     console.error('❌ [Events-v2] Error en updateEvent:', error);
@@ -434,7 +434,7 @@ export const changeEventStatus = async (req, res) => {
         success: false,
         error: 'Status inválido',
         code: 'VALIDATION_ERROR',
-        details: error.errors
+        details: error.issues
       });
     }
     console.error('❌ [Events-v2] Error en changeEventStatus:', error);
@@ -653,7 +653,7 @@ export const createParticipation = async (req, res) => {
         success: false,
         error: 'Payload inválido',
         code: 'VALIDATION_ERROR',
-        details: error.errors
+        details: error.issues
       });
     }
     console.error('❌ [Events-v2] Error en createParticipation:', error);
@@ -726,7 +726,7 @@ export const updateParticipation = async (req, res) => {
         success: false,
         error: 'Payload inválido',
         code: 'VALIDATION_ERROR',
-        details: error.errors
+        details: error.issues
       });
     }
     console.error('❌ [Events-v2] Error en updateParticipation:', error);

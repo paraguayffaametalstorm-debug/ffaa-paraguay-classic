@@ -62,9 +62,9 @@ export const BlackMarketMissionSchema = z.object({
 });
 
 export const BlackMarketMetadataSchema = z.object({
-  // Aeronave en promoción
-  aircraft_id: z.string().min(1).nullable(),
-  aircraft_name: z.string().min(1).nullable(),
+  // Aeronave en promoción (opcional: puede asignarse después)
+  aircraft_id: z.string().min(1).nullable().optional(),
+  aircraft_name: z.string().min(1).nullable().optional(),
 
   // Economía
   base_price_shards: z.number().int().min(0).default(500),
@@ -277,19 +277,46 @@ export const BM_MAX_DISCOUNT = 50;
  * a partir de su progreso por día.
  *
  * @param {Object} dayProgress - Objeto con day_1 a day_5, cada uno {dedication, skill, teamwork}
+ * @param {Array<Object>} missions - Array opcional de misiones del evento (metadata.missions).
+ *                                    Si se provee, usa mission.points de cada misión.
+ *                                    Si no, usa BM_POINTS_PER_MISSION (25) flat.
  * @returns {{total_points: number, discount_percentage: number, completed_missions: number, bonus_points: number}}
  */
-export function calculateBmPoints(dayProgress = {}) {
+export function calculateBmPoints(dayProgress = {}, missions = []) {
   let totalPoints = 0;
   let totalBonus = 0;
   let completedMissions = 0;
+
+  // Indexar misiones por (day, type) para lookup O(1).
+  // Si el evento define points custom en metadata.missions, se respeta.
+  // Si no, se usa BM_POINTS_PER_MISSION (25) como fallback.
+  const missionPointsMap = {};
+  if (Array.isArray(missions)) {
+    for (const m of missions) {
+      if (m && Number.isInteger(m.day) && typeof m.type === 'string') {
+        missionPointsMap[`${m.day}:${m.type}`] = Number.isFinite(m.points)
+          ? m.points
+          : BM_POINTS_PER_MISSION;
+      }
+    }
+  }
 
   for (let d = 1; d <= BM_MAX_DAYS; d++) {
     const day = dayProgress[`day_${d}`] || {};
     const completed = [day.dedication, day.skill, day.teamwork].filter(Boolean).length;
 
     completedMissions += completed;
-    totalPoints += completed * BM_POINTS_PER_MISSION;
+
+    // Sumar puntos por cada misión completada (respeta mission.points custom)
+    if (day.dedication) {
+      totalPoints += missionPointsMap[`${d}:dedication`] ?? BM_POINTS_PER_MISSION;
+    }
+    if (day.skill) {
+      totalPoints += missionPointsMap[`${d}:skill`] ?? BM_POINTS_PER_MISSION;
+    }
+    if (day.teamwork) {
+      totalPoints += missionPointsMap[`${d}:teamwork`] ?? BM_POINTS_PER_MISSION;
+    }
 
     if (completed === BM_MISSIONS_PER_DAY) {
       totalBonus += BM_DAILY_BONUS;
