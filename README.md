@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v4.0.0-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v4.0.5-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.fly.dev/)
@@ -18,6 +18,7 @@
 **PARAGUAY-FFAA | METALSTORM** es una plataforma web táctica de grado militar diseñada para la administración, registro y supervisión del escuadrón paraguayo en el simulador de combate aéreo *MetalStorm*.
 
 La plataforma centraliza las operaciones del escuadrón mediante:
+- **Rediseño del Sistema de Eventos (v4.1.0 - F3):** Módulo unificado `/api/events-v2/*` (12 endpoints) que reemplaza la lógica dual legacy SQ + BM. Scheduler automático de eventos SQ (jueves 00:00 UTC). Deprecación ordenada de `/api/events/*` y `/api/bm/*` con sunset programado para 2026-12-16. Switch funcional que garantiza un solo evento `OPEN` a la vez.
 - **Sistema de Eventos Black Market (BM) (v3.7.0):** Evento táctico especial que reemplaza al Squadron Event cada 1-2 meses. 5 días de combate (miércoles a domingo) con 3 tipos de misiones diarias (Dedicación, Habilidad y Trabajo en equipo). Acumulación de hasta 250 puntos (50 pts/día) para desbloquear hasta un 50% de descuento en cazas exclusivos (F-15EX Eagle II, etc.).
 - **Autenticación Militar Híbrida Dual (v3.5.0):** Inicio de sesión flexible admitiendo tanto el correo institucional del escuadrón (`@ffaa.py`) como cuentas de Gmail vinculadas (Google OAuth 2.0 y tradicional), con sistema de vinculación guiado (`/link-account`).
 - **Restablecimiento Criptográfico de Contraseñas:** Envío de tokens temporales de un solo uso válidos por 15 minutos (`/reset-password`) con formato militar C4ISR vía Nodemailer.
@@ -605,7 +606,7 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
    - **Cuota:** Máximo **1** comandante activo.
    - **Atribuciones:** Mando supremo, auditoría completa (`/api/owner`), ejecución de respaldos de datos, nombramiento o relevo de Administradores y transferencia de comandancia.
 2. **⭐ ADMIN (Oficial de Operaciones):**
-   - **Cuota:** Máximo **3** administradores autorizados.
+   - **Cuota:** Máximo **5** administradores autorizados.
    - **Atribuciones:** Carga masiva de tokens de eventos, altas y bajas operativas de pilotos, reseteo seguro de contraseñas (`MS-XXXX-XXXX`) y publicación de normativas.
 3. **🎖️ VETERANO (Piloto Experimentado):**
    - **Cuota:** Máximo **8** veteranos distinguidos.
@@ -633,6 +634,6 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 ## 📜 Licencia y Confidencialidad
 
 © 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.
-*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*  
+*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*  
 *Uso exclusivo y reservado para los miembros del escuadrón militar.*
 
