@@ -19,6 +19,80 @@
 
 ---
 
+---
+
+## 📊 ESTADO DEL REDISEÑO (a 2026-09-18)
+
+> **Última actualización:** 2026-09-18
+> **Ejecutor:** PJPIROVANI (OWNER)
+> **Progreso global:** ~58%
+
+### ✅ Fases Completadas
+
+| Fase | Descripción | Commits | Estado |
+|---|---|---|---|
+| **F0** | Backup completo en Google Drive | — | ✅ CERRADO |
+| **F1** | Crear tablas nuevas | `b9fb637`, `127dbe2` | ✅ CERRADO |
+| **F2** | Migración de datos + scheduler | `66d0221` a `674b978` | ✅ CERRADO |
+| **F3.1** | Controlador unificado `events-v2` | `d1f8e69`, `a31bb97`, `3da36eb` | ✅ CERRADO |
+| **F3.2** | Deprecación de `/api/bm/*` con sunset headers | `00f72e5` | ✅ CERRADO |
+| **F3.3** | Tests locales (8/8 PASS) + deploy a Fly.io | — | ✅ CERRADO |
+| **F3.4** | Verificación post-deploy + documentación | `9145000`, `ed72461` | 🟢 EN CIERRE |
+
+### 🔴 Fases Pendientes
+
+| Fase | Descripción | Duración Estimada | Prioridad |
+|---|---|---|---|
+| **F4** | Refactor Frontend (vistas adaptativas) | 1-2 días | 🟢 SIGUIENTE |
+| **F5** | Testing exhaustivo + observabilidad | 3-5 días | 🔴 Pendiente |
+| **F6** | Documentación final + limpieza | 1-2 días | 🔴 Pendiente |
+
+### 📊 Estado Real del Sistema (verificado 2026-09-18)
+
+| Métrica | Valor |
+|---|---:|
+| `events_master` total | **36** |
+| `events_master` OPEN | 1 (SEM 38, auto-creado) |
+| `events_master` CLOSED | 35 |
+| `events_master` no_data | 11 |
+| `event_participations` | **639** |
+| `event_participations` tokens totales | **98,750** |
+| `events` legacy (preservados) | 35 |
+| `performances` legacy (preservados) | 639 |
+| `users` | 61 (28 activos, 33 inactivos) |
+
+### 🎯 Endpoints Disponibles
+
+**Nuevos (v2):** 12 endpoints bajo `/api/events-v2/*`.
+**Viejos (legacy):** 5 endpoints `/api/events/*` + 15 endpoints `/api/bm/*` (deprecados con sunset `2026-12-16`).
+
+### 🛡️ Hallazgos Documentados
+
+- **HALL-056:** `DEPLOYMENT_STATE.md` desactualizado.
+- **HALL-057:** `009_plane_upgrades.sql` desactualizado.
+- **HALL-058:** Módulo BM duplicado (resuelto en F3).
+- **HALL-061:** 12 eventos sin participaciones.
+- **HALL-062:** `ON CONFLICT` no funciona con índices parciales.
+- **HALL-063:** "Semanas huérfanas" son eventos sin participaciones.
+
+### 🎯 Notas Importantes
+
+1. **El scheduler funciona en producción.** Creó automáticamente el evento SEM 38 el jueves 2026-09-17 a las 09:00 UTC.
+2. **El switch funcional funciona.** Al crear SEM 38, cerró SEM 35 automáticamente.
+3. **Los nombres de eventos son mixtos:** los históricos usan formato legacy (`SEM 1-35`), los nuevos usan ISO (`2026-W38`). Decisión arquitectónica de F2.1.
+4. **La deuda técnica está identificada:** `js/views.js` (5500 líneas) será refactorizado en F4.
+
+### 📎 Documentos Actualizados
+
+- `CHANGELOG.md` — v4.0.5
+- `CURRENT_STATE.md` — 2026-09-18
+- `FIXES_APPLIED.md` — HALL-059 + HALL-060
+- `MIGRACION_SQL_REFERENCE.md` — F2.1-F2.9
+- `BACKLOG.md` — BL-016 + BL-017
+- `sql/031_verify_events_system.sql` — verificación idempotente
+
+---
+
 ## 🎬 INICIO DEL PROMPT
 
 ---
