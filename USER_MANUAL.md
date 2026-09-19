@@ -300,7 +300,7 @@ La evaluación del combatiente se determina en el servidor considerando **tanto 
 Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máximas de oficiales:
 
 - **👑 OWNER (Comandante en Jefe):** Máximo **1**. Comandancia absoluta, auditoría C4ISR, gestión de respaldos y nombramiento de oficiales.
-- **⭐ ADMIN (Oficial de Operaciones):** Máximo **3**. Altas y bajas de combatientes, activación de eventos Black Market, carga masiva de tokens y reseteo de claves.
+- **⭐ ADMIN (Oficial de Operaciones):** Máximo **5**. Altas y bajas de combatientes, activación de eventos Black Market, carga masiva de tokens y reseteo de claves.
 - **🎖️ VETERANO (Piloto Distinguido):** Máximo **8**. Pilotos de élite con preferencia en escuadrilla y acceso completo a estadísticas.
 - **✈️ MIEMBRO (Piloto de Escuadrón):** Base de combate regular. Registro semanal y gestión de hangar.
 
@@ -329,4 +329,4 @@ A partir de la versión v3.9.9, las descripciones in-game, historias y recomenda
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*
+*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
