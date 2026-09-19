@@ -23,6 +23,7 @@ import profileRoutes from './src/routes/profile.routes.js';
 import settingsRoutes from './src/routes/settings.routes.js';
 import eventsRoutes from './src/routes/events.routes.js';
 import eventsV2Routes from './src/routes/events-v2.routes.js';
+import eventsV2BmRoutes from './src/routes/events-v2-bm.routes.js';
 import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
 import bmRoutes from './src/routes/bm.routes.js';
@@ -194,6 +195,16 @@ app.use('/api/owner', ownerRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/events', eventsRoutes);
+// ============================================================
+// ORDEN CRÍTICO DE MONTAJE (F4.2.2-B)
+// ============================================================
+// eventsV2BmRoutes DEBE ir ANTES que eventsV2Routes.
+// Razón: el handler GET /api/events-v2/:id captura cualquier path
+// bajo /api/events-v2/* como un evento con id=<segmento>. Si se
+// montara primero, /api/events-v2/bm/active matchearía contra /:id
+// con id="bm" y devolvería 404 en vez de llegar al handler BM.
+// ============================================================
+app.use('/api/events-v2/bm', eventsV2BmRoutes);
 app.use('/api/events-v2', eventsV2Routes);
 app.use('/api/presence', presenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
