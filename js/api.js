@@ -1120,4 +1120,119 @@ window.apiEventsV2CreateParticipation  = apiEventsV2CreateParticipation;
 window.apiEventsV2UpdateParticipation  = apiEventsV2UpdateParticipation;
 window.apiEventsV2DeleteParticipation  = apiEventsV2DeleteParticipation;
 
-console.log('✅ [EventsV2] 11 funciones apiEventsV2* expuestas en window');
+// ============================================================
+// EVENTS V2 — BLACK MARKET (BM) API CLIENT (F4.2.2-F.1)
+// ============================================================
+// Wrappers delgados sobre las rutas /api/events-v2/bm/*.
+// Reemplazan las 18 funciones legacy apiGetBm* / apiCreateBm* / ...
+// (eliminadas en F4.2.2-E).
+//
+// Referencias:
+//   - docs/adr/ADR-006-black-market-unificado.md
+//   - src/controllers/events-v2-bm.controller.js (F4.2.2-B)
+//   - src/routes/events-v2-bm.routes.js (F4.2.2-B + F4.2.2-F.0)
+// ============================================================
+
+// ─── LECTURA DE EVENTOS BM ──────────────────────────────────
+
+/**
+ * Lista todos los eventos BM (históricos + activos).
+ * Solo ADMIN/OWNER (el backend valida requireRole).
+ */
+async function apiEventsV2BmList() {
+  return _eventsV2Fetch('/api/events-v2/bm');
+}
+
+/**
+ * Devuelve el evento BM activo actual (status=OPEN, no legacy).
+ * Si no hay ninguno: { success: true, active: false, event: null }.
+ */
+async function apiEventsV2BmActive() {
+  return _eventsV2Fetch('/api/events-v2/bm/active');
+}
+
+/**
+ * Detalle completo de un evento BM + sus misiones.
+ */
+async function apiEventsV2BmGetById(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}`);
+}
+
+// ─── ESCRITURA DE EVENTOS BM (ADMIN/OWNER) ──────────────────
+
+async function apiEventsV2BmCreate(payload) {
+  if (!payload || !payload.name || !payload.start_date) {
+    return { success: false, error: 'name y start_date son obligatorios', code: 'MISSING_FIELDS' };
+  }
+  return _eventsV2Fetch('/api/events-v2/bm', { method: 'POST', body: payload });
+}
+
+async function apiEventsV2BmUpdate(eventId, payload) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}`, {
+    method: 'PUT',
+    body: payload
+  });
+}
+
+// ─── PROGRESO DEL PILOTO ────────────────────────────────────
+
+async function apiEventsV2BmGetProgress(eventId, day) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  const qs = day ? `?day=${encodeURIComponent(day)}` : '';
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/progress${qs}`);
+}
+
+async function apiEventsV2BmUpdateProgress(eventId, payload) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  if (!payload || typeof payload !== 'object') {
+    return { success: false, error: 'payload requerido', code: 'MISSING_PAYLOAD' };
+  }
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/progress`, {
+    method: 'PUT',
+    body: payload
+  });
+}
+
+// ─── LEADERBOARD / DESCUENTO / STATS ────────────────────────
+
+async function apiEventsV2BmGetLeaderboard(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/leaderboard`);
+}
+
+async function apiEventsV2BmGetDiscount(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/discount`);
+}
+
+async function apiEventsV2BmGetStats(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/stats`);
+}
+
+// ─── COMPRA ─────────────────────────────────────────────────
+
+async function apiEventsV2BmPurchase(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/purchase`, {
+    method: 'POST'
+  });
+}
+
+// ─── EXPOSICIÓN GLOBAL ──────────────────────────────────────
+
+window.apiEventsV2BmList           = apiEventsV2BmList;
+window.apiEventsV2BmActive         = apiEventsV2BmActive;
+window.apiEventsV2BmGetById        = apiEventsV2BmGetById;
+window.apiEventsV2BmCreate         = apiEventsV2BmCreate;
+window.apiEventsV2BmUpdate         = apiEventsV2BmUpdate;
+window.apiEventsV2BmGetProgress    = apiEventsV2BmGetProgress;
+window.apiEventsV2BmUpdateProgress = apiEventsV2BmUpdateProgress;
+window.apiEventsV2BmGetLeaderboard = apiEventsV2BmGetLeaderboard;
+window.apiEventsV2BmGetDiscount    = apiEventsV2BmGetDiscount;
+window.apiEventsV2BmGetStats       = apiEventsV2BmGetStats;
+window.apiEventsV2BmPurchase       = apiEventsV2BmPurchase;
+
+console.log('✅ [EventsV2] 11 funciones apiEventsV2* + 11 funciones apiEventsV2Bm* expuestas en window');
