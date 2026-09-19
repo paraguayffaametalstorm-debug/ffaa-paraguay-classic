@@ -48,25 +48,57 @@ export const SquadronMetadataSchema = z.object({
 
 /**
  * Metadata para BLACK_MARKET.
+ *
+ * Estructura extendida del Rediseño de Eventos (F4.2.2-A).
+ * Ver: docs/adr/ADR-006-black-market-unificado.md
  */
+export const BlackMarketMissionSchema = z.object({
+  day: z.number().int().min(1).max(5),
+  type: z.enum(['dedication', 'skill', 'teamwork']),
+  description: z.string().min(3).max(500),
+  requirement: z.string().min(3).max(500),
+  target_value: z.number().int().positive(),
+  points: z.number().int().positive().default(25)
+});
+
 export const BlackMarketMetadataSchema = z.object({
-  aircraft_id: z.string().min(1),
-  aircraft_name: z.string().min(1),
+  // Aeronave en promoción
+  aircraft_id: z.string().min(1).nullable(),
+  aircraft_name: z.string().min(1).nullable(),
+
+  // Economía
   base_price_shards: z.number().int().min(0).default(500),
   max_discount_shards: z.number().int().min(0).default(250),
   max_points: z.number().int().min(0).default(250),
+  discount_per_point: z.number().positive().default(0.2),
+
+  // Duración
   duration_days: z.number().int().min(1).max(30).default(5),
   purchase_window_hours: z.number().int().min(1).max(168).default(24),
+
+  // Progresión de trofeos por día
   trophy_progression: z.object({
-    day_1: z.number().int().min(0),
-    day_2: z.number().int().min(0),
-    day_3: z.number().int().min(0),
-    day_4: z.number().int().min(0),
-    day_5: z.number().int().min(0)
+    day_1: z.number().int().min(0).default(200),
+    day_2: z.number().int().min(0).default(350),
+    day_3: z.number().int().min(0).default(500),
+    day_4: z.number().int().min(0).default(650),
+    day_5: z.number().int().min(0).default(800)
   }).optional(),
+
+  // Misiones (máx 15 = 5 días × 3)
+  missions: z.array(BlackMarketMissionSchema).max(15).default([]),
+
+  // Auditoría
   announced_at: z.string().datetime().optional(),
   created_by: z.string().optional(),
-  notes: z.string().max(500).nullable().optional()
+  notes: z.string().max(1000).nullable().optional(),
+
+  // Marcas de migración (para BM histórico)
+  legacy_bm: z.boolean().optional(),
+  source: z.string().optional(),
+  legacy_id: z.string().optional(),
+  backfilled: z.boolean().optional(),
+  no_data: z.boolean().optional()
 }).passthrough();
 
 /**
@@ -119,40 +151,39 @@ export const SquadronParticipationDataSchema = z.object({
 }).passthrough();
 
 /**
+ * Progreso de un día específico del Black Market (3 misiones).
+ */
+export const BlackMarketDayProgressSchema = z.object({
+  dedication: z.boolean().default(false),
+  skill: z.boolean().default(false),
+  teamwork: z.boolean().default(false)
+});
+
+/**
  * Data para participaciones de BLACK_MARKET.
+ *
+ * Estructura extendida del Rediseño de Eventos (F4.2.2-A).
+ * Ver: docs/adr/ADR-006-black-market-unificado.md
  */
 export const BlackMarketParticipationDataSchema = z.object({
-  day_1: z.object({
-    dedication: z.boolean().default(false),
-    skill: z.boolean().default(false),
-    teamwork: z.boolean().default(false)
-  }).optional(),
-  day_2: z.object({
-    dedication: z.boolean().default(false),
-    skill: z.boolean().default(false),
-    teamwork: z.boolean().default(false)
-  }).optional(),
-  day_3: z.object({
-    dedication: z.boolean().default(false),
-    skill: z.boolean().default(false),
-    teamwork: z.boolean().default(false)
-  }).optional(),
-  day_4: z.object({
-    dedication: z.boolean().default(false),
-    skill: z.boolean().default(false),
-    teamwork: z.boolean().default(false)
-  }).optional(),
-  day_5: z.object({
-    dedication: z.boolean().default(false),
-    skill: z.boolean().default(false),
-    teamwork: z.boolean().default(false)
-  }).optional(),
+  // Progreso por día (5 días)
+  day_1: BlackMarketDayProgressSchema.optional(),
+  day_2: BlackMarketDayProgressSchema.optional(),
+  day_3: BlackMarketDayProgressSchema.optional(),
+  day_4: BlackMarketDayProgressSchema.optional(),
+  day_5: BlackMarketDayProgressSchema.optional(),
+
+  // Cálculos derivados (los completa el backend)
   total_points: z.number().int().min(0).max(250).default(0),
-  discount_percentage: z.number().int().min(0).max(50).default(0),
-  screenshot_urls: z.array(z.string().url()).optional(),
-  verified_by: z.string().nullable().optional(),
-  verified_at: z.string().datetime().nullable().optional(),
-  notes: z.string().max(500).nullable().optional()
+  discount_percentage: z.number().min(0).max(50).default(0),
+  completed_missions: z.number().int().min(0).max(15).default(0),
+  bonus_points: z.number().int().min(0).default(0),
+
+  // Auditoría
+  screenshot_urls: z.array(z.string().url()).max(20).default([]),
+  verified_by: z.string().uuid().nullable().default(null),
+  verified_at: z.string().datetime().nullable().default(null),
+  notes: z.string().max(1000).nullable().default(null)
 }).passthrough();
 
 /**
@@ -226,25 +257,88 @@ export const UpdateParticipationSchema = z.object({
 });
 
 // ============================================================
-// EXPORTACIONES
+// HELPERS DE NEGOCIO — BLACK MARKET (F4.2.2-A)
 // ============================================================
 
+/**
+ * Constantes del Black Market.
+ */
+export const BM_MISSION_TYPES = ['dedication', 'skill', 'teamwork'];
+export const BM_MAX_DAYS = 5;
+export const BM_MISSIONS_PER_DAY = 3;
+export const BM_POINTS_PER_MISSION = 25;
+export const BM_DAILY_BONUS = 25;
+export const BM_MAX_POINTS = 250;
+export const BM_DISCOUNT_PER_POINT = 0.2;
+export const BM_MAX_DISCOUNT = 50;
+
+/**
+ * Calcula los puntos totales y el descuento de un piloto BM
+ * a partir de su progreso por día.
+ *
+ * @param {Object} dayProgress - Objeto con day_1 a day_5, cada uno {dedication, skill, teamwork}
+ * @returns {{total_points: number, discount_percentage: number, completed_missions: number, bonus_points: number}}
+ */
+export function calculateBmPoints(dayProgress = {}) {
+  let totalPoints = 0;
+  let totalBonus = 0;
+  let completedMissions = 0;
+
+  for (let d = 1; d <= BM_MAX_DAYS; d++) {
+    const day = dayProgress[`day_${d}`] || {};
+    const completed = [day.dedication, day.skill, day.teamwork].filter(Boolean).length;
+
+    completedMissions += completed;
+    totalPoints += completed * BM_POINTS_PER_MISSION;
+
+    if (completed === BM_MISSIONS_PER_DAY) {
+      totalBonus += BM_DAILY_BONUS;
+    }
+  }
+
+  totalPoints = Math.min(totalPoints + totalBonus, BM_MAX_POINTS);
+  const discount = Math.min(totalPoints * BM_DISCOUNT_PER_POINT, BM_MAX_DISCOUNT);
+
+  return {
+    total_points: totalPoints,
+    discount_percentage: Math.round(discount * 10) / 10,
+    completed_missions: completedMissions,
+    bonus_points: totalBonus
+  };
+}
+
+// ============================================================
+// EXPORTACIONES
+// ============================================================
 export default {
   EVENT_TYPES,
   EVENT_STATUSES,
   PARTICIPATION_STATUSES,
   SquadronMetadataSchema,
   BlackMarketMetadataSchema,
+  BlackMarketMissionSchema,
   AceChallengeMetadataSchema,
   GenericMetadataSchema,
   getMetadataSchema,
   SquadronParticipationDataSchema,
   BlackMarketParticipationDataSchema,
+  BlackMarketDayProgressSchema,
   GenericParticipationDataSchema,
   getParticipationDataSchema,
   CreateEventSchema,
   UpdateEventSchema,
   ChangeEventStatusSchema,
   CreateParticipationSchema,
-  UpdateParticipationSchema
+  UpdateParticipationSchema,
+  // Constantes BM
+  BM_MISSION_TYPES,
+  BM_MAX_DAYS,
+  BM_MISSIONS_PER_DAY,
+  BM_POINTS_PER_MISSION,
+  BM_DAILY_BONUS,
+  BM_MAX_POINTS,
+  BM_DISCOUNT_PER_POINT,
+  BM_MAX_DISCOUNT,
+  // Helpers BM
+  calculateBmPoints
 };
