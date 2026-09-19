@@ -37,11 +37,7 @@
     <div id="pilotsByStatus"></div>
   </div>
 
-  <!-- Black Market Control -->
-  <div class="card" style="margin-bottom:1.5rem;border:1.5px solid rgba(231,76,60,0.4);">
-    <h3 style="color:#e74c3c;margin-bottom:1rem;">⚡ Control Operativo Black Market</h3>
-    <div id="blackMarketInfo"></div>
-  </div>
+  <!-- (Black Market Control eliminado en F4.3 · absorbido por #adminEventsV2Container) -->
 
   <!-- Members Management Section -->
   <div class="card" style="margin-bottom:1.5rem;">
@@ -166,10 +162,134 @@
     </div>
   </div>
 
-  <!-- Events List -->
-  <div class="card">
-    <h3 style="margin-bottom:1rem;">📅 Registro de Eventos del Escuadrón</h3>
-    <div id="adminEventsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
+  <!-- Eventos Unificados v2 (F4.3) -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+      <div>
+        <h3 style="margin:0;">📅 Eventos del Escuadrón (Unificado)</h3>
+        <p style="margin:4px 0 0 0;font-size:0.82rem;color:#94a3b8;">
+          SQ + Black Market en un solo panel · fuente: <code style="color:#60a5fa;">/api/events-v2</code>
+        </p>
+      </div>
+    </div>
+    <div id="adminEventsV2Container">
+      <div style="text-align:center;padding:2rem;color:#94a3b8;">
+        Cargando panel unificado de eventos...
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Crear Evento (F4.3) -->
+  <div id="adminEventCreateModal" class="modal">
+    <div class="modal-content" style="max-width:620px;">
+      <div class="modal-header">
+        <h3>➕ Crear Evento</h3>
+        <span class="close-btn" onclick="closeModal('adminEventCreateModal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="adminEventCreateForm" onsubmit="event.preventDefault(); window.adminEventsSubmitCreate();">
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label for="evCreateType" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+              Tipo de evento <span style="color:#e74c3c;">*</span>
+            </label>
+            <select id="evCreateType" onchange="window.adminEventsOnTypeChange()"
+                    style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
+              <option value="SQUADRON">✈️ Squadron (SQ)</option>
+              <option value="BLACK_MARKET">⚡ Black Market (BM)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label for="evCreateName" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+              Nombre <span style="color:#e74c3c;">*</span>
+            </label>
+            <input type="text" id="evCreateName" required
+                   placeholder="Ej: Squadron Event 2026-W40"
+                   style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+            <div class="form-group">
+              <label for="evCreateStart" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                Inicio <span style="color:#e74c3c;">*</span>
+              </label>
+              <input type="datetime-local" id="evCreateStart" required
+                     style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+            </div>
+            <div class="form-group">
+              <label for="evCreateEnd" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                Cierre
+              </label>
+              <input type="datetime-local" id="evCreateEnd"
+                     style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+            </div>
+          </div>
+
+          <!-- Campos específicos SQ -->
+          <div id="evCreateSqFields">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+              <div class="form-group">
+                <label for="evCreateSqTargetMembers" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                  Meta pilotos
+                </label>
+                <input type="number" id="evCreateSqTargetMembers" min="0" value="0"
+                       style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+              </div>
+              <div class="form-group">
+                <label for="evCreateSqTargetTokens" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                  Meta tokens
+                </label>
+                <input type="number" id="evCreateSqTargetTokens" min="0" value="0"
+                       style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Campos específicos BM -->
+          <div id="evCreateBmFields" style="display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+              <div class="form-group">
+                <label for="evCreateBmAircraftId" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                  ID aeronave
+                </label>
+                <input type="text" id="evCreateBmAircraftId" placeholder="Ej: 125"
+                       style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+              </div>
+              <div class="form-group">
+                <label for="evCreateBmAircraftName" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                  Nombre aeronave
+                </label>
+                <input type="text" id="evCreateBmAircraftName" placeholder="Ej: F-15EX Eagle II"
+                       style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+              <div class="form-group">
+                <label for="evCreateBmBasePrice" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                  Precio base (shards)
+                </label>
+                <input type="number" id="evCreateBmBasePrice" min="0" value="500"
+                       style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+              </div>
+              <div class="form-group">
+                <label for="evCreateBmMaxDiscount" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">
+                  Descuento máximo (shards)
+                </label>
+                <input type="number" id="evCreateBmMaxDiscount" min="0" value="250"
+                       style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;" />
+              </div>
+            </div>
+            <div style="background:rgba(231,76,60,0.08);border-left:3px solid #e74c3c;padding:8px 12px;border-radius:4px;font-size:0.78rem;color:#fca5a5;margin-bottom:1rem;">
+              ℹ️ Las 15 misiones (5 días × 3 tipos) se autogeneran si no se especifican.
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" onclick="closeModal('adminEventCreateModal')" class="btn-secondary">Cancelar</button>
+        <button type="button" onclick="window.adminEventsSubmitCreate()" class="btn-primary">💾 Crear evento</button>
+      </div>
+    </div>
   </div>
 </div>
 

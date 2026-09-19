@@ -1,5 +1,5 @@
-// Service Worker - PARAGUAY-FFAA | METALSTORM PWA
-// ⬇️ BUMP DE VERSIÓN EN CADA DEPLOY
+�// Service Worker - PARAGUAY-FFAA | METALSTORM PWA
+// �!️ BUMP DE VERSI�N EN CADA DEPLOY
 
 // ============================================================
 // HALL-059 FIX: Actualización de versión de caché (v4.0.3)
@@ -7,9 +7,9 @@
 // en recursos estáticos (componentes HTML) tras redirección 
 // post-vinculación.
 // ============================================================
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.1.0';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.2.5';
 
-// ✅ Assets versionados
+// �S& Assets versionados
 const STATIC_ASSETS = [
   '/css/global.css',
   '/css/components.css',
@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
   '/js/views.js',
   '/js/bm.js',
   '/js/performance.js',
+    '/js/admin-events.js',
   '/js/profile.js',
   '/js/settings.js',
   '/js/main.js',
@@ -81,7 +82,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ✅ Network-first para navegación, Cache-first para assets
+// �S& Network-first para navegación, Cache-first para assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -93,7 +94,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ✅ Network-first para navegación (index.html) — SIEMPRE la versión más nueva
+  // �S& Network-first para navegación (index.html) � SIEMPRE la versión más nueva
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -113,7 +114,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ✅ Cache-first para assets estáticos versionados
+  // �S& Cache-first para assets estáticos versionados
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;

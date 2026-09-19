@@ -220,6 +220,39 @@ const VIEW_ALIASES = {
 // Mostrar una vista específica
 function showView(viewId) {
   const resolvedId = VIEW_ALIASES[viewId] || viewId;
+
+  // F4.3 — Routing adaptativo: bloquea navegación incompatible con el evento activo
+  if (!window._routingGuardActive) {
+    const evt = window.currentActiveEvent;
+    if (evt && evt.type) {
+      const isSQ = evt.type === 'SQUADRON';
+      const isBM = evt.type === 'BLACK_MARKET';
+      const isPerfForm = resolvedId === VIEWS.PERFORMANCE || resolvedId === 'performanceForm';
+      const isBmView = typeof resolvedId === 'string' && resolvedId.toLowerCase().startsWith('bm');
+
+      // BM activo → bloquear formulario SQ
+      if (isBM && isPerfForm) {
+        window._routingGuardActive = true;
+        try {
+          showToast('⚠️ Hay un Black Market activo. Te llevo a las misiones BM.', 'warning');
+          return showView(VIEWS.BM_MISSIONS);
+        } finally {
+          window._routingGuardActive = false;
+        }
+      }
+
+      // SQ activo → bloquear todas las vistas BM
+      if (isSQ && isBmView) {
+        window._routingGuardActive = true;
+        try {
+          showToast('⚠️ Hay un Squadron activo. Te llevo al formulario de rendimiento.', 'warning');
+          return showView(VIEWS.PERFORMANCE);
+        } finally {
+          window._routingGuardActive = false;
+        }
+      }
+    }
+  }
   let targetView = document.getElementById(resolvedId);
 
   // Si los componentes aún no terminaron de inyectarse en el DOM, reintentar tras breve espera
@@ -330,6 +363,9 @@ function refreshCurrentView() {
 
 function refreshDashboard() {
   loadDashboardData();
+  if (typeof renderActiveEventWidget === 'function') {
+    renderActiveEventWidget().catch(err => console.warn('[Widget] Error:', err));
+  }
   showToast('🔄 Cuadro de mando actualizado', 'info');
 }
 
@@ -428,9 +464,189 @@ function loadViewData(viewId) {
   }
 }
 
+
+// ============================================================
+// F4.3 — Widget "Evento Activo" (dashboard)
+// Consume apiEventsV2Active() + apiEventsV2BmActive() si es BM.
+// ============================================================
+
+async function renderActiveEventWidget() {
+  const widget = document.getElementById('activeEventWidget');
+  if (!widget) return;
+
+  try {
+    const res = await apiEventsV2Active();
+    if (!res || !res.success) {
+      widget.style.display = 'none';
+      updateDashboardEventCard(null);
+      return;
+    }
+
+    const event = res.event;
+    if (!event) {
+      widget.style.display = 'none';
+      updateDashboardEventCard(null);
+      return;
+    }
+
+    window.currentActiveEvent = event;
+    widget.style.display = 'block';
+    updateDashboardEventCard(event);
+
+    const isBM = event.type === 'BLACK_MARKET';
+    const badge = document.getElementById('aeTypeBadge');
+    const nameEl = document.getElementById('aeName');
+    const metaEl = document.getElementById('aeMeta');
+    const cta = document.getElementById('aeCta');
+    const bmExtra = document.getElementById('aeBmExtra');
+    const bmDetail = document.getElementById('aeBmDetail');
+    const progressLabel = document.getElementById('aeProgressLabel');
+    const progressPct = document.getElementById('aeProgressPct');
+    const progressFill = document.getElementById('aeProgressFill');
+
+    if (badge) {
+      badge.textContent = isBM ? '⚡ BLACK MARKET' : '✈️ SQUADRON';
+      badge.className = 'status-badge ' + (isBM ? 'status-rojo' : 'status-verde');
+      badge.style.cssText = 'font-size:0.75rem;padding:3px 10px;';
+    }
+
+    if (nameEl) nameEl.textContent = event.name || 'Evento sin nombre';
+
+    const startDate = event.start_date ? new Date(event.start_date) : null;
+    const endDate = event.end_date ? new Date(event.end_date) : null;
+
+    let metaTxt = '';
+    if (startDate && endDate) {
+      const opts = { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+      metaTxt = 'Cierra el ' + endDate.toLocaleDateString('es-PY', opts) + ' (PY)';
+    }
+    if (metaEl) metaEl.textContent = metaTxt;
+
+    if (cta) {
+      cta.onclick = () => {
+        if (isBM) showView('bmMissionsView');
+        else showView('performanceForm');
+      };
+      cta.textContent = isBM ? '➡️ Ver misiones BM' : '➡️ Registrar tokens';
+    }
+
+    if (isBM) {
+      const bmRes = await apiEventsV2BmActive();
+      if (bmRes && bmRes.success && bmRes.active) {
+        const cd = bmRes.current_day || 1;
+        const dl = bmRes.days_left || 0;
+        const acName = bmRes.event?.aircraft_name || '—';
+        if (bmDetail) {
+          bmDetail.textContent = 'Día ' + cd + ' de 5 · Aeronave: ' + acName + ' · ' + dl + ' día(s) restante(s)';
+        }
+        if (bmExtra) bmExtra.style.display = 'block';
+
+        if (progressLabel) progressLabel.textContent = 'Progreso BM (día ' + cd + ' de 5)';
+        const totalPts = bmRes.event?.max_points || 250;
+        const userPts = 0;
+        const pct = Math.min(100, Math.round((userPts / totalPts) * 100));
+        if (progressPct) progressPct.textContent = userPts + ' / ' + totalPts + ' pts';
+        if (progressFill) progressFill.style.width = pct + '%';
+      } else {
+        if (bmExtra) bmExtra.style.display = 'none';
+        if (progressLabel) progressLabel.textContent = 'Progreso del evento';
+        if (progressPct) progressPct.textContent = '—';
+        if (progressFill) progressFill.style.width = '0%';
+      }
+    } else {
+      if (bmExtra) bmExtra.style.display = 'none';
+      if (progressLabel) progressLabel.textContent = 'Progreso semanal del escuadrón';
+      if (progressPct) progressPct.textContent = 'En curso';
+      if (progressFill) progressFill.style.width = '60%';
+    }
+
+    startEventCountdown(event.end_date);
+
+  } catch (err) {
+    console.error('[ActiveEventWidget] Error:', err);
+    widget.style.display = 'none';
+    updateDashboardEventCard(null);
+  }
+}
+
+function updateDashboardEventCard(event) {
+  const nameEl = document.getElementById('dashboardEventId');
+  const statusEl = document.getElementById('dashboardEventStatus');
+
+  if (!event) {
+    if (nameEl) nameEl.textContent = 'Sin evento activo';
+    if (statusEl) {
+      statusEl.textContent = '— Ventana cerrada';
+      statusEl.className = 'stat-footer-badge';
+    }
+    return;
+  }
+
+  if (nameEl) nameEl.textContent = event.name || event.legacy_event_id || 'Evento actual';
+
+  if (statusEl) {
+    const isBM = event.type === 'BLACK_MARKET';
+    statusEl.textContent = isBM ? '● Black Market activo' : '● Ventana Activa';
+    statusEl.className = 'stat-footer-badge';
+  }
+}
+
+function startEventCountdown(endDateIso) {
+  console.log('[EventCountdown] startEventCountdown llamado con:', endDateIso);
+  console.log('[EventCountdown] window._aeCountdownInterval previo:', window._aeCountdownInterval ? 'activo' : 'null');
+
+  if (window._aeCountdownInterval) {
+    clearInterval(window._aeCountdownInterval);
+    window._aeCountdownInterval = null;
+  }
+  if (!endDateIso) return;
+
+  const endMs = new Date(endDateIso).getTime();
+  if (isNaN(endMs)) return;
+
+  function tick() {
+    const el = document.getElementById('aeCountdown');
+    if (!el) return;
+    const rem = Math.max(0, endMs - Date.now());
+    const d = Math.floor(rem / 86400000);
+    const h = Math.floor((rem % 86400000) / 3600000);
+    const m = Math.floor((rem % 3600000) / 60000);
+    const s = Math.floor((rem % 60000) / 1000);
+    const pad = n => String(n).padStart(2, '0');
+    el.textContent = d > 0
+      ? d + 'd ' + pad(h) + ':' + pad(m) + ':' + pad(s)
+      : pad(h) + ':' + pad(m) + ':' + pad(s);
+    if (rem <= 0) {
+      clearInterval(window._aeCountdownInterval);
+      window._aeCountdownInterval = null;
+    }
+  }
+  tick();
+  window._aeCountdownInterval = setInterval(tick, 1000);
+}
+
+window.renderActiveEventWidget = renderActiveEventWidget;
+window.aeNavigate = function() {
+  const ev = window.currentActiveEvent;
+  if (!ev) return;
+  if (ev.type === 'BLACK_MARKET') showView('bmMissionsView');
+  else showView('performanceForm');
+};
+
+// ============================================================
+// FIN F4.3 — Widget Evento Activo
+// ============================================================
+
 // ========== DASHBOARD COMPLETO TÁCTICO ==========
 async function loadDashboardData() {
+  // F4.3 — Disparar widget de evento activo en paralelo (hook temprano)
+  if (typeof renderActiveEventWidget === 'function') {
+    renderActiveEventWidget().catch(err => console.warn('[Widget] Error:', err));
+  }
+
+
   if (!currentUser) return;
+
 
   try {
     const [summaryRes, historyRes] = await Promise.all([
@@ -494,10 +710,7 @@ function updateDashboardTacticalUI(summary, history) {
   const weeksEvaluatedEl = document.getElementById('weeksEvaluated');
   if (weeksEvaluatedEl) weeksEvaluatedEl.textContent = weeksEvaluated;
 
-  const eventEl = document.getElementById('dashboardEventId');
-  if (eventEl) {
-    eventEl.textContent = summary?.currentEvent?.id || 'SQUADRON-2026-08';
-  }
+  // F4.3 — dashboardEventId ya no se sobreescribe (lo maneja renderActiveEventWidget)
 
   const squadAvg = summary?.squadStats?.avg_tokens || 192.4;
   const goalPct = Math.min(100, Math.round((squadAvg / 200) * 100));
@@ -848,57 +1061,44 @@ function loadActiveMembers() {
 }
 
 function loadOpenEvents() {
-  fetch(`${API_BASE}/api/events/open`, {
-    headers: getAuthHeaders()
-  })
-  .then(async res => {
-    if (!res.ok) {
-      const fallback = await fetch(`${API_BASE}/api/events`, { headers: getAuthHeaders() });
-      if (!fallback.ok) throw new Error(`HTTP ${fallback.status}`);
-      return fallback.json();
-    }
-    const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json')) {
-      throw new Error('Response is not JSON');
-    }
-    return res.json();
-  })
-  .then(data => {
-    const prev = document.getElementById('windowClosedNotice');
-    if (prev) prev.remove();
+  // F4.3-F7 — Migrado a apiEventsV2Active() (antes /api/events/open legacy)
+  apiEventsV2Active()
+    .then(res => {
+      const prev = document.getElementById('windowClosedNotice');
+      if (prev) prev.remove();
 
-    const ev = data.event || (data.events && data.events[0]);
-    if (ev) {
-      const inWin = typeof data.inWindow === 'boolean' ? data.inWindow : Boolean(ev.is_open || ev.status === 'OPEN');
-      const winCloseMs = typeof data.windowCloseMs === 'number' ? data.windowCloseMs : 86400000;
-      displayEventInfo(ev, inWin, winCloseMs);
-      const fieldsEl = document.getElementById('performanceFields');
-      if (fieldsEl) {
-        if (inWin) {
-          fieldsEl.style.display = 'block';
-        } else {
-          fieldsEl.style.display = 'none';
-          renderWindowClosedNotice(ev.type);
+      const ev = (res && res.success) ? res.event : null;
+      if (ev) {
+        const inWin = typeof res.inWindow === 'boolean' ? res.inWindow : Boolean(ev.is_open || ev.status === 'OPEN');
+        const winCloseMs = typeof res.windowCloseMs === 'number' ? res.windowCloseMs : 86400000;
+        displayEventInfo(ev, inWin, winCloseMs);
+        const fieldsEl = document.getElementById('performanceFields');
+        if (fieldsEl) {
+          if (inWin) {
+            fieldsEl.style.display = 'block';
+          } else {
+            fieldsEl.style.display = 'none';
+            renderWindowClosedNotice(ev.type);
+          }
         }
-      }
-    } else {
-      const evInfo = document.getElementById('eventInfo');
-      if (evInfo) {
-        evInfo.innerHTML = `
+      } else {
+        const evInfo = document.getElementById('eventInfo');
+        if (evInfo) {
+          evInfo.innerHTML = `
 <div class="black-market-warning">
 <p>⚠️ No hay evento abierto actualmente</p>
 <p>Espera a que el liderazgo habilite el próximo evento</p>
 </div>
 `;
+        }
+        const fieldsEl = document.getElementById('performanceFields');
+        if (fieldsEl) fieldsEl.style.display = 'none';
       }
-      const fieldsEl = document.getElementById('performanceFields');
-      if (fieldsEl) fieldsEl.style.display = 'none';
-    }
-  })
-  .catch(err => {
-    console.error('Error cargando eventos:', err);
-    showToast('❌ Error al cargar eventos', 'error');
-  });
+    })
+    .catch(err => {
+      console.error('Error cargando eventos:', err);
+      showToast('❌ Error al cargar eventos', 'error');
+    });
 }
 
 function msUntilNextWindowOpen() {
@@ -4438,6 +4638,11 @@ async function loadAdminPanel() {
 }
 
 async function loadAdminEvents() {
+  // F4.3 — Delegado al módulo unificado /js/admin-events.js
+  if (typeof window.adminEventsLoad === 'function') {
+    return window.adminEventsLoad();
+  }
+  // Fallback legacy (por si admin-events.js no cargó aún)
   try {
     const res = await fetch(`${API_BASE}/api/events`, { headers: getAuthHeaders() });
     if (!res.ok) return;
