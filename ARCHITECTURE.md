@@ -123,6 +123,87 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
   - `requireRole`: Validador de rangos (`OWNER`, `ADMIN`, `VETERANO`, `MIEMBRO`).
   - `errorHandler.js`: Captura centralizada de excepciones que asegura respuestas estructuradas en JSON.
 
+### 2.2b Módulo de Eventos Unificado (`/api/events-v2/*`) — F3.1
+
+A partir de la Fase 3 del rediseño (2026-09-17), el sistema cuenta con un módulo unificado de eventos que reemplaza la lógica dual legacy (`/api/events/*` para SQ + `/api/bm/*` para BM).
+
+**Endpoints (12):**
+
+| Método | Endpoint | Propósito |
+|---|---|---|
+| `GET` | `/api/events-v2` | Listar eventos (filtros por `type`, `status`) |
+| `GET` | `/api/events-v2/active` | Evento activo actual (1 solo a la vez) |
+| `GET` | `/api/events-v2/:id` | Detalle de un evento |
+| `POST` | `/api/events-v2` | Crear evento (ADMIN/OWNER) |
+| `PUT` | `/api/events-v2/:id` | Editar evento (ADMIN/OWNER) |
+| `PATCH` | `/api/events-v2/:id/status` | Cambiar estado (OPEN/CLOSED/CANCELLED) |
+| `DELETE` | `/api/events-v2/:id` | Eliminar (solo SCHEDULED) |
+| `GET` | `/api/events-v2/:id/participations` | Listar participaciones |
+| `POST` | `/api/events-v2/:id/participations` | Cargar participación |
+| `PUT` | `/api/events-v2/:id/participations/:uid` | Editar participación |
+| `DELETE` | `/api/events-v2/:id/participations/:uid` | Eliminar participación |
+| `GET` | `/api/events-v2/switch-status` | Alias: estado del switch |
+
+**Arquitectura de datos:**
+- **`events_master`:** Tabla unificada de eventos (UUID, `type`, `status`, `metadata` JSONB).
+- **`event_participations`:** Tabla unificada de participaciones (UUID, `event_id`, `user_id`, `data` JSONB, `computed_points`, `status`).
+
+**Regla del switch:**
+- Solo **1 evento `OPEN`** a la vez (índice UNIQUE parcial `idx_events_master_single_open`).
+- Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
+- El scheduler auto-crea el próximo SQ el jueves 00:00 UTC.
+
+**Deprecación de endpoints legacy:**
+- `/api/events/*` (5 endpoints) y `/api/bm/*` (15 endpoints) siguen operativos pero **deprecados**.
+- Emiten headers `Sunset: Sat, 16 Dec 2026 23:59:59 GMT` y `Deprecation: true`.
+- Migración esperada a `/api/events-v2/*` antes del sunset.
+
+### 2.2c Scheduler de Eventos (`eventScheduler.js`) — F2.8
+
+Componente autónomo que garantiza la existencia de eventos SQ según el calendario oficial.
+
+**Ubicación:** `src/utils/eventScheduler.js`
+
+**Características:**
+- **Cron:** cada 1 hora (`0 * * * *`).
+- **Advisory Lock:** multi-réplica safe (RPC `acquire_scheduler_lock` / `release_scheduler_lock`).
+- **Idempotencia:** detecta eventos existentes por `legacy_event_id`.
+- **Backfill:** deshabilitado (decisión F2.9: no inventar datos).
+
+**Flujo:**
+
+1. Scheduler tick (cada 1 hora).
+2. Calcular la semana ISO actual.
+3. ¿Existe evento SQ para esta semana?
+   - **SÍ** → no hace nada (idempotente).
+   - **NO** → continúa:
+     1. Adquirir advisory lock.
+     2. Cerrar evento OPEN anterior.
+     3. Crear nuevo evento SQ con `status: OPEN`.
+     4. Registrar en `audit_logs`: `SQ_EVENT_AUTO_CREATED`.
+     5. Liberar advisory lock.
+
+**Integración:** `server.js` llama a `startEventScheduler()` en el arranque. No bloquea si falla.
+
+### 2.2d Middleware de Deprecación de Endpoints Legacy — F3.2
+
+Middleware que emite headers HTTP de deprecación en endpoints legacy para facilitar la migración ordenada.
+
+**Headers emitidos:**
+
+| Header | Valor |
+|---|---|
+| `Deprecation` | `true` |
+| `Sunset` | `Sat, 16 Dec 2026 23:59:59 GMT` |
+| `Link` | `</api/events-v2>; rel="successor-version"` |
+| `Warning` | `299 - "This endpoint is deprecated. Use /api/events-v2/* instead."` |
+
+**Endpoints afectados:**
+- `/api/events/*` (5 endpoints) → sucesor: `/api/events-v2/*`
+- `/api/bm/*` (15 endpoints) → sucesor: `/api/events-v2/*`
+
+**Implementación:** `src/middlewares/deprecation.js` (aplicado en `server.js` a las rutas legacy).
+
 ---
 
 ### 2.3 Capa de Medios (Cloudinary)
