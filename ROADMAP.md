@@ -31,7 +31,7 @@ Consolidar el sistema **PARAGUAY-FFAA | METALSTORM** como plataforma táctica de
 - [x] **Plan de Mejora Continua v1.0 — Fases 0, 1, 2, 3, 3.1, 4 completadas.**
 
 **Entregables clave:**
-- v4.0.2 en producción.
+- v4.0.5 en producción.
 - 8 hallazgos de seguridad resueltos.
 - 26 archivos SQL versionados.
 - Backups persistentes con sanitización.
@@ -50,7 +50,7 @@ Consolidar el sistema **PARAGUAY-FFAA | METALSTORM** como plataforma táctica de
 - [ ] Auditoría con ambos IDs.
 
 **Fase 6 — Documentación y Limpieza (1-2 días):**
-- [ ] Versionado unificado (v4.0.3).
+- [x] Versionado unificado (v4.0.5).
 - [ ] Migración de `presence` a Supabase (HALL-032).
 - [ ] Eliminar fallback de `plane-models`.
 - [ ] Sincronización documental completa.
