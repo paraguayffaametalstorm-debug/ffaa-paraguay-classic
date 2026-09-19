@@ -74,6 +74,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-005** | ✨ | Auto-login con link prellenado | 💡 Idea | M (1 día) | El link del QR prellena user + pass y auto-loguea. Complementa a BL-001. |
 | **BL-016** | 🐛 | Auditoría completa de claves `localStorage` en todo el frontend | 📋 Priorizado | S (4h) |
 | **BL-017** | 🏗️ | Sincronizar DDL `sql/001_users.sql` con BD real (HALL-061) | 📋 Priorizado | S (4h) | Agregar `google_id` a la BD real o eliminarlo del DDL. Documentar decisión. | HALL-059 reveló que existían inconsistencias puntuales. Auditar todos los archivos JS y HTML que escriben en `localStorage` para garantizar nomenclatura única y evitar futuras regresiones. |
+| **BL-018** | 📚 | Completar §3.5.2, §3.5.3 y §3.5.4 en `API_REFERENCE.md` | 📋 Priorizado | M (4h) | Agregar endpoints faltantes de events-v2 (GET /active, POST, PATCH, participaciones) y sección de deprecación legacy con sunset 2026-12-16. |
 
 ### 🟡 Prioridad Baja (Could Have)
 
