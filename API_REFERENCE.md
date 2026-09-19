@@ -46,7 +46,19 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Dashboard** | `/api/dashboard/summary` | `GET` | Autenticado | Resumen de evento, metas y Top 5 |
 | **Dashboard** | `/api/dashboard/active-members` | `GET` | Autenticado | Lista ordenada de miembros activos |
 | **Events** | `/api/events` | `GET` | Autenticado | Historial de eventos y ventana de tiempo |
-| **Events** | `/api/events/open` o `/active` | `GET` | Autenticado | Datos del evento activo actual |
+| **Events** | `/api/events/open` o `/active` | `GET` | Autenticado | Datos del evento activo actual (⚠️ deprecado, migrar a events-v2) |
+| **Events v2** | `/api/events-v2` | `GET` | Autenticado | Listar eventos unificados (SQ + BM) con filtros |
+| **Events v2** | `/api/events-v2/active` | `GET` | Autenticado | Evento activo actual (1 solo a la vez) |
+| **Events v2** | `/api/events-v2/:id` | `GET` | Autenticado | Detalle de un evento específico |
+| **Events v2** | `/api/events-v2` | `POST` | `ADMIN` / `OWNER` | Crear evento (SQ o BM) |
+| **Events v2** | `/api/events-v2/:id` | `PUT` | `ADMIN` / `OWNER` | Editar evento |
+| **Events v2** | `/api/events-v2/:id/status` | `PATCH` | `ADMIN` / `OWNER` | Cambiar estado (OPEN/CLOSED/CANCELLED) — switch funcional |
+| **Events v2** | `/api/events-v2/:id` | `DELETE` | `ADMIN` / `OWNER` | Eliminar evento (solo SCHEDULED) |
+| **Events v2** | `/api/events-v2/:id/participations` | `GET` | Autenticado | Listar participaciones del evento |
+| **Events v2** | `/api/events-v2/:id/participations` | `POST` | Autenticado | Cargar participación (tokens o misiones BM) |
+| **Events v2** | `/api/events-v2/:id/participations/:uid` | `PUT` | Autenticado | Editar participación |
+| **Events v2** | `/api/events-v2/:id/participations/:uid` | `DELETE` | `ADMIN` / `OWNER` | Eliminar participación |
+| **Events v2** | `/api/events-v2/switch-status` | `GET` | Autenticado | Alias: estado del switch de eventos |
 | **Performances**| `/api/performances` | `POST` | Autenticado | Registrar tokens y evaluar estado militar |
 | **Performances**| `/api/performances/pilots` | `GET` | Autenticado | Selector táctico de pilotos para ADMIN/OWNER |
 | **Performances**| `/api/performances/history` | `GET` | Autenticado | Historial personal de eventos y tokens |
@@ -455,6 +467,76 @@ Obtiene la lista autorizada de pilotos para el **Selector Táctico de Pilotos** 
   Content-Disposition: attachment; filename="PRY-FFAA_Rendimientos_YYYY-MM-DD.csv"
   ```
 - **Seguridad:** Todas las celdas se sanitizan contra inyecciones de fórmulas de hojas de cálculo.
+
+---
+
+## 3.5. Módulo de Eventos Unificado (`/api/events-v2`) — F3.1
+
+> **⚠️ IMPORTANTE:** A partir de la Fase 3 del rediseño (2026-09-17), este módulo reemplaza funcionalmente a `/api/events/*` (legacy SQ) y `/api/bm/*` (legacy BM). Los endpoints legacy siguen operativos pero **deprecados** con sunset programado para **2026-12-16**.
+
+### 3.5.1 Arquitectura Unificada
+
+El módulo unifica la gestión de eventos SQ y BM sobre dos tablas maestras:
+
+| Tabla | Propósito |
+|---|---|
+| `events_master` | Eventos unificados (UUID, `type`, `status`, `metadata` JSONB) |
+| `event_participations` | Participaciones unificadas (UUID, `event_id`, `user_id`, `data` JSONB, `computed_points`, `status`) |
+
+**Tipos de evento soportados:**
+- `SQUADRON`: Evento semanal (jueves-domingo).
+- `BLACK_MARKET`: Evento especial de 5 días (miércoles-domingo).
+- `ACE_CHALLENGE`: Reservado para futuro (estructura documentada, no implementada).
+
+**Regla del switch (1 evento OPEN a la vez):**
+- Solo puede existir **1 evento `OPEN`** en todo el sistema (índice UNIQUE parcial `idx_events_master_single_open`).
+- Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
+- El scheduler auto-crea el próximo SQ el **jueves 00:00 UTC**.
+
+### 3.5.2 Endpoints de Eventos
+
+#### `GET /api/events-v2`
+
+Lista eventos con filtros opcionales.
+
+**Query Params:**
+| Param | Valores | Default | Descripción |
+|---|---|---|---|
+| `type` | `SQUADRON` \| `BLACK_MARKET` \| `ACE_CHALLENGE` | (todos) | Filtrar por tipo |
+| `status` | `SCHEDULED` \| `OPEN` \| `CLOSED` \| `CANCELLED` | (todos) | Filtrar por estado |
+| `limit` | número | 50 | Máximo de resultados |
+| `offset` | número | 0 | Paginación |
+
+**Response Exitosa (200 OK):**
+```json
+{
+  "success": true,
+  "events": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "type": "SQUADRON",
+      "name": "Squadron Event 2026-W38",
+      "start_date": "2026-09-17T00:00:00Z",
+      "end_date": "2026-09-20T23:59:59Z",
+      "status": "OPEN",
+      "metadata": {
+        "iso_week": 38,
+        "iso_year": 2026,
+        "target_members": 27,
+        "target_tokens": 200,
+        "min_tokens_required": 175,
+        "auto_created": true,
+        "source": "SCHEDULER"
+      },
+      "legacy_event_id": "2026-09 · SEM 38 - SQ",
+      "created_at": "2026-09-17T09:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+> **Deuda técnica:** §3.5.2 (endpoints restantes), §3.5.3 (participaciones) y §3.5.4 (deprecación) pendientes. Ver `BL-018` en `BACKLOG.md`.
 
 ---
 
@@ -1126,6 +1208,6 @@ Tabla de clasificación ordenada por puntos acumulados en el Black Market activo
 
 ---
 
-*Versión: v4.0.0 · Actualizado: 16 Septiembre 2026*
+*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
 
 
