@@ -1,10 +1,9 @@
 /**
- * PARAGUAY-FFAA | METALSTORM v2.0 - API Client
- * ✅ SINCRONIZADO CON NUEVA BD (user_id INTEGER)
- * Funciones para interactuar con el backend
- * Actualizado: 12 de febrero de 2026
- */
-
+PARAGUAY-FFAA | METALSTORM v2.0 - API Client
+✅ SINCRONIZADO CON NUEVA BD (user_id INTEGER)
+Funciones para interactuar con el backend
+Actualizado: 12 de febrero de 2026
+*/
 // ========== HELPER DE AUTENTICACIÓN ==========
 function getAuthHeaders() {
   const token = localStorage.getItem('authToken') || localStorage.getItem('tempToken');
@@ -22,23 +21,23 @@ async function savePerformance() {
     const daysConnected = parseInt(document.getElementById('daysConnected').value);
     const flewInGroup   = document.getElementById('flewInGroup').checked;
     const notes         = document.getElementById('notes').value.trim();
-
+    
     // ── Determinar si es modo admin (otro piloto) ────────────────────────
     const targetSel    = document.getElementById('performanceTarget');
     const targetValue  = targetSel ? targetSel.value : 'self';
     const isAdminMode  = targetValue !== 'self';
     const targetUserId = isAdminMode ? parseInt(targetValue) : null;
-
+    
     // ── Validaciones comunes ─────────────────────────────────────────────
     if (!currentEvent) {
       throw new Error('No hay evento activo');
     }
-
+    
     // Límites según tipo de evento (ACTA-2026-001)
     const isBM      = currentEvent.type === 'BLACK_MARKET';
     const maxTokens = isBM ? 250 : 200;
     const maxDays   = isBM ? 5   : 4;
-
+    
     if (isNaN(tokens) || tokens < 0 || tokens > maxTokens) {
       throw new Error(`Tokens deben estar entre 0 y ${maxTokens} (evento ${currentEvent.type})`);
     }
@@ -48,13 +47,12 @@ async function savePerformance() {
     if (!flewInGroup) {
       throw new Error('Vuelo en grupo es obligatorio según normativa');
     }
-
+    
     // ── Deshabilitar botón para evitar doble envío ───────────────────────
     const saveBtn = document.getElementById('btnSavePerf');
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Guardando...'; }
-
+    
     let res;
-
     if (isAdminMode) {
       // ── Ruta ADMIN: registra/sobrescribe en nombre de otro piloto ────────
       const data = {
@@ -66,7 +64,6 @@ async function savePerformance() {
         notes:          notes || null
       };
       console.log(`📊 [ADMIN] Guardando performance para user_id: ${targetUserId}`, data);
-
       res = await fetch(`${API_BASE}/api/admin/performances`, {
         method:  'POST',
         headers: getAuthHeaders(),
@@ -82,24 +79,22 @@ async function savePerformance() {
         notes:          notes || null
       };
       console.log(`📊 Guardando performance para user_id: ${currentUser.user_id}`, data);
-
       res = await fetch(`${API_BASE}/api/performances`, {
         method:  'POST',
         headers: getAuthHeaders(),
         body:    JSON.stringify(data)
       });
     }
-
+    
     const resData = await res.json();
-
     if (!res.ok) {
       throw new Error(resData.error || 'Error al guardar rendimiento');
     }
-
+    
     const action  = resData.action === 'sobrescrito' ? 'Sobrescrito' : 'Registrado';
     const statMsg = resData.status ? ` — Estado: ${resData.status}` : '';
     showToast(`✅ ${action} correctamente${statMsg}`, 'success');
-
+    
     // ── Limpiar formulario ───────────────────────────────────────────────
     document.getElementById('tokens').value        = '';
     document.getElementById('daysConnected').value = '';
@@ -107,28 +102,27 @@ async function savePerformance() {
     document.getElementById('notes').value         = '';
     document.querySelectorAll('#daysSelectorGroup .day-btn')
       .forEach(btn => btn.classList.remove('active'));
+      
     const statusEl = document.getElementById('calculatedStatus');
     if (statusEl) statusEl.innerHTML = '<span class="status-badge">-</span>';
-
+    
     // Resetear selector de piloto al propio usuario
     if (targetSel) {
       targetSel.value = 'self';
       if (typeof onTargetPilotChange === 'function') onTargetPilotChange();
     }
-
+    
     // Re-habilitar botón ANTES de redirigir (el DOM de la SPA se preserva entre vistas)
     if (saveBtn) {
       saveBtn.disabled = false;
       saveBtn.textContent = '💾 Guardar Rendimiento';
     }
-
+    
     // Volver al dashboard tras 1.5s
     setTimeout(() => showView('appView'), 1500);
-
   } catch (err) {
     console.error('Error guardando rendimiento:', err);
     showToast('❌ ' + err.message, 'error');
-
     // Re-habilitar botón si hubo error
     const saveBtn = document.getElementById('btnSavePerf');
     if (saveBtn) {
@@ -145,40 +139,40 @@ async function savePlane() {
     const isEditing  = !!editingId;
     const planeModel = document.getElementById('planeModel').value;
     const planeLevel = parseInt(document.getElementById('planeLevel').value);
-
+    
     // Validaciones básicas
     if (!planeModel) throw new Error('Selecciona un modelo de aeronave');
     if (!planeLevel || planeLevel < 1 || planeLevel > 20) throw new Error('Nivel debe estar entre 1 y 20');
-
+    
     const specialSkill = document.getElementById('specialSkill').value  || null;
     const passiveSkill = document.getElementById('passiveSkill').value  || null;
     const mod1         = document.getElementById('mod1').value          || null;
     const mod1Level    = parseInt(document.getElementById('mod1Level').value) || null;
     const mod2         = document.getElementById('mod2').value          || null;
     const mod2Level    = parseInt(document.getElementById('mod2Level').value) || null;
-
+    
     // Validaciones de nivel (REGLAS 2.4–2.7 / Sección 6)
     if (specialSkill && planeLevel < 8)  throw new Error('Habilidad especial requiere nivel 8+');
     if (passiveSkill && planeLevel < 12) throw new Error('Habilidad pasiva requiere nivel 12+');
     if (mod1         && planeLevel < 16) throw new Error('Modificación 1 requiere nivel 16+');
     if (mod2         && planeLevel < 20) throw new Error('Modificación 2 requiere nivel 20');
-
+    
     // REGLA-2.8: Mods distintos
     if (mod1 && mod2 && mod1 === mod2)
       throw new Error('No puedes equipar la misma modificación dos veces');
-
+      
     // REGLA-2.9: Nivel de mods obligatorio si hay mod
     if (mod1 && (!mod1Level || mod1Level < 1 || mod1Level > 5))
       throw new Error('Selecciona el nivel de Modificación 1 (1–5)');
     if (mod2 && (!mod2Level || mod2Level < 1 || mod2Level > 5))
       throw new Error('Selecciona el nivel de Modificación 2 (1–5)');
-
+      
     // REGLA-2.1: Verificar duplicados solo al agregar
     if (!isEditing) {
       const duplicate = allUserPlanes.find(p => String(p.avion_id) === String(planeModel));
       if (duplicate) throw new Error('Ya posees este modelo de aeronave. No puedes tener duplicados.');
     }
-
+    
     const data = {
       avion_id:       planeModel,
       nivel:          planeLevel,
@@ -189,30 +183,28 @@ async function savePlane() {
       mod2_id:         mod2,
       mod2_lvl:        mod2Level
     };
-
+    
     console.log(`✈️ ${isEditing ? 'Actualizando' : 'Creando'} avión`, data);
-
     const url    = isEditing ? `${API_BASE}/api/planes/${editingId}` : `${API_BASE}/api/planes`;
     const method = isEditing ? 'PUT' : 'POST';
-
+    
     const res = await fetch(url, {
       method,
       headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
-
+    
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.error || 'Error al guardar aeronave');
     }
-
+    
     showToast(
       isEditing ? '✅ Aeronave actualizada correctamente' : '✅ Aeronave registrada correctamente',
       'success'
     );
     closeModal('addPlaneModal');
     loadPlanesView();
-
   } catch (err) {
     console.error('Error guardando aeronave:', err);
     showToast('❌ ' + err.message, 'error');
@@ -221,21 +213,17 @@ async function savePlane() {
 
 async function deletePlane(planeId) {
   if (!confirm('¿Estás seguro de eliminar esta aeronave?')) return;
-  
   try {
     const res = await fetch(`${API_BASE}/api/planes/${planeId}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
-    
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.error || 'Error al eliminar aeronave');
     }
-    
     showToast('✅ Aeronave eliminada correctamente', 'success');
     loadPlanesView();
-    
   } catch (err) {
     console.error('Error eliminando aeronave:', err);
     showToast('❌ ' + err.message, 'error');
@@ -272,12 +260,10 @@ async function updatePlaneSystem(planeId, sistema, nivel, piezas = 0, avanzadas 
         avanzadas: parseInt(avanzadas, 10) || 0
       })
     });
-
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || 'Error al actualizar sistema');
     }
-
     const data = await res.json();
     showToast(`✅ ${data.message || 'Sistema actualizado con éxito'}`, 'success');
     return data.plane;
@@ -287,7 +273,6 @@ async function updatePlaneSystem(planeId, sistema, nivel, piezas = 0, avanzadas 
     throw err;
   }
 }
-
 window.getPlaneDetails = getPlaneDetails;
 window.updatePlaneSystem = updatePlaneSystem;
 
@@ -323,20 +308,20 @@ async function uploadNormativa() {
     const resumen              = document.getElementById('normativaSummary').value.trim();
     const fileInput            = document.getElementById('normativaFile');
     const nivel_confidencialidad = document.getElementById('normativaConfidentiality').value;
-
+    
     if (!titulo || !codigo || !tipo_documento || !categoria || !ambito_aplicacion || !fecha_aprobacion || !fecha_entrada_vigor || !resumen) {
       throw new Error('Completa todos los campos obligatorios');
     }
     if (!fileInput.files || fileInput.files.length === 0) {
       throw new Error('Selecciona un archivo PDF, DOC o DOCX');
     }
-
+    
     const file = fileInput.files[0];
     const maxSize = 15 * 1024 * 1024; // 15 MB
     if (file.size > maxSize) throw new Error('El archivo supera los 15 MB permitidos');
-
+    
     showToast('⏳ Subiendo normativa...', 'info');
-
+    
     // Leer archivo como Base64
     const file_base64 = await new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -344,9 +329,8 @@ async function uploadNormativa() {
       reader.onerror = () => reject(new Error('Error al leer el archivo'));
       reader.readAsDataURL(file);
     });
-
+    
     const ext = file.name.split('.').pop().toLowerCase();
-
     const payload = {
       titulo, codigo, tipo_documento, categoria, ambito_aplicacion,
       fecha_aprobacion, fecha_entrada_vigor, resumen, nivel_confidencialidad,
@@ -355,27 +339,27 @@ async function uploadNormativa() {
       file_extension: ext,
       file_type:      file.type || 'application/pdf'
     };
-
+    
     const res = await fetch(`${API_BASE}/api/normativas`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
-
+    
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.error || 'Error al subir normativa');
     }
-
+    
     showToast('✅ Normativa subida correctamente', 'success');
     closeModal('uploadNormativaModal');
+    
     // Limpiar formulario
     ['normativaTitle','normativaCode','normativaSummary'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
     loadNormativas();
-
   } catch (err) {
     console.error('Error subiendo normativa:', err);
     showToast('❌ ' + err.message, 'error');
@@ -387,11 +371,9 @@ async function downloadNormativa(normativaId) {
     const res = await fetch(`${API_BASE}/api/normativas/${normativaId}/download`, {
       headers: getAuthHeaders()
     });
-    
     if (!res.ok) {
       throw new Error('Error al descargar documento');
     }
-    
     // Descargar archivo
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
@@ -402,9 +384,7 @@ async function downloadNormativa(normativaId) {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
     showToast('✅ Descargando documento...', 'success');
-    
   } catch (err) {
     console.error('Error descargando normativa:', err);
     showToast('❌ ' + err.message, 'error');
@@ -423,7 +403,6 @@ async function addNewMember() {
     }
     
     const data = { nick, email, role };
-    
     const res = await fetch(`${API_BASE}/api/admin/members`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -439,7 +418,6 @@ async function addNewMember() {
     document.getElementById('newMemberNick').value = '';
     document.getElementById('newMemberEmail').value = '';
     loadMembersList();
-    
   } catch (err) {
     console.error('Error agregando miembro:', err);
     showToast('❌ ' + err.message, 'error');
@@ -481,7 +459,6 @@ async function uploadEventBulk() {
     showToast('✅ Evento cargado correctamente', 'success');
     closeModal('uploadEventModal');
     loadAdminPanel();
-    
   } catch (err) {
     console.error('Error cargando evento masivo:', err);
     showToast('❌ ' + err.message, 'error');
@@ -492,36 +469,31 @@ async function uploadEventBulk() {
 async function toggleMemberStatus(userId, newStatus, nick) {
   const label = newStatus === 'INACTIVE' ? 'inactivar' : 'reactivar';
   if (!confirm(`¿Confirmas ${label} al piloto ${nick}?`)) return;
-
+  
   try {
     const res = await fetch(`${API_BASE}/api/admin/members/${userId}/status`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify({ status: newStatus })
     });
-
     const data = await res.json();
-
     if (!res.ok) {
       throw new Error(data.error || `Error al ${label} miembro`);
     }
-
     const accion = newStatus === 'ACTIVE' ? 'reactivado' : 'inactivado';
     showToast(`✅ Piloto ${nick} ${accion} correctamente`, 'success');
-
+    
     // Recargar lista para reflejar el cambio
     if (typeof loadMembersList === 'function') {
       loadMembersList();
     } else if (typeof loadAdminPanel === 'function') {
       loadAdminPanel();
     }
-
   } catch (err) {
     console.error('Error cambiando estado de miembro:', err);
     showToast('❌ ' + err.message, 'error');
   }
 }
-
 window.toggleMemberStatus = toggleMemberStatus;
 
 // ========== EXPORTACIONES ==========
@@ -530,9 +502,7 @@ async function exportPlanesXLSX() {
     const res = await fetch(`${API_BASE}/api/planes/export`, {
       headers: getAuthHeaders()
     });
-    
     if (!res.ok) throw new Error('Error al exportar');
-    
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -542,9 +512,7 @@ async function exportPlanesXLSX() {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
     showToast('✅ Exportando aeronaves...', 'success');
-    
   } catch (err) {
     console.error('Error exportando:', err);
     showToast('❌ ' + err.message, 'error');
@@ -556,9 +524,7 @@ async function exportAllPerformances() {
     const res = await fetch(`${API_BASE}/api/admin/export-performances`, {
       headers: getAuthHeaders()
     });
-    
     if (!res.ok) throw new Error('Error al exportar');
-    
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -568,9 +534,7 @@ async function exportAllPerformances() {
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
     showToast('✅ Exportando rendimientos...', 'success');
-    
   } catch (err) {
     console.error('Error exportando:', err);
     showToast('❌ ' + err.message, 'error');
@@ -638,13 +602,11 @@ function loadPlaneMods() {
 function loadPlaneSkillOptions(preserveValues = false) {
   const modelId = document.getElementById('planeModel')?.value;
   const model   = planeModelsCache.find(m => String(m.id) === String(modelId));
-
   const specialSelect = document.getElementById('specialSkill');
   const passiveSelect = document.getElementById('passiveSkill');
-
   const prevSpecial = preserveValues ? specialSelect?.value : null;
   const prevPassive = preserveValues ? passiveSelect?.value : null;
-
+  
   if (specialSelect) {
     specialSelect.innerHTML = '<option value="">-- Sin habilidad especial --</option>';
     if (model?.special_name) {
@@ -655,7 +617,7 @@ function loadPlaneSkillOptions(preserveValues = false) {
     }
     if (preserveValues && prevSpecial) specialSelect.value = prevSpecial;
   }
-
+  
   if (passiveSelect) {
     passiveSelect.innerHTML = '<option value="">-- Sin habilidad pasiva --</option>';
     if (model?.passive_name) {
@@ -677,7 +639,7 @@ function onPlaneModelChange() {
 // ========== ESTADO DE CAMPOS SEGÚN NIVEL (SECCIÓN 6 DE REGLAS) ==========
 function loadPlaneSkills() {
   const level = parseInt(document.getElementById('planeLevel')?.value) || 0;
-
+  
   // Helper: habilitar o deshabilitar con texto de placeholder correcto
   const setField = (id, enabled, placeholder) => {
     const el = document.getElementById(id);
@@ -688,7 +650,7 @@ function loadPlaneSkills() {
       el.innerHTML = `<option value="">${placeholder}</option>`;
     }
   };
-
+  
   // Habilidad especial — Nivel 8+
   const specialEnabled = level >= 8;
   if (!specialEnabled) {
@@ -701,7 +663,7 @@ function loadPlaneSkills() {
       if (specialSelect.options.length <= 1) loadPlaneSkillOptions(false);
     }
   }
-
+  
   // Habilidad pasiva — Nivel 12+
   const passiveEnabled = level >= 12;
   if (!passiveEnabled) {
@@ -713,7 +675,7 @@ function loadPlaneSkills() {
       if (passiveSelect.options.length <= 1) loadPlaneSkillOptions(false);
     }
   }
-
+  
   // Mod 1 — Nivel 16+
   const mod1Enabled = level >= 16;
   const mod1Select  = document.getElementById('mod1');
@@ -738,7 +700,7 @@ function loadPlaneSkills() {
       if (!mod1Enabled) mod1Level.value = '';
     }
   }
-
+  
   // Mod 2 — Nivel 20
   const mod2Enabled = level >= 20;
   const mod2Select  = document.getElementById('mod2');
@@ -812,9 +774,7 @@ function resetMemberFilters() {
 // ========== FUNCIONES DE FILTRADO ==========
 // NOTA: La función filterPlanes real está implementada en views.js
 // function filterPlanes() { console.log('🔍 Filtrando aeronaves...'); } // Eliminado para evitar conflicto
-
 // filterNormativas — implementado en views.js (applyNormativasFilters)
-
 // [ADMIN MEJORA] Esta función ahora se implementa en vistas.js con el filtrado real.
 // Se mantiene como placeholder por compatibilidad.
 function filterMembers() {
@@ -865,7 +825,6 @@ function showAllNormativas() {
 // ============================================================
 // GESTIÓN DE MODELOS DE AERONAVES (CATÁLOGO ADMIN / OWNER v3.6.0)
 // ============================================================
-
 async function apiGetPlaneModels(includeInactive = true) {
   try {
     const url = `${API_BASE}/api/plane-models?include_inactive=${includeInactive}&all=true`;
@@ -987,7 +946,6 @@ window.apiRestorePlaneModel = apiRestorePlaneModel;
 // ============================================================
 // BLACK MARKET (BM) API CLIENT (v3.7.0)
 // ============================================================
-
 async function apiGetBmEvents() {
   const res = await fetch(`${API_BASE}/api/bm/events`, {
     headers: getAuthHeaders()
@@ -1172,7 +1130,6 @@ window.apiGetBmLeaderboard     = apiGetBmLeaderboard;
 // que antes se hacía con fetch() inline en link-account.html.
 // El backend NUNCA estuvo roto: el bug estaba en las claves
 // de localStorage usadas por el HTML inline.
-
 async function apiLinkAccount(payload) {
   try {
     const res = await fetch('/api/auth/link-account', {
@@ -1190,5 +1147,157 @@ async function apiLinkAccount(payload) {
     throw err;
   }
 }
-
 window.apiLinkAccount = apiLinkAccount;
+
+// ============================================================
+// EVENTS V2 — API CLIENT (Rediseño de Eventos · F4.2.1)
+// ============================================================
+// Propósito: cliente HTTP unificado para /api/events-v2/*.
+// Convive con las funciones legacy hasta F4.4 (deprecación).
+//
+// Patrón de retorno:
+//   - Promise<{ success: true, data: ..., ... }>  → éxito
+//   - Promise<{ success: false, error: 'msg' }>   → error controlado
+//
+// NO lanza excepciones no capturadas.
+// ============================================================
+
+// ─── HELPERS PRIVADOS ───────────────────────────────────────
+
+async function _eventsV2Fetch(path, options = {}) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: options.method || 'GET',
+      headers: getAuthHeaders(),
+      ...(options.body && { body: JSON.stringify(options.body) })
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: json.error || `Error HTTP ${res.status}`,
+        code: json.code || 'HTTP_ERROR',
+        details: json.details || null
+      };
+    }
+
+    return { success: true, ...json };
+  } catch (err) {
+    console.error(`❌ [EventsV2] Error en ${path}:`, err);
+    return {
+      success: false,
+      error: err.message || 'Error de conexión',
+      code: 'NETWORK_ERROR'
+    };
+  }
+}
+
+// ─── LECTURA DE EVENTOS ─────────────────────────────────────
+
+async function apiEventsV2List(params = {}) {
+  const query = new URLSearchParams();
+  if (params.type)   query.set('type', params.type);
+  if (params.status) query.set('status', params.status);
+  if (params.limit)  query.set('limit', params.limit);
+  const qs = query.toString();
+  return _eventsV2Fetch(`/api/events-v2${qs ? `?${qs}` : ''}`);
+}
+
+async function apiEventsV2Active() {
+  return _eventsV2Fetch('/api/events-v2/active');
+}
+
+async function apiEventsV2GetById(id) {
+  if (!id) return { success: false, error: 'ID requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(id)}`);
+}
+
+// ─── ESCRITURA DE EVENTOS (ADMIN/OWNER) ─────────────────────
+
+async function apiEventsV2Create(payload) {
+  if (!payload || !payload.type || !payload.name) {
+    return { success: false, error: 'type y name son obligatorios', code: 'MISSING_FIELDS' };
+  }
+  return _eventsV2Fetch('/api/events-v2', { method: 'POST', body: payload });
+}
+
+async function apiEventsV2Update(id, payload) {
+  if (!id) return { success: false, error: 'ID requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: payload
+  });
+}
+
+async function apiEventsV2ChangeStatus(id, status) {
+  if (!id) return { success: false, error: 'ID requerido', code: 'MISSING_ID' };
+  const valid = ['SCHEDULED', 'OPEN', 'CLOSED', 'CANCELLED'];
+  if (!valid.includes(status)) {
+    return { success: false, error: `status inválido. Válidos: ${valid.join(', ')}`, code: 'INVALID_STATUS' };
+  }
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    body: { status }
+  });
+}
+
+async function apiEventsV2Delete(id) {
+  if (!id) return { success: false, error: 'ID requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// ─── PARTICIPACIONES ────────────────────────────────────────
+
+async function apiEventsV2GetParticipations(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(eventId)}/participations`);
+}
+
+async function apiEventsV2CreateParticipation(eventId, payload) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  if (!payload || !payload.data) {
+    return { success: false, error: 'data es obligatorio', code: 'MISSING_DATA' };
+  }
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(eventId)}/participations`, {
+    method: 'POST',
+    body: payload
+  });
+}
+
+async function apiEventsV2UpdateParticipation(eventId, userId, payload) {
+  if (!eventId || !userId) {
+    return { success: false, error: 'eventId y userId requeridos', code: 'MISSING_ID' };
+  }
+  return _eventsV2Fetch(
+    `/api/events-v2/${encodeURIComponent(eventId)}/participations/${encodeURIComponent(userId)}`,
+    { method: 'PUT', body: payload }
+  );
+}
+
+async function apiEventsV2DeleteParticipation(eventId, userId) {
+  if (!eventId || !userId) {
+    return { success: false, error: 'eventId y userId requeridos', code: 'MISSING_ID' };
+  }
+  return _eventsV2Fetch(
+    `/api/events-v2/${encodeURIComponent(eventId)}/participations/${encodeURIComponent(userId)}`,
+    { method: 'DELETE' }
+  );
+}
+
+// ─── EXPOSICIÓN GLOBAL ──────────────────────────────────────
+
+window.apiEventsV2List                 = apiEventsV2List;
+window.apiEventsV2Active               = apiEventsV2Active;
+window.apiEventsV2GetById              = apiEventsV2GetById;
+window.apiEventsV2Create               = apiEventsV2Create;
+window.apiEventsV2Update               = apiEventsV2Update;
+window.apiEventsV2ChangeStatus         = apiEventsV2ChangeStatus;
+window.apiEventsV2Delete               = apiEventsV2Delete;
+window.apiEventsV2GetParticipations    = apiEventsV2GetParticipations;
+window.apiEventsV2CreateParticipation  = apiEventsV2CreateParticipation;
+window.apiEventsV2UpdateParticipation  = apiEventsV2UpdateParticipation;
+window.apiEventsV2DeleteParticipation  = apiEventsV2DeleteParticipation;
+
+console.log('✅ [EventsV2] 11 funciones apiEventsV2* expuestas en window');
