@@ -95,27 +95,20 @@ async function initPerformanceForm() {
  * Carga el evento activo actual y actualiza el título formateado
  */
 async function loadCurrentEvent() {
+    // F4.3-F7 — Migrado a apiEventsV2Active() (antes /api/events/open legacy)
     try {
-        const res = await fetch('/api/events/open', {
-            headers: getAuthHeaders()
-        });
+        const res = await apiEventsV2Active();
 
-        let data = null;
-        if (res.ok) {
-            data = await res.json();
-        } else {
-            const fallbackRes = await fetch('/api/events', { headers: getAuthHeaders() });
-            if (fallbackRes.ok) data = await fallbackRes.json();
-        }
-
-        if (data && (data.event || (data.events && data.events[0]))) {
-            window.currentEvent = data.event || data.events[0];
-            const inWindow = typeof data.inWindow === 'boolean' ? data.inWindow : true;
-            const windowCloseMs = typeof data.windowCloseMs === 'number' ? data.windowCloseMs : 86400000;
+        if (res && res.success && res.event) {
+            window.currentEvent = res.event;
+            const inWindow = typeof res.inWindow === 'boolean' ? res.inWindow : true;
+            const windowCloseMs = typeof res.windowCloseMs === 'number' ? res.windowCloseMs : 86400000;
 
             if (typeof window.displayEventInfo === 'function') {
                 window.displayEventInfo(window.currentEvent, inWindow, windowCloseMs);
             }
+        } else {
+            window.currentEvent = null;
         }
 
         // Adaptar formulario según tipo de evento

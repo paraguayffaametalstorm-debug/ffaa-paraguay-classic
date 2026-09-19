@@ -77,6 +77,56 @@
     </div>
   </div>
 
+  <!-- F4.3 — Widget Evento Activo (se muestra si hay evento OPEN) -->
+  <section id="activeEventWidget" class="card tactical-corners" style="display:none;margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:260px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span id="aeTypeBadge" class="status-badge" style="font-size:0.75rem;padding:3px 10px;">—</span>
+          <span id="aeStatusDot" style="font-size:0.85rem;color:#2ecc71;">●</span>
+          <span style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">
+            EVENTO ACTIVO
+          </span>
+        </div>
+        <div id="aeName" style="font-size:1.25rem;font-weight:700;color:#f8fafc;font-family:var(--font-tactical);letter-spacing:0.5px;margin-bottom:6px;">
+          Cargando evento...
+        </div>
+        <div id="aeMeta" style="font-size:0.85rem;color:#cbd5e1;line-height:1.6;">
+          <!-- JS inyecta: "Día 3 de 5 · Cierra el domingo 21:00 PY" -->
+        </div>
+      </div>
+
+      <div style="flex:0 0 auto;text-align:right;min-width:140px;">
+        <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">
+          Tiempo restante
+        </div>
+        <div id="aeCountdown" style="font-size:1.6rem;font-weight:700;color:#d4af37;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono',monospace;margin:4px 0;">
+          --:--:--
+        </div>
+        <button id="aeCta" onclick="window.aeNavigate()" class="btn-primary" style="font-size:0.85rem;padding:6px 14px;width:100%;">
+          ➡️ Ir al evento
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#94a3b8;margin-bottom:4px;">
+        <span id="aeProgressLabel">Progreso del evento</span>
+        <span id="aeProgressPct">—</span>
+      </div>
+      <div style="height:6px;background:rgba(148,163,184,0.15);border-radius:3px;overflow:hidden;">
+        <div id="aeProgressFill" style="height:100%;width:0%;background:linear-gradient(90deg,#0038A8,#38BDF8);transition:width 0.4s;"></div>
+      </div>
+    </div>
+
+    <!-- Banner BM específico (se oculta si SQ) -->
+    <div id="aeBmExtra" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(231,76,60,0.08);border-left:3px solid #e74c3c;border-radius:4px;font-size:0.82rem;color:#cbd5e1;">
+      <strong style="color:#fca5a5;">⚡ Black Market:</strong>
+      <span id="aeBmDetail">—</span>
+    </div>
+  </section>
+
   <!-- Squadron Weekly Goal Progress Bar -->
   <div class="card squad-goal-card tactical-corners" style="margin-bottom: 1.5rem;">
     <div class="goal-header">

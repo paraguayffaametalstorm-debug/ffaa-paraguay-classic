@@ -71,6 +71,19 @@ function checkAuthStatus() {
   // 1. Manejar callback de Google OAuth si está presente en la URL
   handleOAuthCallback();
 
+  // HALL-064 — Restaurar currentUser desde localStorage si no está en memoria
+  if (!window.currentUser) {
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        window.currentUser = JSON.parse(storedUser);
+        console.log('[HALL-064] currentUser restaurado desde localStorage:', window.currentUser.nick);
+      }
+    } catch (e) {
+      console.warn('[HALL-064] No se pudo restaurar currentUser:', e.message);
+    }
+  }
+
   const token = localStorage.getItem('authToken');
   
   // ✅ SI NO HAY TOKEN → MOSTRAR LOGIN INMEDIATAMENTE
@@ -110,6 +123,12 @@ function checkAuthStatus() {
     
     console.log(`✅ Usuario autenticado: ${currentUser.nick} (user_id: ${currentUser.user_id}, tipo: number)`);
     window.currentUser = currentUser;
+    // HALL-064 — Persistir currentUser en localStorage para sobrevivir recargas
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } catch (e) {
+      console.warn('[HALL-064] No se pudo guardar currentUser:', e.message);
+    }
 
     // 🔔 ACTUALIZAR UI PARA TODOS LOS ROLES (MIEMBRO, VETERANO, ADMIN, OWNER)
     if (typeof updateUserUI === 'function') {
@@ -188,6 +207,12 @@ function login() {
     
     console.log(`✅ user_id verificado: ${currentUser.user_id} (tipo: number)`);
     window.currentUser = currentUser;
+    // HALL-064 — Persistir currentUser en localStorage para sobrevivir recargas
+    try {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } catch (e) {
+      console.warn('[HALL-064] No se pudo guardar currentUser:', e.message);
+    }
 
     // 🔔 ACTUALIZAR UI INMEDIATAMENTE PARA TODOS LOS ROLES (MIEMBRO, VETERANO, ADMIN, OWNER)
     if (typeof updateUserUI === 'function') {
