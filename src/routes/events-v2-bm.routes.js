@@ -42,12 +42,15 @@ import { Router } from 'express';
 import {
   getBmActiveEventV2,
   getBmEventByIdV2,
+  getBmEventsV2,
   createBmEventV2,
   updateBmEventV2,
   getBmProgressV2,
   updateBmProgressV2,
   getBmLeaderboardV2,
-  getBmDiscountV2
+  getBmDiscountV2,
+  getBmStatsV2,
+  purchaseBmDiscountV2
 } from '../controllers/events-v2-bm.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
 
@@ -106,6 +109,31 @@ router.get('/:eventId/leaderboard', requireAuth, getBmLeaderboardV2);
 // ============================================================
 
 router.get('/:eventId/discount', requireAuth, getBmDiscountV2);
+
+// ============================================================
+// 9. LECTURA — Listar eventos BM (ADMIN/OWNER)
+// ============================================================
+// Ruta raíz '/' — debe declararse JUNTO a las literales del inicio
+// para no colisionar con /:eventId. Sin embargo, para mantener el
+// orden actual del archivo, la declaramos acá abajo: Express
+// matchea '/' con prioridad sobre '/:eventId' porque '/' no tiene
+// segmento dinámico. El orden real lo controla el prefijo de mount
+// en server.js (router /bm montado antes que /events-v2).
+// ============================================================
+
+router.get('/', requireAuth, requireRole('ADMIN', 'OWNER'), getBmEventsV2);
+
+// ============================================================
+// 10. LECTURA — KPIs admin del evento (ADMIN/OWNER)
+// ============================================================
+
+router.get('/:eventId/stats', requireAuth, requireRole('ADMIN', 'OWNER'), getBmStatsV2);
+
+// ============================================================
+// 11. ESCRITURA — Reclamar aeronave (autenticado)
+// ============================================================
+
+router.post('/:eventId/purchase', requireAuth, purchaseBmDiscountV2);
 
 // ============================================================
 // EXPORT

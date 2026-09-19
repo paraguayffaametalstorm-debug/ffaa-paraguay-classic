@@ -1338,6 +1338,362 @@ export const getBmDiscountV2 = async (req, res) => {
 };
 
 // ============================================================
+// 9. GET /api/events-v2/bm — Listar todos los eventos BM (ADMIN)
+// ============================================================
+
+/**
+ * Devuelve la lista completa de eventos BM (históricos + activos).
+ * Usado por la consola administrativa (bmPanelView) para renderizar
+ * la tabla de eventos y elegir el activo.
+ *
+ * Query params:
+ *   ?status=OPEN|CLOSED|SCHEDULED|CANCELLED (opcional, filtra)
+ *   ?limit=N (opcional, default 50, max 200)
+ *
+ * Orden: start_date DESC (más recientes primero).
+ */
+export const getBmEventsV2 = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE',
+        events: []
+      });
+    }
+
+    const { status } = req.query;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+
+    let query = supabase
+      .from('events_master')
+      .select('*')
+      .eq('type', BM_TYPE)
+      .order('start_date', { ascending: false })
+      .limit(limit);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data: events, error } = await query;
+    if (error) throw error;
+
+    const normalized = (events || []).map(normalizeBmEvent);
+    const activeEvent = normalized.find((e) => e.is_open) || null;
+
+    return res.json({
+      success: true,
+      events: normalized,
+      count: normalized.length,
+      active_event: activeEvent,
+      data: normalized
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2/BM] Error en getBmEventsV2:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'INTERNAL_ERROR',
+      events: []
+    });
+  }
+};
+
+// ============================================================
+// 10. GET /api/events-v2/bm/:eventId/stats — KPIs admin del evento
+// ============================================================
+
+/**
+ * KPIs agregados del evento BM para la consola administrativa.
+ * Calcula en runtime desde event_participations (no hay tabla pre-agregada).
+ */
+export const getBmStatsV2 = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    const { data: events, error: evErr } = await supabase
+      .from('events_master')
+      .select('id, type, name, status, metadata, start_date')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (evErr) throw evErr;
+    if (!events || events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento Black Market no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const event = events[0];
+    if (event.type !== BM_TYPE) {
+      return res.status(404).json({
+        success: false,
+        error: `El evento ${eventId} no es de tipo BLACK_MARKET`,
+        code: 'EVENT_NOT_BLACK_MARKET'
+      });
+    }
+
+    const missions = getMissionsFromMetadata(event.metadata);
+
+    const { data: parts, error: pErr } = await supabase
+      .from('event_participations')
+      .select('user_id, data, computed_points, status')
+      .eq('event_id', eventId);
+
+    if (pErr) throw pErr;
+
+    const rows = (parts || []).map((p) => {
+      const rawData = p.data && typeof p.data === 'object' ? p.data : {};
+      const stats = calculateBmPoints(rawData, missions);
+      const daysActive = [1, 2, 3, 4, 5].filter((d) => {
+        const day = rawData[`day_${d}`];
+        return day && (day.dedication || day.skill || day.teamwork);
+      }).length;
+
+      return {
+        total_points: stats.total_points,
+        completed_missions: stats.completed_missions,
+        days_active: daysActive,
+        purchased: Boolean(rawData.purchased)
+      };
+    });
+
+    const realParticipants = rows.filter(
+      (r) => r.total_points > 0 || r.completed_missions > 0
+    );
+
+    const totalParticipants = realParticipants.length;
+    const totalPoints = realParticipants.reduce((s, r) => s + r.total_points, 0);
+    const totalMissions = realParticipants.reduce((s, r) => s + r.completed_missions, 0);
+    const purchasedCount = realParticipants.filter((r) => r.purchased).length;
+    const avgPoints = totalParticipants > 0
+      ? Math.round(totalPoints / totalParticipants)
+      : 0;
+    const maxPoints = realParticipants.reduce(
+      (m, r) => Math.max(m, r.total_points),
+      0
+    );
+    const avgDaysActive = totalParticipants > 0
+      ? Math.round(
+          (realParticipants.reduce((s, r) => s + r.days_active, 0) /
+            totalParticipants) *
+            10
+        ) / 10
+      : 0;
+
+    return res.json({
+      success: true,
+      event_id: eventId,
+      event_name: event.name,
+      event_status: event.status,
+      stats: {
+        total_participants: totalParticipants,
+        total_points_accumulated: totalPoints,
+        aircraft_purchased_count: purchasedCount,
+        missions_completed_total: totalMissions,
+        average_points: avgPoints,
+        max_points_reached: maxPoints,
+        days_active_average: avgDaysActive,
+        total_participations_raw: rows.length
+      },
+      data: {
+        total_participants: totalParticipants,
+        total_points_accumulated: totalPoints,
+        aircraft_purchased_count: purchasedCount,
+        missions_completed_total: totalMissions,
+        average_points: avgPoints,
+        max_points_reached: maxPoints,
+        days_active_average: avgDaysActive
+      }
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2/BM] Error en getBmStatsV2:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'INTERNAL_ERROR'
+    });
+  }
+};
+
+// ============================================================
+// 11. POST /api/events-v2/bm/:eventId/purchase — Reclamar aeronave
+// ============================================================
+
+/**
+ * Marca la aeronave del BM como reclamada por el piloto autenticado.
+ *
+ * ALCANCE (suposición S1):
+ *   - Actualiza data.purchased = true y data.purchased_at = now() en la participación.
+ *   - NO inserta en user_planes.
+ *   - NO descuenta shards.
+ *
+ * Reglas:
+ *   - El evento debe estar OPEN y no ser legacy.
+ *   - El piloto debe tener participación con total_points > 0.
+ *   - Si ya está purchased=true → 409 ALREADY_PURCHASED.
+ */
+export const purchaseBmDiscountV2 = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const userId = req.user?.id;
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    const { data: events, error: evErr } = await supabase
+      .from('events_master')
+      .select('*')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (evErr) throw evErr;
+    if (!events || events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento Black Market no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const event = events[0];
+    if (event.type !== BM_TYPE) {
+      return res.status(404).json({
+        success: false,
+        error: `El evento ${eventId} no es de tipo BLACK_MARKET`,
+        code: 'EVENT_NOT_BLACK_MARKET'
+      });
+    }
+
+    if (!isBmEventOpen(event)) {
+      const metadata = event.metadata || {};
+      const isLegacy = metadata.legacy_bm === true;
+      return res.status(409).json({
+        success: false,
+        error: isLegacy
+          ? 'No se puede comprar en un BM histórico (legacy).'
+          : `El evento no está OPEN (status actual: ${event.status}).`,
+        code: isLegacy ? 'LEGACY_BM_NO_PURCHASE' : 'EVENT_NOT_OPEN'
+      });
+    }
+
+    const { data: parts, error: pErr } = await supabase
+      .from('event_participations')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .limit(1);
+
+    if (pErr) throw pErr;
+    if (!parts || parts.length === 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'No tienes participación en este evento. Debes completar al menos una misión primero.',
+        code: 'NO_PARTICIPATION'
+      });
+    }
+
+    const participation = parts[0];
+    const rawData =
+      participation.data && typeof participation.data === 'object'
+        ? participation.data
+        : buildEmptyDayProgress();
+
+    if (rawData.purchased === true) {
+      return res.status(409).json({
+        success: false,
+        error: 'Ya has reclamado la aeronave de este evento.',
+        code: 'ALREADY_PURCHASED',
+        purchased_at: rawData.purchased_at || null
+      });
+    }
+
+    const missions = getMissionsFromMetadata(event.metadata);
+    const stats = calculateBmPoints(rawData, missions);
+    if (stats.total_points <= 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'No puedes reclamar la aeronave sin haber acumulado puntos.',
+        code: 'INSUFFICIENT_POINTS'
+      });
+    }
+
+    const now = new Date().toISOString();
+    const newData = {
+      ...rawData,
+      purchased: true,
+      purchased_at: now
+    };
+
+    const { data: updated, error: upErr } = await supabase
+      .from('event_participations')
+      .update({
+        data: newData,
+        updated_at: now
+      })
+      .eq('id', participation.id)
+      .select()
+      .single();
+
+    if (upErr) throw upErr;
+
+    await logSecurityEvent({
+      supabase,
+      userId,
+      nick: req.user?.nick || 'Piloto',
+      event: 'PURCHASE_BM_AIRCRAFT_V2',
+      metadata: {
+        event_id: eventId,
+        aircraft_id: event.metadata?.aircraft_id || null,
+        total_points: stats.total_points,
+        discount_percentage: stats.discount_percentage
+      }
+    });
+
+    console.log(
+      `💎 [Events-v2/BM] ${req.user?.nick || 'Piloto'} reclamó aeronave de ${event.name} ` +
+        `con ${stats.total_points} pts (${stats.discount_percentage}%)`
+    );
+
+    return res.json({
+      success: true,
+      message: '¡Aeronave reclamada exitosamente!',
+      purchased: true,
+      purchased_at: now,
+      total_points: stats.total_points,
+      discount_percentage: stats.discount_percentage,
+      participation: updated,
+      data: newData
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2/BM] Error en purchaseBmDiscountV2:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'INTERNAL_ERROR'
+    });
+  }
+};
+
+// ============================================================
 // EXPORT DEFAULT CONSOLIDADO
 // ============================================================
 
@@ -1345,11 +1701,14 @@ export default {
   // Lectura
   getBmActiveEventV2,
   getBmEventByIdV2,
+  getBmEventsV2,
   getBmProgressV2,
   getBmLeaderboardV2,
   getBmDiscountV2,
+  getBmStatsV2,
   // Escritura
   createBmEventV2,
   updateBmEventV2,
-  updateBmProgressV2
+  updateBmProgressV2,
+  purchaseBmDiscountV2
 };
