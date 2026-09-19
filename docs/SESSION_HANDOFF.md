@@ -2,8 +2,8 @@
 
 > **Documento de traspaso entre sesiones de trabajo.**
 > **Actualizado:** 2026-09-19
-> **Última sesión completada:** F4.2.2-A
-> **Próximo paso:** F4.2.2-B, bloque B1
+> **Última sesión completada:** F4.2.2-C (93 tests)
+> **Próximo paso:** F4.2.2-E (refactor `js/api.js`)
 
 ---
 
@@ -16,6 +16,7 @@
 - **Deploy:** Fly.io (región `gru` - São Paulo)
 - **Repo:** `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
 - **Producción:** `https://paraguay-ffaa-metalstorm.fly.dev`
+- **Tests:** Vitest 5.0.1 (93 tests pasando)
 
 **Trabajo activo:** Rediseño de Eventos (Fases F4.1 a F4.4).
 
@@ -25,11 +26,21 @@
 
 | Aspecto | Valor |
 |---|---|
-| Commit HEAD | `6b61852` |
+| Commit HEAD | `05bea21` |
 | Branch | `main` |
-| Working tree | Limpio, todo pusheado |
+| Working tree | Limpio |
+| Push | Sincronizado con origin/main |
 | Deploy producción | ✅ OK |
-| Última verificación | `curl -s https://paraguay-ffaa-metalstorm.fly.dev/health` → `OK` |
+| Tests | ✅ 93/93 passed |
+
+**Últimos 5 commits:**
+05bea21 test(events-v2-bm): 93 tests con Vitest
+2a6cb12 feat(events-v2): BM controller con 8 endpoints sobre events_master
+e3770ea docs(session): agregar handoff F4.2.2-A -> F4.2.2-B
+6b61852 feat(events-v2): extender schemas BM con missions y calculateBmPoints (F4.2.2-A)
+4f88d3f feat(events-v2): agregar cliente API unificado (F4.2.1) + auditoría F4.1
+
+text
 
 ---
 
@@ -40,10 +51,10 @@
 | **F4.1** | Auditoría frontend legacy | ✅ CERRADA | `cd77149` |
 | **F4.2.1** | Cliente `apiEventsV2*` en `js/api.js` | ✅ CERRADA | `4f88d3f` |
 | **F4.2.2-A** | Schemas BM + ADR-006 | ✅ CERRADA | `6b61852` |
-| **F4.2.2-B** | Endpoints BM en `/api/events-v2/bm/*` | ⏳ **SIGUIENTE** | — |
-| **F4.2.2-C** | Tests de endpoints BM | ⏳ Pendiente | — |
-| **F4.2.2-D** | Migración BM histórico (marcar `legacy_bm: true`) | ⏳ Pendiente | — |
-| **F4.2.2-E** | Refactor `js/api.js` (eliminar `apiGetBm*`) | ⏳ Pendiente | — |
+| **F4.2.2-B** | Endpoints BM en `/api/events-v2/bm/*` | ✅ CERRADA | `2a6cb12` |
+| **F4.2.2-C** | 93 tests con Vitest | ✅ CERRADA | `05bea21` |
+| **F4.2.2-D** | Migración BM histórico (`legacy_bm: true`) | ✅ CERRADA | (SQL ejecutado) |
+| **F4.2.2-E** | Refactor `js/api.js` (eliminar `apiGetBm*`) | ⏳ **SIGUIENTE** | — |
 | **F4.2.2-F** | Refactor `js/bm.js` (consumir `apiEventsV2*`) | ⏳ Pendiente | — |
 | **F4.2.2-G** | DROP tablas BM legacy + eliminar `bm.controller.js` | ⏳ Pendiente | — |
 | **F4.3** | Vistas adaptativas + UI evento activo | ⏳ Pendiente | — |
@@ -51,43 +62,44 @@
 
 ---
 
-## 4. PRÓXIMO PASO — F4.2.2-B
+## 4. PRÓXIMO PASO — F4.2.2-E
 
-**Objetivo:** crear 8 endpoints BM en `/api/events-v2/bm/*`.
+**Objetivo:** eliminar las 18 funciones legacy `apiGetBm*` de `js/api.js`.
 
-**Entregables:**
-- `src/controllers/events-v2-bm.controller.js` (nuevo archivo).
-- Modificación de `src/routes/events-v2.routes.js` (agregar 8 rutas).
+**Las 18 funciones a eliminar:**
+1. `apiGetBmEvents()` → `GET /api/bm/events`
+2. `apiGetBmActiveEvent()` → `GET /api/bm/events/active`
+3. `apiGetBmEventById()` → `GET /api/bm/events/:id`
+4. `apiCreateBmEvent()` → `POST /api/bm/events`
+5. `apiUpdateBmEvent()` → `PUT /api/bm/events/:id`
+6. `apiActivateBmEvent()` → `POST /api/bm/events/:id/activate`
+7. `apiDeactivateBmEvent()` → `POST /api/bm/events/:id/deactivate`
+8. `apiGetBmMissionsToday()` → `GET /api/bm/missions/today`
+9. `apiGetBmMissionsByEvent()` → `GET /api/bm/missions/:eventId`
+10. `apiCompleteBmMission()` → `POST /api/bm/missions/:id/complete`
+11. `apiCreateBmMission()` → `POST /api/bm/missions`
+12. `apiUpdateBmMission()` → `PUT /api/bm/missions/:id`
+13. `apiDeleteBmMission()` → `DELETE /api/bm/missions/:id`
+14. `apiGetBmProgress()` → `GET /api/bm/progress`
+15. `apiGetBmDiscount()` → `GET /api/bm/discount`
+16. `apiPurchaseBmDiscount()` → `POST /api/bm/discount/purchase`
+17. `apiGetBmStats()` → `GET /api/bm/stats`
+18. `apiGetBmLeaderboard()` → `GET /api/bm/leaderboard`
 
-**Los 8 endpoints:**
+**Las funciones nuevas (`apiEventsV2*`) ya están en `js/api.js`** desde F4.2.1. No hay que reescribirlas, solo eliminar las viejas.
 
-| # | Método | Endpoint | Propósito |
-|---|---|---|---|
-| 1 | `GET` | `/api/events-v2/bm/active` | Evento BM activo |
-| 2 | `GET` | `/api/events-v2/bm/:id/missions` | Misiones agrupadas por día |
-| 3 | `POST` | `/api/events-v2/bm/:id/missions/:day/:type/complete` | Marcar/desmarcar misión |
-| 4 | `GET` | `/api/events-v2/bm/:id/progress` | Progreso individual |
-| 5 | `GET` | `/api/events-v2/bm/:id/discount` | Descuento acumulado |
-| 6 | `POST` | `/api/events-v2/bm/:id/purchase` | Adquirir avión |
-| 7 | `GET` | `/api/events-v2/bm/:id/leaderboard` | Tabla de posiciones |
-| 8 | `GET` | `/api/events-v2/bm/:id/stats` | Estadísticas globales |
+**Verificación post-refactor:**
+- `findstr "apiGetBm" js\api.js` → 0 ocurrencias.
+- `node --check js\api.js` → silencio.
+- `git diff --stat` → muestra solo eliminaciones.
 
-**Plan de bloques:**
+**Riesgo:** `js/bm.js` todavía usa las funciones viejas. **Va a romper si corremos la app entre E y F.** Eso está previsto — se corrige en F.
 
-| Bloque | Contenido |
-|---|---|
-| **B1** | Header + imports + helpers privados |
-| **B2** | `GET /api/events-v2/bm/active` |
-| **B3** | `GET /api/events-v2/bm/:id/missions` |
-| **B4** | `POST /api/events-v2/bm/:id/missions/:day/:type/complete` |
-| **B5** | `GET /api/events-v2/bm/:id/progress` |
-| **B6** | `GET /api/events-v2/bm/:id/discount` |
-| **B7** | `POST /api/events-v2/bm/:id/purchase` |
-| **B8** | `GET /api/events-v2/bm/:id/leaderboard` |
-| **B9** | `GET /api/events-v2/bm/:id/stats` |
-| **B10** | Modificación de `events-v2.routes.js` |
-
-**Estado:** ⏳ Bloque B1 es el siguiente.
+**Plan:**
+1. Hacer E (eliminar 18 funciones).
+2. NO deployar a Fly.io entre E y F.
+3. Hacer F (adaptar `js/bm.js`).
+4. Recién ahí deployar.
 
 ---
 
@@ -99,198 +111,190 @@
 
 **Decisión:** migrar BM al modelo unificado `events_master` + `event_participations`. Eliminar 4 tablas legacy (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`) y 18 endpoints `/api/bm/*`.
 
-### Modelo de datos BM
+### Interpretación de `discount_per_point`
 
-**`events_master.metadata` (evento BM):**
-```json
-{
-  "aircraft_id": "125",
-  "aircraft_name": "F-15EX Eagle II",
-  "base_price_shards": 500,
-  "max_discount_shards": 250,
-  "max_points": 250,
-  "discount_per_point": 0.2,
-  "duration_days": 5,
-  "purchase_window_hours": 24,
-  "trophy_progression": { "day_1": 200, ..., "day_5": 800 },
-  "missions": [...15 misiones...],
-  "announced_at": "...",
-  "created_by": "...",
-  "notes": null
-}
-event_participations.data (progreso individual):
+**Decisión:** `discount_per_point = 0.2` significa **0.2% por punto** (NO 0.2 shards).
 
-json
-{
-  "day_1": { "dedication": true, "skill": true, "teamwork": false },
-  "day_2": { ... },
-  "day_3": { ... },
-  "day_4": { ... },
-  "day_5": { ... },
-  "total_points": 175,
-  "discount_percentage": 35,
-  "completed_missions": 11,
-  "bonus_points": 75,
-  "screenshot_urls": [],
-  "verified_by": null,
-  "verified_at": null,
-  "notes": null
-}
-Reglas de negocio BM
-Duración: 5 días (miércoles a domingo).
+- 250 puntos × 0.2 = 50% de descuento.
+- 50% de 500 shards = 250 shards de descuento.
+- Precio final: 250 shards (en vez de 500).
 
-Misiones por día: 3 (dedication, skill, teamwork).
+**Fix aplicado en F4.2.2-B** (función `getBmDiscountV2`).
 
-Puntos por misión: 25.
+### Fix Zod v4: `error.errors` → `error.issues`
 
-Bonus diario: +25 al completar 3/día.
+**Aplicado en:**
+- `src/controllers/events-v2.controller.js` (5 ocurrencias)
+- `src/controllers/events-v2-bm.controller.js` (3 ocurrencias)
 
-Máx puntos: 250.
+**Motivo:** Zod 4 renombró `.errors` a `.issues`. El código viejo enviaba `details: undefined`.
 
-Descuento por punto: 0.2%.
+### BM histórico (marcado `legacy_bm: true`)
 
-Máx descuento: 50%.
+**ID:** `d7cbf035-c861-458d-93b6-68e8ba5fb5f4`
 
-Progresión de trofeos: 200 → 350 → 500 → 650 → 800 (+150/día).
+**Aplicado SQL:** `metadata = metadata || jsonb_build_object('legacy_bm', true, 'no_data', true, 'notes', '...')`.
 
-Implementación: calculateBmPoints(dayProgress) en src/utils/eventSchemas.js.
+**Comportamiento:** el controlador lo trata como solo-lectura, sin misiones jugables.
 
-BM histórico
-ID: d7cbf035-c861-458d-93b6-68e8ba5fb5f4
+### Reglas de negocio BM
 
-Nombre: Squadron Event 2026-04 · SEM 16 - BM
+| Regla | Valor |
+|---|---|
+| Duración | 5 días (miércoles a domingo) |
+| Misiones por día | 3 (dedication, skill, teamwork) |
+| Puntos por misión | 25 (custom desde metadata.missions) |
+| Bonus diario | +25 al completar 3/día |
+| Máx puntos | 250 |
+| Descuento por punto | 0.2% |
+| Máx descuento | 50% |
+| Progresión de trofeos | 200 → 350 → 500 → 650 → 800 (+150/día) |
 
-Estado: Artefacto de migración F2.1 (metadata incompleto).
+---
 
-Decisión: marcarlo como legacy_bm: true en F4.2.2-D. NO normalizar con datos inventados.
+## 6. ARCHIVOS RELEVANTES
 
-6. ARCHIVOS RELEVANTES
-Modificados/Creados en la sesión
-✅ src/utils/eventSchemas.js (extendido con schemas BM).
+### Backend (creados/modificados en esta sesión)
 
-✅ docs/adr/ADR-006-black-market-unificado.md (nuevo).
+- ✅ `src/controllers/events-v2-bm.controller.js` (NUEVO — 8 endpoints BM, ~700 líneas)
+- ✅ `src/routes/events-v2-bm.routes.js` (NUEVO — 8 rutas)
+- ✅ `src/utils/eventSchemas.js` (MODIFICADO — schemas BM + `calculateBmPoints(dayProgress, missions)`)
+- ✅ `src/controllers/events-v2.controller.js` (MODIFICADO — fix `error.issues`)
+- ✅ `server.js` (MODIFICADO — montaje `/api/events-v2/bm` ANTES que `/api/events-v2`)
 
-✅ js/api.js (F4.2.1 — cliente apiEventsV2*).
+### Tests (creados en esta sesión)
 
-✅ docs/auditoria-frontend-legacy.md (F4.1 — auditoría).
+- ✅ `vitest.config.js` (config)
+- ✅ `tests/mocks/supabase.js` (mock encadenable)
+- ✅ `tests/mocks/express.js` (helpers req/res)
+- ✅ `tests/fixtures/bm-events.js`
+- ✅ `tests/fixtures/bm-participations.js`
+- ✅ `tests/fixtures/users.js`
+- ✅ `tests/events-v2-bm/calculateBmPoints.test.js` (11 tests)
+- ✅ `tests/events-v2-bm/schemas.test.js` (30 tests)
+- ✅ `tests/events-v2-bm/get-active.test.js` (5 tests)
+- ✅ `tests/events-v2-bm/get-event-by-id.test.js` (7 tests)
+- ✅ `tests/events-v2-bm/create-event.test.js` (8 tests)
+- ✅ `tests/events-v2-bm/update-event.test.js` (8 tests)
+- ✅ `tests/events-v2-bm/get-progress.test.js` (6 tests)
+- ✅ `tests/events-v2-bm/update-progress.test.js` (8 tests)
+- ✅ `tests/events-v2-bm/get-leaderboard.test.js` (5 tests)
+- ✅ `tests/events-v2-bm/get-discount.test.js` (5 tests)
 
-Archivos relevantes para F4.2.2-B
-src/controllers/events-v2.controller.js (controlador existente de events-v2).
+### Archivos para la próxima sesión
 
-src/routes/events-v2.routes.js (rutas existentes).
+- `js/api.js` (PEGAR EN NUEVA CONVERSACIÓN — 500-800 líneas)
+- `js/bm.js` (pegar en F4.2.2-F)
+- `docs/adr/ADR-006-black-market-unificado.md`
+- `docs/auditoria-frontend-legacy.md`
 
-src/utils/eventSchemas.js (schemas + helper calculateBmPoints).
+---
 
-src/controllers/bm.controller.js (controlador legacy — NO tocar).
+## 7. REGLAS DE TRABAJO
 
-src/routes/bm.routes.js (rutas legacy — NO tocar).
+### Sistema operativo
 
-7. REGLAS DE TRABAJO
-Sistema operativo
-OS: Windows 10 con CMD.
+- OS: **Windows 10 con CMD**.
+- **NO usar comandos Linux/macOS** (grep, cat, ls, sed, awk).
+- SÍ usar: `findstr`, `type`, `dir`, `node --check`, `git`, `curl`, `del`, `type nul >`.
+- Para UTF-8: usar PowerShell.
 
-NO usar comandos Linux/macOS (grep, cat, ls, sed, awk).
+### Comandos críticos
 
-SÍ usar: findstr, type, dir, node --check, git, curl.
+- Crear archivos vacíos: `type nul > ruta\archivo.js`
+- Borrar archivo: `del archivo.js`
+- Verificar sintaxis: `node --check ruta\archivo.js`
+- Buscar string: `findstr /N "texto" archivo.js`
+- Commit multilínea: `git commit -m "titulo" -m "detalle 1" -m "detalle 2"`
 
-Para UTF-8: usar powershell -Command "Get-Content 'archivo' -Encoding UTF8".
+### Proceso
 
-Proceso
-Una tarea a la vez. No mezclar cambios.
+1. **Una tarea a la vez.** No mezclar.
+2. **Verificar antes de avanzar** (`node --check`, `npm test`).
+3. **Bloques <100 líneas** (evita truncamiento).
+4. **Commits descriptivos:** `tipo(scope): descripción`.
+5. **NO pegar bloques de git en CMD si no empiezan con `git`** (son informativos).
+6. **Fix antes de F:** NO deployar a Fly.io entre F4.2.2-E y F4.2.2-F.
 
-Verificar antes de avanzar.
+### Desarrollo
 
-Bloques <100 líneas (evita truncamiento).
+- **NO romper producción** (28 pilotos activos).
+- **`node --check`** obligatorio antes de cada commit.
+- **`npm test`** antes de cada commit (debe pasar 93/93).
+- **`git diff --stat`** para verificar cambios.
 
-Commits descriptivos: tipo(scope): descripción.
+### Lecciones aprendidas
 
-Rama por fase (o commit directo en main para cambios pequeños).
+- **CMD `findstr` puede corromper UTF-8** → usar PowerShell si hay problemas.
+- **Notepad puede no guardar UTF-8** → usar VSCode.
+- **Vitest v5.0.1** funciona bien con ESM nativo.
+- **Zod v4 usa `.issues`, no `.errors`**.
+- **No pegar mensajes de commit en CMD** (se ejecutan como comandos).
+- **Mock de Supabase con `globalThis.__TEST_SUPA__`** funciona bien.
 
-Deploy tras cada fase.
+---
 
-Rollback documentado.
+## 8. CÓMO RETOMAR LA SESIÓN
 
-Desarrollo
-NO romper producción (28 pilotos activos).
-
-node --check para validar sintaxis JS.
-
-git diff --stat antes de cada commit.
-
-curl /health tras cada deploy.
-
-Auditar archivos completos antes de entregar bloques (evita colisiones).
-
-Lecciones aprendidas (de esta sesión)
-CMD findstr corrompe visualmente UTF-8 → usar PowerShell.
-
-Notepad puede no guardar con UTF-8 → usar VSCode.
-
-Los visores de chat procesan Markdown y "comen" los # visualmente.
-
-node --check es la autoridad final sobre sintaxis.
-
-git diff --stat + findstr confirman integridad.
-
-Auditar el archivo completo antes de entregar bloques para insertar.
-
-Verificar Ctrl+S después de cada edición (Notepad, VSCode, etc.).
-
-8. CÓMO RETOMAR LA SESIÓN
 En una nueva conversación:
 
-Adjuntar este archivo (SESSION_HANDOFF.md).
+1. **Adjuntar este `SESSION_HANDOFF.md`.**
+2. **Adjuntar `js/api.js` (completo).**
+3. **Escribir:** "Continuemos con F4.2.2-E".
 
-Escribir: "Continuemos con F4.2.2-B, bloque B1".
+**Opcionalmente adjuntar:**
+- `docs/adr/ADR-006-black-market-unificado.md`
+- `docs/auditoria-frontend-legacy.md`
+- `src/controllers/events-v2-bm.controller.js` (para referencia)
+- `tests/mocks/supabase.js` (por si hay que escribir más tests)
 
-La IA leerá el handoff, entenderá el contexto y arrancará.
+---
 
-Opcionalmente, adjuntar también:
-
-docs/adr/ADR-006-black-market-unificado.md
-
-src/utils/eventSchemas.js
-
-src/controllers/events-v2.controller.js
-
-src/routes/events-v2.routes.js
-
-Con esos archivos, la IA tiene todo el contexto necesario.
-
-9. COMANDOS DE VERIFICACIÓN RÁPIDA
-cmd
+## 9. COMANDOS DE VERIFICACIÓN RÁPIDA
 cd C:\Users\pirov\paraguay-ffaa
 git log --oneline -5
 git status
-node --check src\utils\eventSchemas.js
+npm test
 curl -s https://paraguay-ffaa-metalstorm.fly.dev/health
-Resultado esperado:
-
-6b61852 en el log.
-
-up to date with 'origin/main'.
-
-Silencio (éxito en node --check).
-
-OK.
-
-10. ESTADO FINAL DE LA SESIÓN
-Commits en origin/main durante esta sesión:
-
-Hash	Descripción
-cd77149	Auditoría frontend legacy (F4.1)
-4f88d3f	Cliente apiEventsV2* (F4.2.1)
-6b61852	Schemas BM + ADR-006 (F4.2.2-A)
-Sistema: 100% operativo en producción.
-
-Working tree: limpio.
-
-Próxima acción: F4.2.2-B, bloque B1.
-
-PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-19
 
 text
 
-**Fin del contenido.**
+**Esperado:**
+- Log: `05bea21` en top.
+- Status: `up to date with 'origin/main'`, working tree limpio.
+- Tests: 93/93 passed.
+- Health: `OK`.
 
 ---
+
+## 10. CHECKLIST DE CIERRE DE ESTA SESIÓN
+
+- [x] F4.2.2-A cerrado (schemas + ADR)
+- [x] F4.2.2-B cerrado (8 endpoints)
+- [x] F4.2.2-C cerrado (93 tests)
+- [x] F4.2.2-D cerrado (BM histórico legacy)
+- [x] Fix `error.issues` aplicado en 2 controladores
+- [x] Fix `discount_per_point` aplicado (0.2% por punto)
+- [x] Commits pusheados a origin/main
+- [x] Working tree limpio
+- [x] 93/93 tests pasando
+
+**Sistema: 100% operativo en producción.**
+
+---
+
+## 11. PRÓXIMOS PASOS (visión global)
+
+| Sub-fase | Descripción | Estimación |
+|---|---|---|
+| **F4.2.2-E** | Refactor `js/api.js` (eliminar 18 funciones) | ~30 min |
+| **F4.2.2-F** | Refactor `js/bm.js` (~700 líneas) | ~2 horas |
+| **F4.2.2-G** | DROP tablas BM legacy + eliminar `bm.controller.js` | ~30 min |
+| F4.3 | Vistas adaptativas + UI evento activo | ~1 día |
+| F4.4 | Deprecación formal + limpieza | ~4 horas |
+
+**Total:** ~2-3 días de trabajo efectivo.
+
+---
+
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-19 · Commit 05bea21**
