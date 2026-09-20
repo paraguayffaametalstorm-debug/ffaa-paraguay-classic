@@ -149,9 +149,10 @@ La plataforma centraliza las operaciones del escuadrón mediante:
     ├── controllers/              # Controladores de lógica de negocio
     │   ├── admin.controller.js   # Gestión de miembros, roles, estados y carga masiva
     │   ├── auth.controller.js    # Login, verify, register, password change & reset
-    │   ├── bm.controller.js      # Eventos Black Market, misiones, progreso y descuentos
     │   ├── dashboard.controller.js# Resumen C4ISR, promedios y Top 5
     │   ├── events.controller.js  # Ventanas operativas y eventos activos
+    │   ├── events-v2.controller.js   # Módulo unificado de eventos SQ/BM (F3.1)
+    │   ├── events-v2-bm.controller.js# Submódulo BM del rediseño de eventos (F3.2)
     │   ├── normativas.controller.js# Reglamentos, circulares y descargas oficiales
     │   ├── owner.controller.js   # Auditoría de seguridad y respaldos de datos
     │   ├── performances.controller.js# Registro de tokens y exportación CSV

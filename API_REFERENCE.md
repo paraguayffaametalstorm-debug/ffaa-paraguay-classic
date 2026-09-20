@@ -1314,6 +1314,8 @@ Sistema de eventos tácticos especiales que reemplaza al Squadron Event cada 1-2
 - **Puntuación:** 25 pts por misión cumplida + 25 pts de bonus al completar las 3 del día (50 pts/día, máx 250 pts).
 - **Descuento:** 1 punto = 0.2% de descuento (máximo 50% de descuento con 250 puntos).
 
+> ⚠️ **ELIMINADO en v4.3.0 (sunset 2026-12-16).** Estos endpoints fueron reemplazados por el submódulo unificado `/api/events-v2/bm/*` (ver sección superior). El contenido a continuación se conserva como referencia histórica para migración.
+
 ### `GET /api/bm/events`
 Obtiene la lista histórica y actual de eventos Black Market.
 - **Permisos:** Requiere token de autenticación.

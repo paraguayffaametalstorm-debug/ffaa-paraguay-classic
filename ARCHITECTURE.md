@@ -154,7 +154,7 @@ A partir de la Fase 3 del rediseño (2026-09-17), el sistema cuenta con un módu
 - El scheduler auto-crea el próximo SQ el jueves 00:00 UTC.
 
 **Deprecación de endpoints legacy:**
-- `/api/events/*` (5 endpoints) y `/api/bm/*` (15 endpoints) siguen operativos pero **deprecados**.
+- `/api/events/*` (5 endpoints) y `/api/bm/*` (15 endpoints) fueron **retirados** en v4.3.0 (F4.2.2-F). Sucesor: `/api/events-v2/*`. Sunset formal: **2026-12-16**.
 - Emiten headers `Sunset: Sat, 16 Dec 2026 23:59:59 GMT` y `Deprecation: true`.
 - Migración esperada a `/api/events-v2/*` antes del sunset.
 

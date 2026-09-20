@@ -412,6 +412,9 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-009** | `API_REFERENCE.md` cuota ADMIN 3 → 5 | 2026-09-20 | `fbf4852` |
 | **FIX-011** | `ARCHITECTURE.md` cuota ADMIN ya estaba en 5 (verificado) | 2026-09-20 | `f32ed11` |
 | **FIX-018** | `CONTEXTO_PROYECTO.md` cuota ADMIN simplificada a 5 | 2026-09-20 | `fbf4852` |
+| **FIX-003** | `README.md` eliminar `bm.controller.js` del árbol + agregar v2 | 2026-09-20 | `TBD` |
+| **FIX-008** | `API_REFERENCE.md` banner ELIMINADO en sección legacy `/api/bm/*` | 2026-09-20 | `TBD` |
+| **FIX-010** | `ARCHITECTURE.md` reformular estado endpoints legacy | 2026-09-20 | `TBD` |
 
 ---
 
@@ -435,7 +438,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 
 | Métrica | Actual | Sprint 0 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 |
 |---|---|---|---|---|---|---|
-| Docs alineados con versión real | 7/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
+| Docs alineados con versión real | 9/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
 | Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
 | Fixes cerrados | 0 | 25 | 25 | 33+ | 42+ | 49+ |
 | Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
