@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v4.0.0).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v4.3.0).**
 
 ---
 
@@ -132,6 +132,46 @@ Cuando un oficial con rango **`ADMIN`** o **`OWNER`** accede al formulario de re
   `⚠️ Modo Oficial Activo: Estás cargando datos para [CALLSIGN]`.
 - **Aislamiento y Trazabilidad:** Esto permite a los mandos registrar o ajustar las marcas de pilotos ausentes sin perder la trazabilidad de la auditoría.
 - **Acceso Regular:** Para pilotos `MIEMBRO` o `VETERANO`, el selector permanece restringido a su propia identidad para garantizar la privacidad y prevenir registros cruzados no autorizados.
+
+#### Ventanas de Carga de Performance (ADR-008)
+
+A partir de la versión **v4.3.0**, las **ventanas de carga de performance** están
+desacopladas del ciclo del evento. Esto significa que un evento puede figurar
+como cerrado y aun así permitir la carga de performance hasta su deadline.
+
+**Reglas operativas:**
+
+| Tipo de evento | Duración de la ventana | Cuándo cierra |
+|---|---|---|
+| **SQUADRON (SQ)** | 7 días | Jueves 09:00 PY (una semana después del inicio) |
+| **BLACK_MARKET (BM)** | 6 días | Martes 17:00 PY (seis días después del inicio) |
+
+**Comportamiento:**
+
+- **Durante la ventana:** podés cargar y editar tu performance con normalidad.
+- **Después del cierre:** tu participación queda en **READ-ONLY** (solo lectura).
+  No vas a poder modificar los datos ya cargados.
+- **Evento SQ cerrado por BM:** si un evento BM reemplaza al SQ (switch funcional),
+  la ventana de carga del SQ **sigue abierta** hasta su deadline original. Podés
+  seguir cargando performance del SQ aunque el evento ya no esté activo.
+
+**Cómo consultar tu ventana:**
+
+En la vista de eventos activos verás un indicador con el **tiempo restante** para
+cargar tu performance. También podés consultar la info detallada vía los endpoints:
+
+- `GET /api/events-v2/:id/submission-window` — ventana de un evento SQ.
+- `GET /api/events-v2/bm/:eventId/submission-window` — ventana de un evento BM.
+
+**Excepción — reclamo BM:**
+
+El reclamo (purchase) de un descuento BM **NO valida la ventana**. Esto significa
+que podés reclamar tu descuento independientemente del deadline de carga.
+
+**Referencias:**
+
+- ADR-008: `docs/adr/ADR-008-ventanas-carga-desacopladas.md`
+- API: `API_REFERENCE.md` §3.5.5
 
 ### 2.3 ✈️ Hangar Militar & Starform Upgrades 2.0 (Rediseño v3.9.9)
 El módulo de Hangar te permite registrar y calibrar tus cazas seleccionando entre el **catálogo oficial de 44 aeronaves de combate** (F-22 Raptor, Su-57 Felon, F-35 Lightning II, Eurofighter Typhoon, Dassault Rafale, JAS 39 Gripen, J-20, Su-35, A-10C Thunderbolt II, MiG-29, Mirage 2000, etc.) y gestionar sus especificaciones:
@@ -329,4 +369,4 @@ A partir de la versión v3.9.9, las descripciones in-game, historias y recomenda
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
+*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
