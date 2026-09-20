@@ -307,7 +307,7 @@ Actualizar el widget de evento activo para mostrar:
 - [x] Widget de evento activo muestra el estado de la ventana.
 - [x] 40 eventos históricos backfilleados con ventanas.
 - [x] Tests: 167/167 passing (39 nuevos ADR-008 + 128 preexistentes).
-- [ ] Deploy a producción sin downtime. ← *pendiente 5.7.2*
+- [x] Deploy a producción sin downtime.
 - [x] Documentación actualizada (CHANGELOG, API_REFERENCE, CURRENT_STATE).
 
 ---
