@@ -1,3 +1,12 @@
+> **⚠️ DOCUMENTO HISTÓRICO — FASES 0 a 6 CERRADAS**
+>
+> Este documento registra el **Plan de Mejora Continua v1.0** ejecutado entre 2026-09-16 y 2026-09-17.
+> Las fases 0 a 6 están **cerradas**. Los hallazgos HALL-001 a HALL-055 quedaron resueltos o documentados.
+>
+> Para el trabajo activo (sprints en curso), ver **[`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md)**.
+
+---
+
 📋 PLAN DE TRABAJO DE MEJORA CONTINUA
 PARAGUAY-FFAA | METALSTORM
 Documento de Trabajo Oficial — Guía para Implementación de Hallazgos de Auditoría

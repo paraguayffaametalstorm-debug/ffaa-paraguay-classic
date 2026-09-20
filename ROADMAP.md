@@ -129,13 +129,18 @@ Consolidar el sistema **PARAGUAY-FFAA | METALSTORM** como plataforma táctica de
 
 ## 🔗 Documentos Relacionados
 
+### Documentos de gestión
+
 - [`BACKLOG.md`](./BACKLOG.md) — Lista detallada de items.
-- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan de fases activas.
-- [`CHANGELOG.md`](./CHANGELOG.md) — Historial publicado.
+- [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprints activos (qué se hace ahora).
+- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (cerrado).
+- [`CHANGELOG.md`](./CHANGELOG.md) — Historial de versiones publicadas.
+
+### Documentos técnicos y normativos
+
 - [`docs/rfc/`](./docs/rfc/) — Propuestas formales.
 - [`docs/adr/`](./docs/adr/) — Decisiones arquitectónicas.
-
----
+- [`docs/SESSION_HANDOFF.md`](./docs/SESSION_HANDOFF.md) — Handoff entre sesiones.
 
 ## 📝 Notas de Gobierno
 

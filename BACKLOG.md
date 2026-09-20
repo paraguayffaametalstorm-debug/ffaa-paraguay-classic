@@ -152,13 +152,18 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 ## 🔗 Referencias
 
-- [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica
-- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan de fases activas
-- [`CHANGELOG.md`](./CHANGELOG.md) — Historial de cambios publicados
-- [`docs/rfc/`](./docs/rfc/) — Propuestas formales (Request for Comments)
-- [`docs/adr/`](./docs/adr/) — Decisiones arquitectónicas
+### Documentos de gestión
 
----
+- [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica a 12 meses.
+- [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprints activos (qué se hace ahora).
+- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (fases 0-6, cerrado).
+- [`CHANGELOG.md`](./CHANGELOG.md) — Historial de versiones publicadas.
+
+### Documentos técnicos y normativos
+
+- [`docs/rfc/`](./docs/rfc/) — Propuestas formales (Request for Comments).
+- [`docs/adr/`](./docs/adr/) — Decisiones arquitectónicas.
+- [`docs/SESSION_HANDOFF.md`](./docs/SESSION_HANDOFF.md) — Handoff entre sesiones.
 
 ## 📝 Notas de Gobierno
 
