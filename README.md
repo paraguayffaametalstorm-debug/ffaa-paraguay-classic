@@ -85,7 +85,6 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 ├── index.html                    # Single Page Application y loader dinámico
 ├── link-account.html             # Terminal táctica de vinculación de cuentas Google
 ├── manifest.json                 # Manifiesto PWA para instalación standalone
-├── metadata.json                 # Metadatos del entorno AI Studio
 ├── package.json                  # Dependencias y scripts del proyecto
 ├── PWA_SETUP.md                  # Guía de configuración PWA y Service Worker
 ├── README.md                     # Documentación principal del sistema
@@ -139,9 +138,10 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 │   ├── utils.js                  # Utilidades DOM, alertas toast y formateo
 │   └── views.js                  # Enrutador cliente y orquestador de vistas
 │
-├── sql/
-│   ├── upgrades_2_0.sql          # Migración DDL para sistemas Upgrades 2.0
-│   └── password_resets.sql       # Migración DDL para tabla de reset de contraseña
+├── sql/                          # 35 migraciones DDL (000_* a 034_*)
+│   │                             # → ver MIGRACION_SQL_REFERENCE.md
+│   ├── 000_full_schema_dump.sql  # Schema completo (bootstrap inicial)
+│   └── ... (34 archivos más)
 │
 └── src/                          # Núcleo del servidor Backend (ES Modules)
     ├── config/
@@ -629,7 +629,7 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 ### Documentos técnicos
 
 - 🚀 **[Estado Congelado del Despliegue (Deployment State)](./DEPLOYMENT_STATE.md)**
-- 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./CURRENT_STATE.md)**
+- 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./CURRENT_STATE.md#resumen-ejecutivo)**
 - 🔧 **[Historial de Fixes Aplicados y Lógica Tipada](./FIXES_APPLIED.md)**
 - 📡 **[Referencia Completa de la API RESTful](./API_REFERENCE.md)**
 - 🏛️ **[Arquitectura de Sistemas y Seguridad C4ISR](./ARCHITECTURE.md)**
