@@ -34,6 +34,10 @@ import {
   getMetadataSchema,
   getParticipationDataSchema
 } from '../utils/eventSchemas.js';
+import {
+  validateSubmissionWindow,
+  getSubmissionWindowStatus
+} from '../utils/submissionWindow.js';
 
 // ============================================================
 // HELPERS
@@ -602,6 +606,17 @@ export const createParticipation = async (req, res) => {
       });
     }
 
+    // ADR-008: validar ventana de carga (createParticipation)
+    const windowCheck = validateSubmissionWindow(event);
+    if (!windowCheck.valid) {
+      return res.status(409).json({
+        success: false,
+        error: windowCheck.message,
+        code: windowCheck.code,
+        details: windowCheck.details
+      });
+    }
+
     // 3. Validar data según el tipo de evento
     const dataSchema = getParticipationDataSchema(event.type);
     const validatedData = dataSchema.parse(payload.data);
@@ -680,6 +695,32 @@ export const updateParticipation = async (req, res) => {
       });
     }
 
+    // ADR-008: fetch + validar ventana de carga (updateParticipation)
+    const { data: evData, error: evErr } = await supabase
+      .from('events_master')
+      .select('id, type, status, submission_opens_at, submission_closes_at')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (evErr) throw evErr;
+    if (!evData || evData.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const windowCheck = validateSubmissionWindow(evData[0]);
+    if (!windowCheck.valid) {
+      return res.status(409).json({
+        success: false,
+        error: windowCheck.message,
+        code: windowCheck.code,
+        details: windowCheck.details
+      });
+    }
+
     // Verificar que la participación existe
     const { data: existing, error: queryErr } = await supabase
       .from('event_participations')
@@ -733,6 +774,69 @@ export const updateParticipation = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+};
+
+// ============================================================
+// 10.5. GET /api/events-v2/:id/submission-window — Ventana de carga
+// ============================================================
+
+/**
+ * Devuelve el estado de la ventana de carga del evento.
+ * ADR-008: la ventana está desacoplada del ciclo del evento.
+ *   - SQ: 7 días (Jue 09:00 PY → Jue 08:59 PY).
+ *   - BM: 6 días (Mié 17:00 PY → Mar 16:59 PY).
+ */
+export const getSubmissionWindow = async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    const { data: events, error } = await supabase
+      .from('events_master')
+      .select('id, type, name, status, submission_opens_at, submission_closes_at')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (error) throw error;
+    if (!events || events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const event = events[0];
+    const windowStatus = getSubmissionWindowStatus(event);
+
+    return res.json({
+      success: true,
+      event_id: event.id,
+      event_type: event.type,
+      event_name: event.name,
+      event_status: event.status,
+      submission_opens_at: windowStatus.submission_opens_at,
+      submission_closes_at: windowStatus.submission_closes_at,
+      status: windowStatus.status,
+      seconds_remaining: windowStatus.seconds_remaining,
+      seconds_until_open: windowStatus.seconds_until_open,
+      can_submit: windowStatus.can_submit
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2] Error en getSubmissionWindow:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'INTERNAL_ERROR'
     });
   }
 };
