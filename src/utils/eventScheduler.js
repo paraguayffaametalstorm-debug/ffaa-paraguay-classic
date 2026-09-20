@@ -11,17 +11,34 @@
  * Características:
  *   - Idempotente (si el evento existe, no hace nada).
  *   - Advisory Lock (solo 1 réplica de Fly.io ejecuta).
- *   - Auto-backfill al arrancar (últimas 12 semanas).
+ *   - Auto-backfill al arrancar (últimas 12 semanas) — DESHABILITADO (F2.9).
  *   - Auditoría en audit_logs.
  *
- * Versión: v1.0
- * Fecha: 2026-09-17
+ * Versión: v1.1 (HALL-065 fix timezone + duración)
+ * Fecha: 2026-09-20
  * Autor: PJPIROVANI (OWNER)
  * ============================================================================
  */
 
 import cron from 'node-cron';
 import { getSupabase } from '../db/supabase.js';
+
+// ============================================================
+// CONSTANTES DE TIMEZONE
+// ============================================================
+
+/**
+ * Paraguay es UTC-4 todo el año (sin DST desde 2024).
+ * Regla de negocio: los eventos SQ abren jueves 09:00 PY y cierran lunes 08:59 PY.
+ * En UTC: jueves 13:00 → lunes 12:59.
+ */
+const PY_OFFSET_HOURS = 4;
+
+/** Hora PY de apertura del evento (09:00 PY). */
+const SQ_OPEN_HOUR_PY = 9;
+/** Hora PY de cierre del evento (08:59 PY). */
+const SQ_CLOSE_HOUR_PY = 8;
+const SQ_CLOSE_MINUTE_PY = 59;
 
 // ============================================================
 // HELPERS
@@ -54,27 +71,34 @@ function getISOYear(date) {
 
 /**
  * Devuelve las fechas de inicio y fin del evento SQ para una semana ISO.
- * Regla: Jueves 09:00 UTC → Domingo 08:59:59 UTC.
+ *
+ * Regla de negocio (F4.4 / HALL-065):
+ *   - Apertura: Jueves 09:00 PY  →  Jueves 13:00 UTC
+ *   - Cierre:   Lunes 08:59 PY   →  Lunes 12:59 UTC
+ *   - Duración: 4 días exactos (jueves a lunes)
+ *
  * @param {number} isoWeek
  * @param {number} isoYear
  * @returns {{ start: Date, end: Date }}
  */
 function getSquadronEventDates(isoWeek, isoYear) {
-  // Encontrar el jueves de la semana ISO
+  // Encontrar el jueves de la semana ISO (en UTC puro para el cálculo)
   const jan4 = new Date(Date.UTC(isoYear, 0, 4));
   const dayOfWeek = jan4.getUTCDay() || 7;
   const firstThursday = new Date(jan4);
   firstThursday.setUTCDate(jan4.getUTCDate() - dayOfWeek + 4);
 
+  // Jueves 09:00 PY = 13:00 UTC
   const thursday = new Date(firstThursday);
   thursday.setUTCDate(firstThursday.getUTCDate() + (isoWeek - 1) * 7);
-  thursday.setUTCHours(9, 0, 0, 0);
+  thursday.setUTCHours(SQ_OPEN_HOUR_PY + PY_OFFSET_HOURS, 0, 0, 0);
 
-  const sunday = new Date(thursday);
-  sunday.setUTCDate(thursday.getUTCDate() + 3);
-  sunday.setUTCHours(8, 59, 59, 0);
+  // Lunes 08:59 PY = 12:59 UTC (+4 días desde el jueves)
+  const monday = new Date(thursday);
+  monday.setUTCDate(thursday.getUTCDate() + 4);
+  monday.setUTCHours(SQ_CLOSE_HOUR_PY + PY_OFFSET_HOURS, SQ_CLOSE_MINUTE_PY, 59, 0);
 
-  return { start: thursday, end: sunday };
+  return { start: thursday, end: monday };
 }
 
 /**
@@ -89,6 +113,10 @@ function buildEventName(isoWeek, isoYear) {
 /**
  * Construye el legacy_event_id del evento SQ.
  * Formato: "YYYY-MM · SEM NN - SQ"
+ *
+ * Nota: usamos el mes UTC del jueves de apertura. Como el evento arranca
+ * a las 13:00 UTC del jueves, el mes UTC coincide siempre con el mes PY
+ * (nunca cae en un cambio de mes por la madrugada).
  */
 function buildLegacyEventId(isoWeek, isoYear, date) {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -175,9 +203,6 @@ async function closeCurrentOpenEvent(supabase) {
  * @returns {Promise<boolean>}
  */
 async function eventExists(supabase, isoWeek, isoYear) {
-  // Calcular el legacy_event_id esperado.
-  // Este enfoque cubre eventos migrados (que NO tienen iso_week/iso_year en metadata)
-  // y eventos nuevos (que SÍ los tienen).
   const { start } = getSquadronEventDates(isoWeek, isoYear);
   const legacyId = buildLegacyEventId(isoWeek, isoYear, start);
 
@@ -227,7 +252,8 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', 
         backfilled,
         no_data: false,
         source: backfilled ? 'SCHEDULER_BACKFILL' : 'SCHEDULER',
-        notes: backfilled ? 'Evento backfilleado automáticamente al arranque.' : null
+        notes: backfilled ? 'Evento backfilleado automáticamente al arranque.' : null,
+        timezone_py_offset_hours: PY_OFFSET_HOURS
       },
       legacy_event_id: legacyId,
       created_at: start.toISOString(),
@@ -295,11 +321,13 @@ export async function schedulerTick() {
 }
 
 // ============================================================
-// BACKFILL AL ARRANQUE
+// BACKFILL AL ARRANQUE (DESHABILITADO F2.9)
 // ============================================================
 
 /**
  * Ejecuta el backfill de las últimas N semanas al arrancar el servidor.
+ * ⚠️ DESHABILITADO por decisión F2.9 (Opción C): no inventar eventos
+ * históricos para semanas sin actividad real.
  * @param {number} weeksBack - Cuántas semanas hacia atrás backfillear.
  */
 export async function backfillRecentWeeks(weeksBack = 12) {
@@ -322,9 +350,9 @@ export async function backfillRecentWeeks(weeksBack = 12) {
     let createdCount = 0;
 
     // Iterar desde weeksBack hasta 1 (NO incluir 0).
-// La semana actual (i=0) es responsabilidad del schedulerTick,
-// que la crea como 'OPEN'. El backfill solo crea semanas PASADAS ('CLOSED').
-for (let i = weeksBack; i >= 1; i--) {
+    // La semana actual (i=0) es responsabilidad del schedulerTick,
+    // que la crea como 'OPEN'. El backfill solo crea semanas PASADAS ('CLOSED').
+    for (let i = weeksBack; i >= 1; i--) {
       const targetDate = new Date(now);
       targetDate.setUTCDate(now.getUTCDate() - i * 7);
 
@@ -352,22 +380,12 @@ for (let i = weeksBack; i >= 1; i--) {
 
 /**
  * Inicia el scheduler.
- * - Ejecuta el backfill inicial (async, sin bloquear).
+ * - Backfill inicial DESHABILITADO (F2.9).
  * - Registra el cron job cada 1 hora.
  */
 export function startEventScheduler() {
   console.log('🕐 [Scheduler] Iniciando scheduler de eventos SQ...');
-
-  // ❌ Backfill DESHABILITADO (F2.9 - Opción C).
-  // Razón: no inventar eventos históricos para semanas sin actividad real.
-  // El schedulerTick se encarga solo de la semana actual/futura.
-  //
-  // Si en el futuro se necesita backfill, descomentar la línea siguiente
-  // y ajustar la lógica para cubrir solo gaps entre eventos existentes.
-  //
-  // backfillRecentWeeks(12).catch(err => {
-  //   console.error('❌ [Scheduler] Error en backfill inicial:', err.message);
-  // });
+  console.log(`🕐 [Scheduler] Timezone PY offset: UTC-${PY_OFFSET_HOURS} (Jue 09:00 PY → Lun 08:59 PY)`);
 
   // Cron: cada 1 hora en punto
   cron.schedule('0 * * * *', () => {
