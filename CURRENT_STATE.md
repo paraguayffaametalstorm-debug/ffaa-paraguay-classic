@@ -10,7 +10,7 @@
 
 ## 🎯 Resumen Ejecutivo
 
-El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v4.0.2). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
+El sistema **PARAGUAY-FFAA | METALSTORM** está funcionando al 100% de su capacidad operativa en el entorno de producción (v4.3.0). Los módulos críticos de autenticación, control de mando RBAC, registro de rendimiento semanal y gestión de la base de datos han sido auditados exhaustivamente.
 
 Específicamente, en las versiones v3.9.9 y v4.0.0 se ha consolidado:
 1. **Rediseño Completo del Hangar Militar:** Migración de carrusel rígido a doble arquitectura: **Vista 1 (Grid Táctico de Tarjetas)** para navegación ágil y **Vista 2 (Pantalla Dedicada / Detalle Completo de Aeronave)** con botón "← VOLVER AL HANGAR", accesos directos a calibración de Upgrades 2.0 y telemetría de combate profunda.

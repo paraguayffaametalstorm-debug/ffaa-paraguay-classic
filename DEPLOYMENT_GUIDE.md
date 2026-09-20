@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v4.0.5).**  
+> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v4.3.0).**  
 > **Destino Operacional:** Fly.io (Región `gru` - São Paulo) & Supabase PostgreSQL Cloud.
 
 ---
@@ -115,7 +115,7 @@ primary_region = "gru"
 
 ## 5. 🗄️ Validación de Esquema de Base de Datos (Supabase)
 
-Antes de autorizar tráfico operativo en v4.0.5, verificar que las siguientes tablas y columnas existan en Supabase:
+Antes de autorizar tráfico operativo en v4.3.0, verificar que las siguientes tablas y columnas existan en Supabase:
 
 1. **Tabla `plane_models`:**
    - Asegurar columnas de texto e internacionalización: `descripcion_es` (TEXT), `historia_es` (TEXT), `recomendaciones_es` (JSONB).
@@ -241,12 +241,12 @@ fly secrets set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..." -a paraguay-ffaa-metal
 
 ---
 
-## 6. 📱 Política de Cache Invalidation y PWA (v4.0.5)
+## 6. 📱 Política de Cache Invalidation y PWA (v4.3.0)
 
 Al desplegar una nueva versión mayor o menor:
 1. **Actualizar el identificador de cache en `sw.js`:**
    ```javascript
-   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.0.5';
+   const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.2.5';
    ```
 2. **Comportamiento del Service Worker:**
    - Durante la fase de `install`, cachea los activos estáticos y vistas HTML.
@@ -277,4 +277,4 @@ Si se detecta una anomalía crítica tras el despliegue:
 
 ---
 
-*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
+*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*

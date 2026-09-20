@@ -2,7 +2,7 @@
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
 > **Fecha de Congelamiento:** 2026-09-18  
-> **Versión:** v4.0.5  
+> **Versión:** v4.3.0  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - POST-F3 + REDISEÑO DE EVENTOS (F2 COMPLETADA)
 
