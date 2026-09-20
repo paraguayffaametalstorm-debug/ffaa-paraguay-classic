@@ -74,7 +74,7 @@ En lugar de atar la ventana al ciclo del evento, darle **una ventana de carga in
                      (arranca SEM 40)   (cierra carga de SEM 39)
 ```
 
-### 2.2 Reglas de negocio
+### 2.2 Reglas de negocio — SQUADRON
 
 1. **Un evento SQ abre el Jueves 09:00 PY.**
 2. **Un evento SQ cierra el Lunes 08:59 PY.**
@@ -82,7 +82,7 @@ En lugar de atar la ventana al ciclo del evento, darle **una ventana de carga in
    - Abre cuando el evento **ARRANCA** (Jue 09:00 PY).
    - Cierra **7 días después** (Jue 08:59 PY).
    - Es decir: todo el ciclo del evento + 4 días extra.
-4. **Solo se puede cargar si:**
+4. **Solo se puede CARGAR PROGRESO si:**
    - El evento está OPEN o CLOSED (no CANCELLED).
    - La ventana de carga está abierta.
    - El piloto no tiene participación previa (o la está editando).
@@ -98,7 +98,7 @@ En lugar de atar la ventana al ciclo del evento, darle **una ventana de carga in
    - El SQ actual se cierra (BM_REPLACED).
    - La ventana de carga del SQ sigue abierta hasta su deadline original.
 
-### 2.3 Reglas para BM
+### 2.3 Reglas de negocio — BLACK_MARKET
 
 1. **Un evento BM abre el Miércoles 17:00 PY.**
 2. **Un evento BM cierra el Lunes 17:00 PY.**
@@ -106,18 +106,34 @@ En lugar de atar la ventana al ciclo del evento, darle **una ventana de carga in
    - Abre cuando el evento ARRANCA (Mié 17:00 PY).
    - Cierra **6 días después** (Mar 16:59 PY).
    - Es decir: los 5 días del BM + 24h extra de gracia.
-4. **Al cerrar la ventana:**
+4. **Solo se puede CARGAR PROGRESO si:**
+   - El evento está OPEN (no legacy, no CLOSED).
+   - La ventana de carga está abierta.
+5. **Al cerrar la ventana:**
    - Se congela la participación.
    - No se puede modificar ni borrar.
    - Queda en modo READ-ONLY.
+
+### 2.4 Excepción — Compra de aeronave BM
+
+**El endpoint `POST /api/events-v2/bm/:eventId/purchase` NO valida la ventana de carga.**
+
+**Razón:** el BM es un evento **opcional**. Los pilotos pueden no participar en el juego o no cargar sus misiones en la app, y aún así comprar la aeronave con el descuento que hayan acumulado (que puede ser 0%).
+
+**El BM no es determinante para el escuadrón** (a diferencia del SQ).
+
+**Reglas del purchase:**
+- Requiere que el evento exista y sea de tipo `BLACK_MARKET`.
+- Requiere que el piloto tenga una participación previa (aunque sea vacía).
+- **NO** requiere `total_points > 0`.
+- **NO** requiere ventana abierta.
+- Marca `data.purchased = true` con `purchased_at` para auditoría.
 
 ---
 
 ## 3. Arquitectura técnica
 
 ### 3.1 Cambios en `events_master`
-
-Agregar 2 columnas para modelar la ventana de carga:
 
 ```sql
 ALTER TABLE events_master
@@ -137,9 +153,9 @@ CREATE INDEX IF NOT EXISTS idx_events_master_submission_window
   WHERE status IN ('OPEN', 'CLOSED');
 ```
 
-### 3.3 Scheduler
+### 3.3 Scheduler — calculateSubmissionWindow()
 
-Agregar `calculateSubmissionWindow()` a `eventScheduler.js`:
+Función agregada a `src/utils/eventScheduler.js`:
 
 ```js
 function calculateSubmissionWindow(startDate, eventType) {
@@ -163,7 +179,7 @@ function calculateSubmissionWindow(startDate, eventType) {
     };
   }
 
-  // Fallback
+  // Fallback: 7 días desde el inicio
   const closes = new Date(start);
   closes.setUTCDate(closes.getUTCDate() + 7);
   return {
@@ -173,38 +189,28 @@ function calculateSubmissionWindow(startDate, eventType) {
 }
 ```
 
-### 3.4 Endpoint de participación
+### 3.4 Helper de validación
 
-Modificar `saveParticipation` para validar la ventana:
+Nuevo módulo `src/utils/submissionWindow.js` con 2 funciones puras:
 
-```js
-const now = new Date();
-const opensAt = new Date(event.submission_opens_at);
-const closesAt = new Date(event.submission_closes_at);
+- `validateSubmissionWindow(event)` → `{ valid, code, message, details }`
+- `getSubmissionWindowStatus(event)` → `{ status, seconds_remaining, seconds_until_open, can_submit }`
 
-if (now < opensAt) {
-  return res.status(400).json({
-    error: `La ventana de carga abre el ${opensAt.toLocaleString('es-PY')}`,
-    code: 'SUBMISSION_WINDOW_NOT_OPEN',
-    details: { opens_at: event.submission_opens_at }
-  });
-}
+### 3.5 Endpoints modificados
 
-if (now > closesAt) {
-  return res.status(400).json({
-    error: `La ventana de carga cerró el ${closesAt.toLocaleString('es-PY')}`,
-    code: 'SUBMISSION_WINDOW_CLOSED',
-    details: { closed_at: event.submission_closes_at }
-  });
-}
-```
+| Endpoint | Aplica ventana | Motivo |
+|---|---|---|
+| `POST /api/events-v2/:id/participations` (SQ) | ✅ SÍ | Carga de tokens SQ |
+| `PUT /api/events-v2/:id/participations/:uid` (SQ) | ✅ SÍ | Edición de tokens SQ |
+| `PUT /api/events-v2/bm/:eventId/progress` (BM) | ✅ SÍ | Carga de misiones BM |
+| `POST /api/events-v2/bm/:eventId/purchase` (BM) | ❌ NO | Compra opcional (§2.4) |
 
-### 3.5 Nuevos endpoints
+### 3.6 Nuevos endpoints
 
 | Endpoint | Método | Descripción |
 |---|---|---|
-| `GET /api/events-v2/:id/submission-window` | GET | Info de la ventana de carga |
-| `PATCH /api/events-v2/:id/submission-window` | PATCH | Ajustar la ventana (ADMIN/OWNER) |
+| `GET /api/events-v2/:id/submission-window` | GET | Info de la ventana de carga (SQ) |
+| `GET /api/events-v2/bm/:eventId/submission-window` | GET | Info de la ventana de carga (BM) |
 
 **Ejemplo de respuesta:**
 
@@ -221,7 +227,7 @@ if (now > closesAt) {
 }
 ```
 
-### 3.6 Frontend
+### 3.7 Frontend
 
 Actualizar el widget de evento activo para mostrar:
 - Estado de la ventana de carga (abierta/cerrada).
@@ -238,13 +244,14 @@ Actualizar el widget de evento activo para mostrar:
 - ✅ **Desacoplada del ciclo:** la ventana no depende de cuándo arranca el próximo evento.
 - ✅ **Sin pérdida de data:** pilotos tienen tiempo suficiente para cargar.
 - ✅ **Sin bloqueo por BM:** la ventana del SQ sigue abierta durante el BM.
+- ✅ **BM desacoplado del escuadrón:** la compra es posible sin haber participado.
 - ✅ **Predecible:** deadlines claros y documentados.
 - ✅ **Backward compatible:** los eventos existentes se backfillean con ventanas razonables.
 
 ### Negativas / Riesgos
 
 - ⚠️ **Migración de esquema:** agregar 2 columnas a `events_master`.
-- ⚠️ **Backfill de 38 eventos históricos:** calcular ventanas retroactivamente.
+- ⚠️ **Backfill de 40 eventos históricos:** calcular ventanas retroactivamente.
 - ⚠️ **Refactor del scheduler:** nueva lógica de cálculo.
 - ⚠️ **Refactor del endpoint de participación:** validación adicional.
 - ⚠️ **Refactor del frontend:** nuevo widget + countdown.
@@ -280,7 +287,7 @@ Actualizar el widget de evento activo para mostrar:
 | 5.1 | Documentación (este ADR) + validación | 1 día |
 | 5.2 | Migración de esquema (`sql/034_submission_windows.sql`) | 1 día |
 | 5.3 | Refactor del scheduler (`eventScheduler.js`) | 1 día |
-| 5.4 | Refactor del endpoint (`events-v2.controller.js`) | 1 día |
+| 5.4 | Refactor del endpoint (`events-v2.controller.js`, `events-v2-bm.controller.js`) | 1 día |
 | 5.5 | Refactor del frontend (`js/views.js`, `js/performance.js`) | 1 día |
 | 5.6 | Migración de eventos históricos (backfill) | 0.5 día |
 | 5.7 | Testing + Deploy + Docs | 0.5 día |
@@ -293,11 +300,13 @@ Actualizar el widget de evento activo para mostrar:
 
 - [ ] Columnas `submission_opens_at` y `submission_closes_at` en `events_master`.
 - [ ] Scheduler calcula las ventanas correctamente (SQ: +7d, BM: +6d).
-- [ ] Endpoint `saveParticipation` valida la ventana.
-- [ ] Nuevos endpoints `GET/PATCH /:id/submission-window` operativos.
+- [ ] Helper `submissionWindow.js` con 2 funciones puras.
+- [ ] Endpoints de carga validan la ventana.
+- [ ] Purchase de BM NO valida la ventana (§2.4).
+- [ ] Nuevos endpoints `GET /:id/submission-window` operativos.
 - [ ] Widget de evento activo muestra el estado de la ventana.
-- [ ] 38 eventos históricos backfilleados con ventanas.
-- [ ] Tests: 110+ passing (los existentes + nuevos).
+- [ ] 40 eventos históricos backfilleados con ventanas.
+- [ ] Tests: 128+ passing (los existentes + nuevos).
 - [ ] Deploy a producción sin downtime.
 - [ ] Documentación actualizada (CHANGELOG, API_REFERENCE, CURRENT_STATE).
 
@@ -312,6 +321,7 @@ Actualizar el widget de evento activo para mostrar:
 | 3 | SQ cerrado por BM (BM_REPLACED) | **La ventana del SQ sigue abierta** hasta su deadline original |
 | 4 | Edición de participación | **Sí, dentro de la ventana** (mientras no se cierre) |
 | 5 | Cierre de ventana | **Automático** por deadline (`submission_closes_at`) |
+| 6 | Purchase de BM | **NO** valida la ventana (BM es opcional, §2.4) |
 
 ---
 
@@ -319,7 +329,9 @@ Actualizar el widget de evento activo para mostrar:
 
 - `docs/adr/ADR-007-rediseno-eventos-v2.md` (arquitectura base)
 - `src/utils/eventScheduler.js` (scheduler)
-- `src/controllers/events-v2.controller.js` (endpoints)
+- `src/utils/submissionWindow.js` (helper de validación)
+- `src/controllers/events-v2.controller.js` (endpoints SQ)
+- `src/controllers/events-v2-bm.controller.js` (endpoints BM)
 - `js/views.js` (widget de evento activo)
 - `BACKLOG.md` (HALL-065, BL-020)
 
