@@ -61,7 +61,10 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 ### 🔴 Prioridad Alta (Must Have)
 
-*(Sin items actualmente — los críticos ya están en el Plan de Mejora Continua)*
+| ID | Categoria | Titulo | Estado | Esfuerzo | Notas |
+|---|---|---|---|---|---|
+| **HALL-065** | bug | Scheduler SQ: timezone y duracion incorrectos | Priorizado | M (4h) | Detectado en F4.3. El scheduler crea eventos con start_date a las 09:00 UTC (deberia ser 09:00 PY = 13:00 UTC) y end_date con +3 dias (deberia ser +4 dias: jueves a lunes). Impacto: eventos cierran 1 dia antes de lo esperado. Archivo: src/utils/eventScheduler.js. Fix F4.4: calcular en timezone PY + corregir duracion. |
+| **BL-020** | UX | Widget evento activo: display timezone-aware | Priorizado | S (2h) | Detectado en F4.3. El widget usa .toLocaleDateString('es-PY', ...) hardcodeado. Pilotos en otros paises ven fecha/hora incorrectas. Fix F4.4: usar undefined (locale del navegador) + referencia UTC. Archivo: js/views.js. |
 
 ### 🟠 Prioridad Media (Should Have)
 
