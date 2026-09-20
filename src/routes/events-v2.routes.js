@@ -17,6 +17,7 @@ import {
   getEvents,
   getActiveEvent,
   getEventById,
+  getSubmissionWindow,     // ← NUEVO (ADR-008)
   createEvent,
   updateEvent,
   changeEventStatus,
@@ -38,6 +39,7 @@ router.get('/', requireAuth, getEvents);
 router.get('/active', requireAuth, getActiveEvent);
 router.get('/open', requireAuth, getActiveEvent);  // Alias retrocompatible
 router.get('/:id', requireAuth, getEventById);
+router.get('/:id/submission-window', requireAuth, getSubmissionWindow);  // ← NUEVO (ADR-008)
 
 // ============================================================
 // Rutas de escritura (ADMIN/OWNER)
