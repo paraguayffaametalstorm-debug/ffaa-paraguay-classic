@@ -6,6 +6,99 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.3.0] - 2026-09-20
+
+### 🗓️ ADR-008 — Ventanas de Carga Desacopladas del Ciclo de Evento (F5.1 a F5.7)
+
+#### Objetivo Cumplido
+
+Desacoplar la ventana de carga de performance del ciclo del evento. Antes, la ventana estaba atada al ciclo (4 días, desfasada 1 evento, bloqueada por BM). Ahora cada evento tiene su propia ventana configurable y más generosa:
+
+- **SQUADRON:** 7 días (jue 09:00 PY → jue 08:59 PY).
+- **BLACK_MARKET:** 6 días (mié 17:00 PY → mar 16:59 PY).
+
+#### Problema Resuelto
+
+| # | Problema anterior | Solución |
+|---|---|---|
+| 1 | Ventana desfasada 1 evento | Ventana abre con el `start_date` del propio evento |
+| 2 | Ventana corta (4 días) | 7 días (SQ) / 6 días (BM) |
+| 3 | Bloqueo por BM | La ventana del SQ sigue abierta durante el BM |
+| 4 | Pérdida de data | +3 días de gracia por evento |
+| 5 | Confusión operativa | `submission_opens_at` / `submission_closes_at` explícitos |
+
+#### Sub-fases Completadas
+
+| Sub-fase | Descripción | Commit |
+|---|---|---|
+| **5.1** | ADR-008 aprobado por OWNER | `a42aad9` |
+| **5.2** | Migración SQL 034 + backfill de eventos históricos | (SQL ejecutado) |
+| **5.3** | Scheduler `calculateSubmissionWindow()` | `679e961` |
+| **5.4.1** | Helper `submissionWindow.js` (2 funciones puras) | (con 5.4.2) |
+| **5.4.2** | Validación en BM progress | `9ecd92f` |
+| **5.4.3** | Validación en SQ participations | `5cb4784` |
+| **5.4.4** | Rutas `GET /submission-window` (SQ + BM) | `dc232f0` |
+| **5.4.5** | 39 tests unitarios (helper + scheduler) | `0834eb4` |
+| **5.5** | Frontend wrappers en `js/api.js` | `b2fab4c` |
+| **5.6** | Backfill de eventos históricos | (incluido en SQL 034) |
+| **5.7** | Docs + Deploy + Smoke test | (esta entrada) |
+
+#### Arquitectura Técnica
+
+**Nuevas columnas en `events_master`:**
+
+| Columna | Tipo | Semántica |
+|---|---|---|
+| `submission_opens_at` | TIMESTAMPTZ | Cuándo se puede empezar a cargar |
+| `submission_closes_at` | TIMESTAMPTZ | Deadline de carga (después → READ-ONLY) |
+
+**Nuevos endpoints:**
+
+- `GET /api/events-v2/:id/submission-window` (SQ)
+- `GET /api/events-v2/bm/:eventId/submission-window` (BM)
+
+**Excepción de negocio:** el purchase de BM (`POST /api/events-v2/bm/:eventId/purchase`) **NO** valida la ventana (el BM es opcional y no determinante para el escuadrón).
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `sql/034_submission_windows.sql` | NUEVO. ALTER TABLE + índice parcial + backfill SQ/BM |
+| `src/utils/eventScheduler.js` | `calculateSubmissionWindow()` exportada |
+| `src/utils/submissionWindow.js` | NUEVO. `validateSubmissionWindow()` + `getSubmissionWindowStatus()` |
+| `src/controllers/events-v2.controller.js` | Validación en participations SQ + endpoint window |
+| `src/controllers/events-v2-bm.controller.js` | Validación en progress BM + endpoint window |
+| `src/routes/events-v2.routes.js` | Ruta `GET /:id/submission-window` |
+| `src/routes/events-v2-bm.routes.js` | Ruta `GET /bm/:eventId/submission-window` |
+| `js/api.js` | Wrappers `apiEventsV2SubmissionWindow` + `apiEventsV2BmSubmissionWindow` |
+| `docs/adr/ADR-008-ventanas-carga-desacopladas.md` | NUEVO |
+| `docs/adr/README.md` | ADR-008 marcado como Accepted |
+
+#### Tests
+
+- ✅ **167/167 tests pasando** (128 previos + 39 nuevos ADR-008).
+- Cobertura nueva: helper `submissionWindow` (V1-V20, G1-G15, I1-I4), scheduler `calculateSubmissionWindow` (S1-S5, B1-B4, F1-F3, I1-I6), validación en BM progress (F1-F8).
+
+#### ✅ Criterios de Cierre Cumplidos
+
+- ✅ Columnas `submission_opens_at` / `submission_closes_at` en `events_master`.
+- ✅ Scheduler calcula ventanas SQ (+7d) y BM (+6d).
+- ✅ Helper con 2 funciones puras + 39 tests.
+- ✅ Endpoints de carga (SQ + BM) validan la ventana.
+- ✅ Purchase BM exento (decisión de negocio §2.4).
+- ✅ 2 endpoints `GET /submission-window` operativos.
+- ✅ Backfill de 40 eventos históricos.
+- ✅ 167/167 tests.
+- ✅ Documentación actualizada.
+- ⏳ Deploy a producción (ver 5.7.2).
+- ⏳ Smoke test post-deploy (ver 5.7.3).
+
+#### 🎯 Entregable
+
+Rama `main` con 8 commits de Fase 5. Backend + frontend 100%, docs actualizadas. Pendiente único: deploy + smoke test.
+
+---
+
 ## 📌 [4.2.0] - 2026-09-20
 
 ### 🔧 Auditoría y normalización de eventos SQ 2026
