@@ -408,10 +408,10 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-015** | `DEPLOYMENT_GUIDE.md` v4.0.5 → v4.3.0 + cache invalidation | 2026-09-20 | `f32ed11` |
 | **FIX-017** | `PWA_SETUP.md` v4.0.5 → v4.3.0 + CACHE_NAME real | 2026-09-20 | `f32ed11` |
 | **FIX-026** | `sw.js` CACHE_NAME v4.2.5 → v4.3.0 (hallazgo nuevo) | 2026-09-20 | `f32ed11` |
-| **FIX-004** | `README.md` cuota ADMIN 3 → 5 | 2026-09-20 | `TBD` |
-| **FIX-009** | `API_REFERENCE.md` cuota ADMIN 3 → 5 | 2026-09-20 | `TBD` |
+| **FIX-004** | `README.md` cuota ADMIN 3 → 5 | 2026-09-20 | `fbf4852` |
+| **FIX-009** | `API_REFERENCE.md` cuota ADMIN 3 → 5 | 2026-09-20 | `fbf4852` |
 | **FIX-011** | `ARCHITECTURE.md` cuota ADMIN ya estaba en 5 (verificado) | 2026-09-20 | `f32ed11` |
-| **FIX-018** | `CONTEXTO_PROYECTO.md` cuota ADMIN simplificada a 5 | 2026-09-20 | `TBD` |
+| **FIX-018** | `CONTEXTO_PROYECTO.md` cuota ADMIN simplificada a 5 | 2026-09-20 | `fbf4852` |
 
 ---
 
