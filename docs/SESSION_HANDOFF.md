@@ -1,9 +1,9 @@
 # 🔄 SESSION HANDOFF — PARAGUAY-FFAA | METALSTORM
 
 > **Documento de traspaso entre sesiones de trabajo.**
-> **Actualizado:** 2026-09-19
-> **Última sesión completada:** F4.2.2-G (eliminación backend BM legacy + deploy)
-> **Próximo paso:** F4.3 (vistas adaptativas + UI evento activo)
+> **Actualizado:** 2026-09-20
+> **Última sesión completada:** F4.4 Parte 2 (ADR-007 + CHANGELOG + CURRENT_STATE + API_REFERENCE + deploy final)
+> **Próximo paso:** F4.5 (post-deploy: DROP tablas BM legacy después del 2026-09-26)
 
 ---
 
@@ -18,7 +18,7 @@
 - **Producción:** `https://paraguay-ffaa-metalstorm.fly.dev`
 - **Tests:** Vitest 5.0.1 (93 tests pasando)
 
-**Trabajo activo:** Rediseño de Eventos (Fases F4.1 a F4.4).
+**Trabajo activo:** Post-rediseño de Eventos v2 (F4.x).
 
 ---
 
@@ -26,23 +26,23 @@
 
 | Aspecto | Valor |
 |---|---|
-| Commit HEAD | `42867fd` |
+| Commit HEAD | `4ab67cd` (pendiente commit de F4.4 docs) |
 | Branch | `main` |
-| Working tree | Limpio |
-| Push | Sincronizado con origin/main |
-| Deploy producción | ✅ **OK - deployment-01M2XE2FXSAFWXTKBWM3DBNKFR** |
+| Working tree | ⚠️ Con cambios sin commitear (ADR-007 + 4 docs actualizados) |
+| Push | Pendiente push |
+| Deploy producción | ⏳ **Pendiente** (F4.4) |
 | Tests | ✅ 93/93 passed |
 | Service Worker | v4.1.0 |
 | Frontend api.js/bm.js | v4.1.0 (cache-busted) |
 
-**Últimos 5 commits:**
-42867fd refactor(events-v2-bm): eliminar backend BM legacy (F4.2.2-G)
-bad0e28 chore(sw): bump cache a v4.1.0 (post F4.2.2-F)
-9b8ea0e feat(events-v2-bm): agregar 3 endpoints backend faltantes (F4.2.2-F.0)
-647bd9f docs(session): actualizar handoff a F4.2.2-E (post C+D)
-7387d3c refactor(events-v2-bm): js/bm.js consume apiEventsV2Bm* (F4.2.2-F)
-
-text
+**Últimos commits en origin/main:**
+```
+4ab67cd fix(ui): BL-020 widget y formulario de evento timezone-aware
+7f1ce93 fix(scheduler): HALL-065 corregir timezone PY y duracion del evento SQ
+1b6b9ec docs(backlog): registrar HALL-065 (scheduler timezone) y BL-020 (widget timezone-aware)
+b5d542b feat(f4.3): vistas adaptativas + UI evento activo
+75ad2df docs(session): handoff post F4.2.2 (rediseno BM completo + deploy)
+```
 
 ---
 
@@ -56,136 +56,151 @@ text
 | **F4.2.2-B** | 8 endpoints BM en `/api/events-v2/bm/*` | ✅ CERRADA | `2a6cb12` |
 | **F4.2.2-C** | 93 tests con Vitest | ✅ CERRADA | `05bea21` |
 | **F4.2.2-D** | Migración BM histórico (`legacy_bm: true`) | ✅ CERRADA | (SQL ejecutado) |
-| **F4.2.2-E** | Refactor `js/api.js` (eliminar 18 `apiGetBm*`) | ✅ CERRADA | `7ca8450` |
-| **F4.2.2-F** | Refactor `js/bm.js` (consumir `apiEventsV2Bm*`) | ✅ CERRADA | `7387d3c` + `9b8ea0e` |
-| **F4.2.2-G** | DROP tablas BM legacy + eliminar backend legacy | ✅ CERRADA | `42867fd` |
-| **F4.3** | Vistas adaptativas + UI evento activo | ⏳ **SIGUIENTE** | — |
-| **F4.4** | Deprecación formal + limpieza | ⏳ Pendiente | — |
+| **F4.2.2-E** | Refactor `js/api.js` | ✅ CERRADA | `7ca8450` |
+| **F4.2.2-F** | Refactor `js/bm.js` | ✅ CERRADA | `7387d3c` + `9b8ea0e` |
+| **F4.2.2-G** | DROP backend BM legacy | ✅ CERRADA | `42867fd` |
+| **F4.3** | Vistas adaptativas + UI evento activo | ✅ CERRADA | `b5d542b` |
+| **F4.3 (fix)** | HALL-065 (scheduler timezone) + BL-020 (widget timezone) | ✅ CERRADA | `7f1ce93` + `4ab67cd` |
+| **F4.4** | ADR-007 + docs + deploy final | ✅ **CERRADA** | (pendiente commit) |
+| **F4.5** | DROP tablas BM legacy (post-2026-09-26) | ⏳ Pendiente | — |
 
 ---
 
-## 4. PRÓXIMO PASO — F4.3
+## 4. TRABAJO COMPLETADO EN ESTA SESIÓN (F4.4 Parte 2)
 
-**Objetivo:** crear vistas adaptativas según tipo de evento + UI explícita del evento activo.
+### 4.1 ADR-007 — Rediseño de Eventos v2
 
-**Alcance (estimado ~1 día):**
+**Archivo:** `docs/adr/ADR-007-rediseno-eventos-v2.md` (NUEVO, 5794 bytes)
 
-1. **Widget "Evento Activo" en dashboard:**
-   - Mostrar el evento `OPEN` actual (SQ o BM).
-   - Nombre, tipo, tiempo restante, progreso.
-   - Link directo a la vista correspondiente.
+Reemplaza al ADR-006 (Black Market Unificado). Documenta la unificación SQ + BM sobre `events_master` + `event_participations`, el switch funcional (1 evento OPEN a la vez), el scheduler timezone-aware y las consecuencias del rediseño.
 
-2. **Vistas adaptativas por tipo:**
-   - **SQ** → formulario de tokens + días + `flew_in_group`.
-   - **BM** → grid de misiones diarias (ya implementado).
-   - Adaptar según `currentEvent.type`.
+### 4.2 CHANGELOG [4.1.0]
 
-3. **Switch funcional en UI:**
-   - Bloquear cargas incompatibles (no SQ durante BM).
-   - Mostrar mensaje claro si el usuario intenta algo no permitido.
+**Archivo:** `CHANGELOG.md` (MODIFICADO, +4697 bytes)
 
-4. **Panel admin unificado de eventos:**
-   - Lista de eventos (SQ + BM) con filtros.
-   - Botón "Crear evento" (tipo seleccionable).
-   - Botón "Activar/Cerrar" con lógica del switch.
+Nueva entrada `[4.1.0] - 2026-09-20` con:
+- 12 sub-fases del rediseño (F4.1 a F4.3-fix).
+- HALL-065 + BL-020 documentados.
+- Arquitectura nueva.
+- 1666 líneas eliminadas.
+- 16 endpoints unificados.
+- 93 tests pasando.
 
-**Archivos a tocar (estimados):**
-- `components/dashboard.html` (widget evento activo).
-- `js/views.js` (lógica adaptativa).
-- `js/performance.js` (adaptar validaciones según tipo).
-- `components/admin-panel.html` (panel unificado).
+### 4.3 BACKLOG
+
+**Archivo:** `BACKLOG.md` (MODIFICADO, -439 bytes)
+
+- HALL-065 → Completados (línea 128).
+- BL-020 → Completados (línea 129).
+- BL-021 → Completados (línea 130, nuevo item).
+- Items activos: 17 → **15**.
+- Items completados: 4 → **7**.
+
+### 4.4 API_REFERENCE §3.5
+
+**Archivo:** `API_REFERENCE.md` (MODIFICADO, +7148 bytes)
+
+Completadas las 3 subsecciones faltantes:
+- §3.5.2: Endpoints de eventos (línea 496).
+- §3.5.3: Participaciones (línea 647).
+- §3.5.4: Deprecación legacy con sunset 2026-12-16 (línea 745).
+
+Eliminada la nota de deuda técnica `BL-018`.
+
+### 4.5 CURRENT_STATE
+
+**Archivo:** `CURRENT_STATE.md` (MODIFICADO, +2947 bytes)
+
+- Header actualizado a v4.1.0, fecha 2026-09-20.
+- Punto 6 agregado al resumen ejecutivo (Rediseño de Eventos v2).
+- Nueva sección "🎯 Eventos v2 Unificados (v4.1.0)" en línea 27.
+- Nueva fila en la tabla de módulos (línea 245).
+
+---
+
+## 5. PRÓXIMO PASO — F4.5 (post-deploy)
+
+**Objetivo:** Ejecutar el DROP de tablas BM legacy después de 7 días de gracia.
+
+**Alcance (estimado ~10 min):**
+
+1. **Esperar hasta 2026-09-26** (7 días post-deploy F4.4).
+2. **Verificar estabilidad:**
+   - `fly logs -a paraguay-ffaa-metalstorm` sin errores relacionados a BM.
+   - Dashboard Supabase sin picos.
+   - Pilotos activos sin reportes de bugs.
+3. **Ejecutar SQL:**
+   - Abrir Supabase SQL Editor.
+   - Pegar contenido de `sql/032_drop_bm_legacy_tables.sql`.
+   - Ejecutar.
+   - Verificar que las 4 tablas (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`) fueron eliminadas.
+4. **Commit del DDL** (si no estaba commiteado aún).
 
 **Referencias:**
-- `docs/auditoria-frontend-legacy.md` (F4.1)
-- `docs/adr/ADR-006-black-market-unificado.md`
+- `sql/032_drop_bm_legacy_tables.sql`
+- `docs/adr/ADR-007-rediseno-eventos-v2.md`
 
 ---
 
-## 5. DECISIONES CLAVE DE LA SESIÓN
+## 6. DECISIONES CLAVE DE LA SESIÓN
 
-### ADR-006 — Black Market Unificado
+### ADR-007 reemplaza a ADR-006
 
-**Archivo:** `docs/adr/ADR-006-black-market-unificado.md`
+**Decisión:** El ADR-006 (Black Market Unificado) queda **superseded** por el ADR-007 (Rediseño de Eventos v2). El ADR-007 documenta la arquitectura final.
 
-**Decisión:** migrar BM al modelo unificado `events_master` + `event_participations`. **Eliminadas** 4 tablas legacy (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`) y 18 endpoints `/api/bm/*`.
+### Switch funcional (1 evento OPEN a la vez)
 
-### Interpretación de `discount_per_point`
+**Decisión:** Solo puede existir **1 evento `OPEN`** en todo el sistema, garantizado por índice UNIQUE parcial `idx_events_master_single_open`. Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
 
-**Decisión:** `discount_per_point = 0.2` significa **0.2% por punto** (NO 0.2 shards).
+### Scheduler timezone-aware (HALL-065)
 
-- 250 puntos × 0.2 = 50% de descuento.
-- 50% de 500 shards = 250 shards de descuento.
-- Precio final: 250 shards (en vez de 500).
+**Decisión:** El scheduler SQ calcula el offset de Paraguay (`America/Asuncion`, UTC-4/UTC-3) dinámicamente vía `Intl.DateTimeFormat`. Duración: +4 días (jueves 09:00 PY - lunes 09:00 PY).
 
-### Fix Zod v4: `error.errors` → `error.issues`
+### Widget timezone-aware (BL-020)
 
-**Aplicado en:**
-- `src/controllers/events-v2.controller.js` (5 ocurrencias)
-- `src/controllers/events-v2-bm.controller.js` (3 ocurrencias)
+**Decisión:** El widget de evento activo usa `undefined` en `toLocaleDateString` (locale del navegador), con referencia UTC explícita.
 
-### BM histórico (marcado `legacy_bm: true`)
+### Deprecación legacy SQ
 
-**ID:** `d7cbf035-c861-458d-93b6-68e8ba5fb5f4`
-
-**Aplicado SQL:** `metadata = metadata || jsonb_build_object('legacy_bm', true, 'no_data', true, 'notes', '...')`.
-
-**Comportamiento:** el controlador lo trata como solo-lectura, sin misiones jugables.
-
-### Reglas de negocio BM
-
-| Regla | Valor |
-|---|---|
-| Duración | 5 días (miércoles a domingo) |
-| Misiones por día | 3 (dedication, skill, teamwork) |
-| Puntos por misión | 25 (custom desde metadata.missions) |
-| Bonus diario | +25 al completar 3/día |
-| Máx puntos | 250 |
-| Descuento por punto | 0.2% |
-| Máx descuento | 50% |
-| Progresión de trofeos | 200 → 350 → 500 → 650 → 800 (+150/día) |
-
-### IDs migrados de INTEGER a UUID
-
-- Eventos BM: UUID (antes INTEGER auto-incremental).
-- Misiones: sin ID propio, se identifican por `(day, type)` sintético.
-- Participaciones: UUID (ya era).
-
-### Pricing migrado de Tokens a Shards
-
-- `pricing.base_price_shards` (antes `base_price`).
-- `pricing.discount_shards` (antes `discount_amount`).
-- `pricing.final_price_shards` (antes `final_price`).
+**Decisión:** `/api/events/*` queda deprecado con sunset **2026-12-16** (90 días desde F4.3). Los endpoints legacy BM (`/api/bm/*`) fueron eliminados en F4.2.2-G.
 
 ---
 
-## 6. ARCHIVOS RELEVANTES
+## 7. ARCHIVOS RELEVANTES
 
-### Backend (creados/modificados en esta sesión)
+### Docs (modificados/creados en esta sesión)
 
-- ✅ `src/controllers/events-v2-bm.controller.js` (MODIFICADO — 3 handlers nuevos, ~390 líneas añadidas)
-- ✅ `src/routes/events-v2-bm.routes.js` (MODIFICADO — 3 rutas nuevas + import actualizado)
-- ✅ `server.js` (MODIFICADO — eliminado import + mount `/api/bm` + deprecationMiddleware)
-- ❌ `src/controllers/bm.controller.js` (ELIMINADO — 1577 líneas)
-- ❌ `src/routes/bm.routes.js` (ELIMINADO — 89 líneas)
+- ➕ `docs/adr/ADR-007-rediseno-eventos-v2.md` (NUEVO)
+- ✏️ `CHANGELOG.md` (MODIFICADO)
+- ✏️ `BACKLOG.md` (MODIFICADO)
+- ✏️ `API_REFERENCE.md` (MODIFICADO)
+- ✏️ `CURRENT_STATE.md` (MODIFICADO)
+- ✏️ `SESSION_HANDOFF.md` (REGENERADO — este documento)
 
-### Frontend (modificados)
+### SQL (pendiente post-deploy)
 
-- ✅ `js/api.js` (MODIFICADO — 11 wrappers `apiEventsV2Bm*` + limpieza de duplicados)
-- ✅ `js/bm.js` (MODIFICADO — refactor completo, ~600 líneas reescritas)
-- ✅ `sw.js` (MODIFICADO — CACHE_NAME v4.1.0)
-- ✅ `index.html` (MODIFICADO — cache-busting `?v=4.1.0` para api.js y bm.js)
+- ⏳ `sql/032_drop_bm_legacy_tables.sql` (NUEVO — **NO ejecutado todavía**, pendiente post-2026-09-26)
 
-### SQL (nuevo)
+### Backend (de sesiones anteriores)
 
-- ✅ `sql/032_drop_bm_legacy_tables.sql` (NUEVO — **NO ejecutado todavía**, pendiente post-deploy)
+- ✅ `src/controllers/events-v2.controller.js`
+- ✅ `src/controllers/events-v2-bm.controller.js`
+- ✅ `src/routes/events-v2.routes.js`
+- ✅ `src/routes/events-v2-bm.routes.js`
+- ✅ `src/utils/eventScheduler.js` (HALL-065)
+- ❌ `src/controllers/bm.controller.js` (ELIMINADO)
+- ❌ `src/routes/bm.routes.js` (ELIMINADO)
 
-### Tests (sin cambios, 93/93)
+### Frontend (de sesiones anteriores)
 
-- Todos los tests existentes siguen pasando.
+- ✅ `js/api.js` (11 wrappers `apiEventsV2Bm*`)
+- ✅ `js/bm.js` (refactor completo)
+- ✅ `js/views.js` (BL-020)
+- ✅ `sw.js` (CACHE_NAME v4.1.0)
 
 ---
 
-## 7. REGLAS DE TRABAJO
+## 8. REGLAS DE TRABAJO
 
 ### Sistema operativo
 
@@ -193,7 +208,7 @@ text
 - **NO usar comandos Linux/macOS** (grep, cat, ls, sed, awk).
 - SÍ usar: `findstr`, `type`, `dir`, `node --check`, `git`, `curl`, `del`, `type nul >`.
 - Para UTF-8: usar PowerShell.
-- **Para archivos grandes**: usar scripts `.cjs` con `node` (evita el pegado manual en el chat).
+- **Para archivos grandes (>100 líneas)**: usar **scripts Node `.cjs`** en vez de copy-paste manual.
 
 ### Comandos críticos
 
@@ -209,7 +224,7 @@ text
 1. **Una tarea a la vez.** No mezclar.
 2. **Verificar antes de avanzar** (`node --check`, `npm test`).
 3. **Bloques <100 líneas** (evita truncamiento).
-4. **Para archivos grandes (>100 líneas)**: usar **script Node `.cjs`** en vez de copy-paste manual. **Lección aprendida en F4.2.2**.
+4. **Para archivos grandes**: usar **script Node `.cjs`**.
 5. **Commits descriptivos:** `tipo(scope): descripción`.
 6. **NO pegar bloques de git en CMD si no empiezan con `git`**.
 7. **Deploy tras cada fase grande.**
@@ -223,101 +238,110 @@ text
 
 ### Lecciones aprendidas (esta sesión)
 
-- **CMD `findstr` puede corromper UTF-8** → usar PowerShell si hay problemas.
-- **Scripts `.cjs` son la mejor herramienta para reemplazos masivos** en archivos grandes (evitan el pegado manual y son idempotentes).
-- **El Service Worker cachea agresivamente** → siempre bumpear `CACHE_NAME` después de cambios grandes en JS.
-- **Al editar `server.js`**, tener cuidado con mounts multi-línea (`app.use('/path', mid1, mid2, router)`).
-- **Los IDs sintéticos** (`${day}-${type}`) son útiles cuando el modelo de datos ya no expone IDs estables.
-- **Express route ordering:** `router.get('/')` **antes** de `router.get('/:id')`.
-- **Zod v4 usa `.issues`**, no `.errors`.
-- **Vitest v5.0.1** funciona bien con ESM nativo.
+- **Los emojis en los headers pueden tener variaciones de code points (U+FE0F, ZWJ).** Buscar por **texto plano sin emojis** es más robusto.
+- **CMD no renderiza UTF-8 bien.** Lo que ves como `≡ƒÄ»` está bien en el archivo. Verificar siempre con PowerShell.
+- **Cuando un marker aparece múltiples veces**, usar regex con anclaje (`^## `) para garantizar match correcto.
+- **Scripts Node `.cjs` con logs de diagnóstico** son la mejor herramienta para verificar antes de escribir.
+- **Revertir con `git checkout --`** cuando un script falla y deja el archivo inconsistente.
+- **`fs.readFileSync(file, 'utf8')` + `fs.writeFileSync(file, content, 'utf8')`** preserva UTF-8 sin corromper.
 
 ---
 
-## 8. CÓMO RETOMAR LA SESIÓN
+## 9. CÓMO RETOMAR LA SESIÓN
 
 En una nueva conversación:
 
 1. **Adjuntar este `SESSION_HANDOFF.md`.**
-2. **Escribir:** "Continuemos con F4.3 (vistas adaptativas + UI evento activo)".
+2. **Escribir:** "Continuemos con F4.5 (DROP tablas BM legacy post-2026-09-26)".
 3. **Opcionalmente adjuntar:**
-   - `js/views.js` (si vas a tocar vistas).
-   - `components/dashboard.html` (para el widget).
-   - `src/controllers/events-v2.controller.js` (para referencia).
-   - `docs/adr/ADR-006-black-market-unificado.md`.
+   - `sql/032_drop_bm_legacy_tables.sql`.
+   - `docs/adr/ADR-007-rediseno-eventos-v2.md`.
 
-**La IA leerá el handoff, entenderá el contexto y arrancará con F4.3.**
+**La IA leerá el handoff, entenderá el contexto y arrancará con F4.5.**
 
 ---
 
-## 9. COMANDOS DE VERIFICACIÓN RÁPIDA
+## 10. COMANDOS DE VERIFICACIÓN RÁPIDA
 
 ```cmd
 cd C:\Users\pirov\paraguay-ffaa
-git log --oneline -5
+git log --oneline -10
 git status
 npm test
 curl -s https://paraguay-ffaa-metalstorm.fly.dev/health
-Esperado:
+```
 
-Log: 42867fd en top.
+**Esperado:**
 
-Status: up to date with 'origin/main', working tree limpio.
+- **Log:** commit de F4.4 en top (o `4ab67cd` si aún no commiteado).
+- **Status:** working tree limpio (después del commit de F4.4).
+- **Tests:** 93/93 passed.
+- **Health:** `OK`.
 
-Tests: 93/93 passed.
+---
 
-Health: OK.
+## 11. CHECKLIST DE CIERRE DE ESTA SESIÓN
 
-10. CHECKLIST DE CIERRE DE ESTA SESIÓN
-☑ F4.2.2-A cerrado (schemas + ADR)
-☑ F4.2.2-B cerrado (8 endpoints)
-☑ F4.2.2-C cerrado (93 tests)
-☑ F4.2.2-D cerrado (BM histórico legacy)
-☑ F4.2.2-E cerrado (refactor js/api.js)
-☑ F4.2.2-F cerrado (refactor js/bm.js + 3 endpoints backend faltantes)
-☑ F4.2.2-G cerrado (backend BM legacy eliminado)
-☑ Deploy a producción exitoso (deployment-01M2XE2FXSAFWXTKBWM3DBNKFR)
-☑ Smoke test en producción OK (health checks + apiEventsV2BmActive())
-☑ Service Worker v4.1.0 sirviendo archivos nuevos
-☑ 93/93 tests pasando
-☑ Working tree limpio
-☑ Todos los commits pusheados a origin/main
-Sistema: 100% operativo en producción.
+- [x] ADR-007 creado (5794 bytes)
+- [x] CHANGELOG [4.1.0] insertado (+4697 bytes)
+- [x] BACKLOG actualizado (-439 bytes, HALL-065 + BL-020 + BL-021 movidos)
+- [x] API_REFERENCE §3.5 completado (+7148 bytes)
+- [x] CURRENT_STATE actualizado (+2947 bytes)
+- [x] SESSION_HANDOFF regenerado
+- [ ] **Commit consolidado de F4.4**
+- [ ] **Deploy a producción**
+- [ ] **Smoke test post-deploy**
+- [ ] **Push a origin/main**
 
-11. PRÓXIMOS PASOS (visión global)
-Sub-fase	Descripción	Estimación
-F4.3	Vistas adaptativas + UI evento activo	~1 día
-F4.4	Deprecación formal + limpieza	~4 horas
-Post-deploy	Ejecutar sql/032_drop_bm_legacy_tables.sql (esperar 7 días)	~5 min
-Total: ~1.5 días de trabajo efectivo.
+**Sistema: docs de F4.4 completados. Pendiente commit + deploy.**
 
-12. NOTAS POST-DEPLOY
-Monitoreo 24-48h
+---
+
+## 12. PRÓXIMOS PASOS (visión global)
+
+| Sub-fase | Descripción | Estimación |
+|---|---|---|
+| **Commit F4.4** | Agregar todos los docs + ADR-007 y commitear | ~10 min |
+| **Deploy F4.4** | `fly deploy` + smoke test | ~15 min |
+| **Push** | `git push origin main` | ~1 min |
+| **F4.5** | DROP tablas BM legacy (post-2026-09-26) | ~10 min |
+
+**Total: ~35 min de trabajo efectivo + 7 días de espera para F4.5.**
+
+---
+
+## 13. NOTAS POST-DEPLOY
+
+### Monitoreo 24-48h
+
 Verificar:
 
-fly logs -a paraguay-ffaa-metalstorm sin errores.
+- `fly logs -a paraguay-ffaa-metalstorm` sin errores.
+- Dashboard Supabase sin picos.
+- Pilotos activos sin reportes de bugs.
+- Endpoint `GET /api/events-v2/active` respondiendo OK.
 
-Dashboard Supabase sin picos.
+### DROP de tablas (7 días)
 
-Pilotos activos sin reportes de bugs.
+Una vez confirmada estabilidad (después del **2026-09-26**):
 
-DROP de tablas (7 días)
-Una vez confirmada estabilidad:
+1. Abrir Supabase SQL Editor.
+2. Pegar contenido de `sql/032_drop_bm_legacy_tables.sql`.
+3. Ejecutar.
 
-Abrir Supabase SQL Editor.
+**Riesgo:** bajo. Tablas vacías.
 
-Pegar contenido de sql/032_drop_bm_legacy_tables.sql.
+### Rollback de emergencia
 
-Ejecutar.
-
-Riesgo: bajo. Tablas vacías.
-
-Rollback de emergencia
 Si algo se rompe en producción:
 
-cmd
+```cmd
 fly releases -a paraguay-ffaa-metalstorm
 fly deploy --image <IMAGEN_PREVIA>
-Imagen previa: deployment-01M2PSC0HFJ7HBQE34SY9AA4XE (versión pre-F4.2.2).
+```
 
-PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-19 · Commit 42867fd
+**Imagen previa:** `deployment-01M2XE2FXSAFWXTKBWM3DBNKFR` (versión pre-F4.3).
+
+---
+
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-20 · Commit 4ab67cd + cambios sin commitear**

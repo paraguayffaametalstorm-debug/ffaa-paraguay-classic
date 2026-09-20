@@ -5,6 +5,123 @@ Todas las modificaciones notables, correcciones de errores, mejoras de seguridad
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
+
+## 📌 [4.1.0] - 2026-09-20
+
+### 🎯 Rediseño de Eventos v2 — Unificación SQ + BM (F4.1 a F4.4)
+
+#### Objetivo Cumplido
+
+Unificar los dos módulos de eventos del sistema (Squadron Event + Black Market) sobre una arquitectura única basada en `events_master` + `event_participations`, eliminando la deuda técnica acumulada (1577 líneas de `bm.controller.js` + 89 líneas de `bm.routes.js` + 18 endpoints legacy) y corrigiendo dos bugs de timezone detectados durante el rediseño.
+
+#### Sub-fases Completadas
+
+| Sub-fase | Descripción | Commit |
+|---|---|---|
+| **F4.1** | Auditoría frontend legacy | `cd77149` |
+| **F4.2.1** | Cliente `apiEventsV2*` en `js/api.js` | `4f88d3f` |
+| **F4.2.2-A** | Schemas BM + ADR-006 | `6b61852` |
+| **F4.2.2-B** | 8 endpoints BM en `/api/events-v2/bm/*` | `2a6cb12` |
+| **F4.2.2-C** | 93 tests con Vitest | `05bea21` |
+| **F4.2.2-D** | Migración BM histórico (`legacy_bm: true`) | (SQL ejecutado) |
+| **F4.2.2-E** | Refactor `js/api.js` (eliminar 18 `apiGetBm*`) | `7ca8450` |
+| **F4.2.2-F** | Refactor `js/bm.js` (consumir `apiEventsV2Bm*`) | `7387d3c` + `9b8ea0e` |
+| **F4.2.2-G** | DROP tablas BM legacy + eliminar backend legacy | `42867fd` |
+| **F4.3** | Vistas adaptativas + UI evento activo | `b5d542b` |
+| **F4.3 (fix)** | HALL-065: scheduler SQ timezone PY + duración 4 días | `7f1ce93` |
+| **F4.3 (fix)** | BL-020: widget evento activo timezone-aware | `4ab67cd` |
+
+#### Hallazgos Resueltos
+
+| Hallazgo | Descripción | Commit |
+|---|---|---|
+| HALL-065 | Scheduler SQ creaba eventos a las 09:00 UTC en vez de 09:00 PY (UTC-4/UTC-3), y `end_date` con +3 días en vez de +4 días. Eventos cerraban 1 día antes de lo esperado. | `7f1ce93` |
+| BL-020 | Widget de evento activo usaba `.toLocaleDateString('es-PY', ...)` hardcodeado. Pilotos en otros países veían fecha/hora incorrecta. | `4ab67cd` |
+
+#### Arquitectura Nueva
+
+**Tablas maestras:**
+
+| Tabla | Propósito |
+|---|---|
+| `events_master` | Eventos unificados (UUID, `type`, `status`, `metadata` JSONB) |
+| `event_participations` | Participaciones unificadas (UUID, `event_id`, `user_id`, `data` JSONB, `computed_points`, `status`) |
+
+**Tipos de evento:** `SQUADRON` (semanal jueves-lunes), `BLACK_MARKET` (5 días miércoles-domingo), `ACE_CHALLENGE` (reservado).
+
+**Regla del switch:** Solo 1 evento `OPEN` a la vez (índice UNIQUE parcial `idx_events_master_single_open`). Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
+
+**Endpoints nuevos:** `/api/events-v2/*` (8 endpoints) + `/api/events-v2/bm/*` (8 endpoints).
+
+#### Archivos Eliminados
+
+| Archivo | Líneas |
+|---|---|
+| `src/controllers/bm.controller.js` | 1577 |
+| `src/routes/bm.routes.js` | 89 |
+| **Total** | **1666** |
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `src/utils/eventScheduler.js` | Timezone PY (`America/Asuncion`) + duración 4 días (HALL-065) |
+| `server.js` | Eliminado mount `/api/bm` + `deprecationMiddleware` |
+| `js/api.js` | 11 wrappers `apiEventsV2Bm*` |
+| `js/bm.js` | Refactor completo ~600 líneas |
+| `js/views.js` | Widget timezone-aware (BL-020) |
+| `sw.js` | CACHE_NAME v4.1.0 |
+| `index.html` | Cache-busting `?v=4.1.0` |
+
+#### SQL Versionado
+
+| Archivo | Estado |
+|---|---|
+| `sql/030_events_master.sql` | Ejecutado |
+| `sql/031_event_participations.sql` | Ejecutado |
+| `sql/032_drop_bm_legacy_tables.sql` | **PENDIENTE** (post-2026-09-26) |
+
+#### Tests
+
+- ✅ **93/93 tests pasando** (Vitest 5.0.1, 10 test files).
+- Cobertura: schemas BM, controladores events-v2-bm (create/update/progress/discount/leaderboard), lógica de puntos.
+
+#### Documentación
+
+- ➕ `docs/adr/ADR-007-rediseno-eventos-v2.md` (nuevo, reemplaza ADR-006).
+- ✏️ `API_REFERENCE.md` — §3.5 completado (endpoints + participaciones + deprecación).
+- ✏️ `CURRENT_STATE.md` — sección eventos v2 unificados.
+- ✏️ `BACKLOG.md` — HALL-065 + BL-020 movidos a completados.
+- ✏️ `SESSION_HANDOFF.md` — regenerado.
+
+#### Deprecación Formal
+
+Los siguientes endpoints quedan **deprecados** con sunset programado para **2026-12-16**:
+
+- `/api/events/*` (legacy SQ)
+- `/api/bm/*` (legacy BM — eliminado en F4.2.2-G)
+
+#### ✅ Criterios de Cierre Cumplidos
+
+- ✅ Arquitectura unificada `events_master` + `event_participations`.
+- ✅ Switch funcional (1 evento OPEN a la vez).
+- ✅ Scheduler timezone-aware (HALL-065).
+- ✅ Widget timezone-aware (BL-020).
+- ✅ 93/93 tests pasando.
+- ✅ Backend BM legacy eliminado (~1666 líneas).
+- ✅ ADR-007 documentado.
+- ✅ API_REFERENCE §3.5 completado.
+- ✅ Deploy a producción sin downtime.
+- ✅ Smoke test post-deploy OK.
+
+#### 🎯 Entregable
+
+Rama `main` con commits mergeados. Deploy consolidado de F4.4.
+
+**Total:** 14 commits, ~1666 líneas eliminadas, 16 endpoints unificados, 93 tests.
+
+---
+
 ## 📌 [4.0.5] - 2026-09-18
 
 ### 🚨 Hotfix Definitivo — Vinculación Google OAuth operativa (HALL-059 + HALL-060)
