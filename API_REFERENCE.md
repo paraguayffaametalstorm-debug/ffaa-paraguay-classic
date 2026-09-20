@@ -1114,7 +1114,7 @@ Permite regularizar, completar o rectificar el motivo de baja de un piloto inact
 Modifica el rango militar de un piloto aplicando **cuotas institucionales estrictas**.
 - **Reglas de Cuota:**
   - Máximo **1 OWNER** (si se nombra otro, el anterior desciende a `ADMIN`).
-  - Máximo **3 ADMIN** (error `ROLE_LIMIT_REACHED` si se sobrepasa).
+  - Máximo **5 ADMIN** (error `ROLE_LIMIT_REACHED` si se sobrepasa).
   - Máximo **8 VETERANO** (error `ROLE_LIMIT_REACHED` si se sobrepasa).
 - **Request Body:**
   ```json

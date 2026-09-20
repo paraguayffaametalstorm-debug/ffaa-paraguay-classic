@@ -37,7 +37,7 @@ El escuadrón PRY se organizó formalmente en **diciembre 2025** con una normati
 | Rol | Cuota máxima | Atribuciones |
 |---|---|---|
 | **OWNER** (Propietario) | 1 | Mando supremo, decisiones finales, transferencia |
-| **ADMIN** (Administrador) | 3 (ampliado a 5 por decisión del OWNER) | Altas/bajas, resets de claves, publicación de normativas |
+| **ADMIN** (Administrador) | 5 | Altas/bajas, resets de claves, publicación de normativas |
 | **VETERANO** (Anciano) | 8 | Mentoría, coordinación de eventos, reportes |
 | **MIEMBRO** | hasta 30 | Registro semanal, hangar personal |
 

@@ -41,7 +41,7 @@ Este documento **SÍ es la fuente única de verdad** para:
 | Campo | Valor |
 |---|---|
 | **Versión real** | v4.3.0 (según `CHANGELOG.md`) |
-| **Commit HEAD** | `bc01972` (fix views timezone) |
+| **Commit HEAD** | `0d04571` (Sprint 0 Grupo A) |
 | **Deploy producción** | ✅ Activo en Fly.io (`gru`) |
 | **Timezone scheduler** | UTC-3 hardcodeado (`PY_OFFSET_HOURS = 3`) |
 | **Tests** | 167/167 passing (Vitest 5.0.1) |
@@ -408,6 +408,10 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-015** | `DEPLOYMENT_GUIDE.md` v4.0.5 → v4.3.0 + cache invalidation | 2026-09-20 | `f32ed11` |
 | **FIX-017** | `PWA_SETUP.md` v4.0.5 → v4.3.0 + CACHE_NAME real | 2026-09-20 | `f32ed11` |
 | **FIX-026** | `sw.js` CACHE_NAME v4.2.5 → v4.3.0 (hallazgo nuevo) | 2026-09-20 | `f32ed11` |
+| **FIX-004** | `README.md` cuota ADMIN 3 → 5 | 2026-09-20 | `TBD` |
+| **FIX-009** | `API_REFERENCE.md` cuota ADMIN 3 → 5 | 2026-09-20 | `TBD` |
+| **FIX-011** | `ARCHITECTURE.md` cuota ADMIN ya estaba en 5 (verificado) | 2026-09-20 | `f32ed11` |
+| **FIX-018** | `CONTEXTO_PROYECTO.md` cuota ADMIN simplificada a 5 | 2026-09-20 | `TBD` |
 
 ---
 
@@ -431,7 +435,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 
 | Métrica | Actual | Sprint 0 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 |
 |---|---|---|---|---|---|---|
-| Docs alineados con versión real | 6/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
+| Docs alineados con versión real | 7/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
 | Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
 | Fixes cerrados | 0 | 25 | 25 | 33+ | 42+ | 49+ |
 | Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
