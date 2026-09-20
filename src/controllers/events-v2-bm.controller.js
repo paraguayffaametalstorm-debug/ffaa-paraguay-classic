@@ -45,6 +45,10 @@ import {
   BlackMarketParticipationDataSchema
 } from '../utils/eventSchemas.js';
 import { z } from 'zod';
+import {
+  validateSubmissionWindow,
+  getSubmissionWindowStatus
+} from '../utils/submissionWindow.js';
 
 // ============================================================
 // CONSTANTES LOCALES
@@ -899,6 +903,17 @@ export const updateBmProgressV2 = async (req, res) => {
         code: isLegacy ? 'LEGACY_BM_NO_PROGRESS' : 'EVENT_NOT_OPEN'
       });
     }
+    // ADR-008: validar ventana de carga (solo aplica al progreso, no al purchase)
+    const windowCheck = validateSubmissionWindow(event);
+    if (!windowCheck.valid) {
+      return res.status(409).json({
+        success: false,
+        error: windowCheck.message,
+        code: windowCheck.code,
+        details: windowCheck.details
+      });
+    }
+
 
     // 2. Fetch participación existente (si la hay)
     const { data: parts, error: pErr } = await supabase
@@ -1530,6 +1545,76 @@ export const getBmStatsV2 = async (req, res) => {
 };
 
 // ============================================================
+// 10.5. GET /api/events-v2/bm/:eventId/submission-window — Ventana
+// ============================================================
+
+/**
+ * Devuelve el estado de la ventana de carga del evento BM.
+ * ADR-008: la ventana está desacoplada del ciclo del evento.
+ *   - BM: 6 días (Mié 17:00 PY → Mar 16:59 PY).
+ */
+export const getBmSubmissionWindowV2 = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    const { data: events, error } = await supabase
+      .from('events_master')
+      .select('id, type, name, status, submission_opens_at, submission_closes_at')
+      .eq('id', eventId)
+      .limit(1);
+
+    if (error) throw error;
+    if (!events || events.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Evento Black Market no encontrado',
+        code: 'EVENT_NOT_FOUND'
+      });
+    }
+
+    const event = events[0];
+    if (event.type !== BM_TYPE) {
+      return res.status(404).json({
+        success: false,
+        error: 'El evento ' + eventId + ' no es de tipo BLACK_MARKET (es ' + event.type + ')',
+        code: 'EVENT_NOT_BLACK_MARKET'
+      });
+    }
+
+    const windowStatus = getSubmissionWindowStatus(event);
+
+    return res.json({
+      success: true,
+      event_id: event.id,
+      event_type: event.type,
+      event_name: event.name,
+      event_status: event.status,
+      submission_opens_at: windowStatus.submission_opens_at,
+      submission_closes_at: windowStatus.submission_closes_at,
+      status: windowStatus.status,
+      seconds_remaining: windowStatus.seconds_remaining,
+      seconds_until_open: windowStatus.seconds_until_open,
+      can_submit: windowStatus.can_submit
+    });
+  } catch (error) {
+    console.error('❌ [Events-v2/BM] Error en getBmSubmissionWindowV2:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'INTERNAL_ERROR'
+    });
+  }
+};
+
+// ============================================================
 // 11. POST /api/events-v2/bm/:eventId/purchase — Reclamar aeronave
 // ============================================================
 
@@ -1706,6 +1791,7 @@ export default {
   getBmLeaderboardV2,
   getBmDiscountV2,
   getBmStatsV2,
+  getBmSubmissionWindowV2,
   // Escritura
   createBmEventV2,
   updateBmEventV2,

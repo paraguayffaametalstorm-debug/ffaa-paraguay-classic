@@ -1,17 +1,50 @@
 /**
  * ============================================================================
  * PARAGUAY-FFAA | METALSTORM
- * Fixtures de eventos BM [F4.2.2-C]
+ * Fixtures de eventos BM [F4.2.2-C + ADR-008]
  * ============================================================================
  * Eventos BM de prueba en distintas variantes:
- *   - bmEventActive     → OPEN, con misiones completas
- *   - bmEventScheduled  → SCHEDULED, sin participantes
- *   - bmEventClosed     → CLOSED, histórico
- *   - bmEventLegacy     → legacy_bm: true (artefacto de migración)
- *   - bmEventNoMissions → OPEN pero sin missions (fallback 15 default)
- *   - sqEventActive     → tipo SQUADRON (para probar rechazos)
+ *   - bmEventActive     -> OPEN, con misiones completas y ventana ABIERTA
+ *   - bmEventScheduled  -> SCHEDULED, sin participantes
+ *   - bmEventClosed     -> CLOSED, histórico
+ *   - bmEventLegacy     -> legacy_bm: true (artefacto de migración)
+ *   - bmEventNoMissions -> OPEN pero sin missions (fallback 15 default)
+ *   - sqEventActive     -> tipo SQUADRON (para probar rechazos)
+ *
+ * ADR-008: las fechas de start_date/end_date/submission_* son DINÁMICAS
+ * (relativas a Date.now()) para que la ventana de carga esté siempre
+ * abierta cuando corren los tests. NO fijar fechas absolutas.
  * ============================================================================
  */
+
+// ============================================================
+// FECHAS DINÁMICAS (ADR-008)
+// ============================================================
+
+const NOW = Date.now();
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Evento activo: empezó hace 2 días, termina en 3 días. */
+const ACTIVE_START = new Date(NOW - 2 * DAY_MS).toISOString();
+const ACTIVE_END = new Date(NOW + 3 * DAY_MS).toISOString();
+/** Ventana BM: abre cuando el evento empieza, cierra 6 días después. */
+const ACTIVE_SUB_OPEN = ACTIVE_START;
+const ACTIVE_SUB_CLOSE = new Date(NOW + 4 * DAY_MS).toISOString();
+
+/** Evento programado: empieza en 10 días. */
+const SCHEDULED_START = new Date(NOW + 10 * DAY_MS).toISOString();
+const SCHEDULED_END = new Date(NOW + 15 * DAY_MS).toISOString();
+
+/** Evento cerrado: empezó hace 30 días, terminó hace 25 días. */
+const CLOSED_START = new Date(NOW - 30 * DAY_MS).toISOString();
+const CLOSED_END = new Date(NOW - 25 * DAY_MS).toISOString();
+const CLOSED_SUB_OPEN = CLOSED_START;
+const CLOSED_SUB_CLOSE = new Date(NOW - 24 * DAY_MS).toISOString();
+
+/** SQ activo: empezó ayer, termina en 3 días. */
+const SQ_START = new Date(NOW - 1 * DAY_MS).toISOString();
+const SQ_END = new Date(NOW + 3 * DAY_MS).toISOString();
+const SQ_SUB_CLOSE = new Date(NOW + 6 * DAY_MS).toISOString();
 
 // ============================================================
 // HELPERS
@@ -42,8 +75,10 @@ export const bmEventActive = {
   id: 'aaaaaaaa-1111-1111-1111-111111111111',
   type: 'BLACK_MARKET',
   name: 'Operación Tormenta Negra · BM 2026-W38',
-  start_date: '2026-09-16T00:00:00Z',
-  end_date: '2026-09-20T23:59:59Z',
+  start_date: ACTIVE_START,
+  end_date: ACTIVE_END,
+  submission_opens_at: ACTIVE_SUB_OPEN,
+  submission_closes_at: ACTIVE_SUB_CLOSE,
   status: 'OPEN',
   metadata: {
     aircraft_id: '125',
@@ -58,12 +93,12 @@ export const bmEventActive = {
       day_1: 200, day_2: 350, day_3: 500, day_4: 650, day_5: 800
     },
     missions: buildMissions15(),
-    announced_at: '2026-09-15T00:00:00Z',
+    announced_at: ACTIVE_START,
     created_by: 'PJPIROVANI'
   },
   legacy_event_id: null,
-  created_at: '2026-09-15T00:00:00Z',
-  updated_at: '2026-09-15T00:00:00Z'
+  created_at: ACTIVE_START,
+  updated_at: ACTIVE_START
 };
 
 export const bmEventScheduled = {
@@ -71,8 +106,8 @@ export const bmEventScheduled = {
   id: 'bbbbbbbb-2222-2222-2222-222222222222',
   name: 'Operación Futura · BM 2026-W40',
   status: 'SCHEDULED',
-  start_date: '2026-09-30T00:00:00Z',
-  end_date: '2026-10-04T23:59:59Z'
+  start_date: SCHEDULED_START,
+  end_date: SCHEDULED_END
 };
 
 export const bmEventClosed = {
@@ -80,8 +115,10 @@ export const bmEventClosed = {
   id: 'cccccccc-3333-3333-3333-333333333333',
   name: 'Operación Pasada · BM 2026-W30',
   status: 'CLOSED',
-  start_date: '2026-07-22T00:00:00Z',
-  end_date: '2026-07-26T23:59:59Z'
+  start_date: CLOSED_START,
+  end_date: CLOSED_END,
+  submission_opens_at: CLOSED_SUB_OPEN,
+  submission_closes_at: CLOSED_SUB_CLOSE
 };
 
 export const bmEventLegacy = {
@@ -90,6 +127,8 @@ export const bmEventLegacy = {
   name: 'Squadron Event 2026-04 · SEM 16 - BM',
   start_date: '2026-04-16T00:00:00Z',
   end_date: '2026-04-20T23:59:59Z',
+  submission_opens_at: '2026-04-16T00:00:00Z',
+  submission_closes_at: '2026-04-22T00:00:00Z',
   status: 'CLOSED',
   metadata: {
     legacy_bm: true,
@@ -118,8 +157,10 @@ export const sqEventActive = {
   id: 'eeeeeeee-5555-5555-5555-555555555555',
   type: 'SQUADRON',
   name: 'Squadron Event 2026-W38',
-  start_date: '2026-09-17T00:00:00Z',
-  end_date: '2026-09-20T23:59:59Z',
+  start_date: SQ_START,
+  end_date: SQ_END,
+  submission_opens_at: SQ_START,
+  submission_closes_at: SQ_SUB_CLOSE,
   status: 'OPEN',
   metadata: {
     target_members: 27,
