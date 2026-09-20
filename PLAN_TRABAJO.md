@@ -422,6 +422,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-006** | Timezone en docs: "Intl dinámico" → UTC-3 fijo (`PY_OFFSET_HOURS = 3`) | 2026-09-20 | `dd5d17d` |
 | **FIX-021** | Timezone oficial (UTC-3 fijo) propagado a CURRENT_STATE, ARCHITECTURE, ADR-007 | 2026-09-20 | `dd5d17d` |
 | **FIX-022** | Duración SQ: evento 4d vs ventana 7d diferenciadas en docs | 2026-09-20 | `dd5d17d` |
+| **FIX-007** | `API_REFERENCE.md` endpoints submission-window (ADR-008) documentados | 2026-09-20 | `f734dd4` |
 
 ---
 
