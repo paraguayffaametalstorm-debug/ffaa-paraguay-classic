@@ -1,4 +1,4 @@
-�<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -34,7 +34,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- �S& Estilos modulares con cache-busting -->
+  <!-- ✅ Estilos modulares con cache-busting -->
   <link rel="stylesheet" href="/css/global.css?v=3.4.0">
   <link rel="stylesheet" href="/css/components.css?v=3.4.0">
   <link rel="stylesheet" href="/css/views.css?v=3.4.0">
@@ -51,7 +51,7 @@
   
   <!-- Main Content -->
   <div id="mainContent">
-    <!-- �S& Login Modal - OCULTO POR DEFECTO -->
+    <!-- ✅ Login Modal - OCULTO POR DEFECTO -->
     <div id="loginModal" class="modal">
       <div class="modal-content login-modal tactical-corners">
         <div class="modal-header" style="border-bottom:1px solid var(--border-tactical);padding-bottom:1rem;">
@@ -78,11 +78,11 @@
 
           <label style="font-size:0.8rem;color:var(--steel-gray);font-family:var(--font-tactical);text-transform:uppercase;letter-spacing:0.5px;">Clave Cifrada de Acceso</label>
           <div class="password-container" style="position:relative;margin-bottom:1.25rem;">
-            <input type="password" id="loginPassword" placeholder="⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢⬢" required
+            <input type="password" id="loginPassword" placeholder="••••••••••••" required
                    autocomplete="current-password"
                    onkeypress="if(event.key==='Enter') login()"
                    style="background:rgba(17,24,39,0.85);border:1px solid var(--border-tactical);color:#fff;padding:0.75rem 2.5rem 0.75rem 0.85rem;border-radius:4px;width:100%;font-family:var(--font-mono);font-size:0.9rem;">
-            <span class="toggle-password" onclick="togglePasswordVisibility('loginPassword')" role="button" tabindex="0" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--steel-gray);">�x�️</span>
+            <span class="toggle-password" onclick="togglePasswordVisibility('loginPassword')" role="button" tabindex="0" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--steel-gray);">👁️</span>
           </div>
 
           <button onclick="login()" class="btn-primary" style="width:100%;padding:0.85rem;font-size:1rem;display:flex;align-items:center;justify-content:center;gap:8px;">
@@ -90,7 +90,7 @@
           </button>
           
           <div class="auth-divider">
-            <span>O CONTIN�aA CON</span>
+            <span>O CONTINÚA CON</span>
           </div>
 
           <button type="button" id="googleLoginBtn" class="btn-google" onclick="loginWithGoogle()">
@@ -124,7 +124,7 @@
   <!-- Toast Container -->
   <div id="toastContainer"></div>
   
-  <!-- �S& VARIABLES GLOBALES -->
+  <!-- ✅ VARIABLES GLOBALES -->
   <script>
     const API_BASE = '';
     let currentUser    = null;
@@ -132,9 +132,9 @@
     let sessionTimeout = null;
   </script>
   
-  <!-- �S& Component Loader - Carga dinámica de componentes HTML -->
+  <!-- ✅ Component Loader - Carga dinámica de componentes HTML -->
   <script>
-    // ���� Lista de componentes dinámicos (slice(6) en adelante se cargan como vistas) ����
+    // ── Lista de componentes dinámicos (slice(6) en adelante se cargan como vistas) ──
     const COMPONENTS = [
       'header', 'footer', 'help-modal', 'session-warning',
       'forgot-password-modal', 'change-password-modal',
@@ -176,8 +176,8 @@
               return r.text();
             })
             .catch(err => {
-              console.error(`�R Error cargando vista: ${view}`, err);
-              return `<div id="${view.replace('-view','').replace('-panel','').replace('-form','')}View" class="view" style="display:none;"><p style="color:#dc3545;text-align:center;padding:2rem;">�a�️ Error cargando vista: ${view}</p></div>`;
+              console.error(`❌ Error cargando vista: ${view}`, err);
+              return `<div id="${view.replace('-view','').replace('-panel','').replace('-form','')}View" class="view" style="display:none;"><p style="color:#dc3545;text-align:center;padding:2rem;">⚠️ Error cargando vista: ${view}</p></div>`;
             })
         )
       ).then(views => views.join('\n'))
@@ -188,27 +188,27 @@
       document.getElementById('modalsContainer').innerHTML  = modals;
       document.getElementById('viewsContainer').innerHTML   = views;
 
-      console.log('�S& Componentes cargados correctamente');
-      console.log('�x� Vistas disponibles:', COMPONENTS.slice(5).join(', '));
+      console.log('✅ Componentes cargados correctamente');
+      console.log('📦 Vistas disponibles:', COMPONENTS.slice(5).join(', '));
 
       if (typeof initApp === 'function') {
-        console.log('�xa� Ejecutando initApp()...');
+        console.log('🚀 Ejecutando initApp()...');
         initApp();
       } else {
-        console.warn('�a�️ initApp() no disponible aún - esperando scripts');
+        console.warn('⚠️ initApp() no disponible aún - esperando scripts');
         setTimeout(() => {
           if (typeof checkAuthStatus === 'function') checkAuthStatus();
         }, 500);
       }
     }).catch(err => {
-      console.error('�R Error crítico cargando componentes:', err);
+      console.error('❌ Error crítico cargando componentes:', err);
       const container = document.getElementById('viewsContainer');
       if (container) {
         container.innerHTML = `
           <div style="text-align:center;padding:3rem;color:#fff;">
-            <h2 style="color:#dc3545;">�a�️ Error de carga</h2>
+            <h2 style="color:#dc3545;">⚠️ Error de carga</h2>
             <p>No se pudieron cargar los componentes de la interfaz.</p>
-            <button onclick="location.reload()" class="btn-primary" style="margin-top:1rem;">�x Recargar página</button>
+            <button onclick="location.reload()" class="btn-primary" style="margin-top:1rem;">🔄 Recargar página</button>
           </div>
         `;
       }
@@ -216,7 +216,7 @@
   </script>
   
   <!-- ============================================================
-       �S& SCRIPTS EN ORDEN CRÍTICO DE DEPENDENCIAS
+       ✅ SCRIPTS EN ORDEN CRÍTICO DE DEPENDENCIAS
        ============================================================ -->
   
   <!-- 1. Librerías externas (no dependen de nada) -->
@@ -235,8 +235,8 @@
   
   <!-- 5. BLACK MARKET (v3.7.0 - Módulo de eventos, misiones y descuentos) -->
   <script src="/js/bm.js?v=4.2.5"></script>
-  
-  <!-- 5.5 ADMIN EVENTS (F4.3 � Panel unificado de eventos) -->
+
+  <!-- 5.5 ADMIN EVENTS (F4.3 — Panel unificado de eventos) -->
   <script src="/js/admin-events.js?v=4.2.5"></script>
   
   <!-- 6. PERFORMANCE (contiene loadAdminPilotList, initPerformanceForm, savePerformance) -->
@@ -255,7 +255,7 @@
   <!-- 9. Tour (último) -->
   <script src="/js/tour.js?v=4.2.5"></script>
 
-  <!-- �S& Service Worker � PWA + auto-actualización -->
+  <!-- ✅ Service Worker — PWA + auto-actualización -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -286,7 +286,7 @@
         toast.className = 'toast info';
         toast.style.cssText = 'display:flex;align-items:center;gap:10px;min-width:280px;';
         toast.innerHTML = `
-          <span>�x Nueva versión disponible</span>
+          <span>🔄 Nueva versión disponible</span>
           <button onclick="applyUpdate()" style="
             background:var(--accent,#4a90e2);border:none;color:#fff;
             padding:4px 12px;border-radius:6px;cursor:pointer;font-size:0.85rem;
@@ -307,29 +307,29 @@
     }
   </script>
 
-  <!-- �S& Mobile Side Drawer Overlay -->
+  <!-- ✅ Mobile Side Drawer Overlay -->
   <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()" aria-hidden="true"></div>
 
-  <!-- �S& Mobile Side Drawer (Táctico Militar) -->
+  <!-- ✅ Mobile Side Drawer (Táctico Militar) -->
   <aside id="mobileSideDrawer" class="mobile-side-drawer" aria-label="Menú Lateral Táctico" aria-hidden="true">
     <div class="drawer-header">
       <div class="drawer-user-card" onclick="showView('profileView'); closeMobileDrawer();">
         <div class="drawer-avatar">
           <img src="/logo-escuadron.png" alt="Escuadrón" class="drawer-avatar-img" />
-          <span class="drawer-avatar-badge" id="drawerRoleInsignia">�x!��x!�</span>
+          <span class="drawer-avatar-badge" id="drawerRoleInsignia">🇵🇾</span>
         </div>
         <div class="drawer-user-meta">
           <div class="drawer-callsign" id="drawerUserName">Piloto Militar</div>
           <div class="drawer-role-tag" id="drawerUserRole"><span class="role-badge role-miembro">MIEMBRO</span></div>
         </div>
       </div>
-      <button class="drawer-close-btn" onclick="closeMobileDrawer()" aria-label="Cerrar menú">�S"</button>
+      <button class="drawer-close-btn" onclick="closeMobileDrawer()" aria-label="Cerrar menú">✕</button>
     </div>
 
     <div class="drawer-quick-stats">
       <div class="drawer-stat-item">
         <span class="d-stat-label">Pilotos Activos</span>
-        <span class="d-stat-val" id="drawerOnlineCount">�xx� �</span>
+        <span class="d-stat-val" id="drawerOnlineCount">🟢 —</span>
       </div>
       <div class="drawer-stat-item">
         <span class="d-stat-label">Estado</span>
@@ -362,7 +362,7 @@
         </button>
       </div>
 
-      <div class="drawer-section-title">INFORMACI�N & DOCTRINA</div>
+      <div class="drawer-section-title">INFORMACIÓN & DOCTRINA</div>
       <div class="drawer-nav-list">
         <button class="drawer-nav-btn" onclick="showView('normativasView'); closeMobileDrawer();" data-view="normativasView">
           <i data-lucide="book-open" class="drawer-nav-icon"></i>
@@ -432,7 +432,7 @@
     </div>
   </aside>
 
-  <!-- �S& Mobile Bottom Navigation Bar -->
+  <!-- ✅ Mobile Bottom Navigation Bar -->
   <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Navegación Móvil Principal">
     <button class="mobile-nav-item active" onclick="showView('appView')" data-view="appView" aria-label="Inicio">
       <i data-lucide="layout-dashboard" class="mobile-nav-icon"></i>
