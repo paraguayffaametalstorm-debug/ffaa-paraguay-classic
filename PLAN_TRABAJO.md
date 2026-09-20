@@ -208,6 +208,7 @@ Para cada ítem:
 - [ ] **FIX-206** — _(pendiente confirmación FIX-106)_
 - [ ] **FIX-207** — _(pendiente confirmación FIX-107)_
 - [ ] **FIX-208** — _(pendiente confirmación FIX-108)_
+- [ ] **FIX-209** — **Presence en memoria no escala** (ADR-005). El router usa un `Set` local que no se comparte entre las 2 réplicas de Fly.io y se pierde en redeploys. Requiere migrar a tabla `presence` en Supabase.
 
 ### Criterio de cierre del Sprint 2
 
@@ -415,6 +416,8 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-003** | `README.md` eliminar `bm.controller.js` del árbol + agregar v2 | 2026-09-20 | `e10c204` |
 | **FIX-008** | `API_REFERENCE.md` banner ELIMINADO en sección legacy `/api/bm/*` | 2026-09-20 | `e10c204` |
 | **FIX-010** | `ARCHITECTURE.md` reformular estado endpoints legacy | 2026-09-20 | `e10c204` |
+| **FIX-012** | `docs/adr/README.md` ADR-008 marcado como Accepted | 2026-09-20 | `TBD` |
+| **FIX-013** | 5 ADRs creados (001-005) en formato MADR 4.0 + TEMPLATE | 2026-09-20 | `TBD` |
 
 ---
 
@@ -438,7 +441,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 
 | Métrica | Actual | Sprint 0 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 |
 |---|---|---|---|---|---|---|
-| Docs alineados con versión real | 9/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
+| Docs alineados con versión real | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
 | Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
 | Fixes cerrados | 0 | 25 | 25 | 33+ | 42+ | 49+ |
 | Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
