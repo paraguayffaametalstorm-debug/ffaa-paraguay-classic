@@ -1,6 +1,6 @@
 # ADR-008: Ventanas de Carga Desacopladas del Ciclo de Evento
 
-> **Estado:** ✅ Accepted (validado por OWNER el 2026-09-20)
+> **Estado:** ✅ Accepted (validado por OWNER el 2026-09-20 · **implementado**)
 > **Fecha:** 2026-09-20
 > **Autor:** Comando C4ISR
 > **Supersede parcialmente:** Reglas de ventana de carga del ADR-007
@@ -298,17 +298,17 @@ Actualizar el widget de evento activo para mostrar:
 
 ## 7. Criterios de cierre
 
-- [ ] Columnas `submission_opens_at` y `submission_closes_at` en `events_master`.
-- [ ] Scheduler calcula las ventanas correctamente (SQ: +7d, BM: +6d).
-- [ ] Helper `submissionWindow.js` con 2 funciones puras.
-- [ ] Endpoints de carga validan la ventana.
-- [ ] Purchase de BM NO valida la ventana (§2.4).
-- [ ] Nuevos endpoints `GET /:id/submission-window` operativos.
-- [ ] Widget de evento activo muestra el estado de la ventana.
-- [ ] 40 eventos históricos backfilleados con ventanas.
-- [ ] Tests: 128+ passing (los existentes + nuevos).
-- [ ] Deploy a producción sin downtime.
-- [ ] Documentación actualizada (CHANGELOG, API_REFERENCE, CURRENT_STATE).
+- [x] Columnas `submission_opens_at` y `submission_closes_at` en `events_master`.
+- [x] Scheduler calcula las ventanas correctamente (SQ: +7d, BM: +6d).
+- [x] Helper `submissionWindow.js` con 2 funciones puras.
+- [x] Endpoints de carga validan la ventana.
+- [x] Purchase de BM NO valida la ventana (§2.4).
+- [x] Nuevos endpoints `GET /:id/submission-window` operativos.
+- [x] Widget de evento activo muestra el estado de la ventana.
+- [x] 40 eventos históricos backfilleados con ventanas.
+- [x] Tests: 167/167 passing (39 nuevos ADR-008 + 128 preexistentes).
+- [ ] Deploy a producción sin downtime. ← *pendiente 5.7.2*
+- [x] Documentación actualizada (CHANGELOG, API_REFERENCE, CURRENT_STATE).
 
 ---
 

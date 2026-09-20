@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-20  
-> **Versión Activa:** v4.1.0 (Rediseño de Eventos v2 completado)  
+> **Versión Activa:** v4.3.0 (ADR-008: ventanas de carga desacopladas)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -53,6 +53,32 @@ Tras el rediseño F4.1-F4.4, los dos módulos históricos (Squadron Event + Blac
 - Cálculo del offset dinámico vía `Intl.DateTimeFormat`.
 - Duración SQ: **+4 días** (jueves a lunes).
 
+### Ventanas de carga desacopladas (ADR-008 — v4.3.0)
+
+**Columnas nuevas en `events_master`:**
+
+| Columna | Tipo | Semántica |
+|---|---|---|
+| `submission_opens_at` | TIMESTAMPTZ | Cuándo se puede empezar a cargar performance |
+| `submission_closes_at` | TIMESTAMPTZ | Deadline de carga (después → READ-ONLY) |
+
+**Reglas de negocio:**
+
+- **SQUADRON:** ventana de **7 días** (jue 09:00 PY → jue 08:59 PY).
+- **BLACK_MARKET:** ventana de **6 días** (mié 17:00 PY → mar 16:59 PY).
+- **Excepción:** el purchase de BM **NO** valida la ventana (BM es opcional).
+- **Al cerrar la ventana:** la participación queda en READ-ONLY automáticamente.
+- **SQ cerrado por BM:** la ventana del SQ sigue abierta hasta su deadline original.
+
+**Helper:** `src/utils/submissionWindow.js` con `validateSubmissionWindow()` y `getSubmissionWindowStatus()`.
+
+**Endpoints nuevos:**
+
+- `GET /api/events-v2/:id/submission-window` — info de ventana SQ.
+- `GET /api/events-v2/bm/:eventId/submission-window` — info de ventana BM.
+
+**Frontend:** wrappers `apiEventsV2SubmissionWindow()` + `apiEventsV2BmSubmissionWindow()` en `js/api.js`.
+
 ### Widget evento activo timezone-aware (BL-020)
 
 - Frontend usa `undefined` en `toLocaleDateString` (locale del navegador).
@@ -66,7 +92,8 @@ Tras el rediseño F4.1-F4.4, los dos módulos históricos (Squadron Event + Blac
 - `POST /api/events-v2` — crear evento (SQ o BM).
 - `PATCH /api/events-v2/:id/status` — switch funcional.
 - `POST /api/events-v2/:id/participations` — cargar participación.
-
+- `GET /api/events-v2/:id/submission-window` — info de ventana de carga (SQ).
+- `GET /api/events-v2/bm/:eventId/submission-window` — info de ventana de carga (BM).
 ### Backend BM legacy eliminado
 
 - `src/controllers/bm.controller.js` (1577 líneas) → **ELIMINADO**.
@@ -81,8 +108,8 @@ Tras el rediseño F4.1-F4.4, los dos módulos históricos (Squadron Event + Blac
 
 ### Tests
 
-- **93/93 tests pasando** (Vitest 5.0.1, 10 test files).
-- Cobertura: schemas BM, controladores events-v2-bm, cálculo de puntos BM.
+- **167/167 tests pasando** (Vitest 5.0.1, 13 test files).
+- Cobertura: schemas BM, controladores events-v2-bm, cálculo de puntos BM, scheduler SQ timezone (HALL-065), helper submissionWindow (ADR-008).
 
 ---
 
@@ -243,6 +270,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Seguridad Secundaria (Fase 4)** | ✅ Funcional | `/register` protegido, 7 endpoints con auth, backups persistentes con sanitización PII |
 | **Vinculación Google OAuth (HALL-059/HALL-060)** | ✅ Estable | Flujo end-to-end funcional. `API_BASE` definido inline en `link-account.html`; `google_id` eliminado del `.select()` en `linkAccount`. |
 | **Eventos v2 Unificados (F4.1-F4.4)** | ✅ Funcional | `events_master` + `event_participations`, switch funcional, 93 tests, backend BM legacy eliminado. |
+| **Ventanas de Carga (ADR-008)** | ✅ Funcional | `submission_opens_at/closes_at` desacoplados. SQ 7d / BM 6d. 39 tests. |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 
