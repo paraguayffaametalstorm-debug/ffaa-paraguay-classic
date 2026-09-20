@@ -419,9 +419,9 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-010** | `ARCHITECTURE.md` reformular estado endpoints legacy | 2026-09-20 | `e10c204` |
 | **FIX-012** | `docs/adr/README.md` ADR-008 marcado como Accepted | 2026-09-20 | `079889f` |
 | **FIX-013** | 5 ADRs creados (001-005) en formato MADR 4.0 + TEMPLATE | 2026-09-20 | `079889f` |
-| **FIX-006** | Timezone en docs: "Intl dinámico" → UTC-3 fijo (`PY_OFFSET_HOURS = 3`) | 2026-09-20 | _(pendiente)_ |
-| **FIX-021** | Timezone oficial (UTC-3 fijo) propagado a CURRENT_STATE, ARCHITECTURE, ADR-007 | 2026-09-20 | _(pendiente)_ |
-| **FIX-022** | Duración SQ: evento 4d vs ventana 7d diferenciadas en docs | 2026-09-20 | _(pendiente)_ |
+| **FIX-006** | Timezone en docs: "Intl dinámico" → UTC-3 fijo (`PY_OFFSET_HOURS = 3`) | 2026-09-20 | `dd5d17d` |
+| **FIX-021** | Timezone oficial (UTC-3 fijo) propagado a CURRENT_STATE, ARCHITECTURE, ADR-007 | 2026-09-20 | `dd5d17d` |
+| **FIX-022** | Duración SQ: evento 4d vs ventana 7d diferenciadas en docs | 2026-09-20 | `dd5d17d` |
 
 ---
 
