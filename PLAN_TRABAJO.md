@@ -40,12 +40,16 @@ Este documento **SÍ es la fuente única de verdad** para:
 
 | Campo | Valor |
 |---|---|
-| **Versión real** | v4.3.0 (según `CHANGELOG.md`) |
-| **Commit HEAD** | `0d04571` (Sprint 0 Grupo A) |
+| **Versión real** | v4.3.0 runtime · v4.3.1-docs (documentación, Sprint 0) |
+| **Commit HEAD** | `26e3bf4` (Sprint 0 Grupo D) |
 | **Deploy producción** | ✅ Activo en Fly.io (`gru`) |
-| **Timezone scheduler** | UTC-3 hardcodeado (`PY_OFFSET_HOURS = 3`) |
+| **Timezone scheduler** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`, Paraguay sin DST desde oct-2024) |
+| **Duración evento SQ** | 4 días (jue 09:00 PY → lun 08:59 PY) |
+| **Duración ventana SQ** | 7 días (ADR-008) |
+| **Duración evento BM** | 5 días (mié → dom) |
+| **Duración ventana BM** | 6 días (ADR-008) |
 | **Tests** | 167/167 passing (Vitest 5.0.1) |
-| **ADR cerrados** | ADR-006, ADR-007, ADR-008 |
+| **ADR cerrados** | ADR-001 a ADR-005 (Sprint 0 Grupo D) + ADR-006, ADR-007, ADR-008 |
 | **Pendientes heredados** | F4.5 (DROP tablas BM legacy), verificar W39, ticket Supabase tzdata |
 
 > ⚠️ **Si algún valor de esta tabla no coincide con la realidad, actualizalo ANTES de seguir.**
@@ -93,7 +97,6 @@ Tenemos **4 versiones distintas** declaradas como "la actual" en distintos docum
 | **FIX-003** | ALTA | `README.md` | Lista `bm.controller.js` que fue eliminado | XS |
 | **FIX-004** | ALTA | `README.md` | Cuota ADMIN dice 3, es 5 | XS |
 | **FIX-005** | ALTA | `CURRENT_STATE.md` | Resumen ejecutivo dice v4.0.2, header dice v4.3.0 | XS |
-| **FIX-006** | ALTA | `CURRENT_STATE.md` + `ARCHITECTURE.md` + `ADR-007` | Timezone: dicen "dinámico con Intl" pero es hardcodeado UTC-3 | S |
 | **FIX-007** | ALTA | `API_REFERENCE.md` | Falta endpoints `submission-window` (ADR-008) | S |
 | **FIX-008** | ALTA | `API_REFERENCE.md` | Sección completa BM legacy (`/api/bm/*`) que ya no existe | M |
 | **FIX-009** | ALTA | `API_REFERENCE.md` | Cuota ADMIN dice 3, es 5 | XS |
@@ -108,8 +111,6 @@ Tenemos **4 versiones distintas** declaradas como "la actual" en distintos docum
 | **FIX-018** | MEDIA | `CONTEXTO_PROYECTO.md` | Cuota ADMIN dice 3, es 5. Versión v4.0.2 → v4.3.0 | S |
 | **FIX-019** | MEDIA | `BACKLOG.md` | Contador dice "7 completados", hay 8 | XS |
 | **FIX-020** | MEDIA | `BACKLOG.md` | Referencia `BL-059` no definido en tabla | XS |
-| **FIX-021** | MEDIA | Todos | Decidir timezone oficial y propagarlo | S |
-| **FIX-022** | MEDIA | Todos | Decidir duración SQ oficial (¿4 días exactos?) y propagarlo | S |
 | **FIX-023** | BAJA | `README.md` | Ancla `#resumen-ejecutivo` rota en CURRENT_STATE | XS |
 | **FIX-024** | BAJA | `README.md` | Lista `metadata.json` que probablemente sobra | XS |
 | **FIX-025** | BAJA | `DEPLOYMENT_STATE.md` | Confirmar si `sql/032_drop_bm_legacy_tables.sql` se ejecutó | XS |
@@ -418,6 +419,9 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-010** | `ARCHITECTURE.md` reformular estado endpoints legacy | 2026-09-20 | `e10c204` |
 | **FIX-012** | `docs/adr/README.md` ADR-008 marcado como Accepted | 2026-09-20 | `079889f` |
 | **FIX-013** | 5 ADRs creados (001-005) en formato MADR 4.0 + TEMPLATE | 2026-09-20 | `079889f` |
+| **FIX-006** | Timezone en docs: "Intl dinámico" → UTC-3 fijo (`PY_OFFSET_HOURS = 3`) | 2026-09-20 | _(pendiente)_ |
+| **FIX-021** | Timezone oficial (UTC-3 fijo) propagado a CURRENT_STATE, ARCHITECTURE, ADR-007 | 2026-09-20 | _(pendiente)_ |
+| **FIX-022** | Duración SQ: evento 4d vs ventana 7d diferenciadas en docs | 2026-09-20 | _(pendiente)_ |
 
 ---
 

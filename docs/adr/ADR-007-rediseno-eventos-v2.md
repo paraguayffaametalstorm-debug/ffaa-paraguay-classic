@@ -38,7 +38,7 @@ Migrar **AMBOS módulos** a una arquitectura unificada sobre dos tablas maestras
 
 ### 2.1 Tipos de evento soportados
 
-- `SQUADRON`: Evento semanal (jueves 09:00 PY - lunes 09:00 PY).
+- `SQUADRON`: Evento semanal (jueves 09:00 PY - lunes 08:59 PY). Duración del evento: **4 días**.
 - `BLACK_MARKET`: Evento especial de 5 días (miércoles - domingo).
 - `ACE_CHALLENGE`: Reservado para futuro (estructura documentada, no implementada).
 
@@ -46,13 +46,14 @@ Migrar **AMBOS módulos** a una arquitectura unificada sobre dos tablas maestras
 
 - Solo puede existir **1 evento OPEN** en todo el sistema (índice UNIQUE parcial `idx_events_master_single_open`).
 - Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
-- El scheduler auto-crea el próximo SQ el **jueves 00:00 UTC** (09:00 PY).
+- El scheduler auto-crea el próximo SQ el **jueves 12:00 UTC** (09:00 PY, UTC-3 fijo).
 
 ### 2.3 Scheduler timezone-aware
 
-- Paraguay usa **UTC-4 en verano** (oct-mar) y **UTC-3 en invierno** (abr-sep).
-- El scheduler calcula el offset dinámicamente vía `Intl.DateTimeFormat` con timezone `America/Asuncion`.
-- Duración SQ: **+4 días** (jueves - lunes).
+- Paraguay usa **UTC-3 fijo todo el año** desde octubre 2024 (DST abolido por Ley 7141/2024).
+- El scheduler usa la constante `PY_OFFSET_HOURS = 3` (UTC-3 fijo). No usa `Intl.DateTimeFormat`.
+- **Duración del evento SQ:** 4 días (jueves 09:00 PY → lunes 08:59 PY).
+- **Duración de la ventana de carga SQ:** 7 días (ADR-008). Evento y ventana son conceptos separados.
 
 ### 2.4 Widget evento activo timezone-aware
 
