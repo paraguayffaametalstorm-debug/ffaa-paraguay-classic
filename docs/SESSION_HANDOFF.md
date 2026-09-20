@@ -1,9 +1,9 @@
 # 🔄 SESSION HANDOFF — PARAGUAY-FFAA | METALSTORM
 
 > **Documento de traspaso entre sesiones de trabajo.**
-> **Actualizado:** 2026-09-20
-> **Última sesión completada:** F4.4 v4 (fix views timezone + W38 + BM cargados)
-> **Próximo paso:** Auditoría y normalización de la DB de Supabase (SQ históricos + gaps + BM)
+> **Actualizado:** 2026-09-20 (última actualización: cierre Sprint 0 Grupo F)
+> **Última sesión completada:** Sprint 0 — Grupo F (FIX-007: submission-window en API_REFERENCE.md)
+> **Próximo paso:** Sprint 0 — Grupo G (FIX-002, 016, 019, 020, 023, 024, 025)
 
 ---
 
@@ -22,26 +22,88 @@
 
 ---
 
-## 2. ESTADO ACTUAL
+## 🎯 SPRINT 0 — SINCRONIZACIÓN DOCUMENTAL (EN CURSO)
+
+**Objetivo:** alinear toda la documentación con la versión real (v4.3.0) y eliminar contradicciones internas.
+
+**Estado:**
+SPRINT 0 — Sincronización documental urgente
+├── ✅ Grupo A — Versiones (FIX-001, 005, 014, 015, 017, 026)
+├── ✅ Grupo B — Cuota ADMIN 3→5 (FIX-004, 009, 011, 018)
+├── ✅ Grupo C — BM legacy (FIX-003, 008, 010)
+├── ✅ Grupo D — ADRs (FIX-012, 013) + FIX-209 nuevo
+├── ✅ Grupo E — Timezone + duración SQ/BM (FIX-006, 021, 022)
+├── ✅ Grupo F — submission-window (FIX-007) ← CERRADO 2026-09-20
+└── ⏳ Grupo G — Ajustes menores (FIX-002, 016, 019, 020, 023, 024, 025) ← PRÓXIMO
+
+**6/7 grupos cerrados. Solo falta Grupo G.**
+
+### Grupo G — Ítems (7 fixes)
+
+| FIX | Sev | Documento | Problema | Esfuerzo |
+|---|---|---|---|---|
+| **FIX-002** | ALTA | `README.md` | Árbol lista solo 2 SQL, hay 34 | S |
+| **FIX-016** | MEDIA | `USER_MANUAL.md` | Versión v4.0.0 → v4.3.0 + falta sección ADR-008 | S |
+| **FIX-019** | MEDIA | `BACKLOG.md` | Contador dice "7 completados", hay 8 | XS |
+| **FIX-020** | MEDIA | `BACKLOG.md` | Referencia `BL-059` no definida en tabla | XS |
+| **FIX-023** | BAJA | `README.md` | Ancla `#resumen-ejecutivo` rota (CURRENT_STATE no tiene esa sección) | XS |
+| **FIX-024** | BAJA | `README.md` | Lista `metadata.json` que probablemente sobra (AI Studio legacy) | XS |
+| **FIX-025** | BAJA | `DEPLOYMENT_STATE.md` | Confirmar si `sql/032_drop_bm_legacy_tables.sql` se ejecutó | XS |
+
+### 🚨 Lección CRÍTICA del Grupo F — EOL mixto en docs
+
+**`API_REFERENCE.md` mezcla `\r\n` y `\n` (1161 CRLF + 325 LF).** El resto de los docs del repo probablemente igual.
+
+**Regla para el Grupo G:** scripts con **regex `\r?\n`** desde el primer intento, NO esperar a que falle.
+
+**Verificación previa obligatoria:**
+
+### Estrategia para el Grupo G
+
+- Un script `.cjs` por documento (`sprint-0-grupoG-readme.cjs`, `-manual.cjs`, `-backlog.cjs`, `-deployment.cjs`).
+- Verificación previa con `node -e` (no `findstr`, que rompe con pipe).
+- Un commit por documento + mini-commit final de TBD.
+- Scripts versionados en `scripts/`.
+
+### Registro de fixes del Sprint 0
+
+Ver `PLAN_TRABAJO.md` sección **8. ✅ COMPLETADOS** — contiene el hash real de cada fix (Grupos A-F).
+
+**Patrón de trabajo que funcionó (Grupos A-F):**
+1. Relevamiento con `node -e` + `JSON.stringify`.
+2. Script `.cjs` con regex `\r?\n`.
+3. `node --check` + ejecución.
+4. Verificación post con `findstr` simple o `node -e`.
+5. `git diff` → revisión → commit (sin commitear desde el script).
+6. Push + mini-commit TBD + versionar script.
+7. Limpieza opcional de backups (`del <archivo>.bak-*`).
+
+---
+
+## 2. ESTADO ACTUAL (post-Grupo F, 2026-09-20 ~23:30 UTC)
 
 | Aspecto | Valor |
 |---|---|
-| Commit HEAD | `bc01972` (fix views timezone) |
+| Commit HEAD | `3077dcb` (docs(sprint-0-grupoF): cerrar FIX-007 + versionar script .cjs) |
 | Branch | `main` |
 | Working tree | ✅ Limpio |
 | Push | ✅ Sincronizado con origin/main |
-| Deploy producción | ✅ `deployment-01M2ZJ5CETFMN3Y3E86DDMPYVG` |
-| Tests | ✅ 110/110 passed |
-| Service Worker | v4.1.0 |
+| Versión runtime | v4.3.0 (sin cambios desde F5) |
+| Versión docs | v4.3.1-docs (Sprint 0, no publicada) |
+| Deploy producción | ✅ Activo en Fly.io (`gru`) |
+| Tests | ✅ 167/167 passing (Vitest 5.0.1) |
+| Service Worker | v4.3.0 |
 | Offset PY en logs | ✅ UTC-3 |
+| ADRs cerrados | ADR-001 a ADR-005 + ADR-006, ADR-007, ADR-008 |
+
 
 **Últimos commits:**
 ```
-074fdc3 fix(hall-065): corregir timezone PY de UTC-4 a UTC-3 + tests
-a7af951 docs(f4.4): cerrar documentacion del rediseno de Eventos v2
-4ab67cd fix(ui): BL-020 widget y formulario de evento timezone-aware
-7f1ce93 fix(scheduler): HALL-065 corregir timezone PY y duracion del evento SQ
-b5d542b feat(f4.3): vistas adaptativas + UI evento activo
+3077dcb (HEAD) docs(sprint-0-grupoF): cerrar FIX-007 + versionar script .cjs
+f734dd4 docs(sprint-0-grupoF): documentar endpoints submission-window (FIX-007)
+fb8ff75 docs(sprint-0-grupoE): reemplazar TBD por dd5d17d + versionar scripts .cjs del Grupo E
+dd5d17d docs(sprint-0-grupoE): timezone UTC-3 fijo + duracion SQ evento 4d / ventana 7d (FIX-006/021/022)
+26e3bf4 docs(sprint-0-grupoD): reemplazar TBD por commit real 079889f en COMPLETADOS
 ```
 
 ---
