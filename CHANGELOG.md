@@ -90,12 +90,10 @@ Desacoplar la ventana de carga de performance del ciclo del evento. Antes, la ve
 - ✅ Backfill de 40 eventos históricos.
 - ✅ 167/167 tests.
 - ✅ Documentación actualizada.
-- ⏳ Deploy a producción (ver 5.7.2).
-- ⏳ Smoke test post-deploy (ver 5.7.3).
+- ✅ Deploy a producción (ver 5.7.2).
+- ✅ Smoke test post-deploy (ver 5.7.3).
 
-#### 🎯 Entregable
-
-Rama `main` con 8 commits de Fase 5. Backend + frontend 100%, docs actualizadas. Pendiente único: deploy + smoke test.
+Rama `main` con 8 commits de Fase 5. Backend + frontend 100%, docs actualizadas. Deploy y smoke test completados en producción.
 
 ---
 
