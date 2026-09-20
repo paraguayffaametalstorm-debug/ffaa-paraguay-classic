@@ -1,7 +1,7 @@
 # 📋 BACKLOG DE MEJORAS — PARAGUAY-FFAA | METALSTORM
 
 > **Documento vivo de propuestas, mejoras y deuda técnica.**
-> **Última actualización:** 2026-09-17
+> **Última actualización:** 2026-09-20
 > **Responsable:** Comando C4ISR
 
 ---
@@ -63,8 +63,6 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoria | Titulo | Estado | Esfuerzo | Notas |
 |---|---|---|---|---|---|
-| **HALL-065** | bug | Scheduler SQ: timezone y duracion incorrectos | Priorizado | M (4h) | Detectado en F4.3. El scheduler crea eventos con start_date a las 09:00 UTC (deberia ser 09:00 PY = 13:00 UTC) y end_date con +3 dias (deberia ser +4 dias: jueves a lunes). Impacto: eventos cierran 1 dia antes de lo esperado. Archivo: src/utils/eventScheduler.js. Fix F4.4: calcular en timezone PY + corregir duracion. |
-| **BL-020** | UX | Widget evento activo: display timezone-aware | Priorizado | S (2h) | Detectado en F4.3. El widget usa .toLocaleDateString('es-PY', ...) hardcodeado. Pilotos en otros paises ven fecha/hora incorrectas. Fix F4.4: usar undefined (locale del navegador) + referencia UTC. Archivo: js/views.js. |
 
 ### 🟠 Prioridad Media (Should Have)
 
@@ -127,6 +125,10 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **HALL-065** | 🐛 | Scheduler SQ: timezone PY + duración 4 días | 2026-09-20 (F4.3) | `7f1ce93` |
+| **BL-020** | 🎨 | Widget evento activo timezone-aware | 2026-09-20 (F4.3) | `4ab67cd` |
+| **BL-021** | ✨ | Vistas adaptativas + UI evento activo | 2026-09-20 (F4.3) | `b5d542b` |
+
 | **BL-000** | 🔐 | Proteger `/register` con auth + rate limiting | 2026-09-17 (Fase 4) | `20934e2` |
 | **HALL-059** | 🐛 | `ReferenceError: API_BASE is not defined` en `/link-account` | 2026-09-17 (Hotfix) | `71fbda2` |
 | **HALL-060** | 🐛 | `500` en `linkAccount` por columna `google_id` inexistente | 2026-09-18 (Hotfix) | `9678d98` |
@@ -138,8 +140,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 17 |
-| Items completados | 4 |
+| Items activos | 15 |
+| Items completados | 7 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |

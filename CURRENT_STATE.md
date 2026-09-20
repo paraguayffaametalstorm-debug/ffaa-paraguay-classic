@@ -1,8 +1,8 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-18  
-> **Versión Activa:** v4.0.5 (Hotfix HALL-059 + HALL-060 completado)  
+> **Fecha de Congelamiento:** 2026-09-20  
+> **Versión Activa:** v4.1.0 (Rediseño de Eventos v2 completado)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -19,6 +19,70 @@ Específicamente, en las versiones v3.9.9 y v4.0.0 se ha consolidado:
 4. **Sistema Táctico de Gestión de Pilotos Inactivos (v4.0.0):** Registro obligatorio de motivo al inactivar, trazabilidad de oficial y fecha, resolución batch de comandantes, mensaje enriquecido de bloqueo en autenticación y pestañas tácticas con modales dedicados en el panel de administración militar.
 
 5. **Seguridad Secundaria (v4.0.2 - Fase 4):** 8 hallazgos de severidad MEDIA resueltos: `/register` protegido con auth + rate limiting, 7 endpoints GET requieren autenticación (BM y plane-models), `/api/presence/active` protegido, y sistema de backups del OWNER persistido en Supabase con sanitización de PII (ofuscación de email/teléfono) e integridad por hash SHA-256.
+
+6. **Rediseño de Eventos v2 (v4.1.0 - F4.1 a F4.4):** Unificación completa de los dos módulos de eventos (Squadron Event + Black Market) sobre `events_master` + `event_participations`. Switch funcional (1 evento OPEN a la vez), scheduler timezone-aware (HALL-065), widget evento activo timezone-aware (BL-020), backend BM legacy eliminado (~1666 líneas), 93 tests automatizados.
+
+---
+
+## 🎯 Eventos v2 Unificados (v4.1.0)
+
+### Arquitectura
+
+Tras el rediseño F4.1-F4.4, los dos módulos históricos (Squadron Event + Black Market) fueron unificados sobre dos tablas maestras:
+
+| Tabla | Propósito |
+|---|---|
+| `events_master` | Eventos unificados (UUID, `type`, `status`, `metadata` JSONB) |
+| `event_participations` | Participaciones unificadas (UUID, `event_id`, `user_id`, `data` JSONB, `computed_points`, `status`) |
+
+### Tipos de evento soportados
+
+- **SQUADRON:** Evento semanal (jueves 09:00 PY - lunes 09:00 PY).
+- **BLACK_MARKET:** Evento especial de 5 días (miércoles - domingo).
+- **ACE_CHALLENGE:** Reservado para futuro (estructura documentada, no implementada).
+
+### Regla del switch (1 evento OPEN a la vez)
+
+- Solo puede existir **1 evento `OPEN`** en todo el sistema (índice UNIQUE parcial `idx_events_master_single_open`).
+- Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
+- El scheduler auto-crea el próximo SQ el **jueves 00:00 UTC** (09:00 PY).
+
+### Scheduler timezone-aware (HALL-065)
+
+- Timezone: `America/Asuncion` (UTC-4 en verano, UTC-3 en invierno).
+- Cálculo del offset dinámico vía `Intl.DateTimeFormat`.
+- Duración SQ: **+4 días** (jueves a lunes).
+
+### Widget evento activo timezone-aware (BL-020)
+
+- Frontend usa `undefined` en `toLocaleDateString` (locale del navegador).
+- Referencia UTC explícita para evitar ambigüedades.
+
+### Endpoints principales
+
+- `GET /api/events-v2` — lista con filtros (`type`, `status`, `limit`, `offset`).
+- `GET /api/events-v2/active` — único evento `OPEN`.
+- `GET /api/events-v2/:id` — detalle con participaciones.
+- `POST /api/events-v2` — crear evento (SQ o BM).
+- `PATCH /api/events-v2/:id/status` — switch funcional.
+- `POST /api/events-v2/:id/participations` — cargar participación.
+
+### Backend BM legacy eliminado
+
+- `src/controllers/bm.controller.js` (1577 líneas) → **ELIMINADO**.
+- `src/routes/bm.routes.js` (89 líneas) → **ELIMINADO**.
+- 18 endpoints `/api/bm/*` → **ELIMINADOS**.
+- Tablas `bm_events`, `bm_missions`, `bm_progress`, `bm_discounts` → **DROP pendiente** post-2026-09-26 (`sql/032_drop_bm_legacy_tables.sql`).
+
+### Deprecación legacy
+
+- `/api/events/*` (legacy SQ): sunset **2026-12-16**.
+- `/api/bm/*` (legacy BM): eliminado en F4.2.2-G.
+
+### Tests
+
+- **93/93 tests pasando** (Vitest 5.0.1, 10 test files).
+- Cobertura: schemas BM, controladores events-v2-bm, cálculo de puntos BM.
 
 ---
 
@@ -178,6 +242,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Jerarquía Reforzada (Fase 3)** | ✅ Funcional | `ROLE_LIMITS`, validación tipada, secuencia atómica |
 | **Seguridad Secundaria (Fase 4)** | ✅ Funcional | `/register` protegido, 7 endpoints con auth, backups persistentes con sanitización PII |
 | **Vinculación Google OAuth (HALL-059/HALL-060)** | ✅ Estable | Flujo end-to-end funcional. `API_BASE` definido inline en `link-account.html`; `google_id` eliminado del `.select()` en `linkAccount`. |
+| **Eventos v2 Unificados (F4.1-F4.4)** | ✅ Funcional | `events_master` + `event_participations`, switch funcional, 93 tests, backend BM legacy eliminado. |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 

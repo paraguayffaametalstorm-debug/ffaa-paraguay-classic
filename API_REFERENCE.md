@@ -516,8 +516,8 @@ Lista eventos con filtros opcionales.
       "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "type": "SQUADRON",
       "name": "Squadron Event 2026-W38",
-      "start_date": "2026-09-17T00:00:00Z",
-      "end_date": "2026-09-20T23:59:59Z",
+      "start_date": "2026-09-17T13:00:00Z",
+      "end_date": "2026-09-21T13:00:00Z",
       "status": "OPEN",
       "metadata": {
         "iso_week": 38,
@@ -536,7 +536,278 @@ Lista eventos con filtros opcionales.
 }
 ```
 
-> **Deuda técnica:** §3.5.2 (endpoints restantes), §3.5.3 (participaciones) y §3.5.4 (deprecación) pendientes. Ver `BL-018` en `BACKLOG.md`.
+#### `GET /api/events-v2/active`
+
+Devuelve el **único evento `OPEN`** del sistema (1 solo a la vez por diseño).
+
+**Response Exitosa (200 OK):**
+```json
+{
+  "success": true,
+  "active": true,
+  "event": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "type": "SQUADRON",
+    "name": "Squadron Event 2026-W38",
+    "start_date": "2026-09-17T13:00:00Z",
+    "end_date": "2026-09-21T13:00:00Z",
+    "status": "OPEN",
+    "metadata": { "...": "..." }
+  }
+}
+```
+
+**Sin evento activo (200 OK):**
+```json
+{
+  "success": true,
+  "active": false,
+  "event": null
+}
+```
+
+#### `GET /api/events-v2/:id`
+
+Detalle de un evento específico (SQ o BM) con sus participaciones.
+
+- **Acceso:** Autenticado (`requireAuth`).
+- **Errores:**
+  - `404 EVENT_NOT_FOUND`: el ID no existe.
+  - `400 INVALID_EVENT_ID`: el ID no es un UUID válido.
+
+#### `POST /api/events-v2`
+
+Crea un evento (SQ o BM).
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Validación:** Zod (`EventMasterSchema`).
+- **Request Body (SQ):**
+  ```json
+  {
+    "type": "SQUADRON",
+    "name": "Squadron Event 2026-W39",
+    "start_date": "2026-09-24T13:00:00Z",
+    "end_date": "2026-09-28T13:00:00Z",
+    "metadata": {
+      "iso_week": 39,
+      "iso_year": 2026,
+      "target_members": 27,
+      "target_tokens": 200,
+      "min_tokens_required": 175
+    }
+  }
+  ```
+- **Response Exitosa (201 Created):**
+  ```json
+  {
+    "success": true,
+    "event": { "...evento creado..." }
+  }
+  ```
+
+#### `PATCH /api/events-v2/:id/status`
+
+Cambia el estado de un evento (switch funcional).
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Request Body:**
+  ```json
+  {
+    "status": "OPEN",
+    "closed_reason": "BM_REPLACED"
+  }
+  ```
+- **Reglas del switch:**
+  - Al activar un evento como `OPEN`, cualquier otro evento `OPEN` se cierra automáticamente con `closed_reason = 'BM_REPLACED'` (si es BM) o `'MANUAL'` (si es cambio manual).
+  - Solo 1 evento `OPEN` a la vez (garantizado por índice UNIQUE parcial en BD).
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "event": { "...estado actualizado..." },
+    "replaced": {
+      "id": "b2c3d4e5-...",
+      "type": "SQUADRON",
+      "closed_reason": "BM_REPLACED"
+    }
+  }
+  ```
+
+#### `DELETE /api/events-v2/:id`
+
+Elimina un evento (solo si está en estado `SCHEDULED`).
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Errores:**
+  - `409 EVENT_NOT_DELETABLE`: el evento está `OPEN` o `CLOSED`.
+  - `404 EVENT_NOT_FOUND`.
+
+---
+
+### 3.5.3 Participaciones
+
+#### `GET /api/events-v2/:id/participations`
+
+Lista las participaciones del evento con `computed_points` y `status`.
+
+- **Acceso:** Autenticado.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "participations": [
+      {
+        "id": "uuid-participacion",
+        "event_id": "uuid-evento",
+        "user_id": 14,
+        "nick": "Viper_PY",
+        "role": "OWNER",
+        "data": {
+          "tokens": 185,
+          "days_connected": 6,
+          "flew_in_group": true,
+          "notes": "Patrulla CAP en sector norte"
+        },
+        "computed_points": 185,
+        "status": "ACTIVE",
+        "created_at": "2026-09-17T14:30:00Z",
+        "updated_at": "2026-09-17T14:30:00Z"
+      }
+    ],
+    "total": 1
+  }
+  ```
+
+#### `POST /api/events-v2/:id/participations`
+
+Carga una participación (tokens para SQ, misiones para BM).
+
+- **Acceso:** Autenticado.
+- **Reglas:**
+  - Solo en eventos `OPEN`.
+  - Un usuario puede tener máximo **1 participación activa** por evento.
+  - Los `computed_points` se calculan según tipo de evento (SQ: tokens; BM: fórmula 25 pts/misión + bonus diario).
+- **Request Body (SQ):**
+  ```json
+  {
+    "tokens": 185,
+    "days_connected": 6,
+    "flew_in_group": true,
+    "notes": "Patrulla CAP en sector norte con Su-57"
+  }
+  ```
+- **Request Body (BM):**
+  ```json
+  {
+    "day": 3,
+    "completed": true,
+    "screenshot_urls": ["https://..."]
+  }
+  ```
+- **Response Exitosa (201 Created):**
+  ```json
+  {
+    "success": true,
+    "participation": { "...participación..." },
+    "points_earned": 25
+  }
+  ```
+
+#### `PUT /api/events-v2/:id/participations/:userId`
+
+Edita una participación existente.
+
+- **Acceso:** Autenticado (solo el propio usuario o `ADMIN`/`OWNER`).
+- **Request Body:** igual que el POST pero con modo reemplazo total.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "participation": { "...participación actualizada..." }
+  }
+  ```
+
+#### `DELETE /api/events-v2/:id/participations/:userId`
+
+Elimina una participación.
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Participación eliminada"
+  }
+  ```
+
+---
+
+### 3.5.4 Deprecación de Endpoints Legacy
+
+> **⚠️ IMPORTANTE:** Los siguientes endpoints están **deprecados** desde el 2026-09-17 y serán **eliminados** el **2026-12-16** (sunset de 90 días).
+
+#### Endpoints Legacy SQ
+
+| Endpoint | Reemplazo |
+|---|---|
+| `GET /api/events` | `GET /api/events-v2?type=SQUADRON` |
+| `GET /api/events/open` | `GET /api/events-v2/active` |
+| `GET /api/events/active` | `GET /api/events-v2/active` |
+| `POST /api/events` | `POST /api/events-v2` |
+| `PUT /api/events/:id` | `PATCH /api/events-v2/:id/status` |
+
+#### Endpoints Legacy BM (ELIMINADOS en F4.2.2-G)
+
+| Endpoint | Reemplazo |
+|---|---|
+| `GET /api/bm/events` | `GET /api/events-v2?type=BLACK_MARKET` |
+| `GET /api/bm/events/active` | `GET /api/events-v2/bm/active` |
+| `POST /api/bm/events` | `POST /api/events-v2/bm` |
+| `GET /api/bm/missions/today` | `GET /api/events-v2/bm/:id` |
+| `POST /api/bm/missions/:id/complete` | `PUT /api/events-v2/bm/:eventId/progress` |
+| `GET /api/bm/progress` | `GET /api/events-v2/bm/:eventId/progress` |
+| `GET /api/bm/discount` | `GET /api/events-v2/bm/:eventId/discount` |
+| `POST /api/bm/discount/purchase` | (integrado en `apiEventsV2Bm*`) |
+| `GET /api/bm/stats` | `GET /api/events-v2/bm/:eventId` (metadata) |
+| `GET /api/bm/leaderboard` | `GET /api/events-v2/bm/:eventId/leaderboard` |
+
+#### Cabecera de Deprecación
+
+Durante el período de gracia, los endpoints legacy devuelven las siguientes cabeceras:
+
+```http
+Deprecation: true
+Sunset: Wed, 16 Dec 2026 00:00:00 GMT
+Link: </api/events-v2>; rel="successor-version"
+```
+
+#### Cronograma
+
+| Fecha | Acción |
+|---|---|
+| 2026-09-17 | Deprecación formal (F4.3) |
+| 2026-09-20 | Documentación publicada (F4.4) |
+| 2026-09-26 | DROP tablas BM legacy (`sql/032`) |
+| **2026-12-16** | **Eliminación definitiva de endpoints legacy SQ** |
+
+---
+
+#### Endpoints BM Específicos (Submódulo `/api/events-v2/bm`)
+
+Además de los endpoints unificados, existen 8 endpoints específicos para BM:
+
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `GET /api/events-v2/bm/active` | GET | Evento BM actualmente activo |
+| `GET /api/events-v2/bm/:eventId` | GET | Detalle del evento BM con misiones |
+| `POST /api/events-v2/bm` | POST | Crear evento BM |
+| `PUT /api/events-v2/bm/:eventId` | PUT | Editar evento BM |
+| `PUT /api/events-v2/bm/:eventId/progress` | PUT | Actualizar progreso del piloto |
+| `GET /api/events-v2/bm/:eventId/progress` | GET | Consultar progreso del piloto |
+| `GET /api/events-v2/bm/:eventId/discount` | GET | Cotización con descuento aplicado |
+| `GET /api/events-v2/bm/:eventId/leaderboard` | GET | Tabla de clasificación |
+
+> **Reglas de negocio BM:** ver ADR-007 §2 o `docs/adr/ADR-007-rediseno-eventos-v2.md`.
 
 ---
 
