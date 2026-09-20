@@ -113,6 +113,7 @@ Tenemos **4 versiones distintas** declaradas como "la actual" en distintos docum
 | **FIX-023** | BAJA | `README.md` | Ancla `#resumen-ejecutivo` rota en CURRENT_STATE | XS |
 | **FIX-024** | BAJA | `README.md` | Lista `metadata.json` que probablemente sobra | XS |
 | **FIX-025** | BAJA | `DEPLOYMENT_STATE.md` | Confirmar si `sql/032_drop_bm_legacy_tables.sql` se ejecutó | XS |
+| **FIX-026** | ALTA | `sw.js` | `CACHE_NAME` decía v4.2.5, debía ser v4.3.0 (hallazgo nuevo) | XS |
 
 ### Criterio de cierre del Sprint 0
 
@@ -401,7 +402,12 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 
 | ID | Descripción | Fecha | Commit |
 |---|---|---|---|
-| _(vacío al inicio)_ | | | |
+| **FIX-001** | `README.md` badge v4.0.5 → v4.3.0 | 2026-09-20 | `f32ed11` |
+| **FIX-005** | `CURRENT_STATE.md` resumen v4.0.2 → v4.3.0 | 2026-09-20 | `f32ed11` |
+| **FIX-014** | `DEPLOYMENT_STATE.md` v4.0.5 → v4.3.0 | 2026-09-20 | `f32ed11` |
+| **FIX-015** | `DEPLOYMENT_GUIDE.md` v4.0.5 → v4.3.0 + cache invalidation | 2026-09-20 | `f32ed11` |
+| **FIX-017** | `PWA_SETUP.md` v4.0.5 → v4.3.0 + CACHE_NAME real | 2026-09-20 | `f32ed11` |
+| **FIX-026** | `sw.js` CACHE_NAME v4.2.5 → v4.3.0 (hallazgo nuevo) | 2026-09-20 | `f32ed11` |
 
 ---
 
@@ -425,7 +431,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 
 | Métrica | Actual | Sprint 0 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 |
 |---|---|---|---|---|---|---|
-| Docs alineados con versión real | 4/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
+| Docs alineados con versión real | 6/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
 | Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
 | Fixes cerrados | 0 | 25 | 25 | 33+ | 42+ | 49+ |
 | Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
