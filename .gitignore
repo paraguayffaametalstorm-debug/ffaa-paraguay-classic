@@ -1,6 +1,41 @@
-.env 
-node_modules/ 
-package-lock.json 
-".env" 
-"cloudinary-abilities-urls.json" 
-cloudinary-abilities-urls.json 
+# ============================================================
+# PARAGUAY-FFAA | METALSTORM — .gitignore
+# Actualizado: 2026-09-20
+# ============================================================
+
+# ---------- Entorno y credenciales ----------
+.env
+.env.local
+.env.*.local
+
+# ---------- Dependencias ----------
+node_modules/
+package-lock.json
+
+# ---------- Cloudinary ----------
+cloudinary-abilities-urls.json
+
+# ---------- Backups generados por scripts ----------
+*.bak-*
+*.bak
+
+# ---------- Logs ----------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---------- Sistema operativo ----------
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---------- Editores ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ---------- Temporales ----------
+*.tmp
+*.temp
