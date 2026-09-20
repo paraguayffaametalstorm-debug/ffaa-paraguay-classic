@@ -6,6 +6,81 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.1.1] - 2026-09-20
+
+### 🚨 Hotfix — HALL-065 v2: Offset PY corregido (UTC-4 → UTC-3)
+
+#### Objetivo Cumplido
+
+Corregir el offset horario de Paraguay usado por el scheduler de eventos SQ. El sistema asumía UTC-4 cuando Paraguay abolió el DST en octubre 2024 y usa **UTC-3 permanente**. Esto causaba que los eventos SQ abrieran 1 hora más tarde de lo esperado (10:00 PY en vez de 09:00 PY).
+
+#### Descripción del Bug
+
+**Síntoma detectado:** el widget del dashboard mostraba eventos SQ con duración incorrecta y fechas que no coincidían con la regla de negocio (jueves 09:00 PY → lunes 08:59 PY).
+
+**Diagnóstico:**
+- El scheduler (`src/utils/eventScheduler.js`) tenía hardcodeado `PY_OFFSET_HOURS = 4`.
+- Paraguay abolio el DST en octubre 2024 y usa UTC-3 todo el ano desde entonces.
+- Los eventos creados **antes del fix** (W38 y anteriores) tenían `start_date = 09:00 UTC` (debería ser `12:00 UTC`).
+- Los eventos creados **después del fix** (W39+) tendrán las fechas correctas.
+
+#### Cambios Aplicados
+
+| Archivo | Cambio |
+|---|---|
+| `src/utils/eventScheduler.js` | `PY_OFFSET_HOURS`: `4` → `3`. Comentarios actualizados. Bloque `export` para tests. |
+| `tests/utils/eventScheduler.test.js` | NUEVO. 17 tests automatizados que validan constantes, ISO week/year, fechas W38/W39 2026 e invariantes. |
+
+#### Corrección de Datos Históricos
+
+**Evento W38 corregido en producción** vía SQL:
+
+```sql
+UPDATE events_master
+SET
+  start_date = '2026-09-17 12:00:00+00',
+  end_date = '2026-09-21 11:59:59+00',
+  ...
+WHERE name = 'Squadron Event 2026-W38';
+```
+
+**Verificación:** `start_date = 2026-09-17 12:00:00+00`, `end_date = 2026-09-21 11:59:59+00`, `duracion = 3 days 23:59:59`.
+
+#### Tests
+
+- ✅ **110/110 tests pasando** (93 previos + 17 nuevos).
+- ✅ `node --check src/utils/eventScheduler.js` sin errores.
+- ✅ Deploy a Fly.io exitoso (rolling, sin downtime).
+
+#### Hallazgo Adicional: tzdata de Supabase desactualizado
+
+Durante el diagnóstico se detectó que **Supabase tiene la timezone database desactualizada**:
+
+```sql
+SELECT NOW() AT TIME ZONE 'America/Asuncion';
+-- Devuelve 04:42-4h = 00:42 (UTC-4), pero debería ser 01:42 (UTC-3).
+```
+
+**Impacto:** solo afecta a queries SQL manuales con `AT TIME ZONE 'America/Asuncion'`. El sistema operativo (backend + frontend) usa UTC internamente y offsets hardcodeados correctos.
+
+**Acción recomendada:** abrir ticket con Supabase. **Workaround:** usar `AT TIME ZONE 'UTC' - INTERVAL '3 hours'` en queries manuales.
+
+#### ✅ Criterios de Cierre Cumplidos
+
+- ✅ Offset corregido: `PY_OFFSET_HOURS = 3`.
+- ✅ W38 corregido en BD con fechas consistentes.
+- ✅ 17 tests automatizados agregados.
+- ✅ 110/110 tests pasando.
+- ✅ Deploy sin downtime.
+- ✅ Log del scheduler muestra `UTC-3`.
+
+#### 🎯 Entregable
+
+Commit `074fdc3` mergeado a `main` y desplegado. Deploy: `deployment-01M2YHNVV30YCWSKBFA3RSM5R4`.
+
+---
+
+
 ## 📌 [4.1.0] - 2026-09-20
 
 ### 🎯 Rediseño de Eventos v2 — Unificación SQ + BM (F4.1 a F4.4)
