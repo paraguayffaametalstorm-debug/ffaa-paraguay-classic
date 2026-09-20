@@ -416,8 +416,8 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-003** | `README.md` eliminar `bm.controller.js` del árbol + agregar v2 | 2026-09-20 | `e10c204` |
 | **FIX-008** | `API_REFERENCE.md` banner ELIMINADO en sección legacy `/api/bm/*` | 2026-09-20 | `e10c204` |
 | **FIX-010** | `ARCHITECTURE.md` reformular estado endpoints legacy | 2026-09-20 | `e10c204` |
-| **FIX-012** | `docs/adr/README.md` ADR-008 marcado como Accepted | 2026-09-20 | `TBD` |
-| **FIX-013** | 5 ADRs creados (001-005) en formato MADR 4.0 + TEMPLATE | 2026-09-20 | `TBD` |
+| **FIX-012** | `docs/adr/README.md` ADR-008 marcado como Accepted | 2026-09-20 | `079889f` |
+| **FIX-013** | 5 ADRs creados (001-005) en formato MADR 4.0 + TEMPLATE | 2026-09-20 | `079889f` |
 
 ---
 
