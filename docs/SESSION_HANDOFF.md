@@ -2,8 +2,8 @@
 
 > **Documento de traspaso entre sesiones de trabajo.**
 > **Actualizado:** 2026-09-20
-> **Última sesión completada:** F4.4 Parte 3 (HALL-065 v2 + tests automatizados + W38 corregido)
-> **Próximo paso:** F4.5 (DROP tablas BM legacy post-2026-09-26)
+> **Última sesión completada:** F4.4 v4 (fix views timezone + W38 + BM cargados)
+> **Próximo paso:** Auditoría y normalización de la DB de Supabase (SQ históricos + gaps + BM)
 
 ---
 
@@ -26,11 +26,11 @@
 
 | Aspecto | Valor |
 |---|---|
-| Commit HEAD | `074fdc3` (fix HALL-065 v2 + tests) |
+| Commit HEAD | `bc01972` (fix views timezone) |
 | Branch | `main` |
-| Working tree | ⚠️ Con cambios sin commitear (mini-commit de docs pendiente) |
-| Push | ⚠️ Pendiente push del mini-commit |
-| Deploy producción | ✅ `deployment-01M2YHNVV30YCWSKBFA3RSM5R4` |
+| Working tree | ✅ Limpio |
+| Push | ✅ Sincronizado con origin/main |
+| Deploy producción | ✅ `deployment-01M2ZJ5CETFMN3Y3E86DDMPYVG` |
 | Tests | ✅ 110/110 passed |
 | Service Worker | v4.1.0 |
 | Offset PY en logs | ✅ UTC-3 |
@@ -341,3 +341,49 @@ fly logs -a paraguay-ffaa-metalstorm | findstr /I "Timezone"
 ---
 
 **PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-20 · Commit 074fdc3**
+
+
+---
+
+## 📝 TRABAJO COMPLETADO HOY (2026-09-20) — RESUMEN
+
+### Commits realizados
+
+| Commit | Descripción |
+|---|---|
+| `a7af951` | F4.4 docs (ADR-007 + CHANGELOG + CURRENT_STATE + API_REFERENCE + SESSION_HANDOFF + BACKLOG) |
+| `7f1ce93` | HALL-065 v1 (scheduler SQ timezone + duración) |
+| `074fdc3` | HALL-065 v2 (offset UTC-4 → UTC-3) + 17 tests automatizados |
+| `53f8277` | Docs F4.4 v2 (CHANGELOG [4.1.1] + BACKLOG + SESSION_HANDOFF) |
+| `93eb1c3` | Fix mojibake (index.html, sw.js, js/main.js) + scripts de diagnóstico |
+| `bc01972` | Fix views timezone (PY_OFFSET_MS 4→3 + descripciones ventana) |
+
+### Cambios en BD (SQL manual)
+
+| Item | Descripción |
+|---|---|
+| **W38** | start_date: 2026-09-17 09:00 UTC → 2026-09-17 12:00 UTC; end_date: 2026-09-20 08:59:59 → 2026-09-21 11:59:59 |
+| **BM KF-21** | Corregido: nombre, start_date (15-04 20:00 UTC), end_date (20-04 19:59:59 UTC), metadata completa |
+| **BM F-20** | Insertado: start_date (09-09 20:00 UTC), end_date (14-09 19:59:59 UTC), aircraft_id: 110 |
+
+### Pendientes para la próxima sesión
+
+1. **Auditar y normalizar los SQ históricos de 2026:**
+   - 35 eventos con 3 horarios diferentes (13:00 UTC, 09:00 UTC, 12:00 UTC).
+   - Todos deberían ser: **jueves 12:00 UTC → lunes 12:00 UTC** (4 días exactos).
+   - **Decisión de duración:** `4 days` exactos (12:00 → 12:00) vs `3d 23h 59m 59s` (12:00 → 11:59:59). **Pendiente definir** con criterio de negocio (los pilotos cargan tokens de 4 días).
+
+2. **Agregar gaps SQ:**
+   - SEM 8 (jueves 19-02-2026).
+   - SEM 16 (jueves 16-04-2026).
+   - SEM 37 (jueves 10-09-2026).
+
+3. **Investigar más BM históricos** (si existen).
+
+4. **Reportar a Supabase:** bug de tzdata desactualizado (`America/Asuncion` devuelve UTC-4).
+
+### Verificaciones pendientes
+
+- **Jueves 24-09-2026:** verificar que el scheduler cree W39 con las fechas correctas (`start_date = 2026-09-24 12:00:00+00`, `end_date = 2026-09-28 11:59:59+00`).
+- **Post-2026-09-26:** F4.5 — DROP tablas BM legacy.
+
