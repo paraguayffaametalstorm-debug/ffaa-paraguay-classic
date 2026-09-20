@@ -49,10 +49,9 @@ Tras el rediseño F4.1-F4.4, los dos módulos históricos (Squadron Event + Blac
 
 ### Scheduler timezone-aware (HALL-065)
 
-- Timezone: `America/Asuncion` (UTC-4 en verano, UTC-3 en invierno).
-- Cálculo del offset dinámico vía `Intl.DateTimeFormat`.
-- Duración SQ: **+4 días** (jueves a lunes).
-
+- Timezone: **UTC-3 fijo** todo el año (`PY_OFFSET_HOURS = 3`). Paraguay sin DST desde octubre 2024 (Ley 7141/2024).
+- Duración del **evento SQ**: 4 días (jue 09:00 PY → lun 08:59 PY).
+- Duración de la **ventana de carga SQ**: 7 días (ADR-008). Evento y ventana son conceptos separados.
 ### Ventanas de carga desacopladas (ADR-008 — v4.3.0)
 
 **Columnas nuevas en `events_master`:**

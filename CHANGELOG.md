@@ -6,6 +6,55 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.3.1-docs] - 2026-09-20
+
+### 📚 Sincronización Documental — Timezone + Duración SQ (Sprint 0 · Grupo E)
+
+> **Solo documentación. Cero cambios de código. Cero cambios de runtime.**
+> **El runtime sigue siendo v4.3.0.** El badge del README y `sw.js` no se modifican.
+
+#### Objetivo Cumplido
+
+Alinear la documentación con el código real del scheduler (`src/utils/eventScheduler.js`) tras el fix HALL-065 v2 (v4.1.1). Tres fixes del Sprint 0:
+
+- **FIX-006:** Documentos afirmaban "timezone dinámico con `Intl.DateTimeFormat`" cuando el código usa `PY_OFFSET_HOURS = 3` hardcodeado.
+- **FIX-021:** Decisión oficial de timezone y propagación a todos los documentos.
+- **FIX-022:** Decisión oficial de duración SQ (evento vs ventana de carga) y propagación.
+
+#### Decisiones del OWNER (2026-09-20)
+
+| Concepto | Valor oficial | Fundamento |
+|---|---|---|
+| **Timezone oficial** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`) | Paraguay sin DST desde octubre 2024 (Ley 7141/2024). Coincide con el código real. |
+| **Duración evento SQ** | 4 días (jue 09:00 PY → lun 08:59 PY) | Ciclo competitivo semanal. |
+| **Duración ventana de carga SQ** | 7 días (jue 09:00 PY → jue 08:59 PY) | ADR-008. Desacoplada del evento. |
+
+> **Nota clave:** "Evento SQ" y "ventana de carga SQ" son conceptos **distintos** (4d vs 7d). La documentación previa los mezclaba.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `CURRENT_STATE.md` | L52-53: reemplazado bloque "America/Asuncion dinámico Intl" por UTC-3 fijo + duraciones evento/ventana. |
+| `ARCHITECTURE.md` | Header v4.0.5 → v4.3.0; L154 "jueves 00:00 UTC" → "jueves 12:00 UTC"; §2.2c bloque timezone + duración; footer v4.3.0. |
+| `docs/adr/ADR-007-rediseno-eventos-v2.md` | §2.1 (duración evento), §2.2 (jue 12:00 UTC), §2.3 (UTC-3 fijo, sin Intl, evento 4d + ventana 7d). |
+| `PLAN_TRABAJO.md` | Sección 1 (commit HEAD, versión, duraciones, ADRs); FIX-006/021/022 movidos a Completados. |
+
+#### Archivos NO Modificados
+
+- `README.md` — badge sigue en v4.3.0.
+- `sw.js` — `CACHE_NAME` sigue en v4.3.0 (no hay assets cacheados nuevos).
+- `src/utils/eventScheduler.js` — código ya correcto.
+- `src/utils/submissionWindow.js` — código ya correcto.
+
+#### Verificación
+
+- ✅ Tests: 167/167 passing (sin cambios, Vitest 5.0.1).
+- ✅ Contradicciones sobre timezone eliminadas de docs.
+- ✅ Duración evento SQ (4d) y ventana SQ (7d) diferenciadas explícitamente.
+
+---
+
 ## 📌 [4.3.0] - 2026-09-20
 
 ### 🗓️ ADR-008 — Ventanas de Carga Desacopladas del Ciclo de Evento (F5.1 a F5.7)

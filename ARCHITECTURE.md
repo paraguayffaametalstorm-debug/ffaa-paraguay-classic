@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.0.5).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.3.0).**
 
 ---
 
@@ -151,7 +151,7 @@ A partir de la Fase 3 del rediseño (2026-09-17), el sistema cuenta con un módu
 **Regla del switch:**
 - Solo **1 evento `OPEN`** a la vez (índice UNIQUE parcial `idx_events_master_single_open`).
 - Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
-- El scheduler auto-crea el próximo SQ el jueves 00:00 UTC.
+- El scheduler auto-crea el próximo SQ el jueves 12:00 UTC (09:00 PY, UTC-3 fijo).
 
 **Deprecación de endpoints legacy:**
 - `/api/events/*` (5 endpoints) y `/api/bm/*` (15 endpoints) fueron **retirados** en v4.3.0 (F4.2.2-F). Sucesor: `/api/events-v2/*`. Sunset formal: **2026-12-16**.
@@ -169,6 +169,8 @@ Componente autónomo que garantiza la existencia de eventos SQ según el calenda
 - **Advisory Lock:** multi-réplica safe (RPC `acquire_scheduler_lock` / `release_scheduler_lock`).
 - **Idempotencia:** detecta eventos existentes por `legacy_event_id`.
 - **Backfill:** deshabilitado (decisión F2.9: no inventar datos).
+- **Timezone:** UTC-3 fijo (`PY_OFFSET_HOURS = 3`). Paraguay sin DST desde octubre 2024 (Ley 7141/2024).
+- **Duración:** evento SQ = 4 días (jue 09:00 PY → lun 08:59 PY); ventana de carga SQ = 7 días (ADR-008). Conceptos separados.
 
 **Flujo:**
 
@@ -789,6 +791,6 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
 
 ---
 
-*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
+*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
 
 
