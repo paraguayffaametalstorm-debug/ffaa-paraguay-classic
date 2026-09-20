@@ -104,6 +104,47 @@ function getSquadronEventDates(isoWeek, isoYear) {
   return { start: thursday, end: monday };
 }
 
+
+/**
+ * Calcula la ventana de carga (submission window) para un evento.
+ * Reglas (ADR-008):
+ *   - SQ: 7 días (Jue 09:00 PY → Jue 08:59 PY).
+ *   - BM: 6 días (Mié 17:00 PY → Mar 16:59 PY).
+ *
+ * @param {string|Date} startDate - Fecha de inicio del evento (ISO o Date).
+ * @param {string} eventType - 'SQUADRON' | 'BLACK_MARKET' | otros.
+ * @returns {{ submission_opens_at: string, submission_closes_at: string }}
+ */
+function calculateSubmissionWindow(startDate, eventType) {
+  const start = new Date(startDate);
+
+  if (eventType === 'SQUADRON') {
+    const closes = new Date(start);
+    closes.setUTCDate(closes.getUTCDate() + 7);
+    return {
+      submission_opens_at: start.toISOString(),
+      submission_closes_at: closes.toISOString()
+    };
+  }
+
+  if (eventType === 'BLACK_MARKET') {
+    const closes = new Date(start);
+    closes.setUTCDate(closes.getUTCDate() + 6);
+    return {
+      submission_opens_at: start.toISOString(),
+      submission_closes_at: closes.toISOString()
+    };
+  }
+
+  // Fallback: 7 días desde el inicio
+  const closes = new Date(start);
+  closes.setUTCDate(closes.getUTCDate() + 7);
+  return {
+    submission_opens_at: start.toISOString(),
+    submission_closes_at: closes.toISOString()
+  };
+}
+
 /**
  * Construye el nombre del evento SQ.
  * Formato: "Squadron Event YYYY-Www"
@@ -234,6 +275,8 @@ async function eventExists(supabase, isoWeek, isoYear) {
  */
 async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', backfilled = false) {
   const { start, end } = getSquadronEventDates(isoWeek, isoYear);
+  // ADR-008: calcular ventana de carga desacoplada del ciclo del evento
+  const submissionWindow = calculateSubmissionWindow(start, 'SQUADRON');
   const legacyId = buildLegacyEventId(isoWeek, isoYear, start);
   const name = buildEventName(isoWeek, isoYear);
 
@@ -244,6 +287,8 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', 
       name,
       start_date: start.toISOString(),
       end_date: end.toISOString(),
+      submission_opens_at: submissionWindow.submission_opens_at,
+      submission_closes_at: submissionWindow.submission_closes_at,
       status,
       metadata: {
         target_members: 27,
@@ -410,6 +455,7 @@ export {
   getISOWeek,
   getISOYear,
   getSquadronEventDates,
+  calculateSubmissionWindow,
   PY_OFFSET_HOURS,
   SQ_OPEN_HOUR_PY,
   SQ_CLOSE_HOUR_PY,
