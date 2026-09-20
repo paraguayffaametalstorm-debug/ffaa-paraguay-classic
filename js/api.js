@@ -1106,6 +1106,30 @@ async function apiEventsV2DeleteParticipation(eventId, userId) {
   );
 }
 
+// ─── VENTANAS DE CARGA (ADR-008) ─────────────────────────────
+
+/**
+ * Estado de la ventana de carga de un evento (SQ o BM).
+ * @param {string} eventId
+ * @returns {Promise<{success:boolean,event_id:string,event_type:string,
+ *   event_name:string,event_status:string,submission_opens_at:string|null,
+ *   submission_closes_at:string|null,status:'NOT_SET'|'NOT_OPEN'|'OPEN'|'CLOSED',
+ *   seconds_remaining:number,seconds_until_open:number,can_submit:boolean}>}
+ */
+async function apiEventsV2SubmissionWindow(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(eventId)}/submission-window`);
+}
+
+/**
+ * Ventana de carga específica de un evento BLACK_MARKET.
+ * @param {string} eventId
+ */
+async function apiEventsV2BmSubmissionWindow(eventId) {
+  if (!eventId) return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  return _eventsV2Fetch(`/api/events-v2/bm/${encodeURIComponent(eventId)}/submission-window`);
+}
+
 // ─── EXPOSICIÓN GLOBAL ──────────────────────────────────────
 
 window.apiEventsV2List                 = apiEventsV2List;
@@ -1226,6 +1250,8 @@ async function apiEventsV2BmPurchase(eventId) {
 window.apiEventsV2BmList           = apiEventsV2BmList;
 window.apiEventsV2BmActive         = apiEventsV2BmActive;
 window.apiEventsV2BmGetById        = apiEventsV2BmGetById;
+window.apiEventsV2SubmissionWindow   = apiEventsV2SubmissionWindow;
+window.apiEventsV2BmSubmissionWindow = apiEventsV2BmSubmissionWindow;
 window.apiEventsV2BmCreate         = apiEventsV2BmCreate;
 window.apiEventsV2BmUpdate         = apiEventsV2BmUpdate;
 window.apiEventsV2BmGetProgress    = apiEventsV2BmGetProgress;
