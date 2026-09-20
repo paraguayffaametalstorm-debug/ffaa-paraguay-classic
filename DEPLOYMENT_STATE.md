@@ -691,13 +691,27 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | `error_logs` | Diagnóstico | 3 | ✅ Documentada |
 | `normativas` | Institucional | 1 | ✅ Documentada |
 | `password_resets` | Seguridad | 0 | ✅ Documentada |
-| `bm_events` | Black Market | 0 | ✅ Documentada |
-| `bm_missions` | Black Market | 0 | ✅ Documentada |
-| `bm_progress` | Black Market | 0 | ✅ Documentada |
-| `bm_discounts` | Black Market | 0 | ✅ Documentada |
 | `plane_upgrades` | Hangar | 0 | ✅ Documentada |
 | `recovery_codes` | Seguridad | 0 | ✅ Documentada |
 | `user_settings` | Configuración | 0 | ✅ Documentada |
+
+#### 🗑️ Tablas Legacy — DROP Planificado
+
+Las siguientes tablas son **legacy** del módulo Black Market pre-rediseño (F4.x).
+Están **vacías (0 filas)** y su DROP está planificado para **post-2026-09-26**
+(7 días de gracia post-deploy F4.4 v4.3.0), según ADR-006.
+
+| Tabla | Origen | Filas | Estado |
+|---|---|---|---|
+| `bm_events` | Black Market legacy | 0 | 🗑️ DROP pendiente |
+| `bm_missions` | Black Market legacy | 0 | 🗑️ DROP pendiente |
+| `bm_progress` | Black Market legacy | 0 | 🗑️ DROP pendiente |
+| `bm_discounts` | Black Market legacy | 0 | 🗑️ DROP pendiente |
+
+> **Script de DROP:** `sql/032_drop_bm_legacy_tables.sql`
+> **Referencia:** ADR-006, fases F4.2.2-A a F4.2.2-G
+> **Rollback:** No aplica — las tablas pueden recrearse desde `sql/019-022_*.sql` (aunque su contenido está vacío).
+
 | `upgrade_effects_history` | Auditoría | 0 | ✅ Documentada |
 | **`backups`** | **Auditoría** | **0** | ✅ **Documentada (F4)** |
 
@@ -969,6 +983,14 @@ Registro extraído de la tabla `users` confirmando el ciclo de vida completo:
 - **Descripción:** En determinadas resoluciones o estados del modal de cambio forzado, los botones de acción inferior pueden no mostrarse visibles en el viewport.
 - **Solución Alternativa (Workaround Actual):** La funcionalidad es 100% operativa presionando la tecla **`ENTER`** dentro de cualquiera de los campos de contraseña del formulario.
 - **Fix Planificado:** Revisar los estilos en `components/change-password-modal.html` asegurando que el botón `btnChangePasswordSubmit` ("Actualizar Credencial") mantenga visibilidad sticky en dispositivos móviles y resoluciones compactas.
+
+### 🗑️ F4.5 — DROP tablas BM legacy
+
+- **Descripción:** Eliminar las 4 tablas legacy del Black Market (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`), ahora que el módulo BM opera 100% sobre `events_master` + `event_participations`.
+- **Script:** `sql/032_drop_bm_legacy_tables.sql`.
+- **Fecha:** post-2026-09-26 (7 días de gracia post-deploy F4.4).
+- **Estado:** ⏳ Pendiente.
+- **Referencia:** ADR-006, F4.2.2-G.
 
 ---
 
