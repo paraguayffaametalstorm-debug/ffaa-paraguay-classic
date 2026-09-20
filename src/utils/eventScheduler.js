@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * PARAGUAY-FFAA | METALSTORM
  * SCHEDULER DE EVENTOS — Auto-creación de Squadron Events
@@ -28,11 +28,14 @@ import { getSupabase } from '../db/supabase.js';
 // ============================================================
 
 /**
- * Paraguay es UTC-4 todo el año (sin DST desde 2024).
+ * Paraguay usa UTC-3 todo el año desde octubre 2024 (DST abolido por ley).
  * Regla de negocio: los eventos SQ abren jueves 09:00 PY y cierran lunes 08:59 PY.
- * En UTC: jueves 13:00 → lunes 12:59.
+ * En UTC: jueves 12:00 → lunes 11:59.
+ *
+ * ⚠️ HALL-065 fix v2 (2026-09-20): corregido offset UTC-4 → UTC-3.
+ * Ver ADR-007 §2.3 y SESSION_HANDOFF.
  */
-const PY_OFFSET_HOURS = 4;
+const PY_OFFSET_HOURS = 3;
 
 /** Hora PY de apertura del evento (09:00 PY). */
 const SQ_OPEN_HOUR_PY = 9;
@@ -73,8 +76,8 @@ function getISOYear(date) {
  * Devuelve las fechas de inicio y fin del evento SQ para una semana ISO.
  *
  * Regla de negocio (F4.4 / HALL-065):
- *   - Apertura: Jueves 09:00 PY  →  Jueves 13:00 UTC
- *   - Cierre:   Lunes 08:59 PY   →  Lunes 12:59 UTC
+ *   - Apertura: Jueves 09:00 PY  →  Jueves 12:00 UTC
+ *   - Cierre:   Lunes 08:59 PY   →  Lunes 11:59 UTC
  *   - Duración: 4 días exactos (jueves a lunes)
  *
  * @param {number} isoWeek
@@ -88,12 +91,12 @@ function getSquadronEventDates(isoWeek, isoYear) {
   const firstThursday = new Date(jan4);
   firstThursday.setUTCDate(jan4.getUTCDate() - dayOfWeek + 4);
 
-  // Jueves 09:00 PY = 13:00 UTC
+  // Jueves 09:00 PY = 12:00 UTC (UTC-3)
   const thursday = new Date(firstThursday);
   thursday.setUTCDate(firstThursday.getUTCDate() + (isoWeek - 1) * 7);
   thursday.setUTCHours(SQ_OPEN_HOUR_PY + PY_OFFSET_HOURS, 0, 0, 0);
 
-  // Lunes 08:59 PY = 12:59 UTC (+4 días desde el jueves)
+  // Lunes 08:59 PY = 11:59 UTC (+4 días desde el jueves)
   const monday = new Date(thursday);
   monday.setUTCDate(thursday.getUTCDate() + 4);
   monday.setUTCHours(SQ_CLOSE_HOUR_PY + PY_OFFSET_HOURS, SQ_CLOSE_MINUTE_PY, 59, 0);
@@ -115,7 +118,7 @@ function buildEventName(isoWeek, isoYear) {
  * Formato: "YYYY-MM · SEM NN - SQ"
  *
  * Nota: usamos el mes UTC del jueves de apertura. Como el evento arranca
- * a las 13:00 UTC del jueves, el mes UTC coincide siempre con el mes PY
+ * a las 12:00 UTC del jueves, el mes UTC coincide siempre con el mes PY
  * (nunca cae en un cambio de mes por la madrugada).
  */
 function buildLegacyEventId(isoWeek, isoYear, date) {
@@ -397,3 +400,18 @@ export function startEventScheduler() {
 
   console.log('✅ [Scheduler] Scheduler iniciado. Cron: cada 1 hora.');
 }
+
+
+// ============================================================
+// EXPORTS PARA TESTING
+// ============================================================
+// ⚠️ Solo se exportan para tests unitarios. No usar en runtime.
+export {
+  getISOWeek,
+  getISOYear,
+  getSquadronEventDates,
+  PY_OFFSET_HOURS,
+  SQ_OPEN_HOUR_PY,
+  SQ_CLOSE_HOUR_PY,
+  SQ_CLOSE_MINUTE_PY
+};
