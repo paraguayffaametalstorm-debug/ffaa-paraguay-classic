@@ -7,7 +7,7 @@
 function initApp() {
     if (typeof initSettingsOnLoad === 'function') initSettingsOnLoad();
     if (typeof initBmModule === 'function') initBmModule();
-    console.log('e??� PARAGUAY-FFAA | METALSTORM iniciando...');
+    console.log('🚀 PARAGUAY-FFAA | METALSTORM iniciando...');
     
     // a????? NO mostrar ninguna vista aqu?- - dejar que checkAuthStatus() controle
     // Eliminar: showView('appView') - ESTO CAUSABA EL PROBLEMA
@@ -18,7 +18,7 @@ function initApp() {
     // Iniciar monitoreo de sesi?3n
     setupSessionMonitor();
     
-    // e?���� PRIMERO verificar autenticaci?3n - esto decidir?? qu?? mostrar
+    // 🔧 PRIMERO verificar autenticaci?3n - esto decidir?? qu?? mostrar
     checkAuthStatus();
 }
 
@@ -226,10 +226,10 @@ function updateUserUI(user) {
 window.updateUserUI = updateUserUI;
 
 // ============================================
-// PWA - FUNCIONALIDADES DE INSTALACI��?N Y OFFLINE
+// PWA - FUNCIONALIDADES DE INSTALACIÓN Y OFFLINE
 // ============================================
 
-// Variable global para el evento de instalaci��?n
+// Variable global para el evento de instalación
 let deferredPrompt = null;
 
 // Registrar Service Worker
@@ -245,7 +245,7 @@ function registerServiceWorker() {
           const newWorker = registration.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Nueva versi��?n disponible
+              // Nueva versión disponible
               showUpdateNotification(newWorker);
             }
           });
@@ -258,7 +258,7 @@ function registerServiceWorker() {
   }
 }
 
-// Mostrar notificaci��?n de actualizaci��?n disponible
+// Mostrar notificación de actualización disponible
 function showUpdateNotification(worker) {
   // Verificar si ya existe un toast
   if (document.querySelector('.update-toast')) return;
@@ -267,9 +267,9 @@ function showUpdateNotification(worker) {
   toast.className = 'toast update-toast';
   toast.innerHTML = `
     <div class="update-content">
-      <span>?? Nueva versi��?n disponible</span>
+      <span>🔄 Nueva versión disponible</span>
       <button onclick="window.updateApp()" class="btn-primary">Actualizar ahora</button>
-      <button onclick="this.parentElement.parentElement.remove()" class="btn-secondary">M����s tarde</button>
+      <button onclick="this.parentElement.parentElement.remove()" class="btn-secondary">Más tarde</button>
     </div>
   `;
   document.body.appendChild(toast);
@@ -282,18 +282,18 @@ function showUpdateNotification(worker) {
   };
 }
 
-// Manejar evento beforeinstallprompt (instalaci��?n de la app)
+// Manejar evento beforeinstallprompt (instalación de la app)
 function handleInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     console.log('?? App instalable detectada');
     e.preventDefault();
     deferredPrompt = e;
     
-    // Mostrar bot��?n de instalaci��?n personalizado
+    // Mostrar botón de instalación personalizado
     showInstallButton();
   });
 
-  // Detectar si la app ya est���� instalada
+  // Detectar si la app ya está instalada
   window.addEventListener('appinstalled', () => {
     console.log('? App instalada correctamente');
     deferredPrompt = null;
@@ -302,7 +302,7 @@ function handleInstallPrompt() {
   });
 }
 
-// Mostrar bot��?n de instalaci��?n
+// Mostrar botón de instalación
 function showInstallButton() {
   // Verificar si ya existe
   if (document.getElementById('installBtn')) return;
@@ -318,7 +318,7 @@ function showInstallButton() {
   if (headerActions) {
     headerActions.insertBefore(installBtn, headerActions.firstChild);
   } else {
-    // Fallback: insertar despu��|s del header
+    // Fallback: insertar después del header
     const header = document.getElementById('headerContainer');
     if (header) {
       header.appendChild(installBtn);
@@ -326,26 +326,26 @@ function showInstallButton() {
   }
 }
 
-// Ocultar bot��?n de instalaci��?n
+// Ocultar botón de instalación
 function hideInstallButton() {
   const btn = document.getElementById('installBtn');
   if (btn) btn.remove();
 }
 
-// Instalar la aplicaci��?n
+// Instalar la aplicación
 async function installApp() {
   if (!deferredPrompt) {
-    showToast('?? La app ya est���� instalada o no es instalable', 'warning');
+    showToast('🔄 La app ya está instalada o no es instalable', 'warning');
     return;
   }
 
   deferredPrompt.prompt();
   
   const { outcome } = await deferredPrompt.userChoice;
-  console.log('Resultado de instalaci��?n:', outcome);
+  console.log('Resultado de instalación:', outcome);
   
   if (outcome === 'accepted') {
-    console.log('Usuario acept��? instalar');
+    console.log('Usuario aceptó instalar');
   }
   
   deferredPrompt = null;
@@ -358,7 +358,7 @@ function isStandalone() {
          window.navigator.standalone === true; // iOS
 }
 
-// Ajustes espec��aficos cuando es app instalada
+// Ajustes específicos cuando es app instalada
 function applyStandaloneStyles() {
   if (isStandalone()) {
     document.body.classList.add('standalone-mode');
@@ -369,11 +369,11 @@ function applyStandaloneStyles() {
     document.documentElement.style.setProperty('--sab', 'env(safe-area-inset-bottom)');
     document.documentElement.style.setProperty('--sal', 'env(safe-area-inset-left)');
     
-    console.log('?? App ejecut����ndose en modo standalone');
+    console.log('🔄 App ejecutándose en modo standalone');
   }
 }
 
-// Verificar conexi��?n y mostrar estado
+// Verificar conexión y mostrar estado
 function monitorConnection() {
   function updateConnectionStatus() {
     const isOnline = navigator.onLine;
@@ -385,7 +385,7 @@ function monitorConnection() {
   }
 
   window.addEventListener('online', () => {
-    showToast('?? Conexi��?n restaurada', 'success', 3000);
+    showToast('🔄 Conexión restaurada', 'success', 3000);
     document.body.classList.remove('offline');
   });
 
@@ -411,7 +411,7 @@ initApp = function() {
     originalInitApp();
   }
   
-  // Inicializar PWA despu��|s de que la app est��| lista
+  // Inicializar PWA después de que la app esté lista
   setTimeout(() => {
     initPWA();
   }, 1000);
