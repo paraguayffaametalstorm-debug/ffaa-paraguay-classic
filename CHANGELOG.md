@@ -6,6 +6,57 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.2.0] - 2026-09-20
+
+### 🔧 Auditoría y normalización de eventos SQ 2026
+
+#### Objetivo Cumplido
+
+Normalizar los 35 eventos SQUADRON históricos de 2026 en Supabase, eliminar huecos, corregir fechas erróneas y alinear la numeración con el calendario real.
+
+#### Problema Detectado
+
+- **35 eventos SQ** con numeración desfasada (SEM N no coincidía con el N-ésimo jueves del año).
+- **3 gaps** sin cargar: SEM 9 (26-02), SEM 17 (23-04), SEM 37 (10-09).
+- **1 fix de fechas:** SEM 8 tenía fechas invertidas (lunes 23-02 → jueves 26-02 en lugar de jueves 19-02 → lunes 23-02).
+
+#### Estrategia Aplicada (Opción A — Renumerar todo)
+
+1. **Insertar los 3 gaps** primero (SEM 9, SEM 17, SEM 37).
+2. **Corregir fechas de SEM 8** (id `a3c535cf`).
+3. **Renombrar 26 eventos por ID explícito** (SEM 9-35 → SEM 10-36).
+
+#### Lección Crítica Aprendida
+
+**NUNCA usar `REPLACE`/`LIKE` masivo para renombres consecutivos.** El ensayo v1 falló estrepitosamente: cada `UPDATE` arrastraba eventos ya renombrados, generando colisiones (`SEM 16` repetido 6 veces, `SEM 36` repetido 20 veces).
+
+**Solución:** `UPDATE` explícito por `id` — cero ambigüedad, cero colisiones.
+
+#### Verificación Post-COMMIT
+
+| Check | Resultado |
+|---|---|
+| P1: Total SQ 2026 | 38 ✅ |
+| P2: Calendario completo | Sin huecos ✅ |
+| P3: Sin duplicados | 0 filas ✅ |
+| P4: IDs renombrados | OK ✅ |
+| P5: BM intactos | KF-21, F-20 ✅ |
+
+#### Cambios Aplicados
+
+- **26 renames** (SEM 9-35 → SEM 10-36, preservando `id`).
+- **3 INSERTs** (SEM 9, SEM 17, SEM 37).
+- **1 UPDATE de fechas** (SEM 8).
+- **Total:** 30 cambios atómicos en transacción.
+
+#### Entregable
+
+- `sql/033_normalize_sq_2026.sql` — script de normalización.
+- **38 eventos SQ 2026** (SEM 1 → SEM 37 + W38), calendario completo y consistente.
+- **FK preservada:** `event_participations.event_id → events_master.id` intacta.
+
+---
+
 ## 📌 [4.1.1] - 2026-09-20
 
 ### 🚨 Hotfix — HALL-065 v2: Offset PY corregido (UTC-4 → UTC-3)

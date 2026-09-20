@@ -387,3 +387,46 @@ fly logs -a paraguay-ffaa-metalstorm | findstr /I "Timezone"
 - **Jueves 24-09-2026:** verificar que el scheduler cree W39 con las fechas correctas (`start_date = 2026-09-24 12:00:00+00`, `end_date = 2026-09-28 11:59:59+00`).
 - **Post-2026-09-26:** F4.5 — DROP tablas BM legacy.
 
+
+---
+
+## ✅ AUDITORÍA SQ 2026 — COMPLETADA (2026-09-20)
+
+### Resumen
+
+- **38 eventos SQ 2026** normalizados (SEM 1 → SEM 37 + W38).
+- **26 renames por ID** (SEM 9-35 → SEM 10-36, sin colisiones).
+- **3 gaps insertados:** SEM 9 (26-02), SEM 17 (23-04), SEM 37 (10-09).
+- **1 fix de fechas:** SEM 8 (23-02→26-02 → 19-02→23-02).
+- **2 backups** disponibles: `events_master_backup_20260920` + `_full`.
+
+### Verificación post-COMMIT
+
+| Check | Resultado |
+|---|---|
+| P1: Total SQ 2026 | 38 ✅ |
+| P2: Calendario completo | Sin huecos ✅ |
+| P3: Sin duplicados | 0 filas ✅ |
+| P4: IDs renombrados | OK ✅ |
+| P5: BM intactos | KF-21, F-20 ✅ |
+
+### Script SQL
+
+- `sql/033_normalize_sq_2026.sql` — commit final.
+
+### Lecciones aprendidas
+
+- **Rename masivo con REPLACE/LIKE es peligroso** — colisiona por arrastre.
+- **Rename explícito por ID es la única vía segura** para renombres consecutivos.
+- **El ensayo con ROLLBACK detecta bugs sin riesgo** (v1 falló → v2 pasó).
+- **Siempre hacer backup con COUNT(*) verificado** antes de tocar datos productivos.
+- **tzdata de Supabase sigue desactualizado** (issue pendiente con Supabase).
+- **La consola de Windows miente con UTF-8.** Verificar siempre en VS Code / Notepad, no con `type` ni `Get-Content`.
+
+### Pendientes heredados
+
+1. **F4.5** — DROP tablas BM legacy (post-2026-09-26).
+2. **Verificar W39** el jueves 24-09 (scheduler).
+3. **Reportar a Supabase** el bug de tzdata (`America/Asuncion` devuelve UTC-4).
+4. **Investigar BM históricos 2024/2025** (opcional).
+
