@@ -59,7 +59,7 @@ Un ADR (Architecture Decision Record) es un documento que registra una **decisi�
 
 | ID | Título | Prioridad |
 |---|---|---|
-| ADR-005 | Migración de presence a Supabase | Pendiente de aceptación (ver FIX-209 en Sprint 2) |
+| — | (Sin ADRs planificados al 2026-09-20) | — |
 
 ---
 

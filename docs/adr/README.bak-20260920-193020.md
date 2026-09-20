@@ -36,30 +36,13 @@ Un ADR (Architecture Decision Record) es un documento que registra una **decisi�
 | ADR-005 | Migración de presence a Supabase | 2026-09-17 | 📝 Proposed |
 | ADR-006 | Black Market Unificado sobre events_master | 2026-09-19 | ✅ Accepted |
 | ADR-007 | Rediseño de Eventos v2 (Unificación SQ + BM) | 2026-09-20 | ✅ Accepted |
-| ADR-008 | Ventanas de Carga Desacopladas del Ciclo de Evento | 2026-09-20 | ✅ Accepted |
-
-## Cómo crear un nuevo ADR
-
-1. Copiar `TEMPLATE.md` a `ADR-XXX-slug-corto.md` (donde XXX es el siguiente número secuencial).
-2. Completar todas las secciones del template (**MADR 4.0**).
-3. Agregar la fila correspondiente a la tabla de **Listado** en este documento.
-4. Si el ADR cambia el estado de otro, actualizar el estado del original a `Superseded by ADR-XXX`.
-5. Commit con mensaje `docs(adr-XXX): <descripción breve>`.
-6. Si el ADR está `Proposed`, mantenerlo así hasta que sea validado por el OWNER.
-
-**Reglas:**
-
-- Un ADR es **inmutable** una vez aceptado. Los cambios se hacen creando un ADR nuevo que lo supersede.
-- Los ADRs se numeran secuencialmente sin saltos.
-- Los ADRs deben citar **fuentes verificables** (archivo:línea, CHANGELOG, commits).
-
----
+| ADR-008 | Ventanas de Carga Desacopladas del Ciclo de Evento | 2026-09-20 | 📝 Proposed |
 
 ## Próximos ADRs Planificados
 
 | ID | Título | Prioridad |
 |---|---|---|
-| ADR-005 | Migración de presence a Supabase | Pendiente de aceptación (ver FIX-209 en Sprint 2) |
+| — | (Sin ADRs planificados al 2026-09-20) | — |
 
 ---
 
