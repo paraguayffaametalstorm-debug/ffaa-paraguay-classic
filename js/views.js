@@ -1121,7 +1121,7 @@ function loadOpenEvents() {
 }
 
 function msUntilNextWindowOpen() {
-  const PY_OFFSET_MS = 4 * 3600 * 1000;
+  const PY_OFFSET_MS = 3 * 3600 * 1000; // UTC-3 (Ley 7.354/2024)
   const nowUtc       = Date.now();
   const nowPY   = new Date(nowUtc - PY_OFFSET_MS);
   const dayPY   = nowPY.getUTCDay();
@@ -1139,7 +1139,7 @@ function msUntilNextWindowOpen() {
 }
 
 function nextWindowOpenLabel() {
-  const PY_OFFSET_MS = 4 * 3600 * 1000;
+  const PY_OFFSET_MS = 3 * 3600 * 1000; // UTC-3 (Ley 7.354/2024)
   const targetUtcMs  = Date.now() + msUntilNextWindowOpen();
   const targetDate   = new Date(targetUtcMs);
   const opts = { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_PY };
@@ -1150,8 +1150,8 @@ function nextWindowOpenLabel() {
 function renderWindowClosedNotice(eventType) {
   const isBM    = eventType === 'BLACK_MARKET';
   const winDesc = isBM
-    ? 'Lunes 17:00 → Miércoles 16:59 (PY)'
-    : 'Lunes 09:00 → Jueves 08:59 (PY)';
+    ? 'Miércoles 17:00 → Lunes 17:00 (PY)'
+    : 'Jueves 09:00 → Lunes 09:00 (PY)';
   const openLabel = nextWindowOpenLabel();
 
   const notice = document.createElement('div');
@@ -4686,7 +4686,7 @@ function renderAdminEvents(events) {
           <div>
             <strong style="color:#e2e8f0;font-size:1rem;">${escapeHTML(bmEvent.title || 'Black Market')}</strong>
             <div style="font-size:0.82rem;color:#94a3b8;margin-top:2px;">
-              Límite operativo: <strong style="color:#d4af37;">250 Tokens</strong> · Ventana: Lunes 17:00 a Miércoles 16:59 (PY)
+              Límite operativo: <strong style="color:#d4af37;">250 Tokens</strong> · Ventana: Miércoles 17:00 a Lunes 17:00 (PY)
             </div>
           </div>
           <span class="status-badge status-${isOpen ? 'verde' : 'negro'}" style="padding:4px 10px;font-size:0.8rem;">
