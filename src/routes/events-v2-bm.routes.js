@@ -43,6 +43,7 @@ import {
   getBmActiveEventV2,
   getBmEventByIdV2,
   getBmEventsV2,
+  getBmSubmissionWindowV2,  // ← NUEVO (ADR-008)
   createBmEventV2,
   updateBmEventV2,
   getBmProgressV2,
@@ -70,6 +71,15 @@ router.get('/active', requireAuth, getBmActiveEventV2);
 // ============================================================
 
 router.get('/:eventId', requireAuth, getBmEventByIdV2);
+
+// ============================================================
+// 2.5. LECTURA — Ventana de carga (ADR-008)
+// ============================================================
+// Devuelve el estado de submission_opens_at / submission_closes_at.
+// Desacoplado del ciclo del evento (BM: 6 días).
+// ============================================================
+
+router.get('/:eventId/submission-window', requireAuth, getBmSubmissionWindowV2);
 
 // ============================================================
 // 3. ESCRITURA — Crear evento BM (ADMIN/OWNER)
