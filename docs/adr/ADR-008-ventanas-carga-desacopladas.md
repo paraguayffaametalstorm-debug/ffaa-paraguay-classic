@@ -1,6 +1,6 @@
 # ADR-008: Ventanas de Carga Desacopladas del Ciclo de Evento
 
-> **Estado:** Propuesto
+> **Estado:** ✅ Accepted (validado por OWNER el 2026-09-20)
 > **Fecha:** 2026-09-20
 > **Autor:** Comando C4ISR
 > **Supersede parcialmente:** Reglas de ventana de carga del ADR-007
@@ -303,22 +303,15 @@ Actualizar el widget de evento activo para mostrar:
 
 ---
 
-## 8. Preguntas pendientes de validación con el OWNER
+## 8. Decisiones validadas por el OWNER
 
-1. **Ventana SQ:** ¿7 días (Jue→Jue) o 5 días (Jue→Mar)?
-   - **Recomendación: 7 días.**
-
-2. **Ventana BM:** ¿6 días (Mié→Mar) o 7 días (Mié→Mié)?
-   - **Recomendación: 6 días.**
-
-3. **Al cerrar un SQ por BM:** ¿la ventana sigue abierta hasta su deadline original?
-   - **Recomendación: sí.**
-
-4. **Edición de participación:** ¿el piloto puede editar su carga dentro de la ventana?
-   - **Recomendación: sí.**
-
-5. **Cierre de ventana:** ¿automático (deadline) o manual (OWNER)?
-   - **Recomendación: automático.**
+| # | Decisión | Valor aprobado |
+|---|---|---|
+| 1 | Ventana SQ | **7 días** (Jue 09:00 PY → Jue 08:59 PY) |
+| 2 | Ventana BM | **6 días** (Mié 17:00 PY → Mar 16:59 PY) |
+| 3 | SQ cerrado por BM (BM_REPLACED) | **La ventana del SQ sigue abierta** hasta su deadline original |
+| 4 | Edición de participación | **Sí, dentro de la ventana** (mientras no se cierre) |
+| 5 | Cierre de ventana | **Automático** por deadline (`submission_closes_at`) |
 
 ---
 
