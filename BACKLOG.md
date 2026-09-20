@@ -134,7 +134,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-000** | 🔐 | Proteger `/register` con auth + rate limiting | 2026-09-17 (Fase 4) | `20934e2` |
 | **HALL-059** | 🐛 | `ReferenceError: API_BASE is not defined` en `/link-account` | 2026-09-17 (Hotfix) | `71fbda2` |
 | **HALL-060** | 🐛 | `500` en `linkAccount` por columna `google_id` inexistente | 2026-09-18 (Hotfix) | `9678d98` |
-| **BL-059** | 🐛 | HALL-059: Inconsistencia claves `localStorage` en vinculación Google | 2026-09-17 (Hotfix) | `<hash-pendiente>` |
+| **BL-059** | 🐛 | Inconsistencia claves `localStorage` en vinculación Google | 2026-09-17 (Hotfix) | `a82b5b0` |
 
 ---
 
