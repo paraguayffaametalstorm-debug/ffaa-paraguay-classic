@@ -618,6 +618,15 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 
 ## 📚 Documentación Técnica Detallada
 
+### Documentos de gestión del proyecto
+
+- 🗺️ **[Visión Estratégica a 12 meses (Roadmap)](./ROADMAP.md)**
+- 📋 **[Backlog de Ideas y Features](./BACKLOG.md)**
+- 🔧 **[Plan de Trabajo — Sprints Activos](./PLAN_TRABAJO.md)**
+- 📝 **[Histórico de Versiones (Changelog)](./CHANGELOG.md)**
+
+### Documentos técnicos
+
 - 🚀 **[Estado Congelado del Despliegue (Deployment State)](./DEPLOYMENT_STATE.md)**
 - 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./CURRENT_STATE.md)**
 - 🔧 **[Historial de Fixes Aplicados y Lógica Tipada](./FIXES_APPLIED.md)**
@@ -627,9 +636,13 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 - 📖 **[Manual de Usuario y Operaciones de Vuelo](./USER_MANUAL.md)**
 - 📱 **[Configuración PWA, Service Worker y Modo Offline](./PWA_SETUP.md)**
 - 🛡️ **[Política Oficial de Inactivación y Retiro Militar](./POLITICA_INACTIVACION.md)**
-- 📝 **[Registro Histórico de Cambios (Changelog)](./CHANGELOG.md)**
 
----
+### Documentos normativos e históricos
+
+- 📜 **[Plan de Mejora Continua v1.0 (Histórico, cerrado)](./PLAN_MEJORA_CONTINUA.md)**
+- 🎖️ **[Decisiones Arquitectónicas (ADRs)](./docs/adr/)**
+- 📄 **[Propuestas Formales (RFCs)](./docs/rfc/)**
+- 🔄 **[Handoff entre Sesiones](./docs/SESSION_HANDOFF.md)**
 
 ## 📜 Licencia y Confidencialidad
 
