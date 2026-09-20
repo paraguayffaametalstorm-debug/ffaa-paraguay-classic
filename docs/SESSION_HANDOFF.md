@@ -2,8 +2,8 @@
 
 > **Documento de traspaso entre sesiones de trabajo.**
 > **Actualizado:** 2026-09-20
-> **Última sesión completada:** F4.4 Parte 2 (ADR-007 + CHANGELOG + CURRENT_STATE + API_REFERENCE + deploy final)
-> **Próximo paso:** F4.5 (post-deploy: DROP tablas BM legacy después del 2026-09-26)
+> **Última sesión completada:** F4.4 Parte 3 (HALL-065 v2 + tests automatizados + W38 corregido)
+> **Próximo paso:** F4.5 (DROP tablas BM legacy post-2026-09-26)
 
 ---
 
@@ -16,7 +16,7 @@
 - **Deploy:** Fly.io (región `gru` - São Paulo)
 - **Repo:** `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
 - **Producción:** `https://paraguay-ffaa-metalstorm.fly.dev`
-- **Tests:** Vitest 5.0.1 (93 tests pasando)
+- **Tests:** Vitest 5.0.1 (**110 tests pasando**: 93 previos + 17 nuevos)
 
 **Trabajo activo:** Post-rediseño de Eventos v2 (F4.x).
 
@@ -26,22 +26,22 @@
 
 | Aspecto | Valor |
 |---|---|
-| Commit HEAD | `4ab67cd` (pendiente commit de F4.4 docs) |
+| Commit HEAD | `074fdc3` (fix HALL-065 v2 + tests) |
 | Branch | `main` |
-| Working tree | ⚠️ Con cambios sin commitear (ADR-007 + 4 docs actualizados) |
-| Push | Pendiente push |
-| Deploy producción | ⏳ **Pendiente** (F4.4) |
-| Tests | ✅ 93/93 passed |
+| Working tree | ⚠️ Con cambios sin commitear (mini-commit de docs pendiente) |
+| Push | ⚠️ Pendiente push del mini-commit |
+| Deploy producción | ✅ `deployment-01M2YHNVV30YCWSKBFA3RSM5R4` |
+| Tests | ✅ 110/110 passed |
 | Service Worker | v4.1.0 |
-| Frontend api.js/bm.js | v4.1.0 (cache-busted) |
+| Offset PY en logs | ✅ UTC-3 |
 
-**Últimos commits en origin/main:**
+**Últimos commits:**
 ```
+074fdc3 fix(hall-065): corregir timezone PY de UTC-4 a UTC-3 + tests
+a7af951 docs(f4.4): cerrar documentacion del rediseno de Eventos v2
 4ab67cd fix(ui): BL-020 widget y formulario de evento timezone-aware
 7f1ce93 fix(scheduler): HALL-065 corregir timezone PY y duracion del evento SQ
-1b6b9ec docs(backlog): registrar HALL-065 (scheduler timezone) y BL-020 (widget timezone-aware)
 b5d542b feat(f4.3): vistas adaptativas + UI evento activo
-75ad2df docs(session): handoff post F4.2.2 (rediseno BM completo + deploy)
 ```
 
 ---
@@ -60,61 +60,71 @@ b5d542b feat(f4.3): vistas adaptativas + UI evento activo
 | **F4.2.2-F** | Refactor `js/bm.js` | ✅ CERRADA | `7387d3c` + `9b8ea0e` |
 | **F4.2.2-G** | DROP backend BM legacy | ✅ CERRADA | `42867fd` |
 | **F4.3** | Vistas adaptativas + UI evento activo | ✅ CERRADA | `b5d542b` |
-| **F4.3 (fix)** | HALL-065 (scheduler timezone) + BL-020 (widget timezone) | ✅ CERRADA | `7f1ce93` + `4ab67cd` |
-| **F4.4** | ADR-007 + docs + deploy final | ✅ **CERRADA** | (pendiente commit) |
+| **F4.3 (fix 1)** | HALL-065 v1 (scheduler) + BL-020 (widget) | ✅ CERRADA | `7f1ce93` + `4ab67cd` |
+| **F4.4** | ADR-007 + docs + deploy | ✅ CERRADA | `a7af951` |
+| **F4.4 v2** | HALL-065 v2 (offset UTC-3) + tests + W38 corregido | ✅ CERRADA | `074fdc3` |
 | **F4.5** | DROP tablas BM legacy (post-2026-09-26) | ⏳ Pendiente | — |
 
 ---
 
-## 4. TRABAJO COMPLETADO EN ESTA SESIÓN (F4.4 Parte 2)
+## 4. TRABAJO COMPLETADO EN ESTA SESIÓN (F4.4 Parte 3)
 
-### 4.1 ADR-007 — Rediseño de Eventos v2
+### 4.1 HALL-065 v2 — Offset PY corregido (UTC-4 → UTC-3)
 
-**Archivo:** `docs/adr/ADR-007-rediseno-eventos-v2.md` (NUEVO, 5794 bytes)
+**Bug detectado:** el scheduler asumía `PY_OFFSET_HOURS = 4`, cuando Paraguay abolió el DST en octubre 2024 y usa **UTC-3 permanente**.
 
-Reemplaza al ADR-006 (Black Market Unificado). Documenta la unificación SQ + BM sobre `events_master` + `event_participations`, el switch funcional (1 evento OPEN a la vez), el scheduler timezone-aware y las consecuencias del rediseño.
+**Impacto:** los eventos SQ abrían 1 hora más tarde de lo esperado (10:00 PY en vez de 09:00 PY).
 
-### 4.2 CHANGELOG [4.1.0]
+**Fix aplicado (commit `074fdc3`):**
+- `src/utils/eventScheduler.js`: `PY_OFFSET_HOURS: 4 → 3`.
+- Comentarios actualizados.
+- Bloque `export` agregado para tests.
 
-**Archivo:** `CHANGELOG.md` (MODIFICADO, +4697 bytes)
+### 4.2 Tests Automatizados del Scheduler
 
-Nueva entrada `[4.1.0] - 2026-09-20` con:
-- 12 sub-fases del rediseño (F4.1 a F4.3-fix).
-- HALL-065 + BL-020 documentados.
-- Arquitectura nueva.
-- 1666 líneas eliminadas.
-- 16 endpoints unificados.
-- 93 tests pasando.
+**Archivo nuevo:** `tests/utils/eventScheduler.test.js` (17 tests).
 
-### 4.3 BACKLOG
+**Cobertura:**
+- Constantes de timezone (3 tests).
+- `getISOWeek` / `getISOYear` (3 tests).
+- Fechas W38 2026 (3 tests).
+- Fechas W39 2026 (2 tests).
+- Invariantes (6 tests): start=jueves, end=lunes, PY=09:00/08:59, no solapamiento, cambio de año.
 
-**Archivo:** `BACKLOG.md` (MODIFICADO, -439 bytes)
+**Resultado:** **110/110 tests pasando** (93 previos + 17 nuevos).
 
-- HALL-065 → Completados (línea 128).
-- BL-020 → Completados (línea 129).
-- BL-021 → Completados (línea 130, nuevo item).
-- Items activos: 17 → **15**.
-- Items completados: 4 → **7**.
+### 4.3 Evento W38 corregido en producción
 
-### 4.4 API_REFERENCE §3.5
+**SQL ejecutado en Supabase:**
 
-**Archivo:** `API_REFERENCE.md` (MODIFICADO, +7148 bytes)
+```sql
+UPDATE events_master
+SET
+  start_date = '2026-09-17 12:00:00+00',
+  end_date = '2026-09-21 11:59:59+00',
+  ...
+WHERE name = 'Squadron Event 2026-W38';
+```
 
-Completadas las 3 subsecciones faltantes:
-- §3.5.2: Endpoints de eventos (línea 496).
-- §3.5.3: Participaciones (línea 647).
-- §3.5.4: Deprecación legacy con sunset 2026-12-16 (línea 745).
+**Verificación:**
+- `start_date = 2026-09-17 12:00:00+00`
+- `end_date = 2026-09-21 11:59:59+00`
+- `duracion = 3 days 23:59:59`
 
-Eliminada la nota de deuda técnica `BL-018`.
+### 4.4 Hallazgo: tzdata de Supabase desactualizado
 
-### 4.5 CURRENT_STATE
+**Bug detectado durante el diagnóstico:**
 
-**Archivo:** `CURRENT_STATE.md` (MODIFICADO, +2947 bytes)
+```sql
+SELECT NOW() AT TIME ZONE 'America/Asuncion';
+-- Devuelve 04:42-4h = 00:42 (UTC-4), pero debería ser 01:42 (UTC-3).
+```
 
-- Header actualizado a v4.1.0, fecha 2026-09-20.
-- Punto 6 agregado al resumen ejecutivo (Rediseño de Eventos v2).
-- Nueva sección "🎯 Eventos v2 Unificados (v4.1.0)" en línea 27.
-- Nueva fila en la tabla de módulos (línea 245).
+**Impacto:** solo afecta a queries SQL manuales con `AT TIME ZONE 'America/Asuncion'`.
+
+**Acción recomendada:** abrir ticket con Supabase.
+
+**Workaround:** `AT TIME ZONE 'UTC' - INTERVAL '3 hours'` en queries manuales.
 
 ---
 
@@ -134,7 +144,6 @@ Eliminada la nota de deuda técnica `BL-018`.
    - Pegar contenido de `sql/032_drop_bm_legacy_tables.sql`.
    - Ejecutar.
    - Verificar que las 4 tablas (`bm_events`, `bm_missions`, `bm_progress`, `bm_discounts`) fueron eliminadas.
-4. **Commit del DDL** (si no estaba commiteado aún).
 
 **Referencias:**
 - `sql/032_drop_bm_legacy_tables.sql`
@@ -142,65 +151,85 @@ Eliminada la nota de deuda técnica `BL-018`.
 
 ---
 
-## 6. DECISIONES CLAVE DE LA SESIÓN
+## 6. VERIFICACIÓN POST-JUEVES 24-09 (importante)
 
-### ADR-007 reemplaza a ADR-006
+**El jueves 24-09 a las 12:00 UTC**, el scheduler creará W39 con las fechas correctas.
 
-**Decisión:** El ADR-006 (Black Market Unificado) queda **superseded** por el ADR-007 (Rediseño de Eventos v2). El ADR-007 documenta la arquitectura final.
+**Verificar en Supabase:**
 
-### Switch funcional (1 evento OPEN a la vez)
+```sql
+SELECT
+  name,
+  start_date,
+  end_date,
+  (end_date - start_date) AS duracion
+FROM events_master
+WHERE name = 'Squadron Event 2026-W39';
+```
 
-**Decisión:** Solo puede existir **1 evento `OPEN`** en todo el sistema, garantizado por índice UNIQUE parcial `idx_events_master_single_open`. Al activar un BM, el SQ se cierra con `closed_reason = 'BM_REPLACED'`.
+**Esperado:**
+| Campo | Valor |
+|---|---|
+| `start_date` | `2026-09-24 12:00:00+00` |
+| `end_date` | `2026-09-28 11:59:59+00` |
+| `duracion` | `3 days 23:59:59` |
 
-### Scheduler timezone-aware (HALL-065)
-
-**Decisión:** El scheduler SQ calcula el offset de Paraguay (`America/Asuncion`, UTC-4/UTC-3) dinámicamente vía `Intl.DateTimeFormat`. Duración: +4 días (jueves 09:00 PY - lunes 09:00 PY).
-
-### Widget timezone-aware (BL-020)
-
-**Decisión:** El widget de evento activo usa `undefined` en `toLocaleDateString` (locale del navegador), con referencia UTC explícita.
-
-### Deprecación legacy SQ
-
-**Decisión:** `/api/events/*` queda deprecado con sunset **2026-12-16** (90 días desde F4.3). Los endpoints legacy BM (`/api/bm/*`) fueron eliminados en F4.2.2-G.
+**Si NO coincide**, revisar logs:
+```cmd
+fly logs -a paraguay-ffaa-metalstorm | findstr /I "Scheduler"
+```
 
 ---
 
-## 7. ARCHIVOS RELEVANTES
+## 7. DECISIONES CLAVE DE LA SESIÓN
 
-### Docs (modificados/creados en esta sesión)
+### HALL-065 v2 — Offset UTC-3 hardcodeado
 
-- ➕ `docs/adr/ADR-007-rediseno-eventos-v2.md` (NUEVO)
-- ✏️ `CHANGELOG.md` (MODIFICADO)
-- ✏️ `BACKLOG.md` (MODIFICADO)
-- ✏️ `API_REFERENCE.md` (MODIFICADO)
-- ✏️ `CURRENT_STATE.md` (MODIFICADO)
-- ✏️ `SESSION_HANDOFF.md` (REGENERADO — este documento)
+**Decisión:** Paraguay usa UTC-3 todo el año (post-octubre 2024, DST abolido). Se hardcodea `PY_OFFSET_HOURS = 3` en lugar de calcular dinámicamente.
+
+**Razón:** Paraguay ya no tiene DST, así que el offset es constante. Si en el futuro vuelve el DST, se cambia el valor.
+
+### Tests automatizados del scheduler
+
+**Decisión:** exportar las funciones internas del scheduler (`getISOWeek`, `getISOYear`, `getSquadronEventDates`, constantes) solo para testing.
+
+**Razón:** validar la lógica de cálculo de fechas y prevenir regresiones futuras.
+
+### W38 corregido en BD
+
+**Decisión:** corregir W38 (creado antes del fix) para que sea consistente con la nueva regla.
+
+**Razón:** mantener data histórica consistente para futuras auditorías.
+
+### tzdata de Supabase
+
+**Decisión:** documentar el problema pero no bloquear el proyecto.
+
+**Razón:** el sistema operativo (backend + frontend) usa UTC internamente y offsets hardcodeados correctos. Solo afecta a queries manuales.
+
+---
+
+## 8. ARCHIVOS RELEVANTES
+
+### Código (modificados/creados en esta sesión)
+
+- ✏️ `src/utils/eventScheduler.js` (offset 4→3, comentarios, exports)
+- ➕ `tests/utils/eventScheduler.test.js` (NUEVO, 17 tests)
+- ✏️ `CHANGELOG.md` (entrada [4.1.1])
+- ✏️ `BACKLOG.md` (HALL-065 actualizado + nota Prioridad Alta)
 
 ### SQL (pendiente post-deploy)
 
-- ⏳ `sql/032_drop_bm_legacy_tables.sql` (NUEVO — **NO ejecutado todavía**, pendiente post-2026-09-26)
+- ⏳ `sql/032_drop_bm_legacy_tables.sql` (pendiente post-2026-09-26)
 
-### Backend (de sesiones anteriores)
+### Docs (referencia)
 
-- ✅ `src/controllers/events-v2.controller.js`
-- ✅ `src/controllers/events-v2-bm.controller.js`
-- ✅ `src/routes/events-v2.routes.js`
-- ✅ `src/routes/events-v2-bm.routes.js`
-- ✅ `src/utils/eventScheduler.js` (HALL-065)
-- ❌ `src/controllers/bm.controller.js` (ELIMINADO)
-- ❌ `src/routes/bm.routes.js` (ELIMINADO)
-
-### Frontend (de sesiones anteriores)
-
-- ✅ `js/api.js` (11 wrappers `apiEventsV2Bm*`)
-- ✅ `js/bm.js` (refactor completo)
-- ✅ `js/views.js` (BL-020)
-- ✅ `sw.js` (CACHE_NAME v4.1.0)
+- `docs/adr/ADR-007-rediseno-eventos-v2.md`
+- `docs/SESSION_HANDOFF.md` (este documento)
 
 ---
 
-## 8. REGLAS DE TRABAJO
+## 9. REGLAS DE TRABAJO
 
 ### Sistema operativo
 
@@ -233,21 +262,20 @@ Eliminada la nota de deuda técnica `BL-018`.
 
 - **NO romper producción** (28 pilotos activos).
 - **`node --check`** obligatorio antes de cada commit.
-- **`npm test`** antes de cada commit (debe pasar 93/93).
+- **`npm test`** antes de cada commit (debe pasar **110/110**).
 - **`git diff --stat`** para verificar cambios.
 
 ### Lecciones aprendidas (esta sesión)
 
-- **Los emojis en los headers pueden tener variaciones de code points (U+FE0F, ZWJ).** Buscar por **texto plano sin emojis** es más robusto.
-- **CMD no renderiza UTF-8 bien.** Lo que ves como `≡ƒÄ»` está bien en el archivo. Verificar siempre con PowerShell.
-- **Cuando un marker aparece múltiples veces**, usar regex con anclaje (`^## `) para garantizar match correcto.
-- **Scripts Node `.cjs` con logs de diagnóstico** son la mejor herramienta para verificar antes de escribir.
-- **Revertir con `git checkout --`** cuando un script falla y deja el archivo inconsistente.
-- **`fs.readFileSync(file, 'utf8')` + `fs.writeFileSync(file, content, 'utf8')`** preserva UTF-8 sin corromper.
+- **Paraguay usa UTC-3 todo el año desde octubre 2024.** No confundir con la regla pre-2024 (UTC-4 en verano).
+- **Supabase tiene tzdata desactualizado.** `AT TIME ZONE 'America/Asuncion'` devuelve UTC-4 en vez de UTC-3.
+- **Exportar funciones internas solo para testing** es una práctica aceptable en Node.js con ESM.
+- **Los eventos existentes NO se actualizan automáticamente** cuando cambia un offset. Hay que corregirlos manualmente.
+- **`git ls-files | findstr`** es útil para descubrir dónde está trackeado un archivo.
 
 ---
 
-## 9. CÓMO RETOMAR LA SESIÓN
+## 10. CÓMO RETOMAR LA SESIÓN
 
 En una nueva conversación:
 
@@ -261,87 +289,55 @@ En una nueva conversación:
 
 ---
 
-## 10. COMANDOS DE VERIFICACIÓN RÁPIDA
+## 11. COMANDOS DE VERIFICACIÓN RÁPIDA
 
 ```cmd
 cd C:\Users\pirov\paraguay-ffaa
-git log --oneline -10
+git log --oneline -5
 git status
 npm test
 curl -s https://paraguay-ffaa-metalstorm.fly.dev/health
+fly logs -a paraguay-ffaa-metalstorm | findstr /I "Timezone"
 ```
 
 **Esperado:**
 
-- **Log:** commit de F4.4 en top (o `4ab67cd` si aún no commiteado).
-- **Status:** working tree limpio (después del commit de F4.4).
-- **Tests:** 93/93 passed.
+- **Log:** `074fdc3` en top.
+- **Status:** working tree limpio (después del mini-commit de docs).
+- **Tests:** 110/110 passed.
 - **Health:** `OK`.
+- **Timezone:** `UTC-3`.
 
 ---
 
-## 11. CHECKLIST DE CIERRE DE ESTA SESIÓN
+## 12. CHECKLIST DE CIERRE DE ESTA SESIÓN
 
-- [x] ADR-007 creado (5794 bytes)
-- [x] CHANGELOG [4.1.0] insertado (+4697 bytes)
-- [x] BACKLOG actualizado (-439 bytes, HALL-065 + BL-020 + BL-021 movidos)
-- [x] API_REFERENCE §3.5 completado (+7148 bytes)
-- [x] CURRENT_STATE actualizado (+2947 bytes)
+- [x] HALL-065 v2 identificado y diagnosticado
+- [x] Fix aplicado: offset UTC-4 → UTC-3
+- [x] W38 corregido en BD con fechas consistentes
+- [x] 17 tests automatizados creados
+- [x] 110/110 tests pasando
+- [x] Deploy a producción (deployment-01M2YHNVV30YCWSKBFA3RSM5R4)
+- [x] Log del scheduler muestra UTC-3
+- [x] CHANGELOG [4.1.1] documentado
+- [x] BACKLOG actualizado
 - [x] SESSION_HANDOFF regenerado
-- [ ] **Commit consolidado de F4.4**
-- [ ] **Deploy a producción**
-- [ ] **Smoke test post-deploy**
-- [ ] **Push a origin/main**
+- [ ] **Commit + push del mini-commit de docs**
+- [ ] **Verificar W39 el jueves 24-09**
+- [ ] **F4.5 (DROP tablas BM legacy) post-2026-09-26**
 
-**Sistema: docs de F4.4 completados. Pendiente commit + deploy.**
+**Sistema: 100% operativo con HALL-065 v2 aplicado.**
 
 ---
 
-## 12. PRÓXIMOS PASOS (visión global)
+## 13. PRÓXIMOS PASOS (visión global)
 
 | Sub-fase | Descripción | Estimación |
 |---|---|---|
-| **Commit F4.4** | Agregar todos los docs + ADR-007 y commitear | ~10 min |
-| **Deploy F4.4** | `fly deploy` + smoke test | ~15 min |
-| **Push** | `git push origin main` | ~1 min |
+| **Mini-commit docs** | CHANGELOG + BACKLOG + SESSION_HANDOFF | ~10 min |
+| **Verificación W39** | Jueves 24-09 (automático) | ~10 min |
 | **F4.5** | DROP tablas BM legacy (post-2026-09-26) | ~10 min |
 
-**Total: ~35 min de trabajo efectivo + 7 días de espera para F4.5.**
-
 ---
 
-## 13. NOTAS POST-DEPLOY
-
-### Monitoreo 24-48h
-
-Verificar:
-
-- `fly logs -a paraguay-ffaa-metalstorm` sin errores.
-- Dashboard Supabase sin picos.
-- Pilotos activos sin reportes de bugs.
-- Endpoint `GET /api/events-v2/active` respondiendo OK.
-
-### DROP de tablas (7 días)
-
-Una vez confirmada estabilidad (después del **2026-09-26**):
-
-1. Abrir Supabase SQL Editor.
-2. Pegar contenido de `sql/032_drop_bm_legacy_tables.sql`.
-3. Ejecutar.
-
-**Riesgo:** bajo. Tablas vacías.
-
-### Rollback de emergencia
-
-Si algo se rompe en producción:
-
-```cmd
-fly releases -a paraguay-ffaa-metalstorm
-fly deploy --image <IMAGEN_PREVIA>
-```
-
-**Imagen previa:** `deployment-01M2XE2FXSAFWXTKBWM3DBNKFR` (versión pre-F4.3).
-
----
-
-**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-20 · Commit 4ab67cd + cambios sin commitear**
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-20 · Commit 074fdc3**

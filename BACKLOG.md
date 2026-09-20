@@ -64,6 +64,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | ID | Categoria | Titulo | Estado | Esfuerzo | Notas |
 |---|---|---|---|---|---|
 
+*(Sin items críticos al 2026-09-20)*
+
 ### 🟠 Prioridad Media (Should Have)
 
 | ID | Categoría | Título | Estado | Esfuerzo | Notas |
@@ -125,7 +127,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
-| **HALL-065** | 🐛 | Scheduler SQ: timezone PY + duración 4 días | 2026-09-20 (F4.3) | `7f1ce93` |
+| **HALL-065** | 🐛 | Scheduler SQ: timezone PY + duración 4 días | 2026-09-20 (F4.3 + F4.4 v2) | `7f1ce93` + `074fdc3` |
 | **BL-020** | 🎨 | Widget evento activo timezone-aware | 2026-09-20 (F4.3) | `4ab67cd` |
 | **BL-021** | ✨ | Vistas adaptativas + UI evento activo | 2026-09-20 (F4.3) | `b5d542b` |
 
