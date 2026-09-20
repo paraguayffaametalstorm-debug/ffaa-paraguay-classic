@@ -51,6 +51,18 @@ window.TRAITS_ES = TRAITS_ES;
 window.translateTrait = translateTrait;
 
 /**
+ * Timezone oficial del escuadrón: Paraguay (UTC-4, sin DST).
+ * Los eventos SIEMPRE se rigen por hora PY, pero el formato de fecha/hora
+ * se adapta al locale del navegador del piloto (BL-020, F4.4).
+ *
+ * Uso:
+ *   date.toLocaleDateString(undefined, { timeZone: TZ_PY, ... })
+ *   date.toLocaleTimeString(undefined, { timeZone: TZ_PY, ... })
+ */
+const TZ_PY = 'America/Asuncion';
+window.TZ_PY = TZ_PY;
+
+/**
  * Obtener la clase CSS según el tipo de avión
  * @param {string} tipo - Tipo del avión (Ligero, Mediano, Pesado, Interceptor, Ataque)
  * @returns {string} - Clase CSS (light, medium, heavy, interceptor, attack)
@@ -517,8 +529,15 @@ async function renderActiveEventWidget() {
 
     let metaTxt = '';
     if (startDate && endDate) {
-      const opts = { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
-      metaTxt = 'Cierra el ' + endDate.toLocaleDateString('es-PY', opts) + ' (PY)';
+      const opts = {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: TZ_PY
+      };
+      metaTxt = 'Cierra el ' + endDate.toLocaleDateString(undefined, opts) + ' (hora PY)';
     }
     if (metaEl) metaEl.textContent = metaTxt;
 
@@ -1123,8 +1142,8 @@ function nextWindowOpenLabel() {
   const PY_OFFSET_MS = 4 * 3600 * 1000;
   const targetUtcMs  = Date.now() + msUntilNextWindowOpen();
   const targetDate   = new Date(targetUtcMs);
-  const opts = { weekday: 'long', day: 'numeric', month: 'long' };
-  const formatted = targetDate.toLocaleDateString('es-PY', opts);
+  const opts = { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_PY };
+  const formatted = targetDate.toLocaleDateString(undefined, opts);
   return `${formatted} a las 09:00 (PY)`;
 }
 
@@ -1238,7 +1257,7 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
   const pulseClass = inWindow ? 'win-badge-open-pulse'  : 'win-badge-closed-pulse';
   const statusText = inWindow ? '🟢 VENTANA ABIERTA'   : '🔴 VENTANA CERRADA';
   const subText = inWindow
-    ? `Cierra el ${endDate.toLocaleDateString('es-PY', { weekday:'long', day:'numeric', month:'short' })} a las ${endDate.toLocaleTimeString('es-PY', { hour:'2-digit', minute:'2-digit' })}`
+    ? `Cierra el ${endDate.toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'short', timeZone: TZ_PY })} a las ${endDate.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit', timeZone: TZ_PY })} (hora PY)`
     : `Próxima apertura: ${nextWindowOpenLabel()}`;
   const countdownLabel = inWindow ? 'Tiempo restante en ventana' : 'Apertura de registro en';
 
@@ -1267,7 +1286,7 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
 </div>
 </div>
 <div class="win-date-hint">
-📅 Registro: ${startDate.toLocaleDateString('es-PY')} → ${endDate.toLocaleDateString('es-PY')}
+📅 Registro: ${startDate.toLocaleDateString(undefined, { timeZone: TZ_PY })} → ${endDate.toLocaleDateString(undefined, { timeZone: TZ_PY })} (PY)
 </div>
 </div>
 </div>
