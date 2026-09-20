@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.0.0 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.3.0 del núcleo táctico.**
 
 ---
 
@@ -59,6 +59,8 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Events v2** | `/api/events-v2/:id/participations/:uid` | `PUT` | Autenticado | Editar participación |
 | **Events v2** | `/api/events-v2/:id/participations/:uid` | `DELETE` | `ADMIN` / `OWNER` | Eliminar participación |
 | **Events v2** | `/api/events-v2/switch-status` | `GET` | Autenticado | Alias: estado del switch de eventos |
+| **Events v2** | `/api/events-v2/:id/submission-window` | `GET` | Autenticado | Info de ventana de carga SQ (ADR-008) |
+| **Events v2** | `/api/events-v2/bm/:eventId/submission-window` | `GET` | Autenticado | Info de ventana de carga BM (ADR-008) |
 | **Performances**| `/api/performances` | `POST` | Autenticado | Registrar tokens y evaluar estado militar |
 | **Performances**| `/api/performances/pilots` | `GET` | Autenticado | Selector táctico de pilotos para ADMIN/OWNER |
 | **Performances**| `/api/performances/history` | `GET` | Autenticado | Historial personal de eventos y tokens |
@@ -811,6 +813,93 @@ Además de los endpoints unificados, existen 8 endpoints específicos para BM:
 
 ---
 
+### 3.5.5 Submission Window (ADR-008)
+
+> **Contexto:** las ventanas de carga están **desacopladas del ciclo del evento** (ADR-008). Un evento puede estar `CLOSED` y su ventana de carga seguir abierta hasta el deadline. Después del cierre, la participación queda en **READ-ONLY automáticamente**.
+
+#### `GET /api/events-v2/:id/submission-window`
+
+Devuelve el estado de la ventana de carga de un evento SQUADRON.
+
+- **Acceso:** Autenticado (`requireAuth`).
+- **Helper asociado:** `getSubmissionWindowStatus()` en `src/utils/submissionWindow.js`.
+- **Reglas de negocio:**
+  - Ventana SQ: **7 días** (jue 09:00 PY → jue 08:59 PY).
+  - Al cerrar la ventana, la participación queda **READ-ONLY**.
+  - Si el SQ fue cerrado por un BM (`closed_reason = 'BM_REPLACED'`), la ventana del SQ **sigue abierta** hasta su deadline original.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "status": "OPEN",
+    "submission_opens_at": "2026-09-17T12:00:00Z",
+    "submission_closes_at": "2026-09-24T11:59:59Z",
+    "seconds_remaining": 345600,
+    "seconds_until_open": 0,
+    "can_submit": true
+  }
+  ```
+
+#### `GET /api/events-v2/bm/:eventId/submission-window`
+
+Devuelve el estado de la ventana de carga de un evento BLACK_MARKET.
+
+- **Acceso:** Autenticado (`requireAuth`).
+- **Helper asociado:** `getSubmissionWindowStatus()` en `src/utils/submissionWindow.js`.
+- **Reglas de negocio:**
+  - Ventana BM: **6 días** (mié 17:00 PY → mar 16:59 PY).
+  - Al cerrar la ventana, la participación queda **READ-ONLY**.
+  - **Excepción:** el `purchase` de BM **NO** valida la ventana (BM es opcional y no determinante para el escuadrón).
+- **Response:** mismo esquema que el endpoint SQ.
+
+#### Estados de `status`
+
+| Valor | Significado |
+|---|---|
+| `NOT_SET` | El evento no tiene `submission_opens_at` / `submission_closes_at` (backfill pendiente) |
+| `NOT_OPEN` | La ventana aún no abrió (`now < submission_opens_at`) |
+| `OPEN` | Dentro de la ventana, se puede cargar |
+| `CLOSED` | La ventana cerró, la participación ya no admite cambios (READ-ONLY) |
+
+#### Campos del schema de respuesta
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `status` | `NOT_SET` \| `NOT_OPEN` \| `OPEN` \| `CLOSED` | Estado actual de la ventana |
+| `submission_opens_at` | ISO8601 \| null | Cuándo abre la ventana |
+| `submission_closes_at` | ISO8601 \| null | Cuándo cierra la ventana |
+| `seconds_remaining` | int \| null | Segundos hasta el cierre (null si `NOT_SET`) |
+| `seconds_until_open` | int \| null | Segundos hasta la apertura (null si `NOT_SET` o ya abrió) |
+| `can_submit` | boolean | `true` solo si `status === 'OPEN'` |
+
+#### Códigos de Error
+
+| Código | HTTP | Cuándo |
+|---|---|---|
+| `EVENT_NOT_FOUND` | 404 | El ID no existe |
+| `EVENT_CANCELLED` | 409 | El evento está `CANCELLED` |
+| `SUBMISSION_WINDOW_NOT_SET` | 422 | El evento no tiene las columnas de ventana pobladas |
+| `SUBMISSION_WINDOW_NOT_OPEN` | 403 | Intento de carga antes de `submission_opens_at` |
+| `SUBMISSION_WINDOW_CLOSED` | 403 | Intento de carga después de `submission_closes_at` |
+| `SUBMISSION_WINDOW_INVALID` | 400 | Estructura de ventana inválida (`opens_at >= closes_at`) |
+
+#### Helper `src/utils/submissionWindow.js`
+
+Dos funciones puras, testeadas en 39 casos (Vitest):
+
+| Función | Retorno | Uso |
+|---|---|---|
+| `validateSubmissionWindow(event, now)` | `{ valid: boolean, reason: string \| null }` | Usado por los controladores para aceptar/rechazar cargas |
+| `getSubmissionWindowStatus(event, now)` | `{ status, submission_opens_at, submission_closes_at, seconds_remaining, seconds_until_open, can_submit }` | Usado por los endpoints `GET /submission-window` |
+
+#### Referencias
+
+- ADR-008: `docs/adr/ADR-008-ventanas-carga-desacopladas.md`
+- Código: `src/utils/submissionWindow.js`, `src/controllers/events-v2.controller.js`, `src/controllers/events-v2-bm.controller.js`
+- SQL: `sql/034_submission_windows.sql`
+
+---
+
 ## 4. Hangar Militar & Upgrades 2.0 (`/api/planes`)
 
 El módulo gestiona la flota oficial de **44 aeronaves de combate** y subsistemas de mejora mecánica, operando con una arquitectura de dos vistas (Vista 1: Grid Táctico y Vista 2: Pantalla Dedicada).
@@ -1481,6 +1570,6 @@ Tabla de clasificación ordenada por puntos acumulados en el Black Market activo
 
 ---
 
-*Versión: v4.0.5 · Actualizado: 18 Septiembre 2026*
+*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
 
 
