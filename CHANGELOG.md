@@ -6,6 +6,71 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.3.1] - 2026-09-21
+
+### 🚨 Hotfix — HALL-066: Corrección del scheduler + endpoint /active con período de gracia
+
+#### Objetivo Cumplido
+
+Corregir tres bugs del scheduler que causaban que eventos futuros fueran
+marcados como `OPEN` antes de su fecha de inicio real, afectando el
+countdown del dashboard y el ciclo operativo del escuadrón. Además,
+añadir un **período de gracia** al endpoint `/api/events-v2/active` para
+que los pilotos puedan seguir cargando performance del evento anterior
+durante el hueco entre eventos (ADR-008).
+
+#### Problema Detectado
+
+El domingo 20/09/2026 a las ~22:00 PY, el dashboard mostraba un countdown
+de **~7 días** para el evento `Squadron Event 2026-W39`, cuando el evento
+`Squadron Event 2026-W38` debía cerrar el lunes 21/09/2026 a las 08:59 PY
+(~12 horas después).
+
+**Evidencia forense:** El scheduler v1.1 cerró W38 a las `21/09 00:00 UTC`
+(11 horas antes de su `end_date`) y creó W39 como `OPEN` a la misma hora
+(3 días antes de su `start_date`).
+
+#### Causa Raíz
+
+El scheduler v1.1 mezclaba tres responsabilidades en un solo tick:
+
+1. **Cerrar el evento de la semana ISO anterior** — por cambio de semana,
+   no por `end_date`.
+2. **Crear el evento de la semana ISO actual** — siempre como `OPEN`,
+   sin verificar si era futuro.
+3. **Sin lógica para promover `SCHEDULED → OPEN`** cuando llegara la hora.
+
+Además, `created_at` se seteaba con `start_date` en lugar de `NOW()`.
+
+#### Solución Aplicada
+
+**Scheduler v2.0 (`src/utils/eventScheduler.js`):**
+
+- **Tarea 1 — `openScheduledEvents()`:** Promueve `SCHEDULED → OPEN` cuando `NOW() >= start_date`.
+- **Tarea 2 — `closeExpiredEvents()`:** Cierra `OPEN → CLOSED` cuando `NOW() >= end_date`.
+- **Tarea 3 — `ensureNextSquadronEvent()`:** Prepara la próxima semana ISO como `SCHEDULED`.
+- **Guarda de seguridad:** Nunca crea evento futuro como `OPEN`.
+- **Fix de auditoría:** `created_at` ahora usa `NOW()`.
+
+**Backend (`src/controllers/events-v2.controller.js`):**
+
+- `getActiveEvent` con período de gracia (`isGracePeriod`).
+- `normalizeEvent` incluye `submission_opens_at`, `submission_closes_at`, `seconds_remaining`, `can_submit`.
+
+#### Verificación
+
+- ✅ **179/179 tests pasando** (Vitest 5.0.1).
+- ✅ **Deploy sin downtime** (`deployment-01M30T4FFKVMVF63CH8H9G75S9`).
+- ✅ **Smoke test:** `/health` → `OK`.
+- ✅ **Estado BD:** W38 `OPEN` dentro de ventana, W39 `SCHEDULED`.
+- ✅ **Dashboard muestra W38**.
+
+#### Entregable
+
+Commits `0fd9961` + `cf67dd6` mergeados a `main` y desplegados.
+
+---
+
 ## 📌 [4.3.1-docs] - 2026-09-20
 
 ### 📚 Sincronización Documental — Timezone + Duración SQ (Sprint 0 · Grupo E)

@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-20  
-> **Versión Activa:** v4.3.0 (ADR-008: ventanas de carga desacopladas)  
+> **Versión Activa:** v4.3.1 (HALL-066: scheduler v2.0 + grace period)  
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -48,6 +48,43 @@ Tras el rediseño F4.1-F4.4, los dos módulos históricos (Squadron Event + Blac
 - El scheduler auto-crea el próximo SQ el **jueves 00:00 UTC** (09:00 PY).
 
 ### Scheduler timezone-aware (HALL-065)
+
+### Scheduler v2.0 — Arquitectura de 3 tareas independientes (HALL-066 — v4.3.1)
+
+El scheduler fue reescrito en v4.3.1 para resolver HALL-066. Ahora ejecuta
+**3 tareas independientes** en cada tick, cada una idempotente:
+
+| Tarea | Función | Cuándo actúa |
+|---|---|---|
+| **1** | `openScheduledEvents()` | Promueve `SCHEDULED → OPEN` si `NOW() >= start_date` |
+| **2** | `closeExpiredEvents()` | Cierra `OPEN → CLOSED` si `NOW() >= end_date` |
+| **3** | `ensureNextSquadronEvent()` | Prepara la próxima semana ISO como `SCHEDULED` |
+
+**Guardas de seguridad:**
+
+- ⚠️ Un evento futuro **NUNCA** se crea como `OPEN`.
+- ⚠️ Un evento `OPEN` **NUNCA** se cierra antes de su `end_date`.
+- ⚠️ `created_at` siempre usa `NOW()`.
+- ⚠️ `closed_at` siempre es `null` al crear.
+
+**Modo de operación:**
+
+- Corre cada hora (`0 * * * *`).
+- Advisory lock (`acquire_scheduler_lock`) para multi-réplica.
+- Idempotente: ejecutar N ticks = ejecutar 1 tick.
+
+### Período de gracia en el endpoint `/active` (HALL-066 — v4.3.1)
+
+El endpoint `GET /api/events-v2/active` ahora distingue entre:
+
+1. **Evento `OPEN` dentro de su ventana temporal** → `isGracePeriod: false`.
+2. **Evento `CLOSED` con ventana de carga abierta** → `isGracePeriod: true`.
+
+**Caso de uso:** Entre el lunes 08:59 PY (cierre de W38) y el jueves 09:00 PY
+(apertura de W39), el dashboard sigue mostrando W38 con un badge de
+**"📝 PERÍODO DE CARGA"** y permite cargar performance del evento anterior
+hasta el `submission_closes_at` (jueves 08:59 PY).
+
 
 - Timezone: **UTC-3 fijo** todo el año (`PY_OFFSET_HOURS = 3`). Paraguay sin DST desde octubre 2024 (Ley 7141/2024).
 - Duración del **evento SQ**: 4 días (jue 09:00 PY → lun 08:59 PY).

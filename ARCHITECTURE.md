@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.3.0).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.3.1).**
 
 ---
 
@@ -158,34 +158,56 @@ A partir de la Fase 3 del rediseño (2026-09-17), el sistema cuenta con un módu
 - Emiten headers `Sunset: Sat, 16 Dec 2026 23:59:59 GMT` y `Deprecation: true`.
 - Migración esperada a `/api/events-v2/*` antes del sunset.
 
-### 2.2c Scheduler de Eventos (`eventScheduler.js`) — F2.8
+### 2.2c Scheduler de Eventos (`eventScheduler.js`) — v2.0 (HALL-066)
 
-Componente autónomo que garantiza la existencia de eventos SQ según el calendario oficial.
+Componente autónomo que garantiza la existencia y correcta transición de
+eventos SQUADRON según el calendario oficial.
 
 **Ubicación:** `src/utils/eventScheduler.js`
 
+**Arquitectura v2.0 (2026-09-21):**
+
+El scheduler fue reescrito tras HALL-066. Ejecuta **3 tareas independientes**
+en cada tick:
+
+| Tarea | Función | Cuándo actúa |
+|---|---|---|
+| **1** | `openScheduledEvents()` | Promueve `SCHEDULED → OPEN` si `NOW() >= start_date` |
+| **2** | `closeExpiredEvents()` | Cierra `OPEN → CLOSED` si `NOW() >= end_date` |
+| **3** | `ensureNextSquadronEvent()` | Prepara la próxima semana ISO como `SCHEDULED` |
+
 **Características:**
+
 - **Cron:** cada 1 hora (`0 * * * *`).
-- **Advisory Lock:** multi-réplica safe (RPC `acquire_scheduler_lock` / `release_scheduler_lock`).
+- **Advisory Lock:** multi-réplica safe.
 - **Idempotencia:** detecta eventos existentes por `legacy_event_id`.
-- **Backfill:** deshabilitado (decisión F2.9: no inventar datos).
-- **Timezone:** UTC-3 fijo (`PY_OFFSET_HOURS = 3`). Paraguay sin DST desde octubre 2024 (Ley 7141/2024).
-- **Duración:** evento SQ = 4 días (jue 09:00 PY → lun 08:59 PY); ventana de carga SQ = 7 días (ADR-008). Conceptos separados.
+- **Backfill:** deshabilitado (F2.9).
+- **Timezone:** UTC-3 fijo (`PY_OFFSET_HOURS = 3`).
+- **Duración:** evento SQ = 4 días; ventana de carga SQ = 7 días (ADR-008).
+
+**Guardas de seguridad (HALL-066):**
+
+- ⚠️ Un evento futuro **NUNCA** se crea como `OPEN`.
+- ⚠️ Un evento `OPEN` **NUNCA** se cierra antes de su `end_date`.
+- ⚠️ `created_at` siempre usa `NOW()`.
+- ⚠️ `closed_at` siempre es `null` al crear.
 
 **Flujo:**
 
 1. Scheduler tick (cada 1 hora).
-2. Calcular la semana ISO actual.
-3. ¿Existe evento SQ para esta semana?
-   - **SÍ** → no hace nada (idempotente).
-   - **NO** → continúa:
-     1. Adquirir advisory lock.
-     2. Cerrar evento OPEN anterior.
-     3. Crear nuevo evento SQ con `status: OPEN`.
-     4. Registrar en `audit_logs`: `SQ_EVENT_AUTO_CREATED`.
-     5. Liberar advisory lock.
+2. Adquirir advisory lock.
+3. **TAREA 1:** Buscar `SCHEDULED` con `start_date <= NOW()`. Promover a `OPEN`.
+4. **TAREA 2:** Buscar `OPEN` con `end_date <= NOW()`. Cerrar.
+5. **TAREA 3:** Preparar la próxima semana ISO como `SCHEDULED`.
+6. Liberar advisory lock.
 
-**Integración:** `server.js` llama a `startEventScheduler()` en el arranque. No bloquea si falla.
+**Integración:** `server.js` llama a `startEventScheduler()` en el arranque.
+
+**Referencias:**
+
+- HALL-066: `docs/incidentes/HALL-066.md`.
+- ADR-008: `docs/adr/ADR-008-ventanas-carga-desacopladas.md`.
+- Tests: `tests/utils/eventScheduler.test.js` (29 tests).
 
 ### 2.2d Middleware de Deprecación de Endpoints Legacy — F3.2
 
@@ -791,6 +813,6 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
 
 ---
 
-*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
+*Versión: v4.3.1 · Actualizado: 21 Septiembre 2026*
 
 
