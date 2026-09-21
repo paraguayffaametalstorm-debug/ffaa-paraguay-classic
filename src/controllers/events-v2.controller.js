@@ -130,9 +130,27 @@ export const getEvents = async (req, res) => {
 };
 
 // ============================================================
-// 2. GET /api/events-v2/active — Evento activo (OPEN)
+// 2. GET /api/events-v2/active — Evento activo (OPEN o grace period)
 // ============================================================
 
+/**
+ * Devuelve el evento "activo" para el dashboard.
+ *
+ * Estrategia (HALL-066 / ADR-008):
+ *   1. Busca un evento OPEN dentro de su ventana temporal (start_date <= NOW <= end_date).
+ *   2. Si no existe, busca el último evento CLOSED cuya submission_closes_at > NOW
+ *      (período de gracia: evento cerrado pero ventana de carga abierta).
+ *   3. Marca la respuesta con `isGracePeriod` para que el frontend distinga.
+ *
+ * Respuesta:
+ *   {
+ *     success: true,
+ *     event: {...},
+ *     isGracePeriod: boolean,
+ *     inWindow: boolean,       // ¿la ventana de submission está abierta?
+ *     windowCloseMs: number     // ms restantes hasta submission_closes_at
+ *   }
+ */
 export const getActiveEvent = async (req, res) => {
   try {
     const supabase = getSupabase();
@@ -140,33 +158,81 @@ export const getActiveEvent = async (req, res) => {
       return res.status(500).json({
         success: false,
         error: 'Database client unavailable',
-        event: null
+        event: null,
+        isGracePeriod: false
       });
     }
 
-    const { data: events, error } = await supabase
+    const now = new Date().toISOString();
+
+    // -------------------------------------------------------------
+    // PASO 1: Buscar evento OPEN dentro de su ventana temporal
+    // -------------------------------------------------------------
+    const { data: openEvents, error: openErr } = await supabase
       .from('events_master')
       .select('*')
       .eq('status', 'OPEN')
+      .lte('start_date', now)
+      .gte('end_date', now)
+      .order('start_date', { ascending: false })
       .limit(1);
 
-    if (error) throw error;
+    if (openErr) throw openErr;
 
-    const activeEvent = events && events.length > 0 ? events[0] : null;
+    let activeEvent = openEvents && openEvents.length > 0 ? openEvents[0] : null;
+    let isGracePeriod = false;
+
+    // -------------------------------------------------------------
+    // PASO 2: Si no hay OPEN, buscar último CLOSED con ventana abierta
+    // (período de gracia — ADR-008)
+    // -------------------------------------------------------------
+    if (!activeEvent) {
+      const { data: graceEvents, error: graceErr } = await supabase
+        .from('events_master')
+        .select('*')
+        .eq('status', 'CLOSED')
+        .gt('submission_closes_at', now)   // ventana aún abierta
+        .order('end_date', { ascending: false })
+        .limit(1);
+
+      if (graceErr) throw graceErr;
+
+      if (graceEvents && graceEvents.length > 0) {
+        activeEvent = graceEvents[0];
+        isGracePeriod = true;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // PASO 3: Log de diagnóstico si no hay nada
+    // -------------------------------------------------------------
+    if (!activeEvent) {
+      console.log(
+        '⚠️ [Events-v2] Sin evento activo. ' +
+        '(No hay OPEN dentro de ventana ni CLOSED con ventana abierta).'
+      );
+    }
+
+    // -------------------------------------------------------------
+    // PASO 4: Normalizar y responder
+    // -------------------------------------------------------------
     const normalized = normalizeEvent(activeEvent);
 
     return res.json({
       success: true,
       event: normalized,
-      inWindow: normalized ? normalized.is_open : false,
+      isGracePeriod,
+      inWindow: normalized ? normalized.inWindow : false,
       windowCloseMs: normalized ? normalized.windowCloseMs : 0
     });
+
   } catch (error) {
     console.error('❌ [Events-v2] Error en getActiveEvent:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
-      event: null
+      event: null,
+      isGracePeriod: false
     });
   }
 };
