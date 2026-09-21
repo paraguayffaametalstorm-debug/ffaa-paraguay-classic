@@ -4,9 +4,11 @@ import {
   AddMemberSchema,
   UpdateMemberStatusSchema,
   UpdateMemberRoleSchema,
-  BulkUploadSchema
+  BulkUploadSchema,
+  NickFormatSchema,
+  InstitutionalEmailSchema
 } from '../utils/schemas.js';
-import { logAuditChange } from '../utils/audit.js';
+import { logAuditChange, logNickChange } from '../utils/audit.js';
 import { ENV } from '../config/env.js';
 import { generateTemporaryPassword, getNextUserId, getTemporaryPasswordExpiry } from '../utils/security.js';
 
@@ -500,13 +502,14 @@ export const updateMemberStatus = updateUserStatus;
 // ============================================================
 export async function addMember(req, res, next) {
   try {
+    // v4.5.0: Validación estricta de nick y email con schemas dedicados
     const data = AddMemberSchema.parse(req.body);
     const supabase = getSupabase();
     if (!supabase) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
 
-    // NUEVO v4.3.2: Validar cuota de pilotos ACTIVOS (máx 30)
+    // v4.5.0: Validar cuota de pilotos ACTIVOS (máx 30)
     const { count: activeCount, error: countErr } = await supabase
       .from('users')
       .select('id', { count: 'exact', head: true })
@@ -520,16 +523,35 @@ export async function addMember(req, res, next) {
       });
     }
 
-    const { data: existing } = await supabase
+    // v4.5.0: Normalizar email (lowercase + trim) — el schema ya lo validó
+    const normalizedEmail = String(data.email).toLowerCase().trim();
+    const normalizedNick = String(data.nick).trim();
+
+    // v4.5.0: Validar unicidad del email institucional
+    const { data: existingEmail } = await supabase
       .from('users')
-      .select('email')
-      .ilike('email', data.email.toLowerCase())
+      .select('id, email, email_institucional')
+      .or(`email.ilike.${normalizedEmail},email_institucional.ilike.${normalizedEmail}`)
       .limit(1);
 
-    if (existing && existing.length > 0) {
+    if (existingEmail && existingEmail.length > 0) {
       return res.status(409).json({
         error: 'Ya existe un piloto registrado con ese correo institucional',
-        code: 'USER_ALREADY_EXISTS'
+        code: 'EMAIL_INSTITUTIONAL_TAKEN'
+      });
+    }
+
+    // v4.5.0: Validar unicidad del nick (case-insensitive)
+    const { data: existingNick } = await supabase
+      .from('users')
+      .select('id, nick')
+      .ilike('nick', normalizedNick)
+      .limit(1);
+
+    if (existingNick && existingNick.length > 0) {
+      return res.status(409).json({
+        error: 'Ya existe un piloto con ese nick. Elegí otro.',
+        code: 'NICK_TAKEN'
       });
     }
 
@@ -556,11 +578,15 @@ export async function addMember(req, res, next) {
     const tempPassword = generateTemporaryPassword();
     const tempExpiresAt = getTemporaryPasswordExpiry(ENV.TEMP_PASSWORD_EXPIRY_DAYS || 7);
     const defaultHash = await bcrypt.hash(tempPassword, 10);
+
+    // v4.5.0: Poblar tanto `email` como `email_institucional` con el mismo valor
+    // (compatibilidad con v4.4.0 que usa `email` como login principal)
     const newMember = {
       user_id: nextUserId,
-      email: data.email.toLowerCase().trim(),
+      email: normalizedEmail,
+      email_institucional: normalizedEmail,
       password_hash: defaultHash,
-      nick: data.nick.trim(),
+      nick: normalizedNick,
       role: assignedRole,
       must_change_password: true,
       temporary_password_expires_at: tempExpiresAt,
