@@ -98,10 +98,21 @@
 
       <div style="flex:0 0 auto;text-align:right;min-width:140px;">
         <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">
-          Tiempo restante
+          Cierre del evento
         </div>
         <div id="aeCountdown" style="font-size:1.6rem;font-weight:700;color:#d4af37;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono',monospace;margin:4px 0;">
           --:--:--
+        </div>
+        <!-- HALL-066: Bloque de ventana de carga (ADR-008) -->
+        <div id="aeSubmissionBlock" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.15);">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:0.72rem;color:#2ecc71;text-transform:uppercase;letter-spacing:0.5px;">
+            <i data-lucide="clock" style="width:12px;height:12px;"></i>
+            <span>Ventana de carga</span>
+          </div>
+          <div id="aeSubmissionCountdown" style="font-size:1.35rem;font-weight:700;color:#2ecc71;font-variant-numeric:tabular-nums;font-family:'JetBrains Mono',monospace;margin:4px 0;">
+            --:--:--
+          </div>
+          <div id="aeSubmissionMeta" style="font-size:0.72rem;color:#94a3b8;line-height:1.4;"></div>
         </div>
         <button id="aeCta" onclick="window.aeNavigate()" class="btn-primary" style="font-size:0.85rem;padding:6px 14px;width:100%;">
           ➡️ Ir al evento
