@@ -142,11 +142,35 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
       <div>
         <label for="newMemberNick" style="font-size:0.8rem;color:#a0aec0;">Nickname en MetalStorm</label>
-        <input type="text" id="newMemberNick" placeholder="Ej: PRY_Viper" />
+        <input
+          type="text"
+          id="newMemberNick"
+          placeholder="Ej: PRY_Viper"
+          autocomplete="off"
+          spellcheck="false"
+          oninput="window.handleNewMemberNickInput && window.handleNewMemberNickInput()"
+        />
       </div>
       <div>
-        <label for="newMemberEmail" style="font-size:0.8rem;color:#a0aec0;">Correo Electrónico</label>
-        <input type="email" id="newMemberEmail" placeholder="piloto@ffaa.py" />
+        <label for="newMemberEmailLocal" style="font-size:0.8rem;color:#a0aec0;">
+          Correo Institucional
+          <span style="font-size:0.7rem;color:#64748b;font-weight:normal;">(auto-generado, editable)</span>
+        </label>
+        <div style="display:flex;align-items:stretch;width:100%;">
+          <input
+            type="text"
+            id="newMemberEmailLocal"
+            placeholder="piloto"
+            autocomplete="off"
+            spellcheck="false"
+            style="flex:1;min-width:0;border-top-right-radius:0;border-bottom-right-radius:0;"
+            oninput="window.handleNewMemberEmailInput && window.handleNewMemberEmailInput()"
+          />
+          <span style="display:flex;align-items:center;padding:0 10px;background:rgba(15,23,42,0.9);border:1px solid #334155;border-left:none;border-top-right-radius:6px;border-bottom-right-radius:6px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:0.82rem;white-space:nowrap;">
+            @ffaa.py
+          </span>
+        </div>
+        <div id="newMemberEmailFullPreview" style="font-size:0.72rem;color:#64748b;margin-top:4px;font-family:'JetBrains Mono',monospace;min-height:14px;"></div>
       </div>
       <div>
         <label for="newMemberRole" style="font-size:0.8rem;color:#a0aec0;">Rol Inicial</label>
