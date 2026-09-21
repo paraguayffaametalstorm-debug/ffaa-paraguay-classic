@@ -1,7 +1,7 @@
 # 📋 BACKLOG DE MEJORAS — PARAGUAY-FFAA | METALSTORM
 
 > **Documento vivo de propuestas, mejoras y deuda técnica.**
-> **Última actualización:** 2026-09-20
+> **Última actualización:** 2026-09-21
 > **Responsable:** Comando C4ISR
 
 ---
@@ -78,6 +78,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-016** | 🐛 | Auditoría completa de claves `localStorage` en todo el frontend | 📋 Priorizado | S (4h) |
 | **BL-017** | 🏗️ | Sincronizar DDL `sql/001_users.sql` con BD real (HALL-061) | 📋 Priorizado | S (4h) | Agregar `google_id` a la BD real o eliminarlo del DDL. Documentar decisión. | HALL-059 reveló que existían inconsistencias puntuales. Auditar todos los archivos JS y HTML que escriben en `localStorage` para garantizar nomenclatura única y evitar futuras regresiones. |
 | **BL-018** | 📚 | Completar §3.5.2, §3.5.3 y §3.5.4 en `API_REFERENCE.md` | 📋 Priorizado | M (4h) | Agregar endpoints faltantes de events-v2 (GET /active, POST, PATCH, participaciones) y sección de deprecación legacy con sunset 2026-12-16. |
+| **BL-022** | 🧪 | Tests de integración para /api/dashboard/summary | 📋 Priorizado | S (4h) | Evitaría recurrencia de HALL-067. Cubrir: status 200, campos obligatorios (meta_tokens_sq, pilots_without_load, eventType), caso usuario sin perfil. |
+| **BL-023** | 🏗️ | Unificar encoding de archivos JS a LF (.editorconfig + .gitattributes) | 📋 Priorizado | XS (1h) | Causa raíz de HALL-068. Agregar * text=auto eol=lf en .gitattributes y end_of_line = lf en .editorconfig. |
 
 ### 🟡 Prioridad Baja (Could Have)
 
@@ -142,7 +144,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 15 |
+| Items activos | 17 |
 | Items completados | 7 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
