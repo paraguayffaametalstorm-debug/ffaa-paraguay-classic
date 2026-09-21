@@ -591,6 +591,56 @@ El sistema implementa un flujo criptográficamente seguro para el restablecimien
 
 **Auditoría:** Todos los eventos se registran en `security_events` (`PASSWORD_RESET_REQUESTED`, `PASSWORD_RESET_SUCCESS`).
 
+### 6.6b Ciclo de Vida de Credenciales Temporales (v4.4.0)
+
+A partir de v4.4.0, las contraseñas temporales `MS-XXXX-XXXX` tienen **vencimiento de 7 días** (configurable con `TEMP_PASSWORD_EXPIRY_DAYS`).
+
+**Pipeline completo:**
+
+```
+1. ADMIN crea usuario o resetea contraseña
+   POST /api/admin/members  o  /api/admin/users/:id/reset-password
+   ✅ Genera tempPassword = MS-XXXX-XXXX
+   ✅ Calcula expires_at = NOW() + 7 días
+   ✅ bcrypt.hash(tempPassword, 10)
+   ✅ UPDATE users: password_hash, must_change_password=true,
+                    temporary_password_expires_at, token_version++
+   ✅ Auditoría: INITIAL_CREDENTIAL_GENERATED o ADMIN_PASSWORD_RESET
+   ✅ Respuesta incluye tempPassword + expiresAt
+        ↓
+2. FRONTEND genera credencial con QR
+   ✅ Modal muestra tempPassword + fecha de vencimiento
+   ✅ QRCode.js genera QR con /?nick={nick}&temp_pass={pass}
+   ✅ html2canvas captura el JPG con el QR embebido
+        ↓
+3. PILOTO escanea el QR
+   ✅ Abre /?nick={nick}&temp_pass={pass}
+   ✅ IIFE prefillLoginFromQr() precarga los inputs (NO auto-login)
+   ✅ Usuario pulsa "Iniciar Sesión Táctica"
+        ↓
+4. BACKEND valida el login
+   ✅ Busca por email, email_institucional o nick
+   ✅ bcrypt.compare(tempPassword, password_hash)
+   ✅ Verifica must_change_password + temporary_password_expires_at
+   ⚠️ Si NOW() > expires_at → 401 TEMPORARY_CREDENTIAL_EXPIRED
+        ↓
+5. PILOTO cambia la contraseña
+   POST /api/auth/change-password
+   ✅ UPDATE users: password_hash, must_change_password=false,
+                    temporary_password_expires_at=NULL, token_version++
+        ↓
+6. TEMPORAL INVALIDADA
+   ✅ password_hash ya no corresponde a la temporal
+   ✅ must_change_password = false
+   ✅ temporary_password_expires_at = NULL
+```
+
+**Seguridad:**
+- Contraseña temporal hasheada con bcrypt (nunca en texto plano).
+- El QR contiene la pass en URL — se limpia con `history.replaceState`.
+- Backend rechaza credenciales vencidas **antes** de emitir JWT.
+- `audit_logs` NO guarda la contraseña, solo `credential_type`, `credential_version`, `expires_at`.
+
 ### 6.7 Mensaje Enriquecido al Bloquear Usuarios Inactivos
 
 En la versión v4.0.0, el middleware `requireAuth` (`src/middlewares/auth.js`) implementa un mensaje detallado y enriquecido cuando un piloto con `status = 'INACTIVE'` intenta acceder al sistema.

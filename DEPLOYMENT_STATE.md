@@ -51,6 +51,7 @@ CREATE TABLE users (
     inactive_reason TEXT,
     inactive_by UUID REFERENCES users(id) ON DELETE SET NULL,
     inactive_at TIMESTAMPTZ,
+    temporary_password_expires_at TIMESTAMPTZ,
     last_activity TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -69,6 +70,7 @@ CREATE TABLE users (
 | `inactive_reason` | `TEXT` (`NULL`) | Motivo obligatorio al inactivar (10-500 chars). Se limpia a `NULL` al reactivar. |
 | `inactive_by` | `UUID` (`NULL`, FK a `users.id`) | Identificador del oficial ejecutor de la baja militar. Se limpia a `NULL` al reactivar. |
 | `inactive_at` | `TIMESTAMPTZ` (`NULL`) | Marca temporal de la inactivación. Se limpia a `NULL` al reactivar. |
+| `temporary_password_expires_at` | `TIMESTAMPTZ` (`NULL`) | Fecha/hora UTC de vencimiento de la contraseña temporal (v4.4.0). `NULL` = sin vencimiento (legacy). Se limpia a `NULL` al cambiar la contraseña. |
 
 ---
 

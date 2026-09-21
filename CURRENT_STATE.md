@@ -307,6 +307,9 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Vinculación Google OAuth (HALL-059/HALL-060)** | ✅ Estable | Flujo end-to-end funcional. `API_BASE` definido inline en `link-account.html`; `google_id` eliminado del `.select()` en `linkAccount`. |
 | **Eventos v2 Unificados (F4.1-F4.4)** | ✅ Funcional | `events_master` + `event_participations`, switch funcional, 93 tests, backend BM legacy eliminado. |
 | **Ventanas de Carga (ADR-008)** | ✅ Funcional | `submission_opens_at/closes_at` desacoplados. SQ 7d / BM 6d. 39 tests. |
+| **Credenciales Temporales con Vencimiento (v4.4.0)** | ✅ Funcional | Contraseñas `MS-XXXX-XXXX` vencen en 7 días. Login rechaza credenciales expiradas con `TEMPORARY_CREDENTIAL_EXPIRED`. Auditoría `INITIAL_CREDENTIAL_GENERATED` / `ADMIN_PASSWORD_RESET`. |
+| **QR de Acceso Rápido (v4.4.0)** | ✅ Funcional | La credencial JPG incluye QR con `nick` + `temp_pass` precargados. El piloto debe pulsar "Iniciar Sesión Táctica" (NO auto-login). |
+| **Login con Nick (v4.4.0)** | ✅ Funcional | El login acepta email, email institucional, Gmail vinculado o nick como identificador. |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 

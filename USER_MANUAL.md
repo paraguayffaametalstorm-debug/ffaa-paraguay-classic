@@ -38,6 +38,8 @@ Si prefieres ingresar con correo y contraseña:
 2. Ingresa tus credenciales oficiales proporcionadas por tu Oficial de Mando:
    - **Correo Institucional / Identificador:** Tu correo registrado (ej: `callsign@ffaa.py` o correo personal).
    - **Contraseña Temporal:** Formato militar criptoseguro de alta entropía `MS-XXXX-XXXX` (ejemplo real entregado por el ADMIN: `MS-MJWT-SU3U`).
+   - **📱 Acceso Rápido por QR:** La credencial JPG incluye un código QR. Al escanearlo con la cámara del celular, la app se abre con tu **Nick** y **contraseña temporal** ya precargados. **Vos** debés pulsar **"Iniciar Sesión Táctica"**. El QR **no inicia sesión automáticamente**.
+   - **⏱ Vencimiento:** La contraseña temporal tiene una validez de **7 días** desde su emisión. Si no la usás antes de ese plazo, caduca y debe solicitarse una nueva al Comando.
 3. **Cambio Obligatorio de Contraseña:** Al autenticarte por primera vez con una clave temporal, el sistema detecta `must_change_password: true` y desplegará de inmediato el modal táctico de **Actualización de Clave Táctica**:
    - Tu nueva contraseña debe cumplir con los requisitos reglamentarios militares: **mínimo 8 caracteres, al menos 1 letra mayúscula (A-Z), 1 letra minúscula (a-z) y 1 número (0-9)**.
    - El formulario valida en tiempo real la fortaleza de la clave ingresada.
@@ -91,6 +93,16 @@ Al intentar ingresar, verás un mensaje detallado:
 4. **Al reactivarse, todos tus datos se conservan** (hangar, historial, rango, tokens). No perdés nada.
 
 **Nota:** Si tu cuenta fue inactivada por error, contactá inmediatamente al Comando Central para corregirlo.
+
+### 1.7 Formas de Iniciar Sesión (v4.4.0)
+
+A partir de v4.4.0 podés iniciar sesión con **cualquiera** de estos identificadores en el campo "Correo Institucional / Gmail":
+
+- 📧 Tu **correo institucional** (`tu_nick@ffaa.py`).
+- 📧 Tu **Gmail real** (si lo vinculaste previamente con `/link-account`).
+- 🎖️ Tu **nick de combate** (ej: `VIPER`, `FALCON-01`).
+
+En todos los casos, la contraseña debe ser tu clave de combate vigente (o la temporal `MS-XXXX-XXXX` si es tu primer acceso o tras un reseteo).
 
 ### 1.7 Asistencia de Mando y Reseteo Administrativo
 1. Si no tienes acceso a tu correo electrónico, contacta a un **Oficial ADMIN** o al **Comandante OWNER** a través del grupo oficial de WhatsApp o Discord.

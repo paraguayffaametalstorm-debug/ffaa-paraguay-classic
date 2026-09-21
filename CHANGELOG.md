@@ -6,6 +6,67 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.4.0] - 2026-09-21
+
+### 🔐 Credenciales temporales con vencimiento + QR de acceso rápido
+
+#### Objetivo Cumplido
+
+Añadir **vencimiento de 7 días** a las contraseñas temporales `MS-XXXX-XXXX` y un **código QR** en la credencial JPG que permite al piloto abrir la app con el nick y la contraseña temporal precargados. Además, ampliar el login para aceptar el **nick** como identificador válido.
+
+#### Cambios Backend
+
+| Archivo | Cambio |
+|---|---|
+| `sql/035_temporary_password_expiry.sql` | NUEVO. Columna `temporary_password_expires_at` en `users`. |
+| `src/config/env.js` | Nuevo `TEMP_PASSWORD_EXPIRY_DAYS` (default: 7). |
+| `src/utils/security.js` | Nueva función `getTemporaryPasswordExpiry(days)`. |
+| `src/controllers/admin.controller.js` | `addMember()` persiste `temporary_password_expires_at` + auditoría `INITIAL_CREDENTIAL_GENERATED`. |
+| `src/routes/admin.routes.js` | `/reset-password` persiste `temporary_password_expires_at` + auditoría `ADMIN_PASSWORD_RESET` + devuelve `expiresAt`. |
+| `src/controllers/auth.controller.js` | Login rechaza credencial vencida (`TEMPORARY_CREDENTIAL_EXPIRED`). Login acepta `nick` como identificador. `changePassword()` limpia `temporary_password_expires_at`. |
+
+#### Cambios Frontend
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Carga `qrcode.min.js`. `?v=4.2.6` → `?v=4.4.0`. |
+| `js/views.js` | `showTemporaryPasswordModal()` renderiza QR + línea de vencimiento. `downloadCredentialImage()` captura el QR. |
+| `js/auth.js` | IIFE `prefillLoginFromQr()` precarga nick + contraseña desde URL. `showLoginModal()` respeta la precarga. `login()` limpia `sessionStorage`. |
+| `sw.js` | `CACHE_NAME` → `v4.4.0-credential-qr`. |
+
+#### Flujo QR
+
+```
+ESCANEAR QR → ABRIR APP con /?nick={nick}&temp_pass={pass}
+→ FRONTEND precarga los campos (NO auto-login)
+→ USUARIO pulsa "Iniciar Sesión Táctica"
+→ BACKEND valida credencial (no vencida)
+→ FUERZA cambio de contraseña
+```
+
+#### Auditoría
+
+Nuevos eventos en `audit_logs`:
+- `INITIAL_CREDENTIAL_GENERATED` — al crear un nuevo piloto.
+- `ADMIN_PASSWORD_RESET` — al resetear desde el panel admin.
+
+Campos: `actor_user_id`, `target_user_id`, `credential_type`, `credential_version`, `expires_at`. **No se registra la contraseña en texto plano.**
+
+#### Fix adicional: login acepta nick
+
+El login ahora busca por `email`, `email_institucional` **o `nick`**. Esto permite que el QR use el nick (más legible) y simplifica el login en general.
+
+#### Verificación
+
+- ✅ QR abre la app y precarga los campos.
+- ✅ Credencial temporal funciona 7 días.
+- ✅ Cambio obligatorio tras primer login.
+- ✅ Invalidación post-cambio (`token_version`).
+- ✅ Login con email, email institucional, Gmail vinculado o nick.
+- ✅ Auditoría completa sin exponer contraseñas.
+
+---
+
 ## 📌 [4.3.1] - 2026-09-21
 
 ### 🚨 Hotfix — HALL-066: Corrección del scheduler + endpoint /active con período de gracia
