@@ -119,6 +119,11 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
     "password": "PasswordSeguro2026!"
   }
   ```
+  *(El campo `email` acepta también el **nick** del piloto, su email institucional `@ffaa.py` o su Gmail vinculado. Añadido en v4.4.0 para soportar el login asistido por QR.)*
+
+- **Errores Posibles (v4.4.0):**
+  - `401 Unauthorized` con `code: 'TEMPORARY_CREDENTIAL_EXPIRED'` si la contraseña temporal venció (7 días por defecto).
+
 - **Response Exitosa (200 OK):**
   ```json
   {
