@@ -110,3 +110,73 @@ export async function logAuditChange({ supabase, actorId, actorNick, targetId, t
         console.error('❌ [Audit] Error en logAuditChange:', err);
     }
 }
+
+/**
+ * v4.5.0 — Registra un cambio de nick en la tabla `user_nick_changes`.
+ *
+ * @param {Object} params
+ * @param {Object} params.supabase           - Cliente Supabase
+ * @param {string} params.userId             - UUID del usuario (users.id)
+ * @param {string} params.previousNick       - Nick anterior
+ * @param {string} params.newNick            - Nick nuevo
+ * @param {string} [params.previousEmail]    - Email institucional anterior (opcional)
+ * @param {string} [params.newEmail]         - Email institucional nuevo (opcional)
+ * @param {string} params.changeType         - 'SELF' | 'ADMIN'
+ * @param {string} [params.changedBy]        - UUID del admin (solo si changeType === 'ADMIN')
+ * @param {string} [params.reason]           - Razón del cambio (solo si changeType === 'ADMIN')
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+export async function logNickChange({
+    supabase,
+    userId,
+    previousNick,
+    newNick,
+    previousEmail = null,
+    newEmail = null,
+    changeType,
+    changedBy = null,
+    reason = null
+}) {
+    try {
+        if (!supabase) {
+            console.warn('⚠️ [Audit] Supabase no disponible, cambio de nick no registrado');
+            return { ok: false, error: 'SUPABASE_UNAVAILABLE' };
+        }
+
+        if (!userId || !previousNick || !newNick || !changeType) {
+            console.warn('⚠️ [Audit] logNickChange: faltan parámetros requeridos');
+            return { ok: false, error: 'MISSING_PARAMS' };
+        }
+
+        if (changeType !== 'SELF' && changeType !== 'ADMIN') {
+            console.warn('⚠️ [Audit] logNickChange: changeType inválido:', changeType);
+            return { ok: false, error: 'INVALID_CHANGE_TYPE' };
+        }
+
+        const entry = {
+            user_id: userId,
+            previous_nick: previousNick,
+            new_nick: newNick,
+            previous_institutional_email: previousEmail,
+            new_institutional_email: newEmail,
+            change_type: changeType,
+            changed_by: changedBy,
+            reason: reason,
+            created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+            .from('user_nick_changes')
+            .insert(entry);
+
+        if (error) {
+            console.error('❌ [Audit] Error registrando nick change:', error.message);
+            return { ok: false, error: error.message };
+        }
+
+        return { ok: true };
+    } catch (err) {
+        console.error('❌ [Audit] Excepción en logNickChange:', err);
+        return { ok: false, error: err.message };
+    }
+}
