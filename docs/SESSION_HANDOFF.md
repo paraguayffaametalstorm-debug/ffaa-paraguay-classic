@@ -1,9 +1,9 @@
 # 🔄 SESSION HANDOFF — PARAGUAY-FFAA | METALSTORM
 
 > **Documento de traspaso entre sesiones de trabajo.**
-> **Actualizado:** 2026-09-20 (última actualización: cierre Sprint 0 Grupo F)
-> **Última sesión completada:** Sprint 0 — Grupo F (FIX-007: submission-window en API_REFERENCE.md)
-> **Próximo paso:** Sprint 0 — Grupo G (FIX-002, 016, 019, 020, 023, 024, 025)
+> **Actualizado:** 2026-09-20 (última actualización: **cierre Sprint 0 COMPLETO**)
+> **Última sesión completada:** Sprint 0 — Grupo G (FIX-002, 016, 019, 020, 023, 024, 025)
+> **Próximo paso:** Sprint 1 — Verificación de código crítico
 
 ---
 
@@ -16,13 +16,13 @@
 - **Deploy:** Fly.io (región `gru` - São Paulo)
 - **Repo:** `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
 - **Producción:** `https://paraguay-ffaa-metalstorm.fly.dev`
-- **Tests:** Vitest 5.0.1 (**110 tests pasando**: 93 previos + 17 nuevos)
+- **Tests:** Vitest 5.0.1 (**167 tests pasando**: 128 previos + 39 nuevos ADR-008)
 
 **Trabajo activo:** Post-rediseño de Eventos v2 (F4.x).
 
 ---
 
-## 🎯 SPRINT 0 — SINCRONIZACIÓN DOCUMENTAL (EN CURSO)
+## ✅ SPRINT 0 — SINCRONIZACIÓN DOCUMENTAL (CERRADO)
 
 **Objetivo:** alinear toda la documentación con la versión real (v4.3.0) y eliminar contradicciones internas.
 
@@ -34,9 +34,9 @@ SPRINT 0 — Sincronización documental urgente
 ├── ✅ Grupo D — ADRs (FIX-012, 013) + FIX-209 nuevo
 ├── ✅ Grupo E — Timezone + duración SQ/BM (FIX-006, 021, 022)
 ├── ✅ Grupo F — submission-window (FIX-007) ← CERRADO 2026-09-20
-└── ⏳ Grupo G — Ajustes menores (FIX-002, 016, 019, 020, 023, 024, 025) ← PRÓXIMO
+└── ✅ Grupo G — Ajustes menores (FIX-002, 016, 019, 020, 023, 024, 025) ← CERRADO 2026-09-20
 
-**6/7 grupos cerrados. Solo falta Grupo G.**
+**✅ Sprint 0 COMPLETO — 7/7 grupos cerrados.**
 
 ### Grupo G — Ítems (7 fixes)
 
@@ -80,11 +80,11 @@ Ver `PLAN_TRABAJO.md` sección **8. ✅ COMPLETADOS** — contiene el hash real 
 
 ---
 
-## 2. ESTADO ACTUAL (post-Grupo F, 2026-09-20 ~23:30 UTC)
+## 2. ESTADO ACTUAL (post-Grupo G, 2026-09-20 — Sprint 0 COMPLETO)
 
 | Aspecto | Valor |
 |---|---|
-| Commit HEAD | `3077dcb` (docs(sprint-0-grupoF): cerrar FIX-007 + versionar script .cjs) |
+| Commit HEAD | `879c482` (chore(sprint-0-grupoG): versionar script DEPLOYMENT_STATE) |
 | Branch | `main` |
 | Working tree | ✅ Limpio |
 | Push | ✅ Sincronizado con origin/main |
@@ -99,11 +99,14 @@ Ver `PLAN_TRABAJO.md` sección **8. ✅ COMPLETADOS** — contiene el hash real 
 
 **Últimos commits:**
 ```
-3077dcb (HEAD) docs(sprint-0-grupoF): cerrar FIX-007 + versionar script .cjs
-f734dd4 docs(sprint-0-grupoF): documentar endpoints submission-window (FIX-007)
-fb8ff75 docs(sprint-0-grupoE): reemplazar TBD por dd5d17d + versionar scripts .cjs del Grupo E
-dd5d17d docs(sprint-0-grupoE): timezone UTC-3 fijo + duracion SQ evento 4d / ventana 7d (FIX-006/021/022)
-26e3bf4 docs(sprint-0-grupoD): reemplazar TBD por commit real 079889f en COMPLETADOS
+879c482 (HEAD) chore(sprint-0-grupoG): versionar script DEPLOYMENT_STATE (FIX-025)
+802f0dd docs(sprint-0-grupoG): DEPLOYMENT_STATE sección legacy BM + F4.5 pendiente (FIX-025)
+73d12b1 chore(sprint-0-grupoG): versionar script BACKLOG (FIX-019 no aplicable / FIX-020)
+d8e88fb docs(sprint-0-grupoG): BACKLOG BL-059 limpio + hash real (FIX-020); FIX-019 no aplicable
+68da914 chore(sprint-0-grupoG): versionar script USER_MANUAL (FIX-016)
+d2752f3 docs(sprint-0-grupoG): USER_MANUAL v4.0.0→v4.3.0 + sección ADR-008 (FIX-016)
+595314f chore(sprint-0-grupoG): versionar script de reparación README (FIX-002/023/024)
+77be901 docs(sprint-0-grupoG): README — árbol SQL 2→35 + ancla + drop metadata.json (FIX-002/023/024)
 ```
 
 ---
@@ -342,12 +345,16 @@ fly logs -a paraguay-ffaa-metalstorm | findstr /I "Scheduler"
 En una nueva conversación:
 
 1. **Adjuntar este `SESSION_HANDOFF.md`.**
-2. **Escribir:** "Continuemos con F4.5 (DROP tablas BM legacy post-2026-09-26)".
+2. **Escribir:** "Continuemos con Sprint 1 (verificación de código crítico)".
 3. **Opcionalmente adjuntar:**
-   - `sql/032_drop_bm_legacy_tables.sql`.
-   - `docs/adr/ADR-007-rediseno-eventos-v2.md`.
+   - `PLAN_TRABAJO.md` (sección SPRINT 1 con los 8 hallazgos FIX-101 a FIX-108).
+   - Los archivos a verificar según el hallazgo.
 
-**La IA leerá el handoff, entenderá el contexto y arrancará con F4.5.**
+**La IA leerá el handoff, entenderá el contexto y arrancará con Sprint 1.**
+
+> ⚠️ **Excepciones operativas en paralelo:**
+> - **Jueves 24-09-2026:** verificar W39 en Supabase (scheduler).
+> - **Post-2026-09-26:** ejecutar F4.5 (DROP tablas BM legacy).
 
 ---
 
@@ -372,23 +379,27 @@ fly logs -a paraguay-ffaa-metalstorm | findstr /I "Timezone"
 
 ---
 
-## 12. CHECKLIST DE CIERRE DE ESTA SESIÓN
+## 12. CHECKLIST DE CIERRE — SPRINT 0 COMPLETO
 
-- [x] HALL-065 v2 identificado y diagnosticado
-- [x] Fix aplicado: offset UTC-4 → UTC-3
-- [x] W38 corregido en BD con fechas consistentes
-- [x] 17 tests automatizados creados
-- [x] 110/110 tests pasando
-- [x] Deploy a producción (deployment-01M2YHNVV30YCWSKBFA3RSM5R4)
-- [x] Log del scheduler muestra UTC-3
-- [x] CHANGELOG [4.1.1] documentado
-- [x] BACKLOG actualizado
-- [x] SESSION_HANDOFF regenerado
-- [ ] **Commit + push del mini-commit de docs**
-- [ ] **Verificar W39 el jueves 24-09**
-- [ ] **F4.5 (DROP tablas BM legacy) post-2026-09-26**
+### Grupo G (2026-09-20)
 
-**Sistema: 100% operativo con HALL-065 v2 aplicado.**
+- [x] FIX-002/023/024 aplicados en `README.md` (`77be901`)
+- [x] FIX-016 aplicado en `USER_MANUAL.md` (`d2752f3`)
+- [x] FIX-019 verificado — no aplicable (`d8e88fb`)
+- [x] FIX-020 aplicado en `BACKLOG.md` (`d8e88fb`)
+- [x] FIX-025 aplicado en `DEPLOYMENT_STATE.md` (`802f0dd`)
+- [x] 4 scripts `.cjs` versionados en `scripts/`
+- [x] Mini-commit TBD (PLAN_TRABAJO + SESSION_HANDOFF)
+- [x] Push a origin/main
+
+### Pendientes operativos post-Sprint 0
+
+- [ ] **Sprint 1** — Verificación de código crítico (FIX-101 a FIX-108)
+- [ ] **Verificar W39** el jueves 24-09 (scheduler)
+- [ ] **F4.5** (DROP tablas BM legacy) post-2026-09-26
+- [ ] **Reportar a Supabase** bug de tzdata (`America/Asuncion` devuelve UTC-4)
+
+**Sistema: 100% operativo — Sprint 0 COMPLETO.**
 
 ---
 
@@ -396,13 +407,13 @@ fly logs -a paraguay-ffaa-metalstorm | findstr /I "Timezone"
 
 | Sub-fase | Descripción | Estimación |
 |---|---|---|
-| **Mini-commit docs** | CHANGELOG + BACKLOG + SESSION_HANDOFF | ~10 min |
+| **Sprint 1** | Verificación de código crítico (8 hallazgos FIX-101 a FIX-108) | 4-6 h |
 | **Verificación W39** | Jueves 24-09 (automático) | ~10 min |
 | **F4.5** | DROP tablas BM legacy (post-2026-09-26) | ~10 min |
 
 ---
 
-**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-20 · Commit 074fdc3**
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-20 · Commit 879c482**
 
 
 ---
