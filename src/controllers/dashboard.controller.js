@@ -90,28 +90,46 @@ export const getSummary = async (req, res, next) => {
       }
     }
 
-    const totalMembersCount = usersWithAvg.length;
-    const activeMembersCount = usersWithAvg.filter(u => u.status === 'ACTIVE').length;
+        // ============================================================
+    // FIX v4.3.2: Cálculo correcto de squadStats
+    // ============================================================
+    const MAX_ACTIVE_MEMBERS = 30;
+    const META_TOKENS_SQ = 175;
 
-    // Calculate squad average
-    const avgSquad = usersWithAvg.length > 0
-      ? Math.round(usersWithAvg.reduce((acc, u) => acc + (u.avg_tokens || 0), 0) / usersWithAvg.length)
+    const activeMembersCount = usersWithAvg.length;
+    const totalMembersCount = activeMembersCount;
+
+    const avgSquad = activeMembersCount > 0
+      ? Math.round(
+          usersWithAvg.reduce((acc, u) => acc + (u.avg_tokens || 0), 0) /
+          activeMembersCount
+        )
       : 0;
+
+    const pilotsWithLoad = usersWithAvg.filter(u => (u.avg_tokens || 0) > 0).length;
+    const pilotsWithoutLoad = activeMembersCount - pilotsWithLoad;
+    const eventType = activeEvent?.type || null;
 
     res.json({
       success: true,
       currentEvent: activeEvent,
+      eventType,
       userStats: {
         avg_tokens: userTokensAvg,
         weeks_evaluated: userWeeks || 1,
         trend: user.trend || 'stable',
-        perf_status: user.perf_status || 'VERDE'
+        perf_status: currentProfile?.perf_status || user.perf_status || 'VERDE'
       },
       squadStats: {
         total_members: totalMembersCount,
         active_members: activeMembersCount,
+        max_active_members: MAX_ACTIVE_MEMBERS,
         avg_tokens: avgSquad,
-        at_risk_count: usersWithAvg.filter(u => u.perf_status === 'ROJO' || u.perf_status === 'NEGRO').length
+        meta_tokens_sq: META_TOKENS_SQ,
+        at_risk_count: usersWithAvg.filter(u =>
+          u.perf_status === 'ROJO' || u.perf_status === 'NEGRO'
+        ).length,
+        pilots_without_load: pilotsWithoutLoad
       },
       topPilots
     });

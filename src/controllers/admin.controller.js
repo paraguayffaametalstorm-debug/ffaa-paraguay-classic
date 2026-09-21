@@ -18,6 +18,9 @@ const ROLE_LIMITS = {
   VETERANO: 8
 };
 
+// ========== DOTACIÓN MÁXIMA ACTIVA ==========
+const MAX_ACTIVE_MEMBERS = 30;
+
 // ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
 function buildUserQuery(supabase, id, selectFields = 'id, user_id, nick, email, role, status') {
     let query = supabase.from('users').select(selectFields);
@@ -502,6 +505,20 @@ export async function addMember(req, res, next) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
 
+    // NUEVO v4.3.2: Validar cuota de pilotos ACTIVOS (máx 30)
+    const { count: activeCount, error: countErr } = await supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'ACTIVE');
+
+    if (!countErr && (activeCount || 0) >= MAX_ACTIVE_MEMBERS) {
+      return res.status(400).json({
+        error: '⚠️ Dotación activa completa (' + activeCount + '/' + MAX_ACTIVE_MEMBERS + '). Para incorporar un nuevo piloto activo, primero debés inactivar a otro.',
+        code: 'MAX_ACTIVE_MEMBERS_REACHED',
+        details: { active: activeCount, max: MAX_ACTIVE_MEMBERS }
+      });
+    }
+
     const { data: existing } = await supabase
       .from('users')
       .select('email')
@@ -547,7 +564,7 @@ export async function addMember(req, res, next) {
       token_version: 1,
       phone: '',
       bio: '',
-      perf_status: 'VERDE',
+      perf_status: 'PENDIENTE',
       status: 'ACTIVE',
       avg_tokens: 0,
       weeks_evaluated: 0,
@@ -604,6 +621,41 @@ export async function bulkUploadEvent(req, res, next) {
       return res.status(500).json({ error: 'Database client unavailable' });
     }
 
+    // NUEVO v4.3.2: Validar cuota de pilotos ACTIVOS antes del loop
+    const bulkNicks = bulkList.map(i => i.nick.trim());
+    const { data: existingUsers } = await supabase
+      .from('users')
+      .select('nick')
+      .in('nick', bulkNicks);
+
+    const nicksExistentes = new Set(
+      (existingUsers || []).map(u => (u.nick || '').toLowerCase())
+    );
+    const nuevosPilotos = bulkNicks.filter(
+      n => !nicksExistentes.has(n.toLowerCase())
+    ).length;
+
+    const { count: activeCount, error: countErr } = await supabase
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'ACTIVE');
+
+    if (!countErr) {
+      const proyectado = (activeCount || 0) + nuevosPilotos;
+      if (proyectado > MAX_ACTIVE_MEMBERS) {
+        return res.status(400).json({
+          error: '⚠️ La carga masiva excedería la dotación activa máxima (' + MAX_ACTIVE_MEMBERS + '). Activos: ' + activeCount + '. Nuevos: ' + nuevosPilotos + '. Excedente: ' + (proyectado - MAX_ACTIVE_MEMBERS) + '.',
+          code: 'MAX_ACTIVE_MEMBERS_REACHED',
+          details: {
+            active_current: activeCount,
+            new_pilots: nuevosPilotos,
+            max: MAX_ACTIVE_MEMBERS,
+            overflow: proyectado - MAX_ACTIVE_MEMBERS
+          }
+        });
+      }
+    }
+
     let processed = 0;
     const createdUsers = [];
     let nextUserId = await getNextUserId(supabase);
@@ -632,7 +684,7 @@ export async function bulkUploadEvent(req, res, next) {
             nick: item.nick,
             role: item.role || 'MIEMBRO',
             must_change_password: true,
-            perf_status: 'VERDE',
+            perf_status: 'PENDIENTE',
             status: 'ACTIVE',
             avg_tokens: item.tokens,
             weeks_evaluated: 1,
