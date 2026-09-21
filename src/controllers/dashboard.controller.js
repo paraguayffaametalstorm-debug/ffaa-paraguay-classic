@@ -34,6 +34,8 @@ export const getSummary = async (req, res, next) => {
           return st === 'ACTIVE' || st === 'ACTIVO' || !st;
         });
 
+        let currentProfile = null;
+
         if (activeUsersList.length > 0) {
           // Obtener performances para calcular promedios actualizados
           const { data: perfData } = await supabase
@@ -75,7 +77,7 @@ export const getSummary = async (req, res, next) => {
             .slice(0, 5);
 
           // Estadísticas del usuario actual
-          const currentProfile = usersWithAvg.find(u => 
+          currentProfile = usersWithAvg.find(u => 
             (user.user_id && String(u.user_id) === String(user.user_id)) || 
             (user.id && String(u.id) === String(user.id)) || 
             (user.email && u.email?.toLowerCase() === user.email?.toLowerCase())
