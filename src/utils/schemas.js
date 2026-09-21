@@ -37,9 +37,38 @@ export const BulkUploadSchema = z.object({
   ).min(1, 'Debe incluir al menos un registro')
 });
 
+// ============================================================
+// v4.5.0 — Validaciones de Nick y Email Institucional
+// ============================================================
+
+/**
+ * Regex oficial de nick militar.
+ * Permite: A-Z, a-z, 0-9, punto, guión bajo, guión medio.
+ * Longitud: 3 a 20 caracteres.
+ */
+export const NICK_REGEX = /^[A-Za-z0-9._-]{3,20}$/;
+
+/**
+ * Regex oficial del email institucional.
+ * Formato: <prefijo>@ffaa.py
+ * Prefijo: 3 a 30 caracteres, minúsculas + dígitos + . _ -
+ */
+export const INSTITUTIONAL_EMAIL_REGEX = /^[a-z0-9._-]{3,30}@ffaa\.py$/;
+
+export const NickFormatSchema = z.string()
+  .trim()
+  .min(3, 'El nick debe tener al menos 3 caracteres')
+  .max(20, 'El nick no puede exceder 20 caracteres')
+  .regex(NICK_REGEX, 'Formato inválido: solo letras, números, punto, guión bajo y guión medio (3-20 caracteres)');
+
+export const InstitutionalEmailSchema = z.string()
+  .trim()
+  .toLowerCase()
+  .regex(INSTITUTIONAL_EMAIL_REGEX, 'Email institucional inválido. Formato: usuario@ffaa.py (3-30 caracteres, minúsculas)');
+
 export const AddMemberSchema = z.object({
-  nick: z.string().min(2, 'Nickname requerido'),
-  email: z.string().email('Email inválido'),
+  nick: NickFormatSchema,
+  email: InstitutionalEmailSchema,
   role: z.enum(['MIEMBRO', 'VETERANO', 'ADMIN', 'OWNER']).default('MIEMBRO')
 });
 
@@ -77,12 +106,19 @@ export const UpdatePlaneSystemSchema = z.object({
 });
 
 export const ProfileUpdateSchema = z.object({
-  nick: z.string().min(2).max(50).optional(),
+  // v4.5.0: nick con validación estricta (formato militar)
+  // El límite de cambios se valida en el controller, no acá.
+  nick: NickFormatSchema.optional(),
   full_name: z.string().max(100).optional().nullable(),
   email_personal: z.string().email().optional().nullable().or(z.literal('')),
   phone: z.string().max(30).optional().nullable(),
   bio: z.string().max(500).optional().nullable(),
   notifications_enabled: z.boolean().optional()
+});
+
+// v4.5.0 — Payload específico para cambio de nick desde Mi Perfil
+export const NickChangeSchema = z.object({
+  nick: NickFormatSchema
 });
 
 export const SettingsUpdateSchema = z.object({
