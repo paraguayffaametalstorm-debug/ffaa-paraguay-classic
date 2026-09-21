@@ -16,8 +16,9 @@ import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { bulkLimiter } from '../middlewares/rateLimiter.js';
 import { getSupabase } from '../db/supabase.js';
 import bcrypt from 'bcryptjs';
-import { generateTemporaryPassword } from '../utils/security.js';
+import { generateTemporaryPassword, getTemporaryPasswordExpiry } from '../utils/security.js';
 import { logSecurityEvent } from '../utils/audit.js';
+import { ENV } from '../config/env.js';
 
 const router = Router();
 
@@ -144,6 +145,7 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         // ============================================================
 
         const tempPassword = generateTemporaryPassword();
+        const tempExpiresAt = getTemporaryPasswordExpiry(ENV.TEMP_PASSWORD_EXPIRY_DAYS || 7);
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
@@ -154,6 +156,7 @@ router.post('/users/:userId/reset-password', async (req, res) => {
                     .update({
                         password_hash: hashedPassword,
                         must_change_password: true,
+                        temporary_password_expires_at: tempExpiresAt,
                         token_version: newTokenVersion,
                         updated_at: new Date().toISOString()
                     })
@@ -173,14 +176,18 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             metadata: { 
                 reset_by: req.user.nick,
                 reset_by_role: req.user.role,
-                target_role: targetRole
+                target_role: targetRole,
+                credential_type: 'TEMPORARY_PASSWORD',
+                credential_version: newTokenVersion,
+                expires_at: tempExpiresAt
             }
         });
 
         res.json({
             success: true,
             message: `Contraseña de ${user.nick} reseteada. Entrégasela por WhatsApp/Discord — no volverá a mostrarse.`,
-            temporaryPassword: tempPassword
+            temporaryPassword: tempPassword,
+            expiresAt: tempExpiresAt
         });
 
     } catch (error) {

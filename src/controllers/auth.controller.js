@@ -133,6 +133,26 @@ export const login = async (req, res) => {
             user.user_id = numericUserId;
         }
 
+        // 3.2 Verificar vencimiento de credencial temporal
+        if (user.must_change_password && user.temporary_password_expires_at) {
+            const expiry = new Date(user.temporary_password_expires_at);
+            if (new Date() > expiry) {
+                await logSecurityEvent({
+                    supabase,
+                    userId: user.id || user.user_id,
+                    nick: user.nick,
+                    event: 'LOGIN_FAILED_EXPIRED_CREDENTIAL',
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    metadata: { reason: 'temporary_credential_expired', expired_at: user.temporary_password_expires_at }
+                });
+                return res.status(401).json({
+                    error: '⚠️ Tu contraseña temporal ha expirado. Contactá a un administrador para obtener una nueva.',
+                    code: 'TEMPORARY_CREDENTIAL_EXPIRED'
+                });
+            }
+        }
+
         // 4. Generar JWT con token_version
         const token = jwt.sign(
             { 
@@ -406,6 +426,7 @@ export const changePassword = async (req, res) => {
             .update({
                 password_hash: newHash,
                 must_change_password: false,
+                temporary_password_expires_at: null,
                 token_version: newTokenVersion,
                 updated_at: new Date().toISOString()
             });

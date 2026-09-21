@@ -7,7 +7,8 @@ import {
   BulkUploadSchema
 } from '../utils/schemas.js';
 import { logAuditChange } from '../utils/audit.js';
-import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
+import { ENV } from '../config/env.js';
+import { generateTemporaryPassword, getNextUserId, getTemporaryPasswordExpiry } from '../utils/security.js';
 
 // ========== LÍMITES DE ROL CENTRALIZADOS ==========
 // HALL-053/054: Fuente única de verdad para cuotas jerárquicas.
@@ -553,6 +554,7 @@ export async function addMember(req, res, next) {
 
     const nextUserId = await getNextUserId(supabase);
     const tempPassword = generateTemporaryPassword();
+    const tempExpiresAt = getTemporaryPasswordExpiry(ENV.TEMP_PASSWORD_EXPIRY_DAYS || 7);
     const defaultHash = await bcrypt.hash(tempPassword, 10);
     const newMember = {
       user_id: nextUserId,
@@ -561,6 +563,7 @@ export async function addMember(req, res, next) {
       nick: data.nick.trim(),
       role: assignedRole,
       must_change_password: true,
+      temporary_password_expires_at: tempExpiresAt,
       token_version: 1,
       phone: '',
       bio: '',
@@ -589,8 +592,14 @@ export async function addMember(req, res, next) {
       actorNick: req.user.nick,
       targetId: createdUser?.id || createdUser?.user_id,
       targetNick: newMember.nick,
-      action: 'USER_CREATED',
-      details: { role: assignedRole, email: newMember.email }
+      action: 'INITIAL_CREDENTIAL_GENERATED',
+      details: {
+        credential_type: 'TEMPORARY_PASSWORD',
+        credential_version: newMember.token_version,
+        expires_at: tempExpiresAt,
+        role: assignedRole,
+        email: newMember.email
+      }
     });
 
     const { password_hash, ...safe } = createdUser || newMember;
@@ -598,9 +607,11 @@ export async function addMember(req, res, next) {
       success: true,
       message: 'Piloto registrado con éxito. Contraseña táctica temporal generada.',
       temporaryPassword: tempPassword,
+      expiresAt: tempExpiresAt,
       data: {
         ...safe,
-        temporaryPassword: tempPassword
+        temporaryPassword: tempPassword,
+        expiresAt: tempExpiresAt
       },
       member: safe,
       user: safe

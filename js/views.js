@@ -5173,8 +5173,9 @@ async function resetPilotPassword(userId, nick, email) {
     if (!res.ok || !data.success) throw new Error(data.error || 'Error al resetear');
     const tempPass = data.temporaryPassword || data.data?.temporaryPassword;
     const pilotEmail = email || data.email || data.data?.email || '';
+    const expiresAt = data.expiresAt || data.data?.expiresAt || '';
     if (tempPass) {
-      showTemporaryPasswordModal(nick, tempPass, { email: pilotEmail });
+      showTemporaryPasswordModal(nick, tempPass, { email: pilotEmail, expiresAt });
     } else {
       alert(`✅ Contraseña de ${nick} reseteada.\n\nClave temporal: ${data.temporaryPassword}\n\nIndícasela al piloto para que inicie sesión.`);
     }
@@ -5210,8 +5211,9 @@ async function addNewMember() {
     }
 
     const tempPass = data.temporaryPassword || data.data?.temporaryPassword;
+    const expiresAt = data.expiresAt || data.data?.expiresAt || '';
     if (tempPass) {
-      showTemporaryPasswordModal(nick, tempPass, { email, role });
+      showTemporaryPasswordModal(nick, tempPass, { email, role, expiresAt });
     } else {
       showToast(`✅ Piloto ${nick} registrado con éxito`, 'success');
     }
@@ -5232,6 +5234,7 @@ function showTemporaryPasswordModal(nick, tempPass, options = {}) {
   let email = '';
   let role = 'MIEMBRO';
   let creationDate = '';
+  let expiresAt = '';
 
   if (typeof options === 'string') {
     email = options;
@@ -5239,6 +5242,7 @@ function showTemporaryPasswordModal(nick, tempPass, options = {}) {
     email = options.email || '';
     role = options.role || 'MIEMBRO';
     creationDate = options.date || '';
+    expiresAt = options.expiresAt || '';
   }
 
   if (!email) {
@@ -5354,6 +5358,22 @@ function showTemporaryPasswordModal(nick, tempPass, options = {}) {
           <div style="font-size: 0.7rem; color: #64748B; margin-top: 2px; font-family: 'JetBrains Mono', monospace;">
             (Válida para el primer inicio de sesión · Sustitución obligatoria)
           </div>
+          <div id="credentialExpiryLine" style="font-size: 0.72rem; color: #F87171; margin-top: 6px; font-family: 'JetBrains Mono', monospace; ${expiresAt ? '' : 'display:none;'}">
+            ⏱ Vence: <span id="credentialExpiryValue">${expiresAt ? new Date(expiresAt).toLocaleString() : ''}</span>
+          </div>
+        </div>
+
+        <!-- QR de acceso rápido -->
+        <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 14px; background: rgba(7, 13, 30, 0.9); border: 1px solid #2A3A5C; border-radius: 6px; padding: 10px 14px;">
+          <div id="credentialQrContainer" style="width: 140px; height: 140px; background: #FFFFFF; padding: 6px; border-radius: 4px; flex-shrink: 0;"></div>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; color: #D4AF37; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 4px;">
+              📱 Acceso Rápido por QR
+            </div>
+            <div style="font-size: 0.76rem; color: #CBD5E1; line-height: 1.4;">
+              Escaneá este código con la cámara del dispositivo. Se abrirá la aplicación con tu <strong>Nick</strong> y <strong>contraseña temporal</strong> ya precargados. <strong>Vos</strong> deberás pulsar <em>Iniciar Sesión</em>.
+            </div>
+          </div>
         </div>
 
         <!-- Advertencia de Seguridad -->
@@ -5404,6 +5424,28 @@ function showTemporaryPasswordModal(nick, tempPass, options = {}) {
   document.addEventListener('keydown', handleEsc);
 
   document.body.appendChild(modal);
+
+  // Generar QR de acceso rápido
+  try {
+    const qrContainer = document.getElementById('credentialQrContainer');
+    if (qrContainer && typeof QRCode === 'function') {
+      const qrUrl = `${location.origin}/?nick=${encodeURIComponent(nick || '')}&temp_pass=${encodeURIComponent(tempPass || '')}&must_change_password=true`;
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: qrUrl,
+        width: 128,
+        height: 128,
+        colorDark: '#0B132B',
+        colorLight: '#FFFFFF',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else if (qrContainer) {
+      qrContainer.style.display = 'none';
+      console.warn('[Credential] QRCode library no disponible');
+    }
+  } catch (qrErr) {
+    console.warn('[Credential] Error generando QR:', qrErr);
+  }
 }
 
 async function downloadCredentialImage() {

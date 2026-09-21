@@ -66,6 +66,63 @@ function loginWithGoogle() {
   window.location.href = `${apiBase}/api/auth/google`;
 }
 
+// ============================================================
+// Precarga desde QR de credencial temporal
+// NO inicia sesión automáticamente — solo rellena los inputs.
+// Se ejecuta UNA vez al cargar la página.
+// ============================================================
+(function prefillLoginFromQr() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const nick = params.get('nick');
+    const tempPass = params.get('temp_pass');
+    const mustChange = params.get('must_change_password');
+
+    if (!nick && !tempPass) return;
+
+    // Esperar a que el modal de login exista en el DOM
+    const tryFill = (attempt = 0) => {
+      const emailInput = document.getElementById('loginEmail');
+      const passInput  = document.getElementById('loginPassword');
+
+      if (!emailInput || !passInput) {
+        if (attempt < 20) {
+          setTimeout(() => tryFill(attempt + 1), 150);
+        }
+        return;
+      }
+
+      if (nick && !emailInput.value) emailInput.value = nick;
+      if (tempPass && !passInput.value) passInput.value = tempPass;
+
+      // Mostrar el modal de login si está oculto
+      const modal = document.getElementById('loginModal');
+      if (modal && !modal.classList.contains('show')) {
+        modal.classList.add('show');
+      }
+
+      // Limpiar la URL para no dejar la contraseña temporal en el historial
+      try {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      } catch (_) { /* noop */ }
+
+      // Aviso al usuario (sin auto-login)
+      if (typeof showToast === 'function') {
+        showToast('📱 Credenciales precargadas desde QR. Pulsá "Iniciar Sesión Táctica" para continuar.', 'info');
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => tryFill());
+    } else {
+      tryFill();
+    }
+  } catch (err) {
+    console.warn('[QR Prefill] Error:', err);
+  }
+})();
+
 // ========== VERIFICAR ESTADO DE AUTENTICACIÓN ==========
 function checkAuthStatus() {
   // 1. Manejar callback de Google OAuth si está presente en la URL

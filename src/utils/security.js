@@ -58,7 +58,20 @@ export function generateRecoveryCode() {
  * @returns {Promise<number>} Siguiente user_id correlativo entero (atómico)
  * @throws {Error} Si Supabase no está disponible o la RPC falla
  */
+
+/**
+ * Calcula la fecha de vencimiento de una credencial temporal.
+ * @param {number} days - Días de vigencia (default: 7)
+ * @returns {string} ISO 8601 en UTC
+ */
+export function getTemporaryPasswordExpiry(days = 7) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString();
+}
+
 export async function getNextUserId(supabase) {
+
     if (!supabase) {
         throw new Error('Cliente Supabase no disponible para generar user_id');
     }
