@@ -1,21 +1,41 @@
 ﻿/**
  * ============================================================================
  * PARAGUAY-FFAA | METALSTORM
- * SCHEDULER DE EVENTOS — Auto-creación de Squadron Events
+ * SCHEDULER DE EVENTOS — v2.0 (HALL-066 FIX)
  * ============================================================================
  * Propósito:
- *   Garantizar que nunca falten eventos SQUADRON en el sistema.
- *   Corre cada 1 hora y verifica si existe el evento de la semana actual.
- *   Si no existe, lo crea + cierra el anterior.
+ *   Garantizar la existencia y correcta transición de eventos SQUADRON.
+ *   Corre cada 1 hora y ejecuta 3 tareas INDEPENDIENTES:
  *
- * Características:
- *   - Idempotente (si el evento existe, no hace nada).
- *   - Advisory Lock (solo 1 réplica de Fly.io ejecuta).
- *   - Auto-backfill al arrancar (últimas 12 semanas) — DESHABILITADO (F2.9).
- *   - Auditoría en audit_logs.
+ *     TAREA 1 — openScheduledEvents()
+ *       Promueve SCHEDULED → OPEN cuando NOW() >= start_date.
  *
- * Versión: v1.1 (HALL-065 fix timezone + duración)
- * Fecha: 2026-09-20
+ *     TAREA 2 — closeExpiredEvents()
+ *       Cierra OPEN → CLOSED cuando NOW() >= end_date.
+ *       Respeta el end_date real, NO cierra por cambio de semana ISO.
+ *
+ *     TAREA 3 — ensureNextSquadronEvent()
+ *       Prepara el evento de la próxima semana ISO como SCHEDULED.
+ *       NUNCA crea eventos futuros como OPEN.
+ *
+ * Modelo de negocio (ADR-008):
+ *   - Ciclo del evento SQ:  jue 09:00 PY → lun 08:59 PY (4 días).
+ *   - Ventana de carga SQ:  jue 09:00 PY → jue 08:59 PY (7 días).
+ *   - Los pilotos pueden seguir cargando performance durante el "hueco"
+ *     (lunes-jueves) entre eventos, porque la ventana de carga está
+ *     desacoplada del ciclo del evento.
+ *
+ * Cambios vs. v1.1 (HALL-066):
+ *   - [FIX] created_at ahora usa NOW() en vez de start_date.
+ *   - [FIX] closed_at siempre es null al crear.
+ *   - [FIX] Guarda: nunca crear evento futuro como OPEN.
+ *   - [NUEVO] openScheduledEvents() para transición SCHEDULED → OPEN.
+ *   - [NUEVO] closeExpiredEvents() respeta end_date.
+ *   - [REFACTOR] schedulerTick() orquesta 3 tareas independientes.
+ *   - [NUEVO] ensureNextSquadronEvent() prepara la próxima semana.
+ *
+ * Versión: v2.0
+ * Fecha: 2026-09-21
  * Autor: PJPIROVANI (OWNER)
  * ============================================================================
  */
@@ -31,9 +51,6 @@ import { getSupabase } from '../db/supabase.js';
  * Paraguay usa UTC-3 todo el año desde octubre 2024 (DST abolido por ley).
  * Regla de negocio: los eventos SQ abren jueves 09:00 PY y cierran lunes 08:59 PY.
  * En UTC: jueves 12:00 → lunes 11:59.
- *
- * ⚠️ HALL-065 fix v2 (2026-09-20): corregido offset UTC-4 → UTC-3.
- * Ver ADR-007 §2.3 y SESSION_HANDOFF.
  */
 const PY_OFFSET_HOURS = 3;
 
@@ -43,8 +60,11 @@ const SQ_OPEN_HOUR_PY = 9;
 const SQ_CLOSE_HOUR_PY = 8;
 const SQ_CLOSE_MINUTE_PY = 59;
 
+/** Tipo de evento gestionado por este scheduler. */
+const SQ_TYPE = 'SQUADRON';
+
 // ============================================================
-// HELPERS
+// HELPERS DE FECHA / ISO WEEK
 // ============================================================
 
 /**
@@ -104,7 +124,6 @@ function getSquadronEventDates(isoWeek, isoYear) {
   return { start: thursday, end: monday };
 }
 
-
 /**
  * Calcula la ventana de carga (submission window) para un evento.
  * Reglas (ADR-008):
@@ -118,7 +137,7 @@ function getSquadronEventDates(isoWeek, isoYear) {
 function calculateSubmissionWindow(startDate, eventType) {
   const start = new Date(startDate);
 
-  if (eventType === 'SQUADRON') {
+  if (eventType === SQ_TYPE) {
     const closes = new Date(start);
     closes.setUTCDate(closes.getUTCDate() + 7);
     return {
@@ -157,10 +176,6 @@ function buildEventName(isoWeek, isoYear) {
 /**
  * Construye el legacy_event_id del evento SQ.
  * Formato: "YYYY-MM · SEM NN - SQ"
- *
- * Nota: usamos el mes UTC del jueves de apertura. Como el evento arranca
- * a las 12:00 UTC del jueves, el mes UTC coincide siempre con el mes PY
- * (nunca cae en un cambio de mes por la madrugada).
  */
 function buildLegacyEventId(isoWeek, isoYear, date) {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -169,14 +184,9 @@ function buildLegacyEventId(isoWeek, isoYear, date) {
 }
 
 // ============================================================
-// SCHEDULER CORE
+// ADVISORY LOCKS
 // ============================================================
 
-/**
- * Intenta adquirir el advisory lock del scheduler.
- * @param {object} supabase
- * @returns {Promise<boolean>}
- */
 async function tryAcquireLock(supabase) {
   try {
     const { data, error } = await supabase.rpc('acquire_scheduler_lock');
@@ -191,9 +201,6 @@ async function tryAcquireLock(supabase) {
   }
 }
 
-/**
- * Libera el advisory lock del scheduler.
- */
 async function releaseLock(supabase) {
   try {
     await supabase.rpc('release_scheduler_lock');
@@ -202,45 +209,154 @@ async function releaseLock(supabase) {
   }
 }
 
+// ============================================================
+// TAREA 1 — Promover SCHEDULED → OPEN
+// ============================================================
+
 /**
- * Cierra el evento OPEN actual (si existe).
+ * Promueve eventos SCHEDULED a OPEN cuando NOW() >= start_date.
+ * Idempotente. No crea ni cierra nada más.
+ *
+ * ⚠️ Respeta el índice único parcial `idx_events_master_single_open`:
+ *    si ya hay un evento OPEN, NO promueve otro. Esto es defensivo.
+ *
  * @param {object} supabase
- * @returns {Promise<string|null>} UUID del evento cerrado, o null
  */
-async function closeCurrentOpenEvent(supabase) {
-  try {
-    const { data: openEvents, error: queryErr } = await supabase
-      .from('events_master')
-      .select('id, legacy_event_id')
-      .eq('status', 'OPEN')
-      .limit(1);
+async function openScheduledEvents(supabase) {
+  const now = new Date().toISOString();
 
-    if (queryErr) throw queryErr;
-    if (!openEvents || openEvents.length === 0) return null;
+  // Buscar eventos SCHEDULED cuyo start_date ya pasó
+  const { data: toOpen, error } = await supabase
+    .from('events_master')
+    .select('id, name, legacy_event_id, start_date')
+    .eq('status', 'SCHEDULED')
+    .lte('start_date', now);
 
-    const openEvent = openEvents[0];
+  if (error) {
+    console.error('❌ [Scheduler] Error consultando SCHEDULED:', error.message);
+    return;
+  }
+
+  if (!toOpen || toOpen.length === 0) {
+    return; // Nada que abrir
+  }
+
+  // Verificar cuántos eventos OPEN existen ahora (por seguridad)
+  const { data: currentOpen, error: openErr } = await supabase
+    .from('events_master')
+    .select('id, name')
+    .eq('status', 'OPEN')
+    .limit(1);
+
+  if (openErr) {
+    console.error('❌ [Scheduler] Error consultando OPEN actual:', openErr.message);
+    return;
+  }
+
+  const hasOpen = currentOpen && currentOpen.length > 0;
+
+  for (const ev of toOpen) {
+    if (hasOpen) {
+      console.warn(
+        `⚠️ [Scheduler] No puedo abrir ${ev.name}: ya hay un evento OPEN ` +
+        `(${currentOpen[0].name}). Requiere revisión manual (HALL-066).`
+      );
+      continue;
+    }
 
     const { error: updateErr } = await supabase
       .from('events_master')
       .update({
-        status: 'CLOSED',
-        closed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        status: 'OPEN',
+        updated_at: now
       })
-      .eq('id', openEvent.id);
+      .eq('id', ev.id);
 
-    if (updateErr) throw updateErr;
-
-    console.log(`✅ [Scheduler] Evento cerrado: ${openEvent.legacy_event_id}`);
-    return openEvent.id;
-  } catch (err) {
-    console.error('❌ [Scheduler] Error cerrando evento anterior:', err.message);
-    return null;
+    if (updateErr) {
+      console.error(`❌ [Scheduler] Error abriendo ${ev.name}:`, updateErr.message);
+    } else {
+      console.log(`🟢 [Scheduler] Evento abierto: ${ev.legacy_event_id || ev.name}`);
+    }
   }
 }
 
+// ============================================================
+// TAREA 2 — Cerrar OPEN expirados
+// ============================================================
+
 /**
- * Verifica si el evento SQ de la semana ISO ya existe.
+ * Cierra eventos OPEN cuyo end_date ya pasó.
+ * Respeta el end_date real, NO cierra por cambio de semana ISO.
+ * Idempotente.
+ *
+ * @param {object} supabase
+ */
+async function closeExpiredEvents(supabase) {
+  const now = new Date().toISOString();
+
+  const { data: toClose, error } = await supabase
+    .from('events_master')
+    .select('id, name, legacy_event_id, end_date')
+    .eq('status', 'OPEN')
+    .lte('end_date', now);
+
+  if (error) {
+    console.error('❌ [Scheduler] Error consultando OPEN expirados:', error.message);
+    return;
+  }
+
+  if (!toClose || toClose.length === 0) {
+    return; // Nada que cerrar
+  }
+
+  for (const ev of toClose) {
+    const { error: updateErr } = await supabase
+      .from('events_master')
+      .update({
+        status: 'CLOSED',
+        closed_at: now,
+        updated_at: now
+      })
+      .eq('id', ev.id);
+
+    if (updateErr) {
+      console.error(`❌ [Scheduler] Error cerrando ${ev.name}:`, updateErr.message);
+    } else {
+      console.log(`🔴 [Scheduler] Evento cerrado: ${ev.legacy_event_id || ev.name}`);
+    }
+  }
+}
+
+// ============================================================
+// TAREA 3 — Preparar próximo evento SQ
+// ============================================================
+
+/**
+ * Verifica si existe el evento SQ de la próxima semana ISO.
+ * Si no existe, lo crea como SCHEDULED (nunca como OPEN).
+ *
+ * @param {object} supabase
+ */
+async function ensureNextSquadronEvent(supabase) {
+  const now = new Date();
+  const nextWeekDate = new Date(now);
+  nextWeekDate.setUTCDate(now.getUTCDate() + 7);
+
+  const isoWeek = getISOWeek(nextWeekDate);
+  const isoYear = getISOYear(nextWeekDate);
+
+  const exists = await eventExists(supabase, isoWeek, isoYear);
+  if (exists) {
+    console.log(`✅ [Scheduler] Evento SQ ${isoYear}-W${isoWeek} ya existe. Nada que hacer.`);
+    return;
+  }
+
+  console.log(`🔧 [Scheduler] Preparando evento SQ ${isoYear}-W${isoWeek} (SCHEDULED)...`);
+  await createSquadronEvent(supabase, isoWeek, isoYear, 'SCHEDULED', false);
+}
+
+/**
+ * Verifica si el evento SQ de una semana ISO ya existe.
  * @param {object} supabase
  * @param {number} isoWeek
  * @param {number} isoYear
@@ -264,26 +380,50 @@ async function eventExists(supabase, isoWeek, isoYear) {
   return data && data.length > 0;
 }
 
+// ============================================================
+// CREACIÓN DE EVENTOS
+// ============================================================
+
 /**
- * Crea el evento SQ para la semana actual.
+ * Crea el evento SQ para una semana ISO.
+ *
+ * ⚠️ GUARDA DE SEGURIDAD (HALL-066):
+ *    Si `start_date` es futura y se solicitó `OPEN`, fuerza `SCHEDULED`.
+ *    Un evento futuro NUNCA debe crearse como OPEN.
+ *
+ * ⚠️ FIX (HALL-066):
+ *    - `created_at` = NOW() (no start_date).
+ *    - `closed_at` = null (nunca cerrar al crear).
+ *
  * @param {object} supabase
  * @param {number} isoWeek
  * @param {number} isoYear
- * @param {string} status - 'OPEN' o 'CLOSED'
+ * @param {string} status - 'OPEN' | 'SCHEDULED' | 'CLOSED'
  * @param {boolean} backfilled
  * @returns {Promise<object|null>}
  */
-async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', backfilled = false) {
+async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'SCHEDULED', backfilled = false) {
   const { start, end } = getSquadronEventDates(isoWeek, isoYear);
-  // ADR-008: calcular ventana de carga desacoplada del ciclo del evento
-  const submissionWindow = calculateSubmissionWindow(start, 'SQUADRON');
+  const submissionWindow = calculateSubmissionWindow(start, SQ_TYPE);
   const legacyId = buildLegacyEventId(isoWeek, isoYear, start);
   const name = buildEventName(isoWeek, isoYear);
+
+  // ⚠️ GUARDA DE SEGURIDAD HALL-066:
+  // Un evento futuro NUNCA debe crearse como OPEN.
+  if (status === 'OPEN' && start > new Date()) {
+    console.warn(
+      `⚠️ [Scheduler] Intento de crear evento futuro como OPEN. Forzando a SCHEDULED. ` +
+      `(isoWeek=${isoWeek}, isoYear=${isoYear}, start=${start.toISOString()})`
+    );
+    status = 'SCHEDULED';
+  }
+
+  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from('events_master')
     .insert({
-      type: 'SQUADRON',
+      type: SQ_TYPE,
       name,
       start_date: start.toISOString(),
       end_date: end.toISOString(),
@@ -304,8 +444,10 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', 
         timezone_py_offset_hours: PY_OFFSET_HOURS
       },
       legacy_event_id: legacyId,
-      created_at: start.toISOString(),
-      closed_at: status === 'CLOSED' ? end.toISOString() : null
+      // ✅ FIX HALL-066: created_at es el momento real de creación
+      created_at: now,
+      // ✅ FIX HALL-066: nunca cerrar al crear
+      closed_at: null
     })
     .select()
     .single();
@@ -315,7 +457,7 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', 
     return null;
   }
 
-  console.log(`✅ [Scheduler] Evento creado: ${legacyId} (${status})`);
+  console.log(`✨ [Scheduler] Evento creado: ${legacyId} (${status})`);
   return data;
 }
 
@@ -324,11 +466,16 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'OPEN', 
 // ============================================================
 
 /**
- * Ejecuta un tick del scheduler.
- * - Adquiere el lock.
- * - Verifica si el evento de la semana actual existe.
- * - Si no existe, cierra el anterior y crea uno nuevo.
- * - Libera el lock.
+ * Ejecuta un tick del scheduler. Orquesta 3 tareas INDEPENDIENTES:
+ *
+ *   1. Promover SCHEDULED → OPEN si NOW() >= start_date.
+ *   2. Cerrar OPEN → CLOSED si NOW() >= end_date.
+ *   3. Preparar el evento de la próxima semana ISO como SCHEDULED.
+ *
+ * Cada tarea es idempotente. Ejecutar el tick N veces tiene el mismo
+ * efecto que ejecutarlo 1 vez.
+ *
+ * @returns {Promise<void>}
  */
 export async function schedulerTick() {
   const supabase = getSupabase();
@@ -348,19 +495,18 @@ export async function schedulerTick() {
     const isoWeek = getISOWeek(now);
     const isoYear = getISOYear(now);
 
-    const exists = await eventExists(supabase, isoWeek, isoYear);
-    if (exists) {
-      console.log(`✅ [Scheduler] Evento SQ ${isoYear}-W${isoWeek} ya existe. Nada que hacer.`);
-      return;
-    }
+    console.log(`🕐 [Scheduler] Tick — Semana ISO actual: ${isoYear}-W${isoWeek}`);
 
-    console.log(`🔧 [Scheduler] Evento SQ ${isoYear}-W${isoWeek} no existe. Creando...`);
+    // TAREA 1: Abrir eventos SCHEDULED que llegaron a su hora
+    await openScheduledEvents(supabase);
 
-    // Cerrar el evento anterior (si sigue OPEN)
-    await closeCurrentOpenEvent(supabase);
+    // TAREA 2: Cerrar eventos OPEN expirados
+    await closeExpiredEvents(supabase);
 
-    // Crear el nuevo evento SQ
-    await createSquadronEvent(supabase, isoWeek, isoYear, 'OPEN', false);
+    // TAREA 3: Preparar el evento de la próxima semana
+    await ensureNextSquadronEvent(supabase);
+
+    console.log('✅ [Scheduler] Tick completado.');
   } catch (err) {
     console.error('❌ [Scheduler] Error en tick:', err.message);
   } finally {
@@ -369,14 +515,13 @@ export async function schedulerTick() {
 }
 
 // ============================================================
-// BACKFILL AL ARRANQUE (DESHABILITADO F2.9)
+// BACKFILL (DESHABILITADO F2.9)
 // ============================================================
 
 /**
- * Ejecuta el backfill de las últimas N semanas al arrancar el servidor.
- * ⚠️ DESHABILITADO por decisión F2.9 (Opción C): no inventar eventos
- * históricos para semanas sin actividad real.
- * @param {number} weeksBack - Cuántas semanas hacia atrás backfillear.
+ * Backfill de las últimas N semanas al arrancar.
+ * ⚠️ DESHABILITADO por decisión F2.9: no inventar eventos históricos.
+ * @param {number} weeksBack
  */
 export async function backfillRecentWeeks(weeksBack = 12) {
   const supabase = getSupabase();
@@ -387,19 +532,15 @@ export async function backfillRecentWeeks(weeksBack = 12) {
 
   const lockAcquired = await tryAcquireLock(supabase);
   if (!lockAcquired) {
-    console.log('⏳ [Scheduler Backfill] Lock no adquirido. Saltando backfill.');
+    console.log('⏳ [Scheduler Backfill] Lock no adquirido.');
     return;
   }
 
   try {
     console.log(`🔧 [Scheduler Backfill] Verificando últimas ${weeksBack} semanas...`);
-
     const now = new Date();
     let createdCount = 0;
 
-    // Iterar desde weeksBack hasta 1 (NO incluir 0).
-    // La semana actual (i=0) es responsabilidad del schedulerTick,
-    // que la crea como 'OPEN'. El backfill solo crea semanas PASADAS ('CLOSED').
     for (let i = weeksBack; i >= 1; i--) {
       const targetDate = new Date(now);
       targetDate.setUTCDate(now.getUTCDate() - i * 7);
@@ -410,11 +551,12 @@ export async function backfillRecentWeeks(weeksBack = 12) {
       const exists = await eventExists(supabase, isoWeek, isoYear);
       if (exists) continue;
 
+      // Semanas pasadas: crear como CLOSED
       await createSquadronEvent(supabase, isoWeek, isoYear, 'CLOSED', true);
       createdCount++;
     }
 
-    console.log(`✅ [Scheduler Backfill] Backfill completado. Eventos creados: ${createdCount}`);
+    console.log(`✅ [Scheduler Backfill] Completado. Eventos creados: ${createdCount}`);
   } catch (err) {
     console.error('❌ [Scheduler Backfill] Error:', err.message);
   } finally {
@@ -432,8 +574,9 @@ export async function backfillRecentWeeks(weeksBack = 12) {
  * - Registra el cron job cada 1 hora.
  */
 export function startEventScheduler() {
-  console.log('🕐 [Scheduler] Iniciando scheduler de eventos SQ...');
+  console.log('🕐 [Scheduler] Iniciando scheduler de eventos SQ (v2.0 — HALL-066 fix)...');
   console.log(`🕐 [Scheduler] Timezone PY offset: UTC-${PY_OFFSET_HOURS} (Jue 09:00 PY → Lun 08:59 PY)`);
+  console.log(`🕐 [Scheduler] Ventana de carga SQ: 7 días (Jue 09:00 PY → Jue 08:59 PY)`);
 
   // Cron: cada 1 hora en punto
   cron.schedule('0 * * * *', () => {
@@ -443,21 +586,24 @@ export function startEventScheduler() {
     });
   });
 
-  console.log('✅ [Scheduler] Scheduler iniciado. Cron: cada 1 hora.');
+  console.log('✅ [Scheduler] Scheduler v2.0 iniciado. Cron: cada 1 hora.');
 }
-
 
 // ============================================================
 // EXPORTS PARA TESTING
 // ============================================================
-// ⚠️ Solo se exportan para tests unitarios. No usar en runtime.
 export {
+  // Constantes
+  PY_OFFSET_HOURS,
+  SQ_OPEN_HOUR_PY,
+  SQ_CLOSE_HOUR_PY,
+  SQ_CLOSE_MINUTE_PY,
+  SQ_TYPE,
+  // Funciones puras
   getISOWeek,
   getISOYear,
   getSquadronEventDates,
   calculateSubmissionWindow,
-  PY_OFFSET_HOURS,
-  SQ_OPEN_HOUR_PY,
-  SQ_CLOSE_HOUR_PY,
-  SQ_CLOSE_MINUTE_PY
+  buildEventName,
+  buildLegacyEventId
 };
