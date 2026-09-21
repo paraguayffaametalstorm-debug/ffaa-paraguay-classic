@@ -802,7 +802,9 @@ function updateDashboardTacticalUI(summary, history) {
   // F4.3 — dashboardEventId ya no se sobreescribe (lo maneja renderActiveEventWidget)
 
   const squadAvg = summary?.squadStats?.avg_tokens || 192.4;
-  const goalPct = Math.min(100, Math.round((squadAvg / 200) * 100));
+  const metaTokens = summary?.squadStats?.meta_tokens_sq ?? 200;
+  const goalPct = metaTokens > 0 ? Math.min(100, Math.round((squadAvg / metaTokens) * 100)) : 0;
+  const pilotsWithoutLoad = summary?.squadStats?.pilots_without_load ?? 0;
 
   const squadGoalPctEl = document.getElementById('squadGoalPercentage');
   if (squadGoalPctEl) squadGoalPctEl.textContent = `${goalPct}%`;
@@ -823,6 +825,18 @@ function updateDashboardTacticalUI(summary, history) {
   const topPilots = summary?.topPilots || [];
   renderTopPilotsLeaderboard(topPilots);
   renderTrendChart(history, squadAvg);
+
+  // Commit 2 — widget escuadrón con datos reales + hide en BLACK_MARKET
+  const squadCard = document.querySelector('.squad-goal-card');
+  if (squadCard) {
+    squadCard.style.display = summary?.eventType === 'BLACK_MARKET' ? 'none' : '';
+    const pilotsEl = squadCard.querySelector('.squad-pilots-without-load');
+    if (pilotsEl) {
+      pilotsEl.textContent = pilotsWithoutLoad > 0
+        ? `${pilotsWithoutLoad} piloto(s) sin carga asignada`
+        : '';
+    }
+  }
 }
 
 function renderTopPilotsLeaderboard(pilots) {
