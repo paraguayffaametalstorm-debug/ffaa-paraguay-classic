@@ -10,6 +10,7 @@ export const getSummary = async (req, res, next) => {
     let usersWithAvg = [];
     let userTokensAvg = 0;
     let userWeeks = 0;
+    let currentProfile = null;
 
     if (supabase) {
       try {
@@ -33,8 +34,6 @@ export const getSummary = async (req, res, next) => {
           const st = (u.status || '').toUpperCase();
           return st === 'ACTIVE' || st === 'ACTIVO' || !st;
         });
-
-        let currentProfile = null;
 
         if (activeUsersList.length > 0) {
           // Obtener performances para calcular promedios actualizados
