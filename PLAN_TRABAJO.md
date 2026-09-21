@@ -41,7 +41,7 @@ Este documento **SÍ es la fuente única de verdad** para:
 | Campo | Valor |
 |---|---|
 | **Versión real** | v4.3.0 runtime · v4.3.1-docs (documentación, Sprint 0) |
-| **Commit HEAD** | `26e3bf4` (Sprint 0 Grupo D) |
+| **Commit HEAD** | `879c482` (Sprint 0 Grupo G — Sprint 0 COMPLETO) |
 | **Deploy producción** | ✅ Activo en Fly.io (`gru`) |
 | **Timezone scheduler** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`, Paraguay sin DST desde oct-2024) |
 | **Duración evento SQ** | 4 días (jue 09:00 PY → lun 08:59 PY) |
@@ -423,6 +423,13 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | **FIX-021** | Timezone oficial (UTC-3 fijo) propagado a CURRENT_STATE, ARCHITECTURE, ADR-007 | 2026-09-20 | `dd5d17d` |
 | **FIX-022** | Duración SQ: evento 4d vs ventana 7d diferenciadas en docs | 2026-09-20 | `dd5d17d` |
 | **FIX-007** | `API_REFERENCE.md` endpoints submission-window (ADR-008) documentados | 2026-09-20 | `f734dd4` |
+| **FIX-002** | `README.md` árbol SQL 2→35 + link a MIGRACION_SQL_REFERENCE | 2026-09-20 | `77be901` |
+| **FIX-023** | `README.md` link "Resumen Ejecutivo" con ancla directa | 2026-09-20 | `77be901` |
+| **FIX-024** | `README.md` + `metadata.json` eliminado (AI Studio legacy) | 2026-09-20 | `77be901` |
+| **FIX-016** | `USER_MANUAL.md` v4.0.0→v4.3.0 + sección ADR-008 | 2026-09-20 | `d2752f3` |
+| **FIX-019** | `BACKLOG.md` contador verificado (7 correcto) — NO APLICABLE | 2026-09-20 | `d8e88fb` |
+| **FIX-020** | `BACKLOG.md` BL-059 título limpio + hash real | 2026-09-20 | `d8e88fb` |
+| **FIX-025** | `DEPLOYMENT_STATE.md` sección legacy BM + F4.5 pendiente | 2026-09-20 | `802f0dd` |
 
 ---
 
