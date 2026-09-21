@@ -17,6 +17,7 @@ export const ENV = {
   NODE_ENV: process.env.NODE_ENV || 'production',
   JWT_SECRET: JWT_SECRET || 'dev-only-insecure-secret-change-me',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  TEMP_PASSWORD_EXPIRY_DAYS: parseInt(process.env.TEMP_PASSWORD_EXPIRY_DAYS || '7', 10),
   SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_DATABASE_URL || '',
   SUPABASE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '',
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
