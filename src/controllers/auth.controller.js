@@ -43,13 +43,13 @@ export const login = async (req, res) => {
 
         const cleanEmail = email.trim().toLowerCase();
 
-        // 1. Buscar en Supabase por email O email_institucional
+        // 1. Buscar en Supabase por email, email_institucional O nick (para QR)
         let users = [];
         try {
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
-                .or(`email.ilike.${cleanEmail},email_institucional.ilike.${cleanEmail}`)
+                .or(`email.ilike.${cleanEmail},email_institucional.ilike.${cleanEmail},nick.ilike.${cleanEmail}`)
                 .limit(1);
 
             if (!error && data) {
