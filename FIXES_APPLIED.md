@@ -1398,6 +1398,98 @@ Durante pruebas del flujo de vinculación de cuentas Google OAuth (`/link-accoun
 - Archivos auditados: 6 (`server.js`, `auth.routes.js`, `auth.controller.js`, `link-account.html`, `js/api.js`, `js/auth.js`).
 - Documento relacionado: `CHANGELOG.md` sección `[4.0.3]`.
 
+---
+
+### 🐛 HALL-067 — currentProfile Mal Scopeado (Bug 500 en /api/dashboard/summary)
+
+**Fecha:** 2026-09-21  
+**Fase:** Hotfix v4.3.2  
+**Archivo:** src/controllers/dashboard.controller.js  
+**Commits:** ff0399c, 1d1e4fc, 0d1b3bb  
+**Severidad:** 🔴 CRÍTICA  
+**Estado:** ✅ RESUELTO
+
+**Problema Detectado:**  
+currentProfile estaba declarado dentro de un bloque if y se usaba fuera de ese bloque. En producción, cuando la rama del if no se ejecutaba, la variable quedaba indefinida y el endpoint devolvía 500 Internal Server Error. Detectado por smoke test en producción, no por tests unitarios (ver HALL-069).
+
+**Solución Aplicada:**  
+Mover la declaración de currentProfile **antes** del if (supabase), garantizando que siempre esté definida en el scope de la función.
+
+**Verificación:**  
+- node --check en el controller → OK.
+- Smoke test producción: GET /api/dashboard/summary → 200 OK.
+- Payload confirmado con meta_tokens_sq: 175, pilots_without_load, eventType.
+
+**Rollback:** git revert 0d1b3bb ff0399c 1d1e4fc
+
+**Lecciones Aprendidas:**  
+Ver HALL-069.
+
+---
+
+### 🐛 HALL-068 — Scripts .cjs con Anchors Frágiles (\r\n vs \n)
+
+**Fecha:** 2026-09-21  
+**Fase:** Hotfix v4.3.2 (intento fallido, revertido)  
+**Archivos:** scripts temporales .cjs (eliminados)  
+**Severidad:** 🟡 MEDIA  
+**Estado:** ✅ RESUELTO (por eliminación de la aproximación)
+
+**Problema Detectado:**  
+Para aplicar el fix del widget escuadrón (Commit 2) se intentó usar scripts .cjs con anchors de string fijos para localizar y reemplazar bloques de código. Los archivos JS del proyecto tienen line endings mixtos (\r\n de Windows vs \n de Linux), lo que rompía la detección del anchor y consumía tokens en ida-y-vuelta.
+
+**Solución Aplicada:**  
+Eliminar la aproximación de scripts .cjs con anchors fijos. La edición manual con verificación (node --check + git diff --stat) es más rápida y segura para cambios menores a 30 líneas.
+
+**Regla adoptada:**  
+Si un script de automatización debe usar un anchor de string, debe normalizar line endings primero:
+
+    content.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+
+O bien usar regex flexibles: /\r?\n/g en lugar de /\n/g.
+
+**Verificación:**  
+- Commit 2 se aplicó manualmente en un solo pase.
+- node --check js/views.js → OK.
+- git diff --stat → 2 archivos, 16 inserciones, 1 eliminación.
+
+**Rollback:** No aplica (script eliminado).
+
+**Lecciones Aprendidas:**  
+Para cambios quirúrgicos (menos de 30 líneas), edición manual + verificación es superior a scripts con anchors. Los scripts con anchors fijos son frágiles ante CRLF/LF mixtos.
+
+---
+
+### 🧪 HALL-069 — node --check No Detecta Errores de Scope; Falta Cobertura de Tests
+
+**Fecha:** 2026-09-21  
+**Fase:** Post-hotfix v4.3.2  
+**Archivos:** src/controllers/dashboard.controller.js, suite de tests (inexistente para este módulo)  
+**Severidad:** 🟠 ALTA (deuda técnica estructural)  
+**Estado:** ⚠️ DETECTADO — Pendiente mitigación (ver BL-022)
+
+**Problema Detectado:**  
+El bug HALL-067 (variable mal scopeada) no fue detectado por:
+1. node --check — verifica sintaxis, no scope.
+2. Tests unitarios — no existen para dashboard.controller.js.
+3. Tests de integración — no existen para /api/dashboard/summary.
+
+El único detector fue un smoke test manual en producción, después del deploy. Es el patrón de fallo más caro: bug detectable en desarrollo, detectado en producción.
+
+**Solución Propuesta (pendiente):**  
+Ver BL-022 en BACKLOG.md: agregar tests de integración para /api/dashboard/summary que cubran:
+- Status 200 con usuario autenticado.
+- Presencia de campos obligatorios (squadStats.meta_tokens_sq, squadStats.pilots_without_load, eventType).
+- Comportamiento ante usuario sin perfil (currentProfile = null).
+
+**Verificación:**  
+Pendiente — se resolverá con BL-022.
+
+**Rollback:** No aplica.
+
+**Lecciones Aprendidas:**  
+node --check es una red de seguridad mínima, no suficiente. Los controllers críticos (dashboard, auth, performances) deben tener al menos un test de integración que toque el endpoint end-to-end.
+
 ## 📋 Matriz Resumen de Archivos y Responsabilidades
 
 | Componente | Línea de Acción | Estado |
