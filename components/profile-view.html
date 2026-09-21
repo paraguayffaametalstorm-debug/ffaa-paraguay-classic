@@ -96,6 +96,34 @@
 
         <form id="personalProfileForm" class="tactical-form">
           <div class="form-group">
+            <label for="profileNick">
+              <span>Nickname / Indicativo de Combate</span>
+              <span class="field-hint">(3-20 caracteres: letras, números, . _ -)</span>
+            </label>
+            <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+              <input
+                type="text"
+                id="profileNick"
+                placeholder="Ej: PRY_Viper"
+                autocomplete="off"
+                spellcheck="false"
+                maxlength="20"
+                style="flex:1;min-width:200px;"
+              />
+              <button
+                type="button"
+                id="btnSaveNick"
+                onclick="window.handleChangeNick && window.handleChangeNick()"
+                class="btn-secondary"
+                style="display:none;white-space:nowrap;"
+              >
+                💾 Guardar Nick
+              </button>
+            </div>
+            <div id="profileNickStatus" style="font-size:0.78rem;color:#94a3b8;margin-top:6px;min-height:16px;line-height:1.4;"></div>
+          </div>
+
+          <div class="form-group">
             <label for="fullName">
               <span>Nombre y Apellido Real</span>
               <span class="field-hint">(Opcional para registro de escuadrón)</span>
