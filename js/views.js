@@ -581,6 +581,9 @@ async function renderActiveEventWidget() {
 
     startEventCountdown(event.end_date);
 
+    // HALL-066: countdown paralelo para la ventana de carga de tokens (ADR-008)
+    startSubmissionCountdown(event);
+
   } catch (err) {
     console.error('[ActiveEventWidget] Error:', err);
     widget.style.display = 'none';
@@ -643,6 +646,73 @@ function startEventCountdown(endDateIso) {
   tick();
   window._aeCountdownInterval = setInterval(tick, 1000);
 }
+
+/**
+ * HALL-066 — Countdown paralelo para la ventana de carga de tokens.
+ * Usa event.submission_closes_at (ADR-008). Aditivo, no toca startEventCountdown.
+ * Si submission_closes_at no viene, oculta el bloque y no hace nada.
+ */
+function startSubmissionCountdown(event) {
+  const block = document.getElementById('aeSubmissionBlock');
+  const countdownEl = document.getElementById('aeSubmissionCountdown');
+  const metaEl = document.getElementById('aeSubmissionMeta');
+  if (!block || !countdownEl) return;
+
+  if (window._aeSubmissionInterval) {
+    clearInterval(window._aeSubmissionInterval);
+    window._aeSubmissionInterval = null;
+  }
+
+  const closesAtIso = event && event.submission_closes_at ? event.submission_closes_at : null;
+  if (!closesAtIso) {
+    block.style.display = 'none';
+    return;
+  }
+
+  const closesMs = new Date(closesAtIso).getTime();
+  if (isNaN(closesMs)) {
+    block.style.display = 'none';
+    return;
+  }
+
+  block.style.display = 'block';
+
+  if (metaEl) {
+    const closesDate = new Date(closesMs);
+    const opts = {
+      weekday: 'long', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit', timeZone: TZ_PY
+    };
+    metaEl.textContent = 'Hasta ' + closesDate.toLocaleDateString(undefined, opts) + ' (PY)';
+  }
+
+  function tick() {
+    const rem = Math.max(0, closesMs - Date.now());
+    const d = Math.floor(rem / 86400000);
+    const h = Math.floor((rem % 86400000) / 3600000);
+    const m = Math.floor((rem % 3600000) / 60000);
+    const s = Math.floor((rem % 60000) / 1000);
+    const pad = n => String(n).padStart(2, '0');
+
+    // > 1 día: formato largo (3d 14h 22m) · < 1 día: formato HH:MM:SS
+    countdownEl.textContent = d > 0
+      ? d + 'd ' + pad(h) + 'h ' + pad(m) + 'm'
+      : pad(h) + ':' + pad(m) + ':' + pad(s);
+
+    if (rem <= 0) {
+      clearInterval(window._aeSubmissionInterval);
+      window._aeSubmissionInterval = null;
+    }
+  }
+  tick();
+  window._aeSubmissionInterval = setInterval(tick, 1000);
+
+  // Refrescar iconos Lucide del bloque nuevo
+  if (typeof refreshLucideIcons === 'function') {
+    setTimeout(refreshLucideIcons, 30);
+  }
+}
+window.startSubmissionCountdown = startSubmissionCountdown;
 
 window.renderActiveEventWidget = renderActiveEventWidget;
 window.aeNavigate = function() {
