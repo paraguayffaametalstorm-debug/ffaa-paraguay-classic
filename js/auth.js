@@ -80,6 +80,10 @@ function loginWithGoogle() {
 
     if (!nick && !tempPass) return;
 
+    // Marcar en sessionStorage para que showLoginModal() NO borre los campos
+    if (nick) sessionStorage.setItem('qr_prefill_nick', nick);
+    if (tempPass) sessionStorage.setItem('qr_prefill_pass', tempPass);
+
     // Esperar a que el modal de login exista en el DOM
     const tryFill = (attempt = 0) => {
       const emailInput = document.getElementById('loginEmail');
@@ -251,7 +255,11 @@ function login() {
   .then(data => {
     console.log('✅ Login exitoso');
     localStorage.setItem('authToken', data.token);
-    
+
+    // Limpiar flags de precarga del QR
+    sessionStorage.removeItem('qr_prefill_nick');
+    sessionStorage.removeItem('qr_prefill_pass');
+
     currentUser = data.user;
     
     // ✅ VERIFICACIÓN CRÍTICA: currentUser.user_id DEBE ser INTEGER
@@ -400,13 +408,19 @@ function showLoginModal() {
       modal.classList.add('show');
     }
   }
-  
-  // Limpiar campos
-  const emailInput = document.getElementById('loginEmail');
-  const passwordInput = document.getElementById('loginPassword');
-  if (emailInput) emailInput.value = '';
-  if (passwordInput) passwordInput.value = '';
-  
+
+  // QR prefill — NO limpiar los campos si hay una precarga activa
+  const qrPrefillActive =
+    sessionStorage.getItem('qr_prefill_nick') ||
+    sessionStorage.getItem('qr_prefill_pass');
+
+  if (!qrPrefillActive) {
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    if (emailInput) emailInput.value = '';
+    if (passwordInput) passwordInput.value = '';
+  }
+
   // Ocultar todas las vistas
   document.querySelectorAll('.view').forEach(view => {
     view.style.display = 'none';
