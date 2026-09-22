@@ -433,6 +433,15 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 
 ---
 
+
+---
+
+### Sprint 2 — Fixes de seguridad y correctitud (EN CURSO)
+
+| ID | Descripción | Fecha | Commit |
+|---|---|---|---|
+| **FIX-104** | `src/middlewares/errorHandler.js` — filtrar detalles de DB en respuestas 500 | 2026-09-22 | `43db2a8` |
+
 ## 9. ❌ DESCARTADOS
 
 | ID | Descripción | Razón | Fecha |

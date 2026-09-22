@@ -199,3 +199,33 @@ Total estimado Sprint 2: 1-2 días de trabajo efectivo + tests + deploy.
 
 Documento generado por el Sprint 1 — Verificación de código crítico.
 NO se modificó ningún archivo de producción.
+
+
+---
+
+## Estado de cierre (actualizado 2026-09-22)
+
+Verificación de los fixes confirmados en el Sprint 1, con sus commits de resolución en Sprint 2:
+
+| ID | Hallazgo | Estado Sprint 1 | Estado Sprint 2 | Commit | Fecha |
+|---|---|---|---|---|---|
+| **FIX-104** | Filtro de detalles de DB en 500 | ✅ CONFIRMADO | ✅ **CERRADO** | `43db2a8` | 2026-09-22 |
+| **HALL-S1-01** | Ownership check en `getPlaneDetails` | ✅ CONFIRMADO | ⏳ Pendiente | — | — |
+| **FIX-101** | Transacción en `resetPassword` | 🟡 CONFIRMADO PARCIAL | ⏳ Pendiente | — | — |
+| **FIX-105** | Transacción en `changeEventStatus` | 🟡 CONFIRMADO PARCIAL | ⏳ Pendiente | — | — |
+| **FIX-103** | CSP unsafe-inline → nonce/hash | 🟡 CONFIRMADO PARCIAL | ⏳ Sprint 3 | — | — |
+
+**Los 4 hallazgos descartados** (FIX-102, FIX-106, FIX-107, FIX-108) no requieren acción y quedan documentados en la sección principal.
+
+---
+
+## Evidencia de cierre — FIX-104
+
+- **Commit:** `43db2a8` — `fix(fix-104): filtrar detalles de DB en respuestas 500`
+- **Archivo:** `src/middlewares/errorHandler.js` (16 insertions, 3 deletions)
+- **Tests:** 179/179 passing (Vitest 5.0.1)
+- **Sintaxis:** `node --check` → OK
+- **Deploy:** Fly.io `deployment-01M34FDGV3NYHVMEHHGKKYW95G`
+- **Smoke test 1:** `/api/health` → `online` + uptime 4379s
+- **Smoke test 2:** Login inválido → 401 con mensaje específico (4xx intacto)
+- **Rollback:** `git revert 43db2a8 && git push origin main`
