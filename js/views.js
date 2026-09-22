@@ -5209,10 +5209,10 @@ async function addNewMember() {
     return;
   }
 
-  // Validación local del nick (mismo formato que backend)
-  const nickRegex = /^[A-Za-z0-9._-]{3,20}$/;
+  // v4.5.0-hotfix: nick permisivo (letras Unicode, números, espacios, . _ -)
+  const nickRegex = /^[\p{L}\p{N}._\-\s]{3,30}$/u;
   if (!nickRegex.test(nick)) {
-    showToast('❌ Nick inválido (3-20 caracteres: letras, números, . _ -)', 'error');
+    showToast('❌ Nick inválido (3-30 caracteres: letras, números, espacios, . _ -)', 'error');
     return;
   }
 
@@ -5946,11 +5946,15 @@ function resetMemberFilters() {
 function normalizeNickForEmail(nick) {
   if (!nick) return '';
   const clean = String(nick)
+    .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')   // quita diacríticos
-    .replace(/[^a-z0-9._-]/g, '');     // solo caracteres válidos
-  return clean.length >= 3 ? clean.slice(0, 30) : '';
+    .replace(/[\u0300-\u036f]/g, '')   // quita diacríticos (ñ→n, á→a, etc.)
+    .replace(/\s+/g, '.')              // v4.5.0-hotfix: espacios → punto
+    .replace(/[^a-z0-9._-]/g, '');     // solo caracteres válidos para email
+  // Trim de puntos al inicio/final (evita ".nick." raro)
+  const trimmed = clean.replace(/^[._-]+|[._-]+$/g, '');
+  return trimmed.length >= 3 ? trimmed.slice(0, 30) : '';
 }
 
 /**
@@ -6057,6 +6061,253 @@ function updateNewMemberEmailPreview() {
 window.handleNewMemberNickInput = handleNewMemberNickInput;
 window.handleNewMemberEmailInput = handleNewMemberEmailInput;
 window.updateNewMemberEmailPreview = updateNewMemberEmailPreview;
+
+// ============================================================
+// v4.5.0 — Módulo B: Cambio de Nick autogestionado desde Mi Perfil
+// ============================================================
+
+/**
+ * Determina si un usuario puede cambiar su nick autogestionadamente.
+ *
+ * Reglas (HANDOFF v4.5.0 §2 Módulo B):
+ *   - ADMIN / OWNER: siempre puede (ilimitado, auditado)
+ *   - MIEMBRO / VETERANO: solo si NO tiene `nick_self_changed_at` seteado
+ *
+ * @param {Object} profile - Objeto perfil del usuario (de /api/profile)
+ * @returns {{ canChange: boolean, reason: string, message: string, level: 'ok'|'info'|'warn' }}
+ */
+function canUserChangeNick(profile) {
+  if (!profile) {
+    return {
+      canChange: false,
+      reason: 'NO_PROFILE',
+      message: 'No se pudo cargar el perfil.',
+      level: 'warn'
+    };
+  }
+
+  const role = String(profile.role || 'MIEMBRO').toUpperCase();
+  const nickSelfChangedAt = profile.nick_self_changed_at || null;
+
+  if (role === 'ADMIN' || role === 'OWNER') {
+    return {
+      canChange: true,
+      reason: 'PRIVILEGED',
+      message: '⭐ Privilegio de mando: podés cambiar tu nick cuantas veces necesites (cada cambio queda auditado).',
+      level: 'info'
+    };
+  }
+
+  if (nickSelfChangedAt) {
+    return {
+      canChange: false,
+      reason: 'LIMIT_REACHED',
+      message: '🔒 Ya usaste tu cambio autogestionado de nick. Contactá a un Administrador si necesitás otro cambio.',
+      level: 'warn'
+    };
+  }
+
+  return {
+    canChange: true,
+    reason: 'AVAILABLE',
+    message: '💡 Podés cambiar tu nick una vez. Elegí bien: después queda fijo.',
+    level: 'ok'
+  };
+}
+
+/**
+ * Configura el input de nick del perfil según el rol y estado del usuario.
+ * Llamado desde loadPersonalProfile() después de cargar los datos.
+ *
+ * @param {Object} profile - Objeto perfil
+ */
+function configureProfileNickInput(profile) {
+  const input = document.getElementById('profileNickInput');
+  const status = document.getElementById('profileNickStatus');
+  const saveBtn = document.getElementById('btnSaveNick');
+
+  if (!input || !status) return;
+
+  const nick = profile?.nick || '';
+  const verdict = canUserChangeNick(profile);
+
+  // Cargar el nick actual en el input
+  input.value = nick;
+  input.dataset.originalNick = nick;
+  input.dataset.canChange = verdict.canChange ? 'true' : 'false';
+
+  // Aplicar readonly/editable
+  if (!verdict.canChange) {
+    input.setAttribute('readonly', 'readonly');
+    input.style.opacity = '0.65';
+    input.style.cursor = 'not-allowed';
+    input.style.background = 'rgba(15,23,42,0.5)';
+  } else {
+    input.removeAttribute('readonly');
+    input.style.opacity = '';
+    input.style.cursor = '';
+    input.style.background = '';
+  }
+
+  // Mostrar el mensaje de estado con color según nivel
+  const colorMap = {
+    'ok': '#2ecc71',
+    'info': '#38bdf8',
+    'warn': '#f59e0b'
+  };
+  status.textContent = verdict.message;
+  status.style.color = colorMap[verdict.level] || '#94a3b8';
+
+  // Ocultar el botón de guardar (se muestra al editar)
+  if (saveBtn) saveBtn.style.display = 'none';
+
+  // Remover listeners previos para evitar duplicados
+  if (input._nickInputListener) {
+    input.removeEventListener('input', input._nickInputListener);
+  }
+
+  // Agregar listener: al escribir, mostrar el botón si hay cambios reales
+  input._nickInputListener = function () {
+    if (!verdict.canChange || !saveBtn) return;
+    const current = input.value.trim();
+    const original = input.dataset.originalNick || '';
+    const hasChanged = current.length > 0 && current.toLowerCase() !== original.toLowerCase();
+    saveBtn.style.display = hasChanged ? 'inline-flex' : 'none';
+  };
+  input.addEventListener('input', input._nickInputListener);
+}
+
+/**
+ * v4.5.0 — Handler del botón "💾 Guardar Nick".
+ * Envía el cambio de nick al backend y maneja los códigos de error.
+ */
+async function handleChangeNick() {
+  const input = document.getElementById('profileNickInput');
+  const status = document.getElementById('profileNickStatus');
+  const saveBtn = document.getElementById('btnSaveNick');
+
+  if (!input) return;
+
+  const newNick = String(input.value || '').trim();
+  const originalNick = String(input.dataset.originalNick || '').trim();
+
+  // Validación local rápida (defensa en profundidad)
+  if (!newNick) {
+    showToast('⚠️ El nick no puede estar vacío', 'warning');
+    return;
+  }
+
+  // v4.5.0-hotfix: nick permisivo
+  const nickRegex = /^[\p{L}\p{N}._\-\s]{3,30}$/u;
+  if (!nickRegex.test(newNick)) {
+    showToast('❌ Formato inválido: 3-30 caracteres, letras, números, espacios, . _ -', 'error');
+    if (status) {
+      status.textContent = '❌ Formato inválido: 3-30 caracteres, letras, números, espacios, . _ -';
+      status.style.color = '#e74c3c';
+    }
+    return;
+  }
+
+  // Si no cambió, no hacer nada
+  if (newNick.toLowerCase() === originalNick.toLowerCase()) {
+    showToast('ℹ️ El nick es el mismo que el actual', 'info');
+    if (saveBtn) saveBtn.style.display = 'none';
+    return;
+  }
+
+  // Confirmar acción (es irreversible para MIEMBRO/VETERANO)
+  const role = String((currentUser?.role || '').toUpperCase());
+  const isPrivileged = (role === 'ADMIN' || role === 'OWNER');
+  const confirmMsg = isPrivileged
+    ? `¿Confirmás cambiar tu nick de "${originalNick}" a "${newNick}"?\n\n(Este cambio queda auditado.)`
+    : `¿Confirmás cambiar tu nick de "${originalNick}" a "${newNick}"?\n\n⚠️ ATENCIÓN: Solo podés hacer este cambio UNA VEZ. Después el nick queda fijo.`;
+
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  // Deshabilitar UI mientras se procesa
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⏳ Guardando...';
+  }
+  if (status) {
+    status.textContent = '⏳ Enviando cambio al comando central...';
+    status.style.color = '#38bdf8';
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ nick: newNick })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      // Manejar códigos de error específicos del backend
+      const errorCode = data.error || data.code || 'UNKNOWN';
+
+      const errorMessages = {
+        'NICK_FORMAT_INVALID': '❌ Formato de nick inválido (3-20 caracteres: letras, números, . _ -)',
+        'NICK_TAKEN': `❌ El nick "${newNick}" ya está en uso por otro piloto. Elegí otro.`,
+        'NICK_CHANGE_LIMIT_REACHED': '🔒 Ya usaste tu cambio autogestionado. Contactá a un Administrador.',
+        'DATABASE_UNAVAILABLE': '⚠️ Servicio temporalmente no disponible. Reintentá en unos segundos.'
+      };
+
+      const userMsg = errorMessages[errorCode] || data.message || 'Error al cambiar el nick';
+
+      showToast(userMsg, 'error');
+      if (status) {
+        status.textContent = userMsg;
+        status.style.color = '#e74c3c';
+      }
+
+      // Actualizar el estado del input si es un límite alcanzado
+      if (errorCode === 'NICK_CHANGE_LIMIT_REACHED') {
+        input.setAttribute('readonly', 'readonly');
+        input.style.opacity = '0.65';
+        input.style.cursor = 'not-allowed';
+        input.dataset.canChange = 'false';
+      }
+
+      return;
+    }
+
+    // ✅ Éxito
+    showToast(`✅ Nick actualizado: "${originalNick}" → "${newNick}"`, 'success');
+
+    // Actualizar el dataset con el nuevo nick
+    input.dataset.originalNick = newNick;
+
+    // Refrescar el perfil desde el backend para tener datos frescos
+    if (typeof loadPersonalProfile === 'function') {
+      await loadPersonalProfile();
+    }
+
+    // Ocultar el botón
+    if (saveBtn) saveBtn.style.display = 'none';
+
+  } catch (err) {
+    console.error('❌ [Profile] Error cambiando nick:', err);
+    showToast('❌ Error de conexión al cambiar el nick', 'error');
+    if (status) {
+      status.textContent = '❌ Error de conexión. Reintentá.';
+      status.style.color = '#e74c3c';
+    }
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Guardar Nick';
+    }
+  }
+}
+
+// Exponer globalmente
+window.canUserChangeNick = canUserChangeNick;
+window.configureProfileNickInput = configureProfileNickInput;
+window.handleChangeNick = handleChangeNick;
 
 // ========== GESTIÓN DE MODALES DE INACTIVACIÓN / REACTIVACIÓN ==========
 
