@@ -11,7 +11,11 @@ export function errorHandler(err, req, res, next) {
     message: err.message || 'Error interno no especificado'
   };
 
+  // Log completo server-side (con stack) — SIEMPRE se loguea el detalle real
   console.error(`🚨 [ERROR] ${req.method} ${req.originalUrl}:`, err.message);
+  if (err.stack) {
+    console.error('   Stack:', err.stack.split('\n').slice(0, 5).join('\n'));
+  }
 
   // Error de validación Zod
   if (err instanceof ZodError) {
@@ -34,10 +38,19 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
+  // FIX-104 (Sprint 2): no filtrar detalles internos de DB en errores 500.
+  // Los errores de Supabase pueden incluir nombres de tablas, constraints,
+  // columnas inexistentes, etc. En producción devolvemos un mensaje genérico.
+  // En desarrollo mantenemos el mensaje real + stack para debugging.
   const statusCode = err.statusCode || err.status || 500;
+  const isServerError = statusCode >= 500;
+  const isDev = process.env.NODE_ENV === 'development';
+
   res.status(statusCode).json({
-    error: err.message || 'Error interno del servidor táctico',
-    code: err.code || 'INTERNAL_SERVER_ERROR',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: isServerError && !isDev
+      ? 'Error interno del servidor táctico'
+      : (err.message || 'Error interno del servidor táctico'),
+    code: err.code || (isServerError ? 'INTERNAL_SERVER_ERROR' : 'REQUEST_ERROR'),
+    ...(isDev && { stack: err.stack })
   });
 }
