@@ -210,7 +210,7 @@ Verificación de los fixes confirmados en el Sprint 1, con sus commits de resolu
 | ID | Hallazgo | Estado Sprint 1 | Estado Sprint 2 | Commit | Fecha |
 |---|---|---|---|---|---|
 | **FIX-104** | Filtro de detalles de DB en 500 | ✅ CONFIRMADO | ✅ **CERRADO** | `43db2a8` | 2026-09-22 |
-| **HALL-S1-01** | Ownership check en `getPlaneDetails` | ✅ CONFIRMADO | ⏳ Pendiente | — | — |
+| **HALL-S1-01** | Ownership check en `getPlaneDetails` | ✅ CONFIRMADO | ✅ **CERRADO** | `5fbb2d5` | 2026-09-22 |
 | **FIX-101** | Transacción en `resetPassword` | 🟡 CONFIRMADO PARCIAL | ⏳ Pendiente | — | — |
 | **FIX-105** | Transacción en `changeEventStatus` | 🟡 CONFIRMADO PARCIAL | ⏳ Pendiente | — | — |
 | **FIX-103** | CSP unsafe-inline → nonce/hash | 🟡 CONFIRMADO PARCIAL | ⏳ Sprint 3 | — | — |
