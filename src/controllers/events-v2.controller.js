@@ -659,16 +659,8 @@ export const createParticipation = async (req, res) => {
 
     const event = events[0];
 
-    // 2. Switch: el evento debe estar OPEN
-    if (event.status !== 'OPEN') {
-      return res.status(409).json({
-        success: false,
-        error: `No se puede cargar participación en un evento ${event.status}. Solo eventos OPEN aceptan participaciones.`,
-        code: 'EVENT_NOT_OPEN'
-      });
-    }
-
-    // ADR-008: validar ventana de carga (createParticipation)
+    // 2. ADR-008: validar ventana de carga (independiente del status).
+    // Un evento CLOSED con ventana abierta (grace period) TAMBIÉN acepta cargas.
     const windowCheck = validateSubmissionWindow(event);
     if (!windowCheck.valid) {
       return res.status(409).json({
