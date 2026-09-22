@@ -1,4 +1,47 @@
 
+## [4.5.5] - 2026-09-22
+
+### 🎖️ HALL-S2-01 — Ampliación de poderes del ADMIN
+
+#### Objetivo Cumplido
+
+Ampliar los poderes operativos del rol `ADMIN` por decisión del OWNER:
+- Reset password de otro ADMIN.
+- Cambio de rol de MIEMBRO/VETERANO/ADMIN (ascender y degradar).
+- Inactivar/reactivar a otro ADMIN.
+
+El **OWNER sigue intocable** en todos los casos. El ADMIN **no puede transferir el mando** (nombrar/degradar OWNER). Se agregó validación de `SELF_MODIFICATION_FORBIDDEN` en el cambio de rol.
+
+#### Cambios Aplicados
+
+| Archivo | Cambio |
+|---|---|
+| `src/routes/admin.routes.js` | Eliminado bloqueo ADMIN → ADMIN en reset-password |
+| `src/controllers/admin.controller.js` | `updateUserRole`: solo bloquea newRole === 'OWNER' + self-modification |
+| `src/controllers/admin.controller.js` | `updateUserStatus`: eliminado bloqueo ADMIN → ADMIN |
+
+#### Política Resultante
+
+| Acción | MIEMBRO | VETERANO | ADMIN | OWNER |
+|---|---|---|---|---|
+| Reset password (ADMIN) | ✅ | ✅ | ✅ | ❌ |
+| Cambiar rol (ADMIN) | ✅ | ✅ | ✅ | ❌ |
+| Inactivar (ADMIN) | ✅ | ✅ | ✅ | ❌ |
+
+#### Reglas Invariantes
+
+- `OWNER_PROTECTED`: ningún ADMIN puede tocar al OWNER.
+- `SELF_MODIFICATION_FORBIDDEN`: nadie puede cambiar su propio rol.
+- Cuotas: 1 OWNER / 5 ADMIN / 8 VETERANO (sin cambios).
+
+#### Verificación
+
+- ✅ `node --check` en los 2 archivos modificados.
+- ✅ `npm test` → 179/179 passing.
+- ✅ Deploy a Fly.io.
+- ✅ Smoke test post-deploy.
+
+---
 
 ## [4.5.4] - 2026-09-22
 
