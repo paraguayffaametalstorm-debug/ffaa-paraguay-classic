@@ -248,6 +248,72 @@ El sistema de Upgrades 2.0 se apoya en un árbol de nodos técnicos almacenado e
   3. Escribe tu **nueva contraseña** (mínimo 8 caracteres).
   4. Confirma la nueva contraseña y presiona **"Actualizar Contraseña"**.
 
+### 2.4b Cambio de Nick desde Mi Perfil (v4.5.0)
+
+A partir de la v4.5.0, podés cambiar tu **nick** (indicativo de combate) directamente desde **Mi Perfil**.
+
+#### ¿Cuántas veces puedo cambiar mi nick?
+
+Depende de tu rango:
+
+| Rango | Cambios permitidos |
+|---|---|
+| **MIEMBRO** | 1 cambio autogestionado (después queda fijo). |
+| **VETERANO** | 1 cambio autogestionado (después queda fijo). |
+| **ADMIN** | Ilimitado (cada cambio se audita). |
+| **OWNER** | Ilimitado (cada cambio se audita). |
+
+#### Formato válido del nick
+
+Podés usar **letras (incluye tildes y ñ), números, espacios, punto, guión bajo y guión medio**. Longitud: 3 a 30 caracteres.
+
+**Ejemplos válidos:**
+- `Luqueño`
+- `TestPiloñ`
+- `José Ángel`
+- `Comandante_Ríos-01`
+- `Test.Pilot 2026`
+
+**Ejemplos inválidos:**
+- `AB` (muy corto).
+- `Test@Pilot` (@ no permitido).
+- `[PRY]Test` (corchetes no permitidos).
+- Nombres de 31+ caracteres.
+
+#### ¿Cómo cambio mi nick?
+
+1. Andá a **Mi Perfil** (menú superior o drawer móvil).
+2. En el formulario **"Datos Personales"**, encontrá el campo **"Nickname / Indicativo de Combate"**.
+3. Si tenés cambios disponibles, verás el mensaje: *"💡 Podés cambiar tu nick una vez. Elegí bien: después queda fijo."*
+4. Editá el campo con tu nuevo nick.
+5. Aparecerá el botón **"💾 Guardar Nick"**.
+6. Hacé click y confirmá el cambio en el diálogo.
+7. El sistema valida el formato, la unicidad y tu límite de cambios, y aplica el cambio.
+
+#### ¿Qué pasa con mi nick viejo?
+
+- **Perfil y login:** pasan a usar el nuevo nick.
+- **Login con nick viejo:** deja de funcionar.
+- **Histórico de rendimiento (`performances.nick`):** **NUNCA se toca**. Los eventos que volaste con el nick viejo siguen mostrando ese nick en tu historial. Es un snapshot inmutable.
+
+#### ¿Qué pasa con mi email institucional?
+
+Si tu email institucional había sido **auto-generado desde tu nick viejo** (ej: nick `TestPilot` → email `testpilot@ffaa.py`), el sistema lo actualiza automáticamente al nuevo nick.
+
+Si el email fue **editado manualmente por un admin** (ej: `comando@ffaa.py` para el nick `TestPilot`), **NO se toca**.
+
+#### ¿Qué pasa si ya usé mi cambio y quiero otro?
+
+Contactá a un **Administrador**. Los ADMIN/OWNER pueden ejecutar cambios adicionales desde el panel administrativo (auditados).
+
+#### Códigos de error que podés encontrar
+
+- **NICK_FORMAT_INVALID:** el formato del nick no cumple las reglas.
+- **NICK_TAKEN:** el nick ya está en uso por otro piloto.
+- **NICK_CHANGE_LIMIT_REACHED:** ya usaste tu cambio autogestionado.
+
+---
+
 ### 2.5 📚 Centro de Normativas y Protocolos
 - Consulta reglamentos disciplinarios, códigos de conducta y protocolos de combate aprobados por la Comandancia.
 - Descarga en tu dispositivo las directivas operativas oficiales emitidas en formato textual/PDF.

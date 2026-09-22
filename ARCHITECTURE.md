@@ -707,6 +707,102 @@ A partir de la versión v4.0.0 se formaliza el subsistema de gestión integral d
 
 ---
 
+## 6.10 Sistema de Cambio de Nick Autogestionado (v4.5.0)
+
+A partir de v4.5.0, los pilotos pueden cambiar su nick desde Mi Perfil según su rango.
+
+### Reglas de negocio
+
+| Rol | Cambios permitidos | Auditoría |
+|---|---|---|
+| MIEMBRO | 1 (autogestionado) | `change_type='SELF'` |
+| VETERANO | 1 (autogestionado) | `change_type='SELF'` |
+| ADMIN | Ilimitado | `change_type='SELF'` |
+| OWNER | Ilimitado | `change_type='SELF'` |
+
+### Estructura de la tabla `user_nick_changes`
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | UUID | PK |
+| `user_id` | UUID | FK a `users.id` ON DELETE CASCADE |
+| `previous_nick` | TEXT | Nick anterior |
+| `new_nick` | TEXT | Nick nuevo |
+| `previous_institutional_email` | TEXT | Email institucional anterior (nullable) |
+| `new_institutional_email` | TEXT | Email institucional nuevo (nullable) |
+| `change_type` | TEXT | `'SELF'` o `'ADMIN'` |
+| `changed_by` | UUID | FK a `users.id` ON DELETE SET NULL (nullable) |
+| `reason` | TEXT | Motivo del cambio (nullable) |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() |
+
+**Índice:** `idx_user_nick_changes_user_id (user_id, created_at DESC)`
+
+**RLS:** Política `no_public_access` (bloquea todo acceso público).
+
+### Columna `nick_self_changed_at` en `users`
+
+- `TIMESTAMPTZ NULL` — NULL si el piloto nunca cambió su nick.
+- Se setea al momento del primer cambio autogestionado para MIEMBRO/VETERANO.
+- Para ADMIN/OWNER no se usa (privilegio ilimitado).
+
+### Regex permisivo de nick
+
+```javascript
+/^[\p{L}\p{N}._\-\s]{3,30}$/u
+```
+
+- `\p{L}` — letras Unicode (incluye tildes, ñ, ü).
+- `\p{N}` — números.
+- `._-\s` — punto, guión bajo, guión medio, espacios.
+- 3-30 caracteres.
+
+### Normalización del email institucional
+
+```javascript
+function normalizeNickForEmail(nick) {
+  return String(nick || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')   // quita diacríticos
+    .replace(/\s+/g, '.')              // espacios → punto
+    .replace(/[^a-z0-9._-]/g, '')       // solo válidos para email
+    .replace(/^[._-]+|[._-]+$/g, '');   // trim de . _ -
+}
+```
+
+**Ejemplos:**
+- `LuqueñO` → `luqueno`
+- `Comandante Ríos` → `comandante.rios`
+- `Test.Pilot 01` → `test.pilot.01`
+
+### Inmutabilidad de `performances.nick`
+
+Los registros históricos de rendimiento (`performances.nick`) **NUNCA se tocan** cuando un piloto cambia su nick. Esto preserva la trazabilidad militar: el nick que tenías cuando volaste ese evento es historia.
+
+### Flujo del cambio de nick
+
+```
+PILOTO → Mi Perfil → Input Nick → click "Guardar Nick"
+  ↓
+FRONTEND: handleChangeNick()
+  - Valida formato (regex permisivo).
+  - Confirma con el usuario (mensaje según rol).
+  - Envía PUT /api/profile { nick: nuevoNick }.
+  ↓
+BACKEND: updateProfile()
+  - Detecta cambio real de nick.
+  - Valida formato (NickChangeSchema).
+  - Valida límite (MIEMBRO/VETERANO).
+  - Valida unicidad (case-insensitive).
+  - Actualiza `nick` y `nick_self_changed_at` (si aplica).
+  - Auto-actualiza email institucional SOLO si era derivado.
+  - Audita en `user_nick_changes` (change_type='SELF').
+  ↓
+RESPUESTA: 200 OK + profile actualizado
+```
+
+---
+
 ## 7. Integración con la Wiki de Metalstorm
 
 ### 7.1 Fuente de Datos

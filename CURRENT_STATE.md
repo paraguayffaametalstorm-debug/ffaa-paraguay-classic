@@ -310,6 +310,9 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Credenciales Temporales con Vencimiento (v4.4.0)** | ✅ Funcional | Contraseñas `MS-XXXX-XXXX` vencen en 7 días. Login rechaza credenciales expiradas con `TEMPORARY_CREDENTIAL_EXPIRED`. Auditoría `INITIAL_CREDENTIAL_GENERATED` / `ADMIN_PASSWORD_RESET`. |
 | **QR de Acceso Rápido (v4.4.0)** | ✅ Funcional | La credencial JPG incluye QR con `nick` + `temp_pass` precargados. El piloto debe pulsar "Iniciar Sesión Táctica" (NO auto-login). |
 | **Login con Nick (v4.4.0)** | ✅ Funcional | El login acepta email, email institucional, Gmail vinculado o nick como identificador. |
+| **Email Institucional Auto-generado (v4.5.0)** | ✅ Funcional | Al registrar un piloto, el email `<nick>@ffaa.py` se auto-genera desde el nick. Editable por el admin. Validación de unicidad. |
+| **Cambio de Nick Autogestionado (v4.5.0)** | ✅ Funcional | MIEMBRO/VETERANO: 1 cambio. ADMIN/OWNER: ilimitado. Auditoría en `user_nick_changes`. Regex permisivo con Unicode (`ñ`, tildes, espacios). |
+| **Nick Permisivo con Unicode (v4.5.0)** | ✅ Funcional | Regex `/^[\p{L}\p{N}._\-\s]{3,30}$/u` acepta letras Unicode, números, espacios, `.`, `_`, `-`. |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)
 

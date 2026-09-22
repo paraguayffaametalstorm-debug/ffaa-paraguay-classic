@@ -6,6 +6,90 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+## 📌 [4.5.0] - 2026-09-21
+
+### 🎖️ Email institucional auto-generado + Cambio de Nick autogestionado
+
+#### Objetivo Cumplido
+
+Añadir dos módulos operativos:
+1. **Módulo A — Email institucional auto-generado:** al registrar un piloto, el email `<nick>@ffaa.py` se auto-genera desde el nick, con opción de edición manual por el admin.
+2. **Módulo B — Cambio de Nick autogestionado:** el piloto puede cambiar su nick desde Mi Perfil (1 vez para MIEMBRO/VETERANO, ilimitado para ADMIN/OWNER). Cada cambio queda auditado en `user_nick_changes`.
+
+#### Migración de Base de Datos
+
+| Archivo | Cambio |
+|---|---|
+| `sql/036_nick_change_tracking.sql` | NUEVO. Columna `nick_self_changed_at` en `users` + tabla `user_nick_changes` con RLS. |
+
+#### Cambios Backend
+
+| Archivo | Cambio |
+|---|---|
+| `src/utils/schemas.js` | Regex permisivo del nick: `/^[\p{L}\p{N}._\-\s]{3,30}$/u`. Validación estricta del email institucional. `NickChangeSchema`. |
+| `src/utils/audit.js` | Nuevo helper `logNickChange()` (audita en `user_nick_changes`). |
+| `src/controllers/admin.controller.js` | `addMember()` valida unicidad de email/nick, normaliza y pobla `email_institucional`. |
+| `src/controllers/profile.controller.js` | `updateProfile()` con lógica completa de cambio de nick, unicidad, límites y auditoría. |
+
+#### Cambios Frontend
+
+| Archivo | Cambio |
+|---|---|
+| `components/admin-panel.html` | Input de email con sufijo fijo `@ffaa.py` + preview en vivo. |
+| `components/profile-view.html` | Campo de nick condicional (editable/readonly según rol y estado). |
+| `js/views.js` | `generateInstitutionalEmailFromNick()`, `canUserChangeNick()`, `configureProfileNickInput()`, `handleChangeNick()`. |
+| `js/profile.js` | `loadPersonalProfile()` llama a `configureProfileNickInput()`. |
+
+#### Reglas de Negocio
+
+**Nick permisivo:**
+- Acepta: letras Unicode (incluye tildes, ñ, ü), números, espacios, punto, guión bajo, guión medio.
+- Longitud: 3 a 30 caracteres.
+- Ejemplos válidos: `Luqueño`, `TestPiloñ`, `José Ángel`, `Test.Pilot 01`.
+
+**Email institucional estricto:**
+- Prefijo: `[a-z0-9._-]{3,30}` (minúsculas, sin tildes, sin espacios, sin símbolos raros).
+- Dominio fijo: `@ffaa.py`.
+- Normalización: `LuqueñO` → `luqueno@ffaa.py`, `Comandante Ríos` → `comandante.rios@ffaa.py`.
+
+**Cambio de nick:**
+- MIEMBRO / VETERANO: 1 cambio autogestionado.
+- ADMIN / OWNER: ilimitado (auditado).
+- Unicidad: no puede coincidir con otro nick (case-insensitive).
+- Los `performances.nick` históricos **NUNCA se tocan**.
+
+#### Códigos de Error
+
+- `NICK_CHANGE_LIMIT_REACHED` — MIEMBRO/VETERANO intenta cambiar 2da vez.
+- `NICK_FORMAT_INVALID` — Formato del nick inválido.
+- `NICK_TAKEN` — Nick ya en uso por otro piloto.
+- `EMAIL_INSTITUTIONAL_TAKEN` — Email institucional ya en uso.
+
+#### Auditoría
+
+Nuevos registros en `user_nick_changes`:
+- `change_type = 'SELF'` — cambio autogestionado por el piloto.
+- `change_type = 'ADMIN'` — cambio hecho por un admin.
+- Campos: `user_id`, `previous_nick`, `new_nick`, `previous_institutional_email`, `new_institutional_email`, `changed_by`, `reason`, `created_at`.
+
+#### Tests
+
+- ✅ **41/41 checks automatizados** (funciones globales, lógica, normalización, regex, DOM, endpoints).
+- ✅ **Registro real en producción:** `TestPilot` creado con email auto-generado `testpilot@ffaa.py`.
+- ✅ **Deploy exitoso en Fly.io** con hotfix del límite `max(30)`.
+
+#### Verificación
+
+- ✅ Nick permisivo con Unicode (`ñ`, tildes, espacios).
+- ✅ Email institucional estricto (minúsculas, sin símbolos).
+- ✅ Auto-generación de email desde nick.
+- ✅ Cambio de nick con límite para MIEMBRO/VETERANO.
+- ✅ Cambio ilimitado para ADMIN/OWNER.
+- ✅ Auditoría completa en `user_nick_changes`.
+- ✅ `performances.nick` intactos.
+
+---
+
 ## 📌 [4.4.0] - 2026-09-21
 
 ### 🔐 Credenciales temporales con vencimiento + QR de acceso rápido
