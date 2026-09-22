@@ -1142,9 +1142,9 @@ Lista exhaustiva de combatientes con métricas dinámicas para el panel de admin
 ### `PUT /api/admin/users/:id/status` (o `PATCH`)
 Modifica el estado operacional de un piloto militar entre `ACTIVE` e `INACTIVE` con registro obligatorio de motivo al inactivar.
 - **Acceso:** Autenticado (`ADMIN`, `OWNER`).
-- **Jerarquía de Mando:**
+- **Jerarquía de Mando (HALL-S2-01, v4.5.5):**
   - `OWNER`: Puede modificar a cualquier piloto excepto a sí mismo (`SELF_MODIFICATION_FORBIDDEN`).
-  - `ADMIN`: Solo puede modificar a combatientes con rango `MIEMBRO` o `VETERANO`. Prohibido modificar a `ADMIN` u `OWNER` (`HIERARCHY_FORBIDDEN`).
+  - `ADMIN`: Puede modificar el estado de `MIEMBRO`, `VETERANO` **y `ADMIN`**. Prohibido modificar al `OWNER` (`OWNER_PROTECTED`).
 - **Validación de Motivo:**
   - **Inactivación (`status = 'INACTIVE'`):** El campo `reason` es obligatorio (10 a 500 caracteres).
   - **Reactivación (`status = 'ACTIVE'`):** El campo `reason` es opcional (máximo 300 caracteres). Limpia `inactive_reason`, `inactive_by` e `inactive_at` a `null`.

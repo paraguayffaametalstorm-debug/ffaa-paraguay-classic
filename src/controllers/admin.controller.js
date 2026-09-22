@@ -215,8 +215,20 @@ export async function updateUserRole(req, res, next) {
       return res.status(403).json({ error: 'No tienes permiso para modificar al Comandante General (OWNER)' });
     }
 
-    if ((newRole === 'ADMIN' || newRole === 'OWNER') && actorRole !== 'OWNER') {
-      return res.status(403).json({ error: 'Solo el Comandante General (OWNER) puede nombrar Administradores o transferir el mando' });
+    // HALL-S2-01: ADMIN puede promover a MIEMBRO/VETERANO a ADMIN y degradar a ADMIN.
+    // Solo el OWNER puede transferir el mando (nombrar/degradar OWNER).
+    if (newRole === 'OWNER' && actorRole !== 'OWNER') {
+      return res.status(403).json({ error: 'Solo el Comandante General (OWNER) puede transferir el mando' });
+    }
+
+    // HALL-S2-01: bloquear self-cambio de rol.
+    const actorSelfId = req.user.user_id || req.user.id;
+    const targetSelfId = targetUser.user_id || targetUser.id;
+    if (String(actorSelfId) === String(targetSelfId) || String(actorSelfId) === String(targetUser.id)) {
+      return res.status(403).json({
+        error: 'No puedes cambiar tu propio rol',
+        code: 'SELF_MODIFICATION_FORBIDDEN'
+      });
     }
 
     if (currentRole === newRole) {
@@ -412,13 +424,9 @@ export async function updateUserStatus(req, res, next) {
       });
     }
 
-    // 5. Validar jerarquía (ADMIN solo puede tocar MIEMBRO y VETERANO)
-    if (actorRole === 'ADMIN' && (targetRole === 'ADMIN' || targetRole === 'OWNER')) {
-      return res.status(403).json({
-        error: 'Los Administradores solo pueden modificar el estado de Miembros y Veteranos',
-        code: 'HIERARCHY_FORBIDDEN'
-      });
-    }
+    // 5. HALL-S2-01: ADMIN puede inactivar/reactivar a otro ADMIN.
+    // El OWNER sigue protegido (regla 4).
+    // Regla previa bloqueaba ADMIN → ADMIN: removida por decisión del OWNER.
 
     // 6. Actualizar status y campos de inactivación (CONSULTA TIPADA)
     const nowIso = new Date().toISOString();

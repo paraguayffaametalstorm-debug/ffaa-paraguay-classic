@@ -619,7 +619,16 @@ El sistema implementa un flujo criptográficamente seguro para el restablecimien
 **Endpoints involucrados:**
 
 | Endpoint | Método | Auth | Descripción |
-|---|---|:---:|---|
+|
+
+7. **Poderes del ADMIN (HALL-S2-01, v4.5.5):**
+   - Reset password: MIEMBRO, VETERANO y **ADMIN**.
+   - Cambio de rol: MIEMBRO, VETERANO y **ADMIN** (ascender y degradar).
+   - Inactivar/reactivar: MIEMBRO, VETERANO y **ADMIN**.
+   - **Prohibido en todos los casos:** tocar al OWNER.
+   - **Prohibido:** que un usuario cambie su propio rol (`SELF_MODIFICATION_FORBIDDEN`).
+
+---|---|:---:|---|
 | `/api/auth/forgot-password` | POST | Público | Genera token y envía correo |
 | `/api/auth/reset-password` | POST | Público | Valida token y actualiza clave |
 

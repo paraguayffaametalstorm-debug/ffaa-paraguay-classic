@@ -417,8 +417,8 @@ La evaluación del combatiente se determina en el servidor considerando **tanto 
 
 Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máximas de oficiales:
 
-- **👑 OWNER (Comandante en Jefe):** Máximo **1**. Comandancia absoluta, auditoría C4ISR, gestión de respaldos y nombramiento de oficiales.
-- **⭐ ADMIN (Oficial de Operaciones):** Máximo **5**. Altas y bajas de combatientes, activación de eventos Black Market, carga masiva de tokens y reseteo de claves.
+- **👑 OWNER (Comandante en Jefe):** Máximo **1**. Comandancia absoluta, auditoría C4ISR, gestión de respaldos, nombramiento de oficiales **y transferencia del mando**.
+- **⭐ ADMIN (Oficial de Operaciones):** Máximo **5**. Altas y bajas de combatientes (**incluidos otros ADMIN**), ascensos y descensos de rango (**incluidos ADMIN**), activación de eventos Black Market, carga masiva de tokens y reseteo de claves (**incluidas las de otros ADMIN**). **No puede tocar al OWNER ni transferir el mando.**
 - **🎖️ VETERANO (Piloto Distinguido):** Máximo **8**. Pilotos de élite con preferencia en escuadrilla y acceso completo a estadísticas.
 - **✈️ MIEMBRO (Piloto de Escuadrón):** Base de combate regular. Registro semanal y gestión de hangar.
 

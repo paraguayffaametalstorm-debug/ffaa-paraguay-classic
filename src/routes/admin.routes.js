@@ -133,13 +133,9 @@ router.post('/users/:userId/reset-password', async (req, res) => {
             });
         }
 
-        // 3. ADMIN solo puede resetear a MIEMBRO y VETERANO
-        if (actorRole === 'ADMIN' && (targetRole === 'ADMIN' || targetRole === 'OWNER')) {
-            return res.status(403).json({
-                error: 'Los Administradores solo pueden resetear contraseñas de Miembros y Veteranos',
-                code: 'HIERARCHY_FORBIDDEN'
-            });
-        }
+        // 3. HALL-S2-01: ADMIN puede resetear la contraseña de otro ADMIN.
+        // Solo el OWNER sigue protegido (validado en el paso 2).
+        // Regla previa (HALL-022) bloqueaba ADMIN → ADMIN: removida por decisión del OWNER.
 
         // 4. OWNER puede resetear a todos excepto a sí mismo (ya validado arriba)
         // ============================================================
