@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión Activa:** v4.5.3 (HALL-066-septies: user_id string numérico)
+> **Versión Activa:** v4.5.6 (HALL-S2-02: dropdown de roles frontend)
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -312,6 +312,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Login con Nick (v4.4.0)** | ✅ Funcional | El login acepta email, email institucional, Gmail vinculado o nick como identificador. |
 | **Email Institucional Auto-generado (v4.5.0)** | ✅ Funcional | Al registrar un piloto, el email `<nick>@ffaa.py` se auto-genera desde el nick. Editable por el admin. Validación de unicidad. |
 | **Cambio de Nick Autogestionado (v4.5.0)** | ✅ Funcional | MIEMBRO/VETERANO: 1 cambio. ADMIN/OWNER: ilimitado. Auditoría en `user_nick_changes`. Regex permisivo con Unicode (`ñ`, tildes, espacios). |
+| **Dropdown de Roles (HALL-S2-02, v4.5.6)** | ✅ Funcional | Opción ADMIN siempre habilitada en el `<select>` de `renderAdminMembersTable`. Backend valida cuota (5) y jerarquía. |
 | **Nick Permisivo con Unicode (v4.5.0)** | ✅ Funcional | Regex `/^[\p{L}\p{N}._\-\s]{3,30}$/u` acepta letras Unicode, números, espacios, `.`, `_`, `-`. |
 
 ## 🛠️ Sistema de Aviones (Actualizado 2026-09-15)

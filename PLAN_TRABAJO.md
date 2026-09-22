@@ -201,17 +201,15 @@ Para cada ítem:
 - **PR:** #NNN (cuando exista)
 ```
 
-### Ítems placeholder (se llenan tras Sprint 1)
+### Estado de los ítems confirmados en Sprint 1
 
-- [ ] **FIX-201** — _(pendiente confirmación FIX-101)_
-- [ ] **FIX-202** — _(pendiente confirmación FIX-102)_
-- [ ] **FIX-203** — _(pendiente confirmación FIX-103)_
-- [ ] **FIX-204** — _(pendiente confirmación FIX-104)_
-- [ ] **FIX-205** — _(pendiente confirmación FIX-105)_
-- [ ] **FIX-206** — _(pendiente confirmación FIX-106)_
-- [ ] **FIX-207** — _(pendiente confirmación FIX-107)_
-- [ ] **FIX-208** — _(pendiente confirmación FIX-108)_
-- [ ] **FIX-209** — **Presence en memoria no escala** (ADR-005). El router usa un `Set` local que no se comparte entre las 2 réplicas de Fly.io y se pierde en redeploys. Requiere migrar a tabla `presence` en Supabase.
+- ✅ **FIX-104** — Filtro de detalles de DB en respuestas 500 → CERRADO (`43db2a8`)
+- ✅ **HALL-S1-01** — Ownership check en `getPlaneDetails` → CERRADO (`5fbb2d5`)
+- ✅ **HALL-S2-01** — Ampliación de poderes ADMIN (backend) → CERRADO (`d496f5c`)
+- ✅ **HALL-S2-02** — Dropdown de rol frontend → CERRADO (`13501af`)
+- ⏳ **FIX-101** — Transacción en `resetPassword` (2 UPDATE sin transacción) → Pendiente
+- ⏳ **FIX-105** — Transacción en `changeEventStatus` (SELECT+UPDATE sin transacción) → Pendiente
+- ⏳ **FIX-209** — Presence en memoria no escala → Sprint 2/Sprint 3
 
 ### Criterio de cierre del Sprint 2
 
@@ -443,6 +441,9 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | ID | Descripción | Fecha | Commit |
 |---|---|---|---|
 | **FIX-104** | `src/middlewares/errorHandler.js` — filtrar detalles de DB en respuestas 500 | 2026-09-22 | `43db2a8` |
+| **HALL-S1-01** | Ownership check en `getPlaneDetails` | 2026-09-22 | `5fbb2d5` |
+| **HALL-S2-01** | Ampliación de poderes del ADMIN (reset, rol, status) — backend | 2026-09-22 | `d496f5c` |
+| **HALL-S2-02** | Dropdown de rol frontend — habilitar opción ADMIN | 2026-09-22 | `13501af` |
 
 ## 9. ❌ DESCARTADOS
 
@@ -466,7 +467,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 |---|---|---|---|---|---|---|
 | Docs alineados con versión real | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
 | Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
-| Fixes cerrados | 0 | 25 | 25 | 33+ | 42+ | 49+ |
+| Fixes cerrados | 0 | 25 | 25 | 36 | 42+ | 49+ |
 | Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
 | Deuda técnica (horas estimadas) | ~40h | ~36h | ~28h | ~16h | ~8h | ~2h |
 

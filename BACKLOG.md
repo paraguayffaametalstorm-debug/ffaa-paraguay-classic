@@ -145,7 +145,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | Métrica | Valor |
 |---|---|
 | Items activos | 17 |
-| Items completados | 7 |
+| Items completados | 8 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
@@ -180,3 +180,4 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
 **Backlog v1.0 · 2026-09-17 · Documento vivo**
 | **HALL-066** | 🐛 | Cadena de 6 bugs bloqueando carga de W38 (v4.5.2-hotfix) | 2026-09-22 | `7157492` |
+| **HALL-S2-02** | 🐛 | Dropdown de rol frontend no permitía seleccionar ADMIN | 2026-09-22 | `13501af` |

@@ -1,4 +1,56 @@
 
+## [4.5.6] - 2026-09-22
+
+### 🎖️ HALL-S2-02 — Habilitación de opción ADMIN en dropdown de roles (frontend)
+
+#### Objetivo Cumplido
+
+Alinear el dropdown de cambio de rol del panel de administración con la
+política de backend establecida en HALL-S2-01 (v4.5.5). El `<option value="ADMIN">`
+estaba deshabilitado para actores con rol `ADMIN`, aunque el backend ya
+permitía la acción. Divergencia frontend/backend resuelta.
+
+#### Causa Raíz
+
+La condición `${!isOwner && currentRole !== 'ADMIN' ? 'disabled' : ''}` en
+`renderAdminMembersTable()` replicaba la regla VIEJA pre-HALL-S2-01.
+
+#### Cambio Aplicado
+
+| Archivo | Cambio |
+|---|---|
+| `js/views.js` (función `renderAdminMembersTable`) | Eliminada la condición `disabled` de la opción ADMIN |
+
+#### Política Resultante
+
+El dropdown refleja la política actual:
+
+| Actor | Puede asignar MIEMBRO | Puede asignar VETERANO | Puede asignar ADMIN | Puede asignar OWNER |
+|---|:---:|:---:|:---:|:---:|
+| **MIEMBRO** | — | — | — | — |
+| **VETERANO** | — | — | — | — |
+| **ADMIN** | ✅ | ✅ | ✅ | ❌ |
+| **OWNER** | ✅ | ✅ | ✅ | ✅ |
+
+La validación de cuota (máximo 5 ADMIN) y jerarquía la sigue aplicando el
+backend, que es la única fuente de verdad.
+
+#### Verificación
+
+- ✅ `node --check js/views.js` → OK.
+- ✅ Dry-run del script: `[MATCH] views.js (option ADMIN): 1 ocurrencia`.
+- ✅ `git diff` quirúrgico: 1 inserción, 1 eliminación.
+- ✅ Commit `13501af`.
+- ✅ Deploy a Fly.io sin downtime: `deployment-01M35PSP3XQ6QAH86CSXW88X4P`.
+
+#### Referencias
+
+- `docs/auditoria-sprint-1.md` — hallazgo original (Sprint 2).
+- `PLAN_TRABAJO.md` — sección Sprint 2.
+- Commit `13501af`.
+
+---
+
 ## [4.5.5] - 2026-09-22
 
 ### 🎖️ HALL-S2-01 — Ampliación de poderes del ADMIN
