@@ -498,6 +498,21 @@ Si algún valor de la sección 1 (Estado Actual de Referencia) resulta incorrect
 
 ---
 
+## 16b. HOTFIX v4.5.3 — HALL-066-septies (2026-09-22)
+
+**Estado:** ✅ CERRADO
+
+**Contexto:** El `<select>` HTML del modo oficial devuelve `user_id` como
+STRING (`"6"`). Zod rechazaba con 400 "Invalid UUID". Fix: aceptar strings
+numéricos y convertirlos a number.
+
+**Commit:** `4da002b`
+
+**Verificación end-to-end:** POST con `user_id: "6"` → 201 Created.
+Fila insertada en `event_participations` con `nick: AIRJUMP`.
+
+---
+
 ## 16. HOTFIX v4.5.2 — Cadena HALL-066 (2026-09-22)
 
 **Estado:** ✅ CERRADO

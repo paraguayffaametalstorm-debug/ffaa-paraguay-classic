@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión Activa:** v4.5.2-hotfix (HALL-066: cadena de 6 bugs resuelta)
+> **Versión Activa:** v4.5.3 (HALL-066-septies: user_id string numérico)
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -420,3 +420,31 @@ en período de gracia. El formulario aparecía pero el POST fallaba.
 - `docs/incidentes/HALL-066-completo.md`
 - `docs/HANDOFF-v4.5.2-hotfix.md`
 - `docs/adr/ADR-008-update.md`
+
+
+---
+
+## 🚨 Hotfix v4.5.3 — HALL-066-septies (2026-09-22)
+
+### Problema
+
+El `<select>` HTML del modo oficial devuelve `user_id` como STRING.
+Zod rechazaba con 400 "Invalid UUID" al cargar para otro piloto.
+
+### Fix
+
+`CreateParticipationSchema.user_id` ahora acepta:
+1. `number` INTEGER (self mode)
+2. `string` UUID (self mode)
+3. `string` numérico → transformado a number (modo oficial)
+
+### Verificación
+
+- ✅ Test con `user_id: "6"` (string) → 201 Created
+- ✅ Fila insertada: `event_participations` con `nick: AIRJUMP`
+- ✅ UUID correcto: `f5359f76-8845-40de-87d2-a15b0d2027fe`
+
+### Referencias
+
+- `CHANGELOG.md` sección `[4.5.3]`
+- Commit `4da002b`
