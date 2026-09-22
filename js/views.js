@@ -1165,20 +1165,30 @@ function loadActiveMembers() {
 
 function loadOpenEvents() {
   // F4.3-F7 — Migrado a apiEventsV2Active() (antes /api/events/open legacy)
+  // v4.5.1-hotfix (HALL-066 / ADR-008): respeta `isGracePeriod` — el evento
+  // puede estar CLOSED pero con la ventana de carga aún abierta.
   apiEventsV2Active()
     .then(res => {
       const prev = document.getElementById('windowClosedNotice');
       if (prev) prev.remove();
+      const prevGrace = document.getElementById('gracePeriodNotice');
+      if (prevGrace) prevGrace.remove();
 
       const ev = (res && res.success) ? res.event : null;
       if (ev) {
-        const inWin = typeof res.inWindow === 'boolean' ? res.inWindow : Boolean(ev.is_open || ev.status === 'OPEN');
-        const winCloseMs = typeof res.windowCloseMs === 'number' ? res.windowCloseMs : 86400000;
+        const isGrace = res.isGracePeriod === true;
+        const inWin = typeof res.inWindow === 'boolean'
+          ? res.inWindow
+          : Boolean(ev.is_open || ev.status === 'OPEN');
+        const winCloseMs = typeof res.windowCloseMs === 'number' ? res.windowCloseMs : 0;
         displayEventInfo(ev, inWin, winCloseMs);
         const fieldsEl = document.getElementById('performanceFields');
         if (fieldsEl) {
           if (inWin) {
             fieldsEl.style.display = 'block';
+            if (isGrace) {
+              renderGracePeriodNotice(ev);
+            }
           } else {
             fieldsEl.style.display = 'none';
             renderWindowClosedNotice(ev.type);
@@ -1229,6 +1239,68 @@ function nextWindowOpenLabel() {
   const opts = { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ_PY };
   const formatted = targetDate.toLocaleDateString(undefined, opts);
   return `${formatted} a las 09:00 (PY)`;
+}
+
+/**
+ * v4.5.1-hotfix (HALL-066 / ADR-008) — Cartel "Período de Carga".
+ * Se muestra cuando el evento está CLOSED pero su ventana de carga
+ * (`submission_closes_at`) sigue abierta. El piloto puede seguir
+ * registrando performance hasta el cierre de la ventana.
+ */
+function renderGracePeriodNotice(event) {
+  const prev = document.getElementById('gracePeriodNotice');
+  if (prev) prev.remove();
+
+  const closesAt = event && event.submission_closes_at
+    ? new Date(event.submission_closes_at)
+    : null;
+  const closeLabel = (closesAt && !isNaN(closesAt.getTime()))
+    ? closesAt.toLocaleDateString(undefined, {
+        weekday: 'long', day: 'numeric', month: 'long',
+        hour: '2-digit', minute: '2-digit', timeZone: TZ_PY
+      })
+    : 'la fecha de cierre';
+
+  const notice = document.createElement('div');
+  notice.id = 'gracePeriodNotice';
+  notice.innerHTML = `
+<div style="
+  margin-top: 14px;
+  background: rgba(11, 19, 43, 0.75);
+  border: 1.5px solid rgba(212, 175, 55, 0.55);
+  border-left: 4px solid #D4AF37;
+  border-radius: 12px;
+  padding: 16px 20px;
+">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+    <span style="font-size:1.3rem;">📝</span>
+    <div>
+      <div style="font-weight:700; font-size:0.95rem; color:#D4AF37; letter-spacing:0.4px;">
+        PERÍODO DE CARGA
+      </div>
+      <div style="font-size:0.8rem; color:#a0aec0; margin-top:2px;">
+        El evento ya cerró, pero podés seguir cargando tu performance.
+      </div>
+    </div>
+  </div>
+  <div style="
+    background: rgba(45, 55, 72, 0.5);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #cbd5e0;
+    line-height: 1.5;
+  ">
+    ⏱ <strong style="color:#e2e8f0;">Carga habilitada hasta:</strong>
+    <span>${closeLabel} (PY)</span>
+  </div>
+</div>
+`;
+
+  const eventInfoEl = document.getElementById('eventInfo');
+  if (eventInfoEl && eventInfoEl.parentNode) {
+    eventInfoEl.parentNode.insertBefore(notice, eventInfoEl.nextSibling);
+  }
 }
 
 function renderWindowClosedNotice(eventType) {
@@ -1340,10 +1412,13 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
   const barClass   = inWindow ? 'win-bar-open'          : 'win-bar-closed';
   const pulseClass = inWindow ? 'win-badge-open-pulse'  : 'win-badge-closed-pulse';
   const statusText = inWindow ? '🟢 VENTANA ABIERTA'   : '🔴 VENTANA CERRADA';
+  const isGracePeriod = Boolean(event.status === 'CLOSED' && event.submission_closes_at && new Date(event.submission_closes_at) > new Date());
   const subText = inWindow
-    ? `Cierra el ${endDate.toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'short', timeZone: TZ_PY })} a las ${endDate.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit', timeZone: TZ_PY })} (hora PY)`
+    ? (isGracePeriod
+        ? `Evento cerrado. Carga hasta el ${new Date(event.submission_closes_at).toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'short', timeZone: TZ_PY })} (hora PY)`
+        : `Cierra el ${endDate.toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'short', timeZone: TZ_PY })} a las ${endDate.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit', timeZone: TZ_PY })} (hora PY)`)
     : `Próxima apertura: ${nextWindowOpenLabel()}`;
-  const countdownLabel = inWindow ? 'Tiempo restante en ventana' : 'Apertura de registro en';
+  const countdownLabel = inWindow ? (isGracePeriod ? 'Tiempo restante de carga (evento cerrado)' : 'Tiempo restante en ventana') : 'Apertura de registro en';
 
   document.getElementById('eventInfo').innerHTML = `
 <div class="card event-card ${typeClass}">
@@ -1378,8 +1453,11 @@ function displayEventInfo(event, inWindow, windowCloseMs) {
 `;
 
   if (window._winCountdownInterval) clearInterval(window._winCountdownInterval);
+  const submissionClosesMs = event.submission_closes_at
+    ? new Date(event.submission_closes_at).getTime()
+    : null;
   const countdownTargetMs = inWindow
-    ? endDate.getTime()
+    ? (isGracePeriod && submissionClosesMs ? submissionClosesMs : endDate.getTime())
     : Date.now() + msUntilNextWindowOpen();
 
   function tick() {
