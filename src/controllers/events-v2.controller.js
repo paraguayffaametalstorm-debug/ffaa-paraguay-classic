@@ -43,13 +43,6 @@ import {
 // HELPERS
 // ============================================================
 
-function calculateWindowCloseMs(event) {
-  if (!event || !event.end_date) return 86400000;
-  const now = Date.now();
-  const endDate = new Date(event.end_date).getTime();
-  return Math.max(0, endDate - now);
-}
-
 function isEventOpen(event) {
   return Boolean(event && event.status === 'OPEN');
 }
@@ -62,13 +55,16 @@ function isEventOpen(event) {
 function normalizeEvent(event) {
   if (!event) return null;
   const metadata = event.metadata || {};
+  const windowStatus = getSubmissionWindowStatus(event);
   return {
     ...event,
     target_members: metadata.target_members ?? 0,
     target_tokens: metadata.target_tokens ?? 0,
     is_open: isEventOpen(event),
-    inWindow: isEventOpen(event),
-    windowCloseMs: calculateWindowCloseMs(event)
+    inWindow: windowStatus.can_submit,
+    windowCloseMs: windowStatus.seconds_remaining * 1000,
+    submission_opens_at: windowStatus.submission_opens_at,
+    submission_closes_at: windowStatus.submission_closes_at
   };
 }
 
