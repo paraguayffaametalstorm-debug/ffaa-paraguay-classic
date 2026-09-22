@@ -497,10 +497,12 @@ async function savePerformance() {
             throw new Error('No hay evento activo. No se puede guardar.');
         }
 
+        // v4.5.2-hotfix: event_participations.user_id es UUID (users.id).
+        // Preferimos _user.id (UUID). Fallback a user_id (INTEGER) — el backend lo resuelve.
         const _user = window.currentUser || {};
         const _targetUserId = (isAdminMode && targetUserId)
             ? targetUserId
-            : (_user.user_id || _user.id);
+            : (_user.id || _user.user_id);
 
         if (!_targetUserId) {
             throw new Error('No se pudo identificar al piloto. Reintentá sesión.');
