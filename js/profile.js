@@ -33,6 +33,12 @@ async function loadPersonalProfile() {
     const data = await profileRes.json();
     const profile = data.data?.profile || data.profile || data.user || currentUser;
 
+    // v4.5.0 — Configurar el input de cambio de nick (Módulo B)
+    // Habilita/deshabilita el campo según rol + nick_self_changed_at.
+    if (typeof configureProfileNickInput === 'function') {
+      configureProfileNickInput(profile);
+    }
+
     // 1. Llenar Badge Táctico de Identificación
     const nick = profile.nick || currentUser.nick || 'PILOTO';
     const role = (profile.role || currentUser.role || 'MIEMBRO').toUpperCase();
