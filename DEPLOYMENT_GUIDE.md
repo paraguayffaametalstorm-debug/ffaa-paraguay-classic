@@ -1,6 +1,6 @@
 # 🚀 Guía de Despliegue en Producción - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v4.3.0).**  
+> **Manual Táctico de Operaciones de Despliegue, Configuración de Entornos y Validación en Producción (v4.5.2-hotfix).**  
 > **Destino Operacional:** Fly.io (Región `gru` - São Paulo) & Supabase PostgreSQL Cloud.
 
 ---
@@ -277,4 +277,4 @@ Si se detecta una anomalía crítica tras el despliegue:
 
 ---
 
-*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
+*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*

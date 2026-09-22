@@ -498,6 +498,27 @@ Si algún valor de la sección 1 (Estado Actual de Referencia) resulta incorrect
 
 ---
 
+## 16. HOTFIX v4.5.2 — Cadena HALL-066 (2026-09-22)
+
+**Estado:** ✅ CERRADO
+
+**Contexto:** 6 bugs en cascada que impedían cargar performance de W38 en
+período de gracia (ADR-008). Bugs en frontend, backend y SW.
+
+**Commits:** `1614c13`, `28e3cf7`, `6d872ae`, `b3c1f00`, `4cab228`,
+`6d09ba3`, `0731c31`, `7157492`.
+
+**Deploy:** `deployment-01M33KQSV9MYTYV7GS3W8XDW8V` (rolling, sin downtime).
+
+**Referencias:**
+
+- `docs/incidentes/HALL-066-completo.md`
+- `docs/HANDOFF-v4.5.2-hotfix.md`
+- `docs/adr/ADR-008-update.md`
+- `CHANGELOG.md` — `[4.5.2]`
+
+---
+
 ## 15. REFERENCIAS
 
 - [`CHANGELOG.md`](./CHANGELOG.md) — Histórico de versiones.

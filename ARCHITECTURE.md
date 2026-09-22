@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.3.1).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.5.2-hotfix).**
 
 ---
 
@@ -227,6 +227,40 @@ Middleware que emite headers HTTP de deprecación en endpoints legacy para facil
 - `/api/bm/*` (15 endpoints) → sucesor: `/api/events-v2/*`
 
 **Implementación:** `src/middlewares/deprecation.js` (aplicado en `server.js` a las rutas legacy).
+
+### 2.2e Hotfix v4.5.2 — Cadena HALL-066 (2026-09-22)
+
+Resolución de 6 bugs en cascada que impedían cargar performance del evento
+W38 en período de gracia (ADR-008).
+
+**Componentes tocados:**
+
+| Capa | Archivo | Cambio |
+|---|---|---|
+| Frontend | `js/views.js` | `isGracePeriod` declarado antes de `subText` |
+| Frontend | `js/performance.js` | Migrado a `POST /api/events-v2/:id/participations` |
+| Frontend | `js/performance.js` | `_targetUserId` prefiere UUID |
+| Backend | `src/utils/eventSchemas.js` | `user_id` acepta INTEGER o UUID |
+| Backend | `src/controllers/events-v2.controller.js` | Resolución INTEGER→UUID + `validateSubmissionWindow` + select completo |
+| SW | `sw.js` | `CACHE_NAME` → `v4.5.2-hotfix` |
+
+**Reglas de negocio consolidadas:**
+
+1. **La ventana de carga manda, no el status.** Un evento `CLOSED` con
+   ventana abierta acepta participaciones (`validateSubmissionWindow`).
+2. **El schema Zod acepta ambos identificadores.** `user_id` puede ser
+   INTEGER (`users.user_id`) o UUID (`users.id`).
+3. **El .select() debe traer todo lo que el validador necesita.**
+   `submission_opens_at` y `submission_closes_at` son obligatorios.
+4. **El CACHE_NAME se bumpea en cada hotfix de frontend.**
+
+**Referencias:**
+
+- `docs/incidentes/HALL-066-completo.md`
+- `docs/adr/ADR-008-update.md`
+
+---
+
 
 ---
 
@@ -959,6 +993,6 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
 
 ---
 
-*Versión: v4.3.1 · Actualizado: 21 Septiembre 2026*
+*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*
 
 

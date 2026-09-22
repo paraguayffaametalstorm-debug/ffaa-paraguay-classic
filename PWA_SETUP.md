@@ -1,6 +1,6 @@
 # 📱 Configuración PWA y Modo Offline - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v4.3.0.**
+> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v4.5.2-hotfix.**
 
 ---
 
@@ -20,7 +20,7 @@ La plataforma **PARAGUAY-FFAA | METALSTORM** implementa un diseño PWA militar d
 - **Iconografía:** Íconos adaptativos en resoluciones 72x72, 96x96, 128x128, 144x144, 152x152, 192x192, 384x384 y 512x512 con propósito `any maskable`.
 
 ### 1.2 Estrategia de Caché del Service Worker (`sw.js` v4.3.0)
-El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v4.0.5` con estrategias diferenciadas por tipo de tráfico:
+El Service Worker implementa la versión de caché `PARAGUAY-FFAA-METALSTORM-v4.5.2-hotfix` con estrategias diferenciadas por tipo de tráfico:
 
 | Tipo de Recurso | Estrategia de Caché | Justificación Técnica |
 |---|:---:|---|
@@ -78,10 +78,10 @@ Cuando se despliega una nueva versión del sistema (v4.3.0):
 
 1. En tu navegador de escritorio, presiona `F12` para abrir las herramientas de desarrollador.
 2. Ve a la pestaña **Application** $\rightarrow$ **Service Workers**.
-3. Confirma que el Service Worker se encuentra en estado `Activated and is running` con versión `PARAGUAY-FFAA-METALSTORM-v4.0.5`.
+3. Confirma que el Service Worker se encuentra en estado `Activated and is running` con versión `PARAGUAY-FFAA-METALSTORM-v4.5.2-hotfix`.
 4. Marca la casilla **Offline** (o desconecta la red Wi-Fi en un teléfono móvil).
 5. Recarga la página: La aplicación cargará al 100% de manera instantánea desde la memoria local en caché.
 
 ---
 
-*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
+*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*

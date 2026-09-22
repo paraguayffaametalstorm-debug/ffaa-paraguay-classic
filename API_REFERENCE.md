@@ -1604,8 +1604,29 @@ Tabla de clasificación ordenada por puntos acumulados en el Black Market activo
   }
   ```
 
+### Nota v4.5.2 — POST /api/events-v2/:id/participations (HALL-066)
+
+A partir del hotfix v4.5.2, el endpoint `POST /api/events-v2/:id/participations`
+acepta eventos con `status === 'CLOSED'` si la ventana de carga está abierta
+(`validateSubmissionWindow`). El check duro `status !== 'OPEN'` fue removido.
+
+**Cambios en el payload:**
+
+- `user_id` acepta tanto INTEGER (`users.user_id`) como UUID string (`users.id`).
+- Si se envía INTEGER, el controller resuelve a UUID antes del INSERT.
+- El `.select()` del evento incluye `submission_opens_at` y `submission_closes_at`.
+
+**Códigos de error nuevos:**
+
+| Código | HTTP | Cuándo |
+|---|---|---|
+| `USER_NOT_FOUND` | 404 | `user_id` INTEGER no existe en `users` |
+| `INVALID_USER_ID` | 400 | `user_id` no es UUID ni entero positivo |
+
 ---
 
-*Versión: v4.3.0 · Actualizado: 20 Septiembre 2026*
+---
+
+*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*
 
 

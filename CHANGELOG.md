@@ -6,6 +6,70 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 
 ---
 
+
+## 📌 [4.5.2] - 2026-09-22
+
+### 🚨 Hotfix crítico — Cadena HALL-066 (6 bugs en 3 capas)
+
+#### Objetivo Cumplido
+
+Resolver la cadena de 6 bugs que impedía a los pilotos cargar
+performance del evento **Squadron Event 2026-W38** (en período de gracia).
+Los bugs abarcaban frontend, backend y Service Worker.
+
+#### Cadena de Bugs Resueltos
+
+| # | ID | Capa | Descripción | Commit |
+|---|---|---|---|---|
+| 1 | HALL-066 | Frontend | `isGracePeriod` usado antes de declararse en `displayEventInfo` | `1614c13` |
+| 2 | HALL-066-bis | Frontend | `savePerformance()` llamaba a `/api/performances` (legacy) | `6d872ae` |
+| 3 | HALL-066-ter | Backend | `CreateParticipationSchema.user_id` esperaba UUID, frontend enviaba INTEGER | `6d09ba3` |
+| 4 | HALL-066-quater | Backend | `createParticipation` no resolvía user_id INTEGER → UUID | `0731c31` |
+| 5 | HALL-066-quinquies | Backend | `.select()` no traía `submission_opens_at/closes_at` | `7157492` |
+| 6 | HALL-066-sexies | SW | `CACHE_NAME` no bumpeado → navegador servía `performance.js` viejo | `4cab228` |
+
+#### Cambios Backend
+
+| Archivo | Cambio |
+|---|---|
+| `src/utils/eventSchemas.js` | `user_id` acepta `z.union([number.int, string.uuid])` |
+| `src/controllers/events-v2.controller.js` | Resolución INTEGER → UUID + `validateSubmissionWindow` + `.select()` completo |
+| `src/controllers/events-v2.controller.js` | `normalizeEvent` incluye `submission_opens_at/closes_at` |
+
+#### Cambios Frontend
+
+| Archivo | Cambio |
+|---|---|
+| `js/views.js` | `isGracePeriod` declarado antes de `subText` |
+| `js/performance.js` | `savePerformance()` migrado a `POST /api/events-v2/:id/participations` |
+| `js/performance.js` | `_targetUserId` prefiere `_user.id` (UUID) sobre `_user.user_id` |
+| `sw.js` | `CACHE_NAME` → `v4.5.2-hotfix` |
+
+#### Verificación
+
+- ✅ `node --check` limpio en los 4 archivos JS/Node modificados.
+- ✅ 5 commits mergeados a `main` + 3 hotfix = 8 commits desplegados.
+- ✅ `fly deploy` exitoso sin downtime (`deployment-01M33KQSV9MYTYV7GS3W8XDW8V`).
+- ✅ Smoke test: piloto carga 100 tokens en W38 con toast verde.
+- ✅ Supabase: fila insertada en `event_participations`.
+
+#### Lección Arquitectónica
+
+La migración `events` → `events_master` (ADR-008) quedó a medias en v4.1.0.
+El frontend seguía llamando al endpoint legacy `POST /api/performances`.
+**Conclusión:** toda migración de tablas debe incluir la migración del cliente
+en el mismo release.
+
+#### Archivos Nuevos
+
+| Archivo | Propósito |
+|---|---|
+| `docs/incidentes/HALL-066-completo.md` | Post-mortem completo de la cadena |
+| `docs/HANDOFF-v4.5.2-hotfix.md` | Handoff detallado |
+| `docs/adr/ADR-008-update.md` | Anexo con lecciones aprendidas |
+
+---
+
 ## 📌 [4.5.0] - 2026-09-21
 
 ### 🎖️ Email institucional auto-generado + Cambio de Nick autogestionado
