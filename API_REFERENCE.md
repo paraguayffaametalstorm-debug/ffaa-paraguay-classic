@@ -89,7 +89,38 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Presence** | `/api/presence/offline` | `POST` | Autenticado | Desconectar al piloto del monitor de presencia |
 | **Presence** | `/api/presence/active` | `GET` | Público | Conteo de pilotos actualmente en línea |
 | **Profile** | `/api/profile` o `/me` | `GET` | Autenticado | Obtener expediente táctico del piloto |
-| **Profile** | `/api/profile` o `/me` | `PUT` | Autenticado | Actualizar Callsign, teléfono o bio |
+| **Profile** | `/api/profile` o `/me` | `PUT` | Autenticado | Actualizar Callsign, teléfono o bio. Acepta cambio de nick (v4.5.0). |
+### `PUT /api/profile` — Actualización con cambio de nick (v4.5.0)
+
+- **Acceso:** Autenticado.
+- **Body:**
+  ```json
+  {
+    "nick": "NuevoNick",
+    "phone": "+595 981 123456",
+    "bio": "Piloto de combate"
+  }
+  ```
+- **Comportamiento:**
+  - Si `nick` viene y difiere del actual → aplica lógica del Módulo B (validación, límites, unicidad, auditoría).
+  - Los `performances.nick` históricos **NUNCA se tocan** (snapshot inmutable).
+  - El email institucional se auto-actualiza **SOLO si era derivado del nick viejo**.
+- **Errores:**
+  - `400 NICK_FORMAT_INVALID` — Formato del nick inválido.
+  - `403 NICK_CHANGE_LIMIT_REACHED` — MIEMBRO/VETERANO ya usó su cambio.
+  - `409 NICK_TAKEN` — Nick ya en uso por otro piloto.
+- **Ejemplo de respuesta exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Nick actualizado correctamente: TestPilot → TestPilot2026",
+    "data": {
+      "profile": { "nick": "TestPilot2026", "nick_self_changed_at": "2026-09-21T..." },
+      "user": { "nick": "TestPilot2026", "nick_self_changed_at": "2026-09-21T..." }
+    }
+  }
+  ```
+
 | **Settings** | `/api/settings` o `/me` | `GET` | Autenticado | Obtener preferencias de tema y alertas |
 | **Settings** | `/api/settings` o `/me` | `PUT` | Autenticado | Modificar tema (militar/ops/clasico) y alertas |
 | **Admin** | `/api/admin/users` o `/members` | `GET` | `ADMIN` / `OWNER` | Listado completo de miembros del escuadrón |

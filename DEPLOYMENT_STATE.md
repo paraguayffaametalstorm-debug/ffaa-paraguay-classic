@@ -52,6 +52,7 @@ CREATE TABLE users (
     inactive_by UUID REFERENCES users(id) ON DELETE SET NULL,
     inactive_at TIMESTAMPTZ,
     temporary_password_expires_at TIMESTAMPTZ,
+    nick_self_changed_at TIMESTAMPTZ,  -- v4.5.0: tracking de cambios de nick autogestionados
     last_activity TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -696,6 +697,26 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | `plane_upgrades` | Hangar | 0 | ✅ Documentada |
 | `recovery_codes` | Seguridad | 0 | ✅ Documentada |
 | `user_settings` | Configuración | 0 | ✅ Documentada |
+
+#### 🆕 Tabla `user_nick_changes` (v4.5.0)
+
+Registro histórico de cambios de nick autogestionados.
+
+| Columna | Tipo | Descripción |
+|---|---|---|
+| `id` | UUID | PK |
+| `user_id` | UUID | FK a `users.id` ON DELETE CASCADE |
+| `previous_nick` | TEXT | Nick anterior |
+| `new_nick` | TEXT | Nick nuevo |
+| `previous_institutional_email` | TEXT | Email institucional anterior |
+| `new_institutional_email` | TEXT | Email institucional nuevo |
+| `change_type` | TEXT | `'SELF'` o `'ADMIN'` |
+| `changed_by` | UUID | FK a `users.id` (admin que ejecutó el cambio) |
+| `reason` | TEXT | Motivo (si es cambio administrativo) |
+| `created_at` | TIMESTAMPTZ | Fecha del cambio |
+
+**Índice:** `idx_user_nick_changes_user_id`
+**RLS:** Política `no_public_access`.
 
 #### 🗑️ Tablas Legacy — DROP Planificado
 
