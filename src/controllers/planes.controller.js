@@ -917,6 +917,17 @@ export async function getPlaneDetails(req, res, next) {
       return res.status(404).json({ success: false, message: 'Aeronave no encontrada', error: 'PLANE_NOT_FOUND' });
     }
 
+    // HALL-S1-01: ownership check. Impide que un usuario lea el hangar de otro
+    // piloto pasando un planeId ajeno. Mismo patrón que updatePlane/deletePlane.
+    const userId = req.user.user_id || req.user.id;
+    if (String(plane.user_id) !== String(userId) && req.user.role !== 'ADMIN' && req.user.role !== 'OWNER') {
+      return res.status(403).json({
+        success: false,
+        message: 'Permisos insuficientes para ver esta aeronave',
+        error: 'FORBIDDEN'
+      });
+    }
+
     const catalog = await getFullCatalogModels(supabase);
     const model = findModel(catalog, plane.avion_id);
     const modelName = model?.name || (plane.name && !/^\d+$/.test(plane.name) ? plane.name : null) || plane.avion_id;
