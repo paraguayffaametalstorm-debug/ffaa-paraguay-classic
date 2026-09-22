@@ -240,11 +240,17 @@ export const ChangeEventStatusSchema = z.object({
  * Payload para crear/editar una participación.
  */
 export const CreateParticipationSchema = z.object({
-  // v4.5.2-hotfix: user_id acepta tanto INTEGER (users.user_id) como UUID (users.id).
-  // El frontend envía el user_id numérico (ej: 1) porque es el identificador visible.
+  // v4.5.2-hotfix-2 (HALL-066-septies):
+  // El <select> HTML del modo oficial devuelve user_id como STRING ("10").
+  // Zod rechazaba con 400 "Invalid UUID" porque no aceptaba strings numéricos.
+  // Ahora aceptamos 3 formatos:
+  //   1. number INTEGER: 1 (users.user_id, self mode)
+  //   2. string UUID: "45217610-..." (users.id, self mode)
+  //   3. string numérico: "10" (del <select>, se convierte a number)
   user_id: z.union([
     z.number().int().positive(),
-    z.string().uuid()
+    z.string().uuid(),
+    z.string().regex(/^\d+$/).transform(Number)  // "10" → 10
   ]).optional(),
   nick: z.string().min(1).max(100).optional(),
   data: z.record(z.any()),
