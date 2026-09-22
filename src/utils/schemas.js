@@ -42,11 +42,12 @@ export const BulkUploadSchema = z.object({
 // ============================================================
 
 /**
- * Regex oficial de nick militar.
- * Permite: A-Z, a-z, 0-9, punto, guión bajo, guión medio.
- * Longitud: 3 a 20 caracteres.
+ * v4.5.0-hotfix — Regex permisivo de nick militar.
+ * Permite: letras Unicode (incluye tildes, ñ, ü), números, espacios, punto, guión bajo, guión medio.
+ * Longitud: 3 a 30 caracteres.
+ * Nota: los emojis y símbolos raros (@ # [ ] etc.) siguen bloqueados.
  */
-export const NICK_REGEX = /^[A-Za-z0-9._-]{3,20}$/;
+export const NICK_REGEX = /^[\p{L}\p{N}._\-\s]{3,30}$/u;
 
 /**
  * Regex oficial del email institucional.
