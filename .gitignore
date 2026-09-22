@@ -42,3 +42,6 @@ Desktop.ini
 
 # ---------- Archivos residuales ----------
 start_date 
+
+# Backups locales generados por scripts/update-docs-*.cjs
+*.bak
