@@ -240,7 +240,12 @@ export const ChangeEventStatusSchema = z.object({
  * Payload para crear/editar una participación.
  */
 export const CreateParticipationSchema = z.object({
-  user_id: z.string().uuid().optional(),
+  // v4.5.2-hotfix: user_id acepta tanto INTEGER (users.user_id) como UUID (users.id).
+  // El frontend envía el user_id numérico (ej: 1) porque es el identificador visible.
+  user_id: z.union([
+    z.number().int().positive(),
+    z.string().uuid()
+  ]).optional(),
   nick: z.string().min(1).max(100).optional(),
   data: z.record(z.any()),
   computed_points: z.number().int().min(0).optional(),
