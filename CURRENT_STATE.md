@@ -1,8 +1,8 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
-> **Fecha de Congelamiento:** 2026-09-20  
-> **Versión Activa:** v4.3.1 (HALL-066: scheduler v2.0 + grace period)  
+> **Fecha de Congelamiento:** 2026-09-22  
+> **Versión Activa:** v4.5.2-hotfix (HALL-066: cadena de 6 bugs resuelta)
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -386,3 +386,37 @@ Cada modelo en `plane_models` define detalladamente su arquitectura:
 | `wiki_extracted_at` | TIMESTAMPTZ | Timestamp de extracción |
 
 - **Frontend:** Vista 1 (Grid Táctico) y Vista 2 (Pantalla Dedicada). Modal `#aircraftDeepModal` con grid responsive de cards. Fallback automático a inglés cuando el contenido en español no está disponible.
+
+
+---
+
+## 🚨 Hotfix v4.5.2 — Cadena HALL-066 (2026-09-22)
+
+### Problema
+
+Los pilotos no podían cargar performance del evento **Squadron Event 2026-W38**
+en período de gracia. El formulario aparecía pero el POST fallaba.
+
+### Cadena de 6 Bugs
+
+| # | ID | Capa | Descripción |
+|---|---|---|---|
+| 1 | HALL-066 | Frontend | `isGracePeriod` usado antes de declararse |
+| 2 | HALL-066-bis | Frontend | `savePerformance()` llamaba a endpoint legacy |
+| 3 | HALL-066-ter | Backend | Schema Zod esperaba UUID, recibía INTEGER |
+| 4 | HALL-066-quater | Backend | `user_id` INTEGER no resuelto a UUID |
+| 5 | HALL-066-quinquies | Backend | `.select()` incompleto |
+| 6 | HALL-066-sexies | SW | Caché no invalidado |
+
+### Estado
+
+- ✅ **8 commits desplegados** en `origin/main`.
+- ✅ **Deploy exitoso** sin downtime.
+- ✅ **Smoke test validado**: piloto carga 100 tokens en W38.
+- ✅ **Supabase:** fila insertada en `event_participations`.
+
+### Referencias
+
+- `docs/incidentes/HALL-066-completo.md`
+- `docs/HANDOFF-v4.5.2-hotfix.md`
+- `docs/adr/ADR-008-update.md`

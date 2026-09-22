@@ -1,8 +1,8 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
-> **Fecha de Congelamiento:** 2026-09-18  
-> **Versión:** v4.3.0  
+> **Fecha de Congelamiento:** 2026-09-22  
+> **Versión:** v4.5.2-hotfix  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - POST-F3 + REDISEÑO DE EVENTOS (F2 COMPLETADA)
 

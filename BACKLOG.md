@@ -179,3 +179,4 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
 **Backlog v1.0 · 2026-09-17 · Documento vivo**
+| **HALL-066** | 🐛 | Cadena de 6 bugs bloqueando carga de W38 (v4.5.2-hotfix) | 2026-09-22 | `7157492` |
