@@ -676,8 +676,43 @@ export const createParticipation = async (req, res) => {
     const validatedData = dataSchema.parse(payload.data);
 
     // 4. Determinar user_id (propio o target por ADMIN/OWNER)
-    let targetUserId = payload.user_id || req.user?.id;
+    // v4.5.2-hotfix: event_participations.user_id es UUID.
+    // Si payload.user_id viene como INTEGER (users.user_id), resolver a users.id (UUID).
+    let rawUserId = payload.user_id !== undefined ? payload.user_id : req.user?.id;
     let targetNick = payload.nick || req.user?.nick;
+
+    let targetUserId = rawUserId;
+
+    // Si rawUserId es un número (INTEGER), resolver a UUID
+    const isNumeric = typeof rawUserId === 'number' ||
+      (typeof rawUserId === 'string' && /^\d+$/.test(rawUserId));
+    const isUuid = typeof rawUserId === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawUserId);
+
+    if (isNumeric) {
+      const { data: userRows, error: userErr } = await supabase
+        .from('users')
+        .select('id, nick')
+        .eq('user_id', Number(rawUserId))
+        .limit(1);
+
+      if (userErr) throw userErr;
+      if (!userRows || userRows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: `No existe un usuario con user_id = ${rawUserId}.`,
+          code: 'USER_NOT_FOUND'
+        });
+      }
+      targetUserId = userRows[0].id;
+      if (!targetNick) targetNick = userRows[0].nick;
+    } else if (!isUuid) {
+      return res.status(400).json({
+        success: false,
+        error: 'user_id debe ser un UUID o un entero positivo.',
+        code: 'INVALID_USER_ID'
+      });
+    }
 
     // 5. Insertar participación
     const participationData = {
