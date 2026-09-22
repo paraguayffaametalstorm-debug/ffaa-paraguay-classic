@@ -641,10 +641,11 @@ export const createParticipation = async (req, res) => {
       });
     }
 
-    // 1. Verificar que el evento existe y está OPEN
+    // 1. Verificar que el evento existe (no filtramos por status: ADR-008)
+    // v4.5.2-hotfix: incluir submission_opens_at/closes_at para validateSubmissionWindow.
     const { data: events, error: eventErr } = await supabase
       .from('events_master')
-      .select('id, type, status, name')
+      .select('id, type, status, name, submission_opens_at, submission_closes_at')
       .eq('id', eventId)
       .limit(1);
 
