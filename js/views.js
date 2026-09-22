@@ -5107,7 +5107,7 @@ function renderAdminMembersTable(members) {
                     style="background:#0f172a;color:#cbd5e1;border:1px solid #334155;border-radius:4px;padding:2px 4px;font-size:0.75rem;cursor:pointer;">
               <option value="MIEMBRO" ${currentRole === 'MIEMBRO' ? 'selected' : ''}>MIEMBRO</option>
               <option value="VETERANO" ${currentRole === 'VETERANO' ? 'selected' : ''}>VETERANO</option>
-              <option value="ADMIN" ${currentRole === 'ADMIN' ? 'selected' : ''} ${!isOwner && currentRole !== 'ADMIN' ? 'disabled' : ''}>ADMIN</option>
+              <option value="ADMIN" ${currentRole === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
               ${isOwner ? `<option value="OWNER" ${currentRole === 'OWNER' ? 'selected' : ''}>OWNER</option>` : ''}
             </select>
           </div>
