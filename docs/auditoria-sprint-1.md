@@ -212,6 +212,7 @@ Verificación de los fixes confirmados en el Sprint 1, con sus commits de resolu
 | **FIX-104** | Filtro de detalles de DB en 500 | ✅ CONFIRMADO | ✅ **CERRADO** | `43db2a8` | 2026-09-22 |
 | **HALL-S1-01** | Ownership check en `getPlaneDetails` | ✅ CONFIRMADO | ✅ **CERRADO** | `5fbb2d5` | 2026-09-22 |
 | **HALL-S2-01** | Ampliación de poderes del ADMIN (reset, rol, status) | ➕ NUEVO | ✅ **CERRADO** | (ver CHANGELOG v4.5.5) | 2026-09-22 |
+| **HALL-S2-02** | Dropdown de rol frontend no permite seleccionar ADMIN | ➕ NUEVO | ✅ **CERRADO** | `13501af` | 2026-09-22 |
 | **FIX-101** | Transacción en `resetPassword` | 🟡 CONFIRMADO PARCIAL | ⏳ Pendiente | — | — |
 | **FIX-105** | Transacción en `changeEventStatus` | 🟡 CONFIRMADO PARCIAL | ⏳ Pendiente | — | — |
 | **FIX-103** | CSP unsafe-inline → nonce/hash | 🟡 CONFIRMADO PARCIAL | ⏳ Sprint 3 | — | — |
@@ -230,3 +231,17 @@ Verificación de los fixes confirmados en el Sprint 1, con sus commits de resolu
 - **Smoke test 1:** `/api/health` → `online` + uptime 4379s
 - **Smoke test 2:** Login inválido → 401 con mensaje específico (4xx intacto)
 - **Rollback:** `git revert 43db2a8 && git push origin main`
+
+---
+
+## Evidencia de cierre — HALL-S2-02
+
+- **Commit:** `13501af` — `fix(hall-s2-02): habilitar opción ADMIN en dropdown de roles`
+- **Archivo:** `js/views.js` (función `renderAdminMembersTable`, ~línea 5110)
+- **Cambio:** Eliminada la condición `disabled` de la opción `ADMIN` del `<select>`.
+- **Sintaxis:** `node --check js/views.js` → OK
+- **Diff:** 1 inserción, 1 eliminación (cambio quirúrgico)
+- **Deploy:** Fly.io `deployment-01M35PSP3XQ6QAH86CSXW88X4P`
+- **Deploy sin downtime:** rolling deploy `[1/2]` y `[2/2]` OK
+- **Smoke test:** Pendiente verificación visual del dropdown por el OWNER.
+- **Rollback:** `git revert 13501af && git push origin main && fly deploy`
