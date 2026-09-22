@@ -487,27 +487,47 @@ async function savePerformance() {
             return;
         }
 
-        const payload = {
-            event_id: window.currentEvent?.id || '2026-05-SQ',
-            tokens: tokens,
-            days_connected: days,
-            flew_in_group: flewInGroup,
-            notes: notes || null
-        };
-
-        if (isAdminMode && targetUserId) {
-            payload.user_id = targetUserId;
+        // v4.5.2-hotfix (HALL-066-bis / ADR-008): migración al endpoint v2.
+        // El endpoint legacy POST /api/performances inserta en `performances`
+        // (con event_id TEXT apuntando a la tabla legacy `events`), pero el
+        // frontend ahora envía UUIDs de `events_master`. Migramos a events-v2
+        // para escribir en `event_participations` (FK correcta con events_master).
+        const _eventId = window.currentEvent?.id;
+        if (!_eventId) {
+            throw new Error('No hay evento activo. No se puede guardar.');
         }
+
+        const _user = window.currentUser || {};
+        const _targetUserId = (isAdminMode && targetUserId)
+            ? targetUserId
+            : (_user.user_id || _user.id);
+
+        if (!_targetUserId) {
+            throw new Error('No se pudo identificar al piloto. Reintentá sesión.');
+        }
+
+        const participationPayload = {
+            user_id: _targetUserId,
+            nick: _user.nick || _user.email || 'Piloto',
+            data: {
+                tokens: tokens,
+                days_connected: days,
+                flew_in_group: flewInGroup,
+                notes: notes || null
+            },
+            computed_points: tokens,
+            status: 'PENDING'
+        };
 
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ Guardando...';
         }
 
-        const res = await fetch('/api/performances', {
+        const res = await fetch(`/api/events-v2/${encodeURIComponent(_eventId)}/participations`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify(payload)
+            body: JSON.stringify(participationPayload)
         });
 
         const data = await res.json();
@@ -529,7 +549,7 @@ async function savePerformance() {
         }, 1200);
 
     } catch (err) {
-        console.error('Error guardando rendimiento:', err);
+        console.error('[Performance v2] Error guardando participación:', err);
         showToast(`❌ ${err.message}`, 'error');
     } finally {
         if (submitBtn) {
