@@ -7,6 +7,63 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 ---
 
 
+## 📌 [4.5.3] - 2026-09-22
+
+### 🚨 Hotfix — HALL-066-septies: user_id string numérico del `<select>`
+
+#### Objetivo Cumplido
+
+Aceptar `user_id` como string numérico (`"6"`) en `CreateParticipationSchema`,
+para que el modo oficial (cargar para otro piloto desde el `<select>` HTML)
+funcione sin `400 Payload inválido`.
+
+#### Problema Detectado
+
+El `<select id="performanceTarget">` HTML devuelve el `value` de cada
+`<option>` como **string** (`"6"`, `"10"`). El schema Zod solo aceptaba:
+- `z.number().int().positive()` → ❌ rechaza string
+- `z.string().uuid()` → ❌ rechaza "6"
+
+Resultado: FURTIVO/OWNER no podían cargar performance para otros pilotos.
+
+#### Causa Raíz
+
+Zod no tiene un tipo implícito para "string numérico que se convierte a number".
+El `<select>` HTML siempre devuelve strings.
+
+#### Fix Aplicado
+
+```javascript
+user_id: z.union([
+  z.number().int().positive(),
+  z.string().uuid(),
+  z.string().regex(/^\d+$/).transform(Number)  // ← NUEVA
+]).optional()
+```
+
+El tercer formato acepta `"6"` (string numérico) y lo convierte a `6` (number)
+antes de pasar al controller.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `src/utils/eventSchemas.js` | `CreateParticipationSchema.user_id` acepta 3 formatos |
+
+#### Verificación End-to-End
+
+- ✅ **Test automático desde consola:** POST con `user_id: "6"` (string)
+- ✅ **Status HTTP:** 201 Created
+- ✅ **Fila insertada:** `event_participations` con `nick: AIRJUMP`
+- ✅ **UUID resuelto:** `f5359f76-8845-40de-87d2-a15b0d2027fe`
+- ✅ **Auditoría:** `created_by: 45217610-...` (PJPIROVANI)
+
+#### Commits
+
+- `4da002b` — fix(events-v2): aceptar user_id string numérico del select (HALL-066-septies)
+
+---
+
 ## 📌 [4.5.2] - 2026-09-22
 
 ### 🚨 Hotfix crítico — Cadena HALL-066 (6 bugs en 3 capas)

@@ -78,6 +78,18 @@ Al pasar el evento a `validateSubmissionWindow(event)`, este leía
 
 **Fix:** expandir el select a `id, type, status, name, submission_opens_at, submission_closes_at`.
 
+### Bug #7 — HALL-066-septies (Backend)
+
+**Archivo:** `src/utils/eventSchemas.js` (línea 242)
+**Commit fix:** `4da002b`
+
+Después de resolver los 6 bugs anteriores, apareció un 7mo bug: el `<select>`
+HTML del modo oficial devuelve el `user_id` como **string** (`"6"`), pero el
+schema Zod solo aceptaba number o UUID.
+
+**Fix:** agregar un tercer formato `z.string().regex(/^\d+$/).transform(Number)`
+que convierte el string numérico a number antes de validar.
+
 ### Bug #6 — HALL-066-sexies (Service Worker)
 
 **Archivo:** `sw.js` (línea 12)

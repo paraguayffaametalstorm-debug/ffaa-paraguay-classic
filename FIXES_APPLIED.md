@@ -1512,3 +1512,61 @@ node --check es una red de seguridad mínima, no suficiente. Los controllers cr�
 | `plane_models (Supabase)` | Catálogo oficial de 44 modelos con `sistemas_disponibles` y columnas i18n (`_es`) | 🟢 ESTABLE |
 | `users (Supabase)` | Padrón militar con columnas `inactive_reason`, `inactive_by` e `inactive_at` | 🟢 ESTABLE |
 | `components/change-password-modal.html` | Modal de actualización táctica (Workaround: ENTER) | 🟡 FIX UI PENDIENTE |
+
+
+---
+
+### 🐛 HALL-066-septies — user_id string numérico del `<select>`
+
+**Fecha:** 2026-09-22
+**Fase:** Hotfix v4.5.3
+**Archivo:** `src/utils/eventSchemas.js`
+**Commit:** `4da002b`
+**Severidad:** 🟠 ALTA
+**Estado:** ✅ RESUELTO Y VERIFICADO
+
+**Problema Detectado:**
+
+El `<select id="performanceTarget">` HTML devuelve el `value` de cada
+`<option>` como **string** (`"6"`, `"10"`). El schema Zod solo aceptaba
+`z.number().int()` o `z.string().uuid()`, rechazando el string numérico
+con `400 Payload inválido` + `code: 'VALIDATION_ERROR'`.
+
+**Causa Raíz:**
+
+Zod no tiene un tipo implícito para "string numérico que se convierte a number".
+El `<select>` HTML siempre devuelve strings.
+
+**Solución Aplicada:**
+
+Se agregó un tercer formato al `z.union` de `user_id`:
+
+```javascript
+user_id: z.union([
+  z.number().int().positive(),
+  z.string().uuid(),
+  z.string().regex(/^\d+$/).transform(Number)  // ← NUEVA
+]).optional()
+```
+
+**Verificación:**
+
+Test automático desde la consola del navegador:
+
+```
+POST /api/events-v2/04feaccb-.../participations
+Body: { "user_id": "6", "nick": "AIRJUMP", ... }
+Response: 201 Created
+  - id: a1f9e24b-1b47-42ed-be04-b684a94adcb1
+  - user_id: f5359f76-8845-40de-87d2-a15b0d2027fe  (UUID resuelto)
+  - nick: AIRJUMP
+  - computed_points: 100
+  - created_by: 45217610-...  (PJPIROVANI)
+```
+
+**Lección Aprendida:**
+
+Los `<select>` HTML **siempre** devuelven strings. Los schemas Zod que los
+consumen deben tolerar strings numéricos y convertirlos.
+
+---
