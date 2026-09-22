@@ -1,3 +1,10 @@
+
+
+## [4.5.4] - 2026-09-22
+
+### Fixed
+- **HALL-S1-01:** Ownership check en `GET /api/planes/:id/details`. Previene lectura cruzada del hangar de otros pilotos. ADMIN/OWNER mantienen acceso irrestricto. Commit `5fbb2d5`.
+
 # 📝 Registro de Versiones y Cambios (Changelog) - PARAGUAY-FFAA | METALSTORM
 
 Todas las modificaciones notables, correcciones de errores, mejoras de seguridad y despliegues del sistema táctico **PARAGUAY-FFAA | METALSTORM** se documentan en este archivo.

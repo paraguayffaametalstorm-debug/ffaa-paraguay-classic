@@ -149,6 +149,8 @@ Una auditoría externa reportó **22 hallazgos** sin acceso verificado al repo. 
 | **FIX-102** | `src/controllers/planes.controller.js` | IDOR en delete/update de aviones | ⏳ Pendiente |
 | **FIX-103** | `server.js` | CSP con `unsafe-inline` / `unsafe-eval` | ⏳ Pendiente |
 | **FIX-104** | `src/middlewares/errorHandler.js` | Fuga de detalles de DB en respuestas 500 | ⏳ Pendiente |
+
+| **HALL-S1-01** | `src/controllers/planes.controller.js` — ownership check en getPlaneDetails | 2026-09-22 | `5fbb2d5` |
 | **FIX-105** | `src/controllers/events-v2.controller.js` | Race condition al abrir evento | ⏳ Pendiente |
 | **FIX-106** | `js/performance.js`, `js/views.js` | XSS por `innerHTML` sin escape | ⏳ Pendiente |
 | **FIX-107** | `sql/028_events_master.sql` | RLS permisivo / falta bloqueo a `anon` | ⏳ Pendiente |
