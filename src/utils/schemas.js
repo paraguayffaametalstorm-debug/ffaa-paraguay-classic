@@ -59,8 +59,8 @@ export const INSTITUTIONAL_EMAIL_REGEX = /^[a-z0-9._-]{3,30}@ffaa\.py$/;
 export const NickFormatSchema = z.string()
   .trim()
   .min(3, 'El nick debe tener al menos 3 caracteres')
-  .max(20, 'El nick no puede exceder 20 caracteres')
-  .regex(NICK_REGEX, 'Formato inválido: solo letras, números, punto, guión bajo y guión medio (3-20 caracteres)');
+  .max(30, 'El nick no puede exceder 30 caracteres')
+  .regex(NICK_REGEX, 'Formato inválido: solo letras (incluye tildes/ñ), números, espacios, punto, guión bajo y guión medio (3-30 caracteres)');
 
 export const InstitutionalEmailSchema = z.string()
   .trim()
