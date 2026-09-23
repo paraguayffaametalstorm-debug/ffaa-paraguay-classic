@@ -1,4 +1,56 @@
 
+## [4.5.7] - 2026-09-22
+
+### 🎖️ FIX-101 — Reset password atómico (RPC + fallback)
+
+#### Objetivo Cumplido
+
+Eliminar la condición de carrera y el estado inconsistente en `resetPassword()`.
+La función original hacía 2 UPDATE secuenciales (users + password_resets) sin
+transacción: si el 2do fallaba, el token quedaba reusable durante 15 min.
+
+#### Solución Implementada
+
+1. **RPC PostgreSQL atómica** `reset_password_atomic` con `SELECT ... FOR UPDATE`.
+2. **Feature flag `USE_ATOMIC_RESET`** (default `true`). Rollback sin redeploy.
+3. **Fallback automático** a la lógica legacy si la RPC falla por infraestructura.
+4. **Contrato JSON idéntico**: mensajes, códigos HTTP y formato de respuesta no cambian.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `sql/037_reset_password_atomic.sql` | NUEVO — Función RPC atómica |
+| `src/config/env.js` | Agregada flag `USE_ATOMIC_RESET` (default: true) |
+| `src/controllers/auth.controller.js` | `resetPassword` usa RPC + fallback legacy |
+
+#### Comportamiento Visible
+
+**Cero cambios perceptibles para el usuario final.** Mismos mensajes, mismos
+códigos HTTP, mismos tiempos de respuesta. Solo cambia la garantía de
+atomicidad por dentro.
+
+#### Rollback
+
+- **Sin redeploy (30 seg):** `fly secrets set USE_ATOMIC_RESET=false`
+- **Rollback total:** `git revert <hash> && git push origin main && fly deploy`
+- **Eliminar RPC:** `DROP FUNCTION IF EXISTS reset_password_atomic(TEXT, TEXT);`
+
+#### Verificación
+
+- ✅ RPC aplicada en Supabase (con `SECURITY DEFINER` + solo `service_role`).
+- ✅ Test con token falso → `TOKEN_NOT_FOUND`.
+- ✅ `node --check` OK en `env.js` y `auth.controller.js`.
+- ⏳ Smoke test end-to-end pendiente.
+
+#### Referencias
+
+- `docs/auditoria-sprint-1.md` — hallazgo original (FIX-101).
+- `PLAN_TRABAJO.md` — Sprint 2.
+- `sql/037_reset_password_atomic.sql` — función SQL.
+
+---
+
 ## [4.5.6] - 2026-09-22
 
 ### 🎖️ HALL-S2-02 — Habilitación de opción ADMIN en dropdown de roles (frontend)
