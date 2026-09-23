@@ -20,6 +20,10 @@ export const ENV = {
   // FIX-101: Feature flag para reset password atómico (RPC reset_password_atomic).
   // Default: true (usa la RPC). Si algo falla: fly secrets set USE_ATOMIC_RESET=false
   USE_ATOMIC_RESET: process.env.USE_ATOMIC_RESET !== 'false',
+
+  // FIX-105: Feature flag para cambio de status de evento atómico (RPC change_event_status_atomic).
+  // Default: true (usa la RPC). Si algo falla: fly secrets set USE_ATOMIC_EVENT_STATUS=false
+  USE_ATOMIC_EVENT_STATUS: process.env.USE_ATOMIC_EVENT_STATUS !== 'false',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   TEMP_PASSWORD_EXPIRY_DAYS: parseInt(process.env.TEMP_PASSWORD_EXPIRY_DAYS || '7', 10),
   SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_DATABASE_URL || '',
