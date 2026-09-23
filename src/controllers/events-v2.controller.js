@@ -833,10 +833,30 @@ export const createParticipation = async (req, res) => {
     if (error) {
       // Manejar conflicto de duplicado (UNIQUE event_id + user_id)
       if (error.code === '23505') {
+        // FIX-PARTICIPATION-EDIT: devolver el registro existente completo para
+        // que el frontend pueda mostrar el conflicto y ofrecer resolverlo
+        // (sobrescribir con PUT o cancelar). RFC 9110 §15.5.10.
+        const { data: existingRows, error: fetchErr } = await supabase
+          .from('event_participations')
+          .select('*')
+          .eq('event_id', eventId)
+          .eq('user_id', targetUserId)
+          .limit(1);
+
+        if (fetchErr || !existingRows || existingRows.length === 0) {
+          // Fallback: devolver 409 sin datos si el fetch falla
+          return res.status(409).json({
+            success: false,
+            error: 'Ya existe una participación para este piloto en este evento.',
+            code: 'PARTICIPATION_EXISTS'
+          });
+        }
+
         return res.status(409).json({
           success: false,
           error: 'Ya existe una participación para este piloto en este evento.',
-          code: 'PARTICIPATION_EXISTS'
+          code: 'PARTICIPATION_EXISTS',
+          existing: existingRows[0]
         });
       }
       throw error;
@@ -904,6 +924,43 @@ export const updateParticipation = async (req, res) => {
         error: windowCheck.message,
         code: windowCheck.code,
         details: windowCheck.details
+      });
+    }
+
+    // FIX-PARTICIPATION-EDIT: validación de jerarquía y self-modification
+    // - Solo ADMIN y OWNER pueden modificar participaciones existentes.
+    // - Ni siquiera un ADMIN/OWNER puede modificar su propio registro
+    //   (por principio de Separación de Deberes).
+    const callerRole = (req.user?.role || '').toUpperCase();
+    const callerId = req.user?.id;
+    const isPrivileged = callerRole === 'ADMIN' || callerRole === 'OWNER';
+
+    if (!isPrivileged) {
+      return res.status(403).json({
+        success: false,
+        error: 'Los pilotos no pueden modificar registros existentes. Contactá a un ADMIN.',
+        code: 'UPDATE_FORBIDDEN'
+      });
+    }
+
+    // Self-modification check: si el target es el propio caller, rechazar.
+    // Necesitamos resolver el caller_id vs target_user_id (que puede ser UUID o user_id INTEGER).
+    let callerUUID = callerId;
+    if (callerId && typeof callerId === 'string' && /^\d+$/.test(callerId)) {
+      // El JWT contiene user_id INTEGER — resolver a UUID
+      const { data: callerRows } = await supabase
+        .from('users')
+        .select('id')
+        .eq('user_id', Number(callerId))
+        .limit(1);
+      if (callerRows && callerRows.length > 0) callerUUID = callerRows[0].id;
+    }
+
+    if (String(callerUUID) === String(userId)) {
+      return res.status(403).json({
+        success: false,
+        error: 'No podés modificar tu propio registro. Pedile a otro ADMIN que lo haga.',
+        code: 'SELF_MODIFICATION_FORBIDDEN'
       });
     }
 
