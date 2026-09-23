@@ -447,4 +447,4 @@ A partir de la versión v3.9.9, las descripciones in-game, historias y recomenda
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v4.5.8 · Actualizado: 2026-09-22*
+*Versión: v4.5.9 · Actualizado: 2026-09-23*

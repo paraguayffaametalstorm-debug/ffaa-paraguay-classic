@@ -84,4 +84,4 @@ Cuando se despliega una nueva versión del sistema (v4.3.0):
 
 ---
 
-*Versión: v4.5.8 · Actualizado: 2026-09-22*
+*Versión: v4.5.9 · Actualizado: 2026-09-23*

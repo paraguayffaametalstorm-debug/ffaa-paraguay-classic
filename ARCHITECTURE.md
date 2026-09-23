@@ -1002,6 +1002,6 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
 
 ---
 
-*Versión: v4.5.8 · Actualizado: 2026-09-22*
+*Versión: v4.5.9 · Actualizado: 2026-09-23*
 
 

@@ -1,8 +1,18 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
+> **Actualizacion BL-017 (2026-09-23):** Se sincronizo el schema `users` con la BD
+> real. Cambios aplicados via `sql/039_sync_users_schema.sql`:
+>
+> - `google_id TEXT` agregada + indice `idx_users_google_id` (HALL-061).
+> - `must_change_password` DEFAULT `true` -> `false`.
+> - `token_version` DEFAULT `0` -> `1` + `NOT NULL`.
+>
+> **Verificacion:** 63 usuarios, 0 filas con `token_version = NULL`.
+
+
 > **⚠️ ESTADO CONGELADO - NO MODIFICAR SIN REVISIÓN MANUAL**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión:** v4.5.8  
+> **Versión:** v4.5.9  
 > **Entorno:** Producción (`Fly.io` región `gru` - São Paulo / Supabase PostgreSQL)  
 > **Estado Operativo:** ✅ 100% OPERATIVO - POST-F3 + REDISEÑO DE EVENTOS (F2 COMPLETADA)
 
