@@ -29,14 +29,97 @@ import { startEventScheduler } from './src/utils/eventScheduler.js';
 import { cleanupPresence } from './src/controllers/presence.controller.js';
 import cron from 'node-cron';
 
-// Global error handlers to prevent process crash
-process.on('unhandledRejection', (err) => {
-  console.error('⚠️ [Process] Unhandled Rejection:', err);
+// ============================================================
+// GLOBAL ERROR HANDLERS (FIX-309)
+// ============================================================
+// Política: un error NO manejado deja el proceso en estado indefinido.
+// La respuesta correcta es loguear con contexto y SALIR para que Fly.io
+// reinicie la máquina en estado limpio. NO seguir operando.
+//
+// Referencia: https://nodejs.org/api/process.html#warning-using-uncaughtexception-correctly
+// ============================================================
+
+/**
+ * Formatea un error para logging estructurado.
+ * Evita "[object Object]" y expone stack + tipo + contexto.
+ */
+function formatProcessError(label, err) {
+  const timestamp = new Date().toISOString();
+  const type = err?.constructor?.name || typeof err;
+  const message = err?.message || String(err);
+  const stack = err?.stack || '(sin stack disponible)';
+  return {
+    timestamp,
+    label,
+    type,
+    message,
+    stack,
+    pid: process.pid,
+    uptime: Math.round(process.uptime()),
+    node_version: process.version
+  };
+}
+
+/**
+ * Loguea el error y sale con código 1 tras un tick (flush de stdout/stderr).
+ * El setImmediate garantiza que el log llegue a Fly.io antes de morir.
+ */
+function logAndExit(label, err) {
+  const payload = formatProcessError(label, err);
+  console.error(`❌ [Process] ${label}:`);
+  console.error(JSON.stringify(payload, null, 2));
+  // Flush async: esperar un tick antes de salir.
+  setImmediate(() => process.exit(1));
+}
+
+// Unhandled Rejection: promesa rechazada sin catch.
+// Node 15+ default: mata el proceso. Nosotros hacemos lo mismo pero con log.
+process.on('unhandledRejection', (reason) => {
+  logAndExit('Unhandled Rejection', reason);
 });
 
+// Uncaught Exception: error síncrono no capturado.
+// El proceso queda en estado indefinido. Salir es la única opción segura.
 process.on('uncaughtException', (err) => {
-  console.error('⚠️ [Process] Uncaught Exception:', err);
+  logAndExit('Uncaught Exception', err);
 });
+
+// ============================================================
+// GRACEFUL SHUTDOWN (FIX-309)
+// ============================================================
+// Fly.io envía SIGTERM en cada deploy (rolling). Cerramos el HTTP server
+// y salimos limpio para evitar conexiones colgadas.
+// ============================================================
+
+let httpServer = null; // Se asigna en app.listen()
+
+function gracefulShutdown(signal) {
+  console.log(`🛑 [Process] ${signal} recibido. Iniciando apagado ordenado...`);
+
+  if (!httpServer) {
+    console.log('🛑 [Process] HTTP server no inicializado. Saliendo directo.');
+    process.exit(0);
+  }
+
+  // Timeout de seguridad: si en 10s no cerró, forzar exit.
+  const forceExit = setTimeout(() => {
+    console.error('⚠️ [Process] Timeout de apagado (10s). Forzando exit.');
+    process.exit(1);
+  }, 10_000);
+  forceExit.unref();
+
+  httpServer.close((err) => {
+    if (err) {
+      console.error('❌ [Process] Error cerrando HTTP server:', err.message);
+      process.exit(1);
+    }
+    console.log('✅ [Process] HTTP server cerrado limpiamente. Saliendo.');
+    process.exit(0);
+  });
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -258,7 +341,7 @@ app.use(errorHandler);
 // START SERVER
 // ============================================================
 
-app.listen(ENV.PORT, '0.0.0.0', () => {
+httpServer = app.listen(ENV.PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto ${ENV.PORT} (0.0.0.0:${ENV.PORT})`);
 
   // ============================================================
@@ -285,7 +368,13 @@ app.listen(ENV.PORT, '0.0.0.0', () => {
   // ============================================================
   try {
     cron.schedule('*/5 * * * *', async () => {
-      await cleanupPresence();
+      try {
+        await cleanupPresence();
+      } catch (err) {
+        // FIX-309: catch explícito para evitar unhandledRejection → exit(1).
+        // Si el cleanup falla, logueamos y seguimos. El próximo tick reintenta.
+        console.error('⚠️ [Presence] Error en cleanup cron:', err?.message || err);
+      }
     });
     console.log('✅ [Server] Presence cleanup cron iniciado (cada 5 min).');
   } catch (err) {
