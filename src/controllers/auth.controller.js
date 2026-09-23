@@ -793,6 +793,11 @@ export const forgotPassword = async (req, res) => {
 };
 
 // ========== CONFIRMAR RESTABLECIMIENTO DE CONTRASEÑA (RESET PASSWORD) ==========
+// FIX-101 (v4.5.7): Transacción atómica vía RPC reset_password_atomic.
+// - Si USE_ATOMIC_RESET=true (default): usa la RPC atómica con FOR UPDATE.
+// - Si la RPC falla por infraestructura: fallback automático a lógica legacy.
+// - Si USE_ATOMIC_RESET=false: usa la lógica legacy directamente.
+// El contrato JSON (mensajes, códigos HTTP) es IDÉNTICO en ambos caminos.
 export const resetPassword = async (req, res) => {
     try {
         const { token, newPassword, password } = req.body;
@@ -811,6 +816,72 @@ export const resetPassword = async (req, res) => {
             return res.status(500).json({ success: false, error: 'Servicio de base de datos no disponible' });
         }
 
+        // FIX-101: Hashear antes de cualquier camino (mismo hash para RPC o legacy)
+        const hashedPassword = await bcrypt.hash(targetPassword, 10);
+
+        // ─────────────────────────────────────────────────────────────
+        // FIX-101: Camino preferido → RPC atómica (si la flag está activa)
+        // ─────────────────────────────────────────────────────────────
+        if (ENV.USE_ATOMIC_RESET) {
+            try {
+                const { data: rpcData, error: rpcError } = await supabase
+                    .rpc('reset_password_atomic', {
+                        p_token: token.trim(),
+                        p_new_password_hash: hashedPassword
+                    });
+
+                if (rpcError) {
+                    // Error de infraestructura → fallback a legacy (log + continue)
+                    console.error('⚠️ [resetPassword] RPC falló, aplicando fallback legacy:', rpcError.message);
+                } else {
+                    const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+
+                    if (result && result.success) {
+                        // ✅ Éxito vía RPC
+                        await logSecurityEvent({
+                            supabase,
+                            userId: result.user_id,
+                            nick: result.nick,
+                            event: 'PASSWORD_RESET_SUCCESS',
+                            ip: req.ip,
+                            userAgent: req.headers['user-agent'],
+                            metadata: {
+                                method: 'token_email_atomic',
+                                token_version: result.token_version
+                            }
+                        });
+
+                        return res.json({
+                            success: true,
+                            message: 'Contraseña táctica actualizada exitosamente. Ya puedes iniciar sesión con tu nueva clave.'
+                        });
+                    }
+
+                    // La RPC rechazó por validación → mapear error y responder
+                    const errorCode = result?.error_code || 'UNKNOWN';
+                    const errorMap = {
+                        'TOKEN_NOT_FOUND':    { status: 400, message: 'El token de restablecimiento es inválido o inexistente.' },
+                        'TOKEN_ALREADY_USED': { status: 400, message: 'Este enlace de restablecimiento ya ha sido utilizado previamente.' },
+                        'TOKEN_EXPIRED':      { status: 400, message: 'El enlace de restablecimiento ha expirado (plazo máximo de 15 minutos superado).' },
+                        'USER_NOT_FOUND':     { status: 404, message: 'Combatiente asociado al token no encontrado.' }
+                    };
+
+                    const mapped = errorMap[errorCode];
+                    if (mapped) {
+                        return res.status(mapped.status).json({ success: false, error: mapped.message });
+                    }
+                    // Error code desconocido → fallback a legacy
+                    console.warn('⚠️ [resetPassword] Error code inesperado de RPC:', errorCode, '→ fallback legacy');
+                }
+            } catch (rpcException) {
+                // Excepción de red/parsing → fallback a legacy
+                console.error('⚠️ [resetPassword] Excepción en RPC, aplicando fallback legacy:', rpcException.message);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // FIX-101: Fallback legacy (comportamiento actual, sin cambios)
+        // ─────────────────────────────────────────────────────────────
         const { data: resets, error: resetErr } = await supabase
             .from('password_resets')
             .select('*')
@@ -856,12 +927,9 @@ export const resetPassword = async (req, res) => {
         }
 
         const user = users[0];
-
-        const hashedPassword = await bcrypt.hash(targetPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        // ✅ CORREGIDO: Agregar .select() después de .update()
-        const { data: updateData, error: updateError } = await supabase
+        const { error: updateError } = await supabase
             .from('users')
             .update({
                 password_hash: hashedPassword,
@@ -892,7 +960,7 @@ export const resetPassword = async (req, res) => {
             event: 'PASSWORD_RESET_SUCCESS',
             ip: req.ip,
             userAgent: req.headers['user-agent'],
-            metadata: { method: 'token_email', reset_id: resetRecord.id }
+            metadata: { method: 'token_email_legacy', reset_id: resetRecord.id }
         });
 
         return res.json({

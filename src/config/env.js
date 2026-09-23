@@ -16,6 +16,10 @@ export const ENV = {
   PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'production',
   JWT_SECRET: JWT_SECRET || 'dev-only-insecure-secret-change-me',
+
+  // FIX-101: Feature flag para reset password atómico (RPC reset_password_atomic).
+  // Default: true (usa la RPC). Si algo falla: fly secrets set USE_ATOMIC_RESET=false
+  USE_ATOMIC_RESET: process.env.USE_ATOMIC_RESET !== 'false',
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
   TEMP_PASSWORD_EXPIRY_DAYS: parseInt(process.env.TEMP_PASSWORD_EXPIRY_DAYS || '7', 10),
   SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_DATABASE_URL || '',

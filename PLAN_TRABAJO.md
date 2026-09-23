@@ -207,7 +207,7 @@ Para cada ítem:
 - ✅ **HALL-S1-01** — Ownership check en `getPlaneDetails` → CERRADO (`5fbb2d5`)
 - ✅ **HALL-S2-01** — Ampliación de poderes ADMIN (backend) → CERRADO (`d496f5c`)
 - ✅ **HALL-S2-02** — Dropdown de rol frontend → CERRADO (`13501af`)
-- ⏳ **FIX-101** — Transacción en `resetPassword` (2 UPDATE sin transacción) → Pendiente
+- ✅ **FIX-101** — Transacción en `resetPassword` (2 UPDATE sin transacción) → CERRADO (ver CHANGELOG v4.5.7)
 - ⏳ **FIX-105** — Transacción en `changeEventStatus` (SELECT+UPDATE sin transacción) → Pendiente
 - ⏳ **FIX-209** — Presence en memoria no escala → Sprint 2/Sprint 3
 
@@ -441,6 +441,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 | ID | Descripción | Fecha | Commit |
 |---|---|---|---|
 | **FIX-104** | `src/middlewares/errorHandler.js` — filtrar detalles de DB en respuestas 500 | 2026-09-22 | `43db2a8` |
+| **FIX-101** | `src/controllers/auth.controller.js` — RPC atómica `reset_password_atomic` + fallback legacy | 2026-09-22 | (ver CHANGELOG v4.5.7) |
 | **HALL-S1-01** | Ownership check en `getPlaneDetails` | 2026-09-22 | `5fbb2d5` |
 | **HALL-S2-01** | Ampliación de poderes del ADMIN (reset, rol, status) — backend | 2026-09-22 | `d496f5c` |
 | **HALL-S2-02** | Dropdown de rol frontend — habilitar opción ADMIN | 2026-09-22 | `13501af` |
@@ -467,7 +468,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 |---|---|---|---|---|---|---|
 | Docs alineados con versión real | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
 | Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
-| Fixes cerrados | 0 | 25 | 25 | 36 | 42+ | 49+ |
+| Fixes cerrados | 0 | 25 | 25 | 37 | 42+ | 49+ |
 | Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
 | Deuda técnica (horas estimadas) | ~40h | ~36h | ~28h | ~16h | ~8h | ~2h |
 
