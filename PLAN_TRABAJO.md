@@ -181,7 +181,38 @@ Para cada ítem:
 
 ---
 
-## SPRINT 2 — Fixes de correctitud y seguridad
+## SPRINT 2 — Fixes de correctitud y seguridad  ✅ CERRADO (2026-09-23)
+
+> **Cerrado el 2026-09-23.** 7 de 8 fixes completados. FIX-103 diferido al Sprint 3.
+>
+> **FIX-103 (CSP unsafe-inline) — DIFERIDO al Sprint 3:**
+> El CSP actual mantiene `'unsafe-inline'` en `scriptSrc` y `styleSrc` porque la SPA
+> usa `onclick="..."` inline masivamente (~200 ocurrencias). Migrar a `addEventListener`
+> requiere un refactor grande + tests visuales exhaustivos.
+>
+> **Razón del diferimiento:**
+> - Los 7 fixes del Sprint 2 ya cerraron los hallazgos CRÍTICOS.
+> - `'unsafe-inline'` es un riesgo residual, no crítico.
+> - El frontend ya tiene `escapeHtml` para prevenir XSS por input.
+> - El Sprint 3 (tests + observabilidad) aporta más valor en este momento.
+>
+> **Ref:** BL-024 en `BACKLOG.md`.  ✅ CERRADO (2026-09-23)
+
+> **Cerrado el 2026-09-23.** 7 de 8 fixes completados. FIX-103 diferido al Sprint 3.
+
+> **FIX-103 (CSP unsafe-inline) — DIFERIDO al Sprint 3:**
+>
+> El CSP actual mantiene `'unsafe-inline'` en `scriptSrc` y `styleSrc` porque la SPA
+> usa `onclick="..."` inline masivamente (~200 ocurrencias). Migrar a `addEventListener`
+> requiere un refactor grande + tests visuales exhaustivos.
+>
+> **Razón del diferimiento:**
+> - Los 7 fixes del Sprint 2 ya cerraron los hallazgos CRÍTICOS.
+> - `'unsafe-inline'` es un riesgo residual, no crítico (el CSP ya limita a `'self'` + whitelist de CDNs confiables).
+> - El frontend ya tiene `escapeHtml` para prevenir XSS por input.
+> - El Sprint 3 (tests + observabilidad) aporta más valor en este momento.
+>
+> **Ref:** BL-024 en `BACKLOG.md`.
 
 **Objetivo:** resolver los hallazgos confirmados en Sprint 1, priorizando seguridad.
 **Criterio de salida:** cada fix tiene test de regresión + deploy + smoke test.
