@@ -9,6 +9,86 @@
 
 ---
 
+## [4.5.10] - 2026-09-23
+
+### 🎯 FIX-308 — Logging estructurado con Pino
+
+#### Objetivo Cumplido
+
+Reemplazar los ~215 `console.log`/`console.error`/`console.warn` del proyecto
+por un **logger estructurado con Pino**:
+- **Development:** formato legible con colores (`pino-pretty`).
+- **Production:** JSON puro (parseable por `fly logs`, agregadores, Datadog).
+- **Redacción automática** de secretos: `password`, `token`, `authorization`, `google_id`.
+- **Contexto enriquecido:** `service`, `env`, `pid` en cada línea.
+- **Helper `loggerForRequest(req)`** para inyectar `request_id` automáticamente (integración FIX-307).
+
+#### Componentes Nuevos
+
+| Archivo | Propósito |
+|---|---|
+| `src/config/logger.js` | Módulo centralizado Pino con config dev/prod |
+| `LOG_LEVEL` en `src/config/env.js` | Nivel configurable (default: info) |
+
+#### Componentes Modificados (19 archivos, 215 ocurrencias)
+
+| Archivo | Ocurrencias |
+|---|---:|
+| `server.js` | 14 |
+| `src/db/supabase.js` | 11 |
+| `src/utils/eventScheduler.js` | 33 |
+| `src/middlewares/correlationId.js` | 2 |
+| `src/middlewares/errorHandler.js` | 2 |
+| `src/middlewares/deprecation.js` | 1 |
+| `src/config/passport.js` | 5 |
+| `src/controllers/auth.controller.js` | 23 |
+| `src/controllers/admin.controller.js` | 3 |
+| `src/controllers/dashboard.controller.js` | 1 |
+| `src/controllers/events.controller.js` | 3 |
+| `src/controllers/events-v2.controller.js` | 17 |
+| `src/controllers/events-v2-bm.controller.js` | 15 |
+| `src/controllers/owner.controller.js` | 13 |
+| `src/controllers/performances.controller.js` | 6 |
+| `src/controllers/plane-models.controller.js` | 17 |
+| `src/controllers/planes.controller.js` | 26 |
+| `src/controllers/presence.controller.js` | 10 |
+| `src/controllers/profile.controller.js` | 13 |
+| **Total** | **215** |
+
+#### Incidente Durante la Migración (HALL-070)
+
+**Bug del script:** insertó el `import { logger }` **dentro** de un import multilínea en 2 archivos.
+
+**Causa:** el regex `/^import\s.+?;?\s*$/gm` no reconoce imports multilínea.
+
+**Fix aplicado:** reubicación manual del import en `events-v2.controller.js` y `events-v2-bm.controller.js`.
+
+**Lección:** los scripts que editan código fuente deben ser agnósticos al estilo de import.
+
+#### Verificación
+
+- ✅ `node --check` OK en 20 archivos.
+- ✅ 187/187 tests passing (Vitest 5.0.1).
+- ✅ Logs de tests en formato JSON estructurado.
+- ✅ Smoke test /health y /api/health OK.
+- ✅ Deploy a Fly.io exitoso.
+
+#### Variables de Entorno Nuevas
+
+| Variable | Default | Propósito |
+|---|---|---|
+| `LOG_LEVEL` | `info` | Nivel de logging (trace, debug, info, warn, error, fatal) |
+
+Override en producción: `fly secrets set LOG_LEVEL=debug`
+
+#### Referencias
+
+- `src/config/logger.js` — Módulo centralizado Pino.
+- `scripts/migrate-to-pino.cjs` — Script de migración ad-hoc.
+- `HALL-070` — Bug del script con imports multilínea.
+
+---
+
 ## [4.5.9] - 2026-09-23
 
 ### Sincronizacion del Schema `users` + Higiene del Repo

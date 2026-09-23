@@ -275,7 +275,7 @@ Para cada ítem:
 | **FIX-305** | Testing | Tests de integración con Postgres real (Testcontainers o Supabase local en CI) | L |
 | **FIX-306** | Observabilidad | Health checks separados: `/health` (liveness) vs `/api/health` (readiness) | S |
 | **FIX-307** | Observabilidad | Correlation IDs en logs (UUID por request, inyectado en middleware) | M |
-| **FIX-308** | Observabilidad | Logging estructurado con Pino (nivel, contexto, sin PII) | M |
+| **FIX-308** | Observabilidad | Logging estructurado con Pino (nivel, contexto, sin PII) | ✅ **CERRADO** |
 | **FIX-309** | Observabilidad | Manejadores globales `unhandledRejection` y `uncaughtException` en `server.js` | S |
 
 ### Criterio de cierre del Sprint 3
