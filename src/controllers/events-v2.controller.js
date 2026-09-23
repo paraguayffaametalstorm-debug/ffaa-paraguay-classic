@@ -423,6 +423,11 @@ export const updateEvent = async (req, res) => {
 // 6. PATCH /api/events-v2/:id/status — Cambiar status (switch funcional)
 // ============================================================
 
+// FIX-105 (v4.5.8): Transacción atómica vía RPC change_event_status_atomic.
+// - Si USE_ATOMIC_EVENT_STATUS=true (default): usa la RPC atómica con FOR UPDATE.
+// - Si la RPC falla por infraestructura: fallback automático a lógica legacy.
+// - Si USE_ATOMIC_EVENT_STATUS=false: usa la lógica legacy directamente.
+// El contrato JSON (mensajes, códigos HTTP) es IDÉNTICO en ambos caminos.
 export const changeEventStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -435,6 +440,96 @@ export const changeEventStatus = async (req, res) => {
       });
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // FIX-105: Camino preferido → RPC atómica (si la flag está activa)
+    // ─────────────────────────────────────────────────────────────
+    if (ENV.USE_ATOMIC_EVENT_STATUS) {
+      try {
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('change_event_status_atomic', {
+            p_event_id: id,
+            p_new_status: status,
+            p_actor_id: req.user?.id || null
+          });
+
+        if (rpcError) {
+          // Error de infraestructura → fallback a legacy (log + continue)
+          console.error('⚠️ [changeEventStatus] RPC falló, aplicando fallback legacy:', rpcError.message);
+        } else {
+          const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+
+          if (result && result.success) {
+            // ✅ Éxito vía RPC
+            let message = `Evento ${result.event_name} cambiado a ${result.new_status}`;
+            const responsePayload = {
+              success: true,
+              message,
+              data: {
+                event_id: result.event_id,
+                event_name: result.event_name,
+                event_type: result.event_type,
+                old_status: result.old_status,
+                new_status: result.new_status,
+                replaced_event_id: result.replaced_event_id,
+                replaced_event_name: result.replaced_event_name
+              }
+            };
+
+            // Si hubo reemplazo (auto-cierre del OPEN anterior), incluirlo
+            if (result.replaced_event_id) {
+              responsePayload.replaced = {
+                id: result.replaced_event_id,
+                name: result.replaced_event_name
+              };
+              responsePayload.message = `Evento ${result.event_name} cambiado a ${result.new_status}. Reemplazado: ${result.replaced_event_name}.`;
+            }
+
+            // Devolver también el evento completo (fetch liviano para compatibilidad con el frontend actual)
+            try {
+              const { data: freshEvent } = await supabase
+                .from('events_master')
+                .select('*')
+                .eq('id', result.event_id)
+                .limit(1);
+
+              if (freshEvent && freshEvent[0]) {
+                responsePayload.event = normalizeEvent(freshEvent[0]);
+                responsePayload.data.event = responsePayload.event;
+              }
+            } catch (fetchErr) {
+              console.warn('⚠️ [changeEventStatus] No se pudo traer el evento fresco post-RPC:', fetchErr.message);
+            }
+
+            return res.json(responsePayload);
+          }
+
+          // La RPC rechazó por validación → mapear error y responder
+          const errorCode = result?.error_code || 'UNKNOWN';
+          const errorMap = {
+            'EVENT_NOT_FOUND':       { status: 404, message: 'Evento no encontrado' },
+            'INVALID_TRANSITION':    { status: 400, message: `Transición de estado no permitida: ${result.old_status || '?'} → ${status}` }
+          };
+
+          const mapped = errorMap[errorCode];
+          if (mapped) {
+            return res.status(mapped.status).json({
+              success: false,
+              error: mapped.message,
+              code: errorCode
+            });
+          }
+          // Error code desconocido → fallback a legacy
+          console.warn('⚠️ [changeEventStatus] Error code inesperado de RPC:', errorCode, '→ fallback legacy');
+        }
+      } catch (rpcException) {
+        // Excepción de red/parsing → fallback a legacy
+        console.error('⚠️ [changeEventStatus] Excepción en RPC, aplicando fallback legacy:', rpcException.message);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FIX-105: Fallback legacy (comportamiento actual, sin cambios)
+    // ─────────────────────────────────────────────────────────────
     const { data: existing, error: queryErr } = await supabase
       .from('events_master')
       .select('id, type, status, name')

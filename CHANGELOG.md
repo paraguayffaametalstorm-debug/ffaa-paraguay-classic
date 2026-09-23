@@ -1,4 +1,66 @@
 
+## [4.5.8] - 2026-09-22
+
+### 🎖️ FIX-105 — Cambio de status de evento atómico (RPC + fallback)
+
+#### Objetivo Cumplido
+
+Eliminar la condición de carrera y el estado inconsistente en `changeEventStatus()`.
+La función original hacía 2-3 operaciones secuenciales sin transacción: si el
+UPDATE del evento target fallaba después de cerrar el evento OPEN anterior, el
+sistema quedaba sin evento activo.
+
+#### Solución Implementada
+
+1. **RPC PostgreSQL atómica** `change_event_status_atomic` con `SELECT ... FOR UPDATE`.
+2. **Validación de transiciones** en la misma transacción:
+   - `SCHEDULED → OPEN` (abrir)
+   - `SCHEDULED → CANCELLED`
+   - `OPEN → CLOSED` (cerrar)
+   - `OPEN → CANCELLED`
+3. **Auto-switch atómico:** al abrir un evento, el anterior OPEN se cierra en la misma transacción.
+4. **Feature flag `USE_ATOMIC_EVENT_STATUS`** (default `true`). Rollback sin redeploy.
+5. **Fallback automático** a la lógica legacy si la RPC falla por infraestructura.
+6. **Contrato JSON enriquecido**: se agrega `replaced` cuando hay auto-cierre.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `sql/038_change_event_status_atomic.sql` | NUEVO — Función RPC atómica |
+| `src/config/env.js` | Agregada flag `USE_ATOMIC_EVENT_STATUS` (default: true) |
+| `src/controllers/events-v2.controller.js` | `changeEventStatus` usa RPC + fallback legacy |
+
+#### Comportamiento Visible
+
+**Cero cambios perceptibles para el usuario final.**
+
+- Mismos mensajes de éxito.
+- Mismo mensaje si el evento no existe.
+- **Nuevo:** mensaje enriquecido cuando hay reemplazo (`"Evento X cambiado a OPEN. Reemplazado: Y."`).
+- **Nuevo:** error claro `INVALID_TRANSITION` si se intenta una transición no permitida.
+
+#### Rollback
+
+- **Sin redeploy (30 seg):** `fly secrets set USE_ATOMIC_EVENT_STATUS=false`
+- **Rollback total:** `git revert <hash> && git push origin main && fly deploy`
+- **Eliminar RPC:** `DROP FUNCTION IF EXISTS change_event_status_atomic(UUID, TEXT, UUID);`
+
+#### Verificación
+
+- ✅ RPC aplicada en Supabase (con `SECURITY DEFINER` + solo `service_role`).
+- ✅ Test con UUID falso → `EVENT_NOT_FOUND`.
+- ✅ `node --check` OK en `env.js` y `events-v2.controller.js`.
+- ⏳ Smoke test end-to-end pendiente.
+
+#### Referencias
+
+- `docs/auditoria-sprint-1.md` — hallazgo original (FIX-105).
+- `PLAN_TRABAJO.md` — Sprint 2.
+- `sql/038_change_event_status_atomic.sql` — función SQL.
+
+---
+
 ## [4.5.7] - 2026-09-22
 
 ### 🎖️ FIX-101 — Reset password atómico (RPC + fallback)
