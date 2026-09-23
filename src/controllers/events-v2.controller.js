@@ -24,6 +24,7 @@
  * ============================================================================
  */
 
+import { ENV } from '../config/env.js';
 import { getSupabase } from '../db/supabase.js';
 import {
   CreateEventSchema,
