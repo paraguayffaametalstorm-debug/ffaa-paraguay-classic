@@ -88,6 +88,38 @@ export async function checkSupabaseHealth() {
   }
 }
 
+/**
+ * FIX-306: Readiness check liviano para /api/health.
+ * Hace UNA sola query HEAD a `users`. No trae filas, solo verifica que
+ * Supabase responde y que las credenciales son válidas.
+ *
+ * Diferencia con checkSupabaseHealth():
+ *   - checkSupabaseHealth(): 3 queries, loguea en consola, usado al arranque.
+ *   - checkReadiness():      1 query HEAD, silencioso, usado por healthchecks HTTP.
+ *
+ * @returns {Promise<{ ok: boolean, reason?: string, message?: string }>}
+ */
+export async function checkReadiness() {
+  if (!supabaseClient) {
+    return { ok: false, reason: 'SUPABASE_NOT_INITIALIZED' };
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from('users')
+      .select('id', { count: 'exact', head: true })
+      .limit(1);
+
+    if (error) {
+      return { ok: false, reason: 'SUPABASE_ERROR', message: error.message };
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: 'SUPABASE_EXCEPTION', message: err?.message || String(err) };
+  }
+}
+
 // Execute health check asynchronously on server startup
 if (supabaseClient) {
   checkSupabaseHealth().catch(err => {
