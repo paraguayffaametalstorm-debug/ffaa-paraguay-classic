@@ -26,6 +26,8 @@ import eventsV2BmRoutes from './src/routes/events-v2-bm.routes.js';
 import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
 import { startEventScheduler } from './src/utils/eventScheduler.js';
+import { cleanupPresence } from './src/controllers/presence.controller.js';
+import cron from 'node-cron';
 
 // Global error handlers to prevent process crash
 process.on('unhandledRejection', (err) => {
@@ -271,6 +273,23 @@ app.listen(ENV.PORT, '0.0.0.0', () => {
     console.log('✅ [Server] Event Scheduler iniciado.');
   } catch (err) {
     console.error('❌ [Server] Error iniciando Event Scheduler:', err.message);
+    // No bloquea el arranque del servidor.
+  }
+
+  // ============================================================
+  // START PRESENCE CLEANUP CRON (FIX-209)
+  // ============================================================
+  // Cada 5 minutos: elimina registros de presence con last_seen < NOW() - 1h.
+  // Evita acumulacion infinita de filas en la tabla `presence`.
+  // Advisory lock NO es necesario: DELETE es idempotente.
+  // ============================================================
+  try {
+    cron.schedule('*/5 * * * *', async () => {
+      await cleanupPresence();
+    });
+    console.log('✅ [Server] Presence cleanup cron iniciado (cada 5 min).');
+  } catch (err) {
+    console.error('❌ [Server] Error iniciando Presence cron:', err.message);
     // No bloquea el arranque del servidor.
   }
 });
