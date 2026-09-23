@@ -534,6 +534,105 @@ async function savePerformance() {
 
         const data = await res.json();
 
+        // FIX-PARTICIPATION-EDIT: manejar 409 PARTICIPATION_EXISTS con resolución.
+        // Best practice (RFC 9110): el 409 incluye el registro existente y el
+        // frontend ofrece al usuario decidir si reemplazar (PUT) o cancelar.
+        if (res.status === 409 && data.code === 'PARTICIPATION_EXISTS') {
+            const existing = data.existing || {};
+            const existingData = existing.data || {};
+            const existingTokens = existingData.tokens ?? existing.computed_points ?? '—';
+            const existingDays = existingData.days_connected ?? '—';
+            const existingGroup = existingData.flew_in_group ? 'Sí' : 'No';
+            const existingStatus = existing.status || 'PENDING';
+            const existingNotes = existingData.notes || '(sin notas)';
+            const existingCreated = existing.created_at
+                ? new Date(existing.created_at).toLocaleString('es-PY', { hour12: false })
+                : '—';
+            const existingUpdated = existing.updated_at && existing.updated_at !== existing.created_at
+                ? new Date(existing.updated_at).toLocaleString('es-PY', { hour12: false })
+                : existingCreated;
+
+            // Toast informativo (no bloqueante)
+            showToast('⚠️ Ya existe un registro previo para este piloto en este evento.', 'warning');
+
+            // Confirmación con contexto completo
+            const confirmMsg = [
+                '⚠️ REGISTRO YA EXISTENTE',
+                '',
+                '📊 Registro actual:',
+                `   • Tokens:       ${existingTokens}`,
+                `   • Días:         ${existingDays}`,
+                `   • Grupo:        ${existingGroup}`,
+                `   • Estado:       ${existingStatus}`,
+                `   • Creado:       ${existingCreated}`,
+                `   • Actualizado:  ${existingUpdated}`,
+                `   • Notas:        ${existingNotes}`,
+                '',
+                '🆕 Datos nuevos a cargar:',
+                `   • Tokens:       ${tokens}`,
+                `   • Días:         ${days}`,
+                `   • Grupo:        ${flewInGroup ? 'Sí' : 'No'}`,
+                `   • Notas:        ${notes || '(sin notas)'}`,
+                '',
+                '¿Reemplazar el registro anterior con los nuevos datos?'
+            ].join('\n');
+
+            const confirmed = confirm(confirmMsg);
+
+            if (!confirmed) {
+                showToast('ℹ️ Registro no modificado. Los datos anteriores siguen intactos.', 'info');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '💾 Guardar Rendimiento';
+                }
+                return;
+            }
+
+            // Usuario confirmó → PUT para reemplazar
+            // El userId a usar en la URL es el UUID del piloto target (existing.user_id)
+            const targetUuid = existing.user_id;
+            if (!targetUuid) {
+                throw new Error('No se pudo resolver el UUID del piloto para actualizar.');
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Actualizando...';
+            }
+
+            const putRes = await fetch(
+                `/api/events-v2/${encodeURIComponent(_eventId)}/participations/${encodeURIComponent(targetUuid)}`,
+                {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(participationPayload)
+                }
+            );
+
+            const putData = await putRes.json();
+
+            if (!putRes.ok) {
+                if (putData.code === 'SELF_MODIFICATION_FORBIDDEN') {
+                    throw new Error('No podés modificar tu propio registro. Pedile a otro ADMIN que lo haga.');
+                }
+                if (putData.code === 'UPDATE_FORBIDDEN') {
+                    throw new Error('No tenés permisos para modificar registros existentes.');
+                }
+                throw new Error(putData.error || putData.message || 'Error al actualizar rendimiento');
+            }
+
+            showToast('✅ Registro actualizado correctamente.', 'success');
+
+            resetPerformanceForm();
+
+            setTimeout(() => {
+                if (typeof window.showView === 'function') {
+                    window.showView('appView');
+                }
+            }, 1200);
+            return;
+        }
+
         if (!res.ok) {
             throw new Error(data.error || data.message || 'Error al guardar rendimiento');
         }
