@@ -1,5 +1,6 @@
 import { ZodError } from 'zod';
 
+import { logger } from '../config/logger.js';
 /**
  * ============================================================
  * Error Handler Centralizado — FIX-104 + FIX-307
@@ -32,9 +33,9 @@ export function errorHandler(err, req, res, next) {
   };
 
   // Log estructurado server-side (JSON one-liner, fácil de parsear).
-  console.error(`[ERR] ${JSON.stringify(errorLogEntry)}`);
+  logger.error(`[ERR] ${JSON.stringify(errorLogEntry)}`);
   if (isServerError && err.stack) {
-    console.error(`[ERR-STACK] id=${requestId} ${err.stack.split('\n').slice(0, 5).join(' | ')}`);
+    logger.error(`[ERR-STACK] id=${requestId} ${err.stack.split('\n').slice(0, 5).join(' | ')}`);
   }
 
   // Error de validación Zod

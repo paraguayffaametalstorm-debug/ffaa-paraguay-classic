@@ -1,5 +1,6 @@
 import { getSupabase } from '../db/supabase.js';
 
+import { logger } from '../config/logger.js';
 export const getEvents = async (req, res) => {
     try {
         const supabase = getSupabase();
@@ -30,7 +31,7 @@ export const getEvents = async (req, res) => {
             windowCloseMs
         });
     } catch (error) {
-        console.error('❌ Error en getEvents:', error);
+        logger.error('❌ Error en getEvents:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message,
@@ -71,7 +72,7 @@ export const getOpenEvent = async (req, res) => {
             events 
         });
     } catch (error) {
-        console.error('❌ Error en getOpenEvent:', error);
+        logger.error('❌ Error en getOpenEvent:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message,
@@ -121,7 +122,7 @@ export const getActiveMembers = async (req, res) => {
             members: activeMembers || [] 
         });
     } catch (error) {
-        console.error('❌ Error en getActiveMembers:', error);
+        logger.error('❌ Error en getActiveMembers:', error);
         res.status(500).json({ 
             success: false, 
             error: error.message,

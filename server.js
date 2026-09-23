@@ -31,6 +31,7 @@ import { cleanupPresence } from './src/controllers/presence.controller.js';
 import { checkReadiness } from './src/db/supabase.js';
 import cron from 'node-cron';
 
+import { logger } from './src/config/logger.js';
 // ============================================================
 // GLOBAL ERROR HANDLERS (FIX-309)
 // ============================================================
@@ -68,8 +69,8 @@ function formatProcessError(label, err) {
  */
 function logAndExit(label, err) {
   const payload = formatProcessError(label, err);
-  console.error(`❌ [Process] ${label}:`);
-  console.error(JSON.stringify(payload, null, 2));
+  logger.error(`❌ [Process] ${label}:`);
+  logger.error(JSON.stringify(payload, null, 2));
   // Flush async: esperar un tick antes de salir.
   setImmediate(() => process.exit(1));
 }
@@ -96,26 +97,26 @@ process.on('uncaughtException', (err) => {
 let httpServer = null; // Se asigna en app.listen()
 
 function gracefulShutdown(signal) {
-  console.log(`🛑 [Process] ${signal} recibido. Iniciando apagado ordenado...`);
+  logger.info(`🛑 [Process] ${signal} recibido. Iniciando apagado ordenado...`);
 
   if (!httpServer) {
-    console.log('🛑 [Process] HTTP server no inicializado. Saliendo directo.');
+    logger.info('🛑 [Process] HTTP server no inicializado. Saliendo directo.');
     process.exit(0);
   }
 
   // Timeout de seguridad: si en 10s no cerró, forzar exit.
   const forceExit = setTimeout(() => {
-    console.error('⚠️ [Process] Timeout de apagado (10s). Forzando exit.');
+    logger.error('⚠️ [Process] Timeout de apagado (10s). Forzando exit.');
     process.exit(1);
   }, 10_000);
   forceExit.unref();
 
   httpServer.close((err) => {
     if (err) {
-      console.error('❌ [Process] Error cerrando HTTP server:', err.message);
+      logger.error('❌ [Process] Error cerrando HTTP server:', err.message);
       process.exit(1);
     }
-    console.log('✅ [Process] HTTP server cerrado limpiamente. Saliendo.');
+    logger.info('✅ [Process] HTTP server cerrado limpiamente. Saliendo.');
     process.exit(0);
   });
 }
@@ -285,7 +286,7 @@ app.use(
         return callback(null, true);
       }
 
-      console.warn(`⚠️ [CORS] Origen bloqueado: ${origin}`);
+      logger.warn(`⚠️ [CORS] Origen bloqueado: ${origin}`);
       return callback(new Error(`Acceso CORS bloqueado para el origen: ${origin}`));
     },
     credentials: true,
@@ -393,7 +394,7 @@ app.use(errorHandler);
 // ============================================================
 
 httpServer = app.listen(ENV.PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto ${ENV.PORT} (0.0.0.0:${ENV.PORT})`);
+  logger.info(`🚀 Servidor PARAGUAY-FFAA | METALSTORM activo en puerto ${ENV.PORT} (0.0.0.0:${ENV.PORT})`);
 
   // ============================================================
   // START EVENT SCHEDULER (F2.9)
@@ -404,9 +405,9 @@ httpServer = app.listen(ENV.PORT, '0.0.0.0', () => {
   // ============================================================
   try {
     startEventScheduler();
-    console.log('✅ [Server] Event Scheduler iniciado.');
+    logger.info('✅ [Server] Event Scheduler iniciado.');
   } catch (err) {
-    console.error('❌ [Server] Error iniciando Event Scheduler:', err.message);
+    logger.error('❌ [Server] Error iniciando Event Scheduler:', err.message);
     // No bloquea el arranque del servidor.
   }
 
@@ -424,12 +425,12 @@ httpServer = app.listen(ENV.PORT, '0.0.0.0', () => {
       } catch (err) {
         // FIX-309: catch explícito para evitar unhandledRejection → exit(1).
         // Si el cleanup falla, logueamos y seguimos. El próximo tick reintenta.
-        console.error('⚠️ [Presence] Error en cleanup cron:', err?.message || err);
+        logger.error('⚠️ [Presence] Error en cleanup cron:', err?.message || err);
       }
     });
-    console.log('✅ [Server] Presence cleanup cron iniciado (cada 5 min).');
+    logger.info('✅ [Server] Presence cleanup cron iniciado (cada 5 min).');
   } catch (err) {
-    console.error('❌ [Server] Error iniciando Presence cron:', err.message);
+    logger.error('❌ [Server] Error iniciando Presence cron:', err.message);
     // No bloquea el arranque del servidor.
   }
 });

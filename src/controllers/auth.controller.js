@@ -8,6 +8,7 @@ import { generateTemporaryPassword, getNextUserId } from '../utils/security.js';
 import { sendPasswordResetEmail } from '../utils/email.js';
 import passport, { isGoogleConfigured } from '../config/passport.js';
 
+import { logger } from '../config/logger.js';
 // ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
 function buildUserQuery(supabase, user, selectFields = '*') {
     let query = supabase.from('users').select(selectFields);
@@ -190,7 +191,7 @@ export const login = async (req, res) => {
             }
             await activityQuery;
         } catch (err) {
-            console.warn('⚠️ [Auth] Error actualizando last_activity:', err.message);
+            logger.warn('⚠️ [Auth] Error actualizando last_activity:', err.message);
         }
 
         // 6. Preparar respuesta
@@ -208,7 +209,7 @@ export const login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en login:', error);
+        logger.error('❌ Error en login:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
@@ -246,7 +247,7 @@ export const verifyMe = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('❌ Error en verifyMe:', error);
+        logger.error('❌ Error en verifyMe:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 };
@@ -271,7 +272,7 @@ export const register = async (req, res) => {
             .limit(1);
 
         if (checkError) {
-            console.error('Error verificando usuario en Supabase:', checkError);
+            logger.error('Error verificando usuario en Supabase:', checkError);
         } else if (existing && existing.length > 0) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
@@ -319,7 +320,7 @@ export const register = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en register:', error);
+        logger.error('❌ Error en register:', error);
         res.status(500).json({ error: error.message || 'Error interno del servidor' });
     }
 };
@@ -413,7 +414,7 @@ export const changePassword = async (req, res) => {
         const newHash = await bcrypt.hash(newPassword, 10);
         const newTokenVersion = (user.token_version || 0) + 1;
 
-        console.log('🔍 [changePassword] Actualizando usuario con:', {
+        logger.info('🔍 [changePassword] Actualizando usuario con:', {
             id: user.id,
             user_id: user.user_id,
             newTokenVersion,
@@ -446,11 +447,11 @@ export const changePassword = async (req, res) => {
             .select('id, email, nick, user_id, role, token_version, must_change_password');
 
         if (updateError) {
-            console.error('❌ Error actualizando contraseña en Supabase:', updateError);
+            logger.error('❌ Error actualizando contraseña en Supabase:', updateError);
             throw updateError;
         }
 
-        console.log('✅ [changePassword] Filas actualizadas con éxito:', updateData?.length || 0);
+        logger.info('✅ [changePassword] Filas actualizadas con éxito:', updateData?.length || 0);
 
         await logSecurityEvent({
             supabase,
@@ -501,7 +502,7 @@ export const changePassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en changePassword:', error);
+        logger.error('❌ Error en changePassword:', error);
         return res.status(500).json({
             success: false,
             message: 'Error interno del servidor al actualizar contraseña',
@@ -624,7 +625,7 @@ export const linkAccount = async (req, res) => {
             .select('id, email, nick, user_id, role, token_version, must_change_password, google_linked');
 
         if (updateError) {
-            console.error('❌ Error vinculando cuenta Google en Supabase:', updateError);
+            logger.error('❌ Error vinculando cuenta Google en Supabase:', updateError);
             return res.status(500).json({
                 success: false,
                 error: 'Error al actualizar el registro militar de vinculación en base de datos'
@@ -672,7 +673,7 @@ export const linkAccount = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en linkAccount:', error);
+        logger.error('❌ Error en linkAccount:', error);
         return res.status(500).json({
             success: false,
             error: error.message || 'Error interno al procesar vinculación de cuenta'
@@ -740,7 +741,7 @@ export const forgotPassword = async (req, res) => {
             });
 
         if (resetError) {
-            console.error('❌ Error guardando token en password_resets:', resetError);
+            logger.error('❌ Error guardando token en password_resets:', resetError);
             return res.status(500).json({ 
                 success: false, 
                 error: 'Error al registrar solicitud de restablecimiento militar. Verifique la tabla password_resets.' 
@@ -760,7 +761,7 @@ export const forgotPassword = async (req, res) => {
                 token
             });
         } catch (mailErr) {
-            console.error('❌ Error enviando email de restablecimiento:', mailErr.message);
+            logger.error('❌ Error enviando email de restablecimiento:', mailErr.message);
         }
 
         await logSecurityEvent({
@@ -787,7 +788,7 @@ export const forgotPassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en forgotPassword:', error);
+        logger.error('❌ Error en forgotPassword:', error);
         return res.status(500).json({ success: false, error: 'Error interno del servidor' });
     }
 };
@@ -832,7 +833,7 @@ export const resetPassword = async (req, res) => {
 
                 if (rpcError) {
                     // Error de infraestructura → fallback a legacy (log + continue)
-                    console.error('⚠️ [resetPassword] RPC falló, aplicando fallback legacy:', rpcError.message);
+                    logger.error('⚠️ [resetPassword] RPC falló, aplicando fallback legacy:', rpcError.message);
                 } else {
                     const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
@@ -871,11 +872,11 @@ export const resetPassword = async (req, res) => {
                         return res.status(mapped.status).json({ success: false, error: mapped.message });
                     }
                     // Error code desconocido → fallback a legacy
-                    console.warn('⚠️ [resetPassword] Error code inesperado de RPC:', errorCode, '→ fallback legacy');
+                    logger.warn('⚠️ [resetPassword] Error code inesperado de RPC:', errorCode, '→ fallback legacy');
                 }
             } catch (rpcException) {
                 // Excepción de red/parsing → fallback a legacy
-                console.error('⚠️ [resetPassword] Excepción en RPC, aplicando fallback legacy:', rpcException.message);
+                logger.error('⚠️ [resetPassword] Excepción en RPC, aplicando fallback legacy:', rpcException.message);
             }
         }
 
@@ -941,7 +942,7 @@ export const resetPassword = async (req, res) => {
             .select('id, email, nick, user_id, role, token_version, must_change_password');
 
         if (updateError) {
-            console.error('❌ Error actualizando contraseña en Supabase:', updateError);
+            logger.error('❌ Error actualizando contraseña en Supabase:', updateError);
             return res.status(500).json({
                 success: false,
                 error: 'Error al actualizar las credenciales en la base militar.'
@@ -969,7 +970,7 @@ export const resetPassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en resetPassword:', error);
+        logger.error('❌ Error en resetPassword:', error);
         return res.status(500).json({ success: false, error: 'Error interno del servidor al restablecer contraseña' });
     }
 };
@@ -1017,7 +1018,7 @@ export const googleStatus = async (req, res) => {
             user: user ? { nick: user.nick, email: user.email } : null
         });
     } catch (err) {
-        console.error('❌ Error en googleStatus:', err);
+        logger.error('❌ Error en googleStatus:', err);
         return res.json({ success: false, enabled: isGoogleConfigured(), linked: false });
     }
 };
@@ -1039,14 +1040,14 @@ export const googleCallback = (req, res, next) => {
 
     passport.authenticate('google', { session: false }, async (err, user, info) => {
         if (err) {
-            console.error('❌ [Google Callback Error]:', err);
+            logger.error('❌ [Google Callback Error]:', err);
             const msg = err.message || 'Error en la autenticación con Google';
             return res.redirect(`/?auth_error=${encodeURIComponent(msg)}`);
         }
 
         if (!user) {
             if (info?.code === 'NOT_LINKED' && info?.email) {
-                console.log(`🔗 [Google Callback] Redirigiendo a /link-account para el correo ${info.email}`);
+                logger.info(`🔗 [Google Callback] Redirigiendo a /link-account para el correo ${info.email}`);
                 return res.redirect(`/link-account?email=${encodeURIComponent(info.email)}`);
             }
 
@@ -1112,7 +1113,7 @@ export const googleCallback = (req, res, next) => {
             const mustChangeParam = user.must_change_password ? '&must_change_password=true' : '';
             return res.redirect(`/?auth_token=${encodeURIComponent(token)}${mustChangeParam}`);
         } catch (tokenErr) {
-            console.error('❌ [Google Callback Token Error]:', tokenErr);
+            logger.error('❌ [Google Callback Token Error]:', tokenErr);
             return res.redirect('/?auth_error=' + encodeURIComponent('Error interno procesando sesión militar'));
         }
     })(req, res, next);

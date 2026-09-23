@@ -10,6 +10,7 @@ import { getSupabase } from '../db/supabase.js';
 import { PlaneModelSchema, UpdatePlaneModelSchema } from '../utils/schemas.js';
 import { logAuditChange } from '../utils/audit.js';
 
+import { logger } from '../config/logger.js';
 // Catálogo base predeterminado de 23 modelos tácticos oficiales
 export const INITIAL_PLANE_MODELS = [
   {
@@ -594,7 +595,7 @@ export async function getPlaneModels(req, res) {
           });
         }
       } catch (dbErr) {
-        console.warn('⚠️ [PlaneModels] Fallback a memoria por error en Supabase:', dbErr.message);
+        logger.warn('⚠️ [PlaneModels] Fallback a memoria por error en Supabase:', dbErr.message);
       }
     }
 
@@ -613,7 +614,7 @@ export async function getPlaneModels(req, res) {
       total: models.length
     });
   } catch (error) {
-    console.error('❌ [PlaneModels] Error en getPlaneModels:', error);
+    logger.error('❌ [PlaneModels] Error en getPlaneModels:', error);
     return res.status(500).json({
       success: false,
       error: 'Error interno al consultar catálogo de aeronaves',
@@ -652,7 +653,7 @@ export async function getPlaneModelById(req, res) {
           });
         }
       } catch (dbErr) {
-        console.warn('⚠️ [PlaneModels] Consulta unitaria en memoria por error DB:', dbErr.message);
+        logger.warn('⚠️ [PlaneModels] Consulta unitaria en memoria por error DB:', dbErr.message);
       }
     }
 
@@ -673,7 +674,7 @@ export async function getPlaneModelById(req, res) {
       data: normalized
     });
   } catch (error) {
-    console.error('❌ [PlaneModels] Error en getPlaneModelById:', error);
+    logger.error('❌ [PlaneModels] Error en getPlaneModelById:', error);
     return res.status(500).json({
       success: false,
       error: 'Error al consultar modelo de aeronave',
@@ -763,7 +764,7 @@ export async function createPlaneModel(req, res) {
         .single();
 
       if (insertError) {
-        console.error('❌ [PlaneModels] Error insertando modelo en Supabase:', insertError.message);
+        logger.error('❌ [PlaneModels] Error insertando modelo en Supabase:', insertError.message);
         // Continuamos con fallback a memoria pero registramos advertencia
       } else if (insertedData) {
         savedModel = insertedData;
@@ -789,7 +790,7 @@ export async function createPlaneModel(req, res) {
       }
     });
 
-    console.log(`✈️ [PlaneModels] Nuevo modelo agregado: ${normalized.name} [ID: ${normalized.id}] por ${req.user?.nick}`);
+    logger.info(`✈️ [PlaneModels] Nuevo modelo agregado: ${normalized.name} [ID: ${normalized.id}] por ${req.user?.nick}`);
 
     return res.status(201).json({
       success: true,
@@ -798,7 +799,7 @@ export async function createPlaneModel(req, res) {
       data: normalized
     });
   } catch (error) {
-    console.error('❌ [PlaneModels] Error en createPlaneModel:', error);
+    logger.error('❌ [PlaneModels] Error en createPlaneModel:', error);
     return res.status(400).json({
       success: false,
       error: error.message || 'Error al agregar modelo de avión',
@@ -852,10 +853,10 @@ export async function updatePlaneModel(req, res) {
         if (!error && data) {
           updatedRecord = data;
         } else if (error) {
-          console.warn('⚠️ [PlaneModels] Actualización DB error:', error.message);
+          logger.warn('⚠️ [PlaneModels] Actualización DB error:', error.message);
         }
       } catch (dbErr) {
-        console.warn('⚠️ [PlaneModels] Excepción al actualizar en Supabase:', dbErr.message);
+        logger.warn('⚠️ [PlaneModels] Excepción al actualizar en Supabase:', dbErr.message);
       }
     }
 
@@ -890,7 +891,7 @@ export async function updatePlaneModel(req, res) {
       details: updatePayload
     });
 
-    console.log(`✏️ [PlaneModels] Modelo actualizado: ${normalized.name} [ID: ${normalized.id}] por ${req.user?.nick}`);
+    logger.info(`✏️ [PlaneModels] Modelo actualizado: ${normalized.name} [ID: ${normalized.id}] por ${req.user?.nick}`);
 
     return res.json({
       success: true,
@@ -899,7 +900,7 @@ export async function updatePlaneModel(req, res) {
       data: normalized
     });
   } catch (error) {
-    console.error('❌ [PlaneModels] Error en updatePlaneModel:', error);
+    logger.error('❌ [PlaneModels] Error en updatePlaneModel:', error);
     return res.status(400).json({
       success: false,
       error: error.message || 'Error al actualizar modelo de aeronave',
@@ -937,7 +938,7 @@ export async function deletePlaneModel(req, res) {
           modelName = data.name || targetId;
         }
       } catch (dbErr) {
-        console.warn('⚠️ [PlaneModels] Error al desactivar en Supabase:', dbErr.message);
+        logger.warn('⚠️ [PlaneModels] Error al desactivar en Supabase:', dbErr.message);
       }
     }
 
@@ -960,7 +961,7 @@ export async function deletePlaneModel(req, res) {
       details: { id: targetId, is_active: false }
     });
 
-    console.log(`🗑️ [PlaneModels] Modelo desactivado: ${modelName} [ID: ${targetId}] por ${req.user?.nick}`);
+    logger.info(`🗑️ [PlaneModels] Modelo desactivado: ${modelName} [ID: ${targetId}] por ${req.user?.nick}`);
 
     return res.json({
       success: true,
@@ -969,7 +970,7 @@ export async function deletePlaneModel(req, res) {
       is_active: false
     });
   } catch (error) {
-    console.error('❌ [PlaneModels] Error en deletePlaneModel:', error);
+    logger.error('❌ [PlaneModels] Error en deletePlaneModel:', error);
     return res.status(500).json({
       success: false,
       error: 'Error al desactivar modelo de aeronave',
@@ -1006,7 +1007,7 @@ export async function restorePlaneModel(req, res) {
           modelName = data.name || targetId;
         }
       } catch (dbErr) {
-        console.warn('⚠️ [PlaneModels] Error al reactivar en Supabase:', dbErr.message);
+        logger.warn('⚠️ [PlaneModels] Error al reactivar en Supabase:', dbErr.message);
       }
     }
 
@@ -1029,7 +1030,7 @@ export async function restorePlaneModel(req, res) {
       details: { id: targetId, is_active: true }
     });
 
-    console.log(`♻️ [PlaneModels] Modelo reactivado: ${modelName} [ID: ${targetId}] por ${req.user?.nick}`);
+    logger.info(`♻️ [PlaneModels] Modelo reactivado: ${modelName} [ID: ${targetId}] por ${req.user?.nick}`);
 
     const restoredModel = memIndex !== -1 ? inMemoryPlaneModels[memIndex] : null;
 
@@ -1042,7 +1043,7 @@ export async function restorePlaneModel(req, res) {
       data: restoredModel
     });
   } catch (error) {
-    console.error('❌ [PlaneModels] Error en restorePlaneModel:', error);
+    logger.error('❌ [PlaneModels] Error en restorePlaneModel:', error);
     return res.status(500).json({
       success: false,
       error: 'Error al reactivar modelo de aeronave',

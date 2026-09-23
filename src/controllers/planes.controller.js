@@ -14,6 +14,7 @@ import { getPlaneTraitsWithInfo } from '../utils/traits.js';
 import { getUpgradeNodes, getNode, calculateNodeEffects, calculateCategoryEffects, getNodesForCategory } from '../utils/upgradeNodes.js';
 import { logSecurityEvent } from '../utils/audit.js';
 
+import { logger } from '../config/logger.js';
 // Catálogo oficial de modelos de aeronaves base
 const DEFAULT_PLANE_MODELS = [
   { id: 1, name: 'F-22 Raptor', type: 'Caza de Superioridad Aérea', tier: 5 },
@@ -45,7 +46,7 @@ async function getFullCatalogModels(supabase) {
         dbModels = data;
       }
     } catch (e) {
-      console.warn('⚠️ [Hangar] No se pudo leer plane_models en Supabase:', e.message);
+      logger.warn('⚠️ [Hangar] No se pudo leer plane_models en Supabase:', e.message);
     }
   }
 
@@ -134,7 +135,7 @@ export async function getCatalogModels(req, res) {
     const fallbackModels = INITIAL_PLANE_MODELS.filter(m => m.is_active !== false);
     return res.json({ success: true, message: 'Catálogo base cargado', models: fallbackModels, data: fallbackModels });
   } catch (error) {
-    console.error('❌ [Hangar] Error en getCatalogModels:', error);
+    logger.error('❌ [Hangar] Error en getCatalogModels:', error);
     const fallbackModels = INITIAL_PLANE_MODELS.filter(m => m.is_active !== false);
     return res.json({ success: true, message: 'Catálogo de emergencia', models: fallbackModels, data: fallbackModels });
   }
@@ -158,7 +159,7 @@ export async function getCatalogMods(req, res) {
     }
     return res.json({ success: true, message: 'Catálogo base de mods cargado', mods: DEFAULT_PLANE_MODS, data: DEFAULT_PLANE_MODS });
   } catch (error) {
-    console.error('❌ [Hangar] Error en getCatalogMods:', error);
+    logger.error('❌ [Hangar] Error en getCatalogMods:', error);
     return res.json({ success: true, message: 'Catálogo de emergencia de mods', mods: DEFAULT_PLANE_MODS, data: DEFAULT_PLANE_MODS });
   }
 }
@@ -173,7 +174,7 @@ export async function getMyPlanes(req, res, next) {
     const userId = req.user.user_id || req.user.id;
     const userNick = req.user.nick;
 
-    console.log(`🛩️ [Hangar] Consultando flota de combate para combatiente: ID=${userId}, Nick=${userNick || 'Piloto'}`);
+    logger.info(`🛩️ [Hangar] Consultando flota de combate para combatiente: ID=${userId}, Nick=${userNick || 'Piloto'}`);
 
     if (supabase) {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(userId));
@@ -195,11 +196,11 @@ export async function getMyPlanes(req, res, next) {
       const { data, error } = await query;
 
       if (error) {
-        console.error('❌ [Hangar] Error en consulta de aeronaves en Supabase:', error.message);
+        logger.error('❌ [Hangar] Error en consulta de aeronaves en Supabase:', error.message);
       }
 
       if (!error && data) {
-        console.log(`✅ [Hangar] Flota recuperada con éxito: ${data.length} aeronaves encontradas`);
+        logger.info(`✅ [Hangar] Flota recuperada con éxito: ${data.length} aeronaves encontradas`);
 
         const catalog = await getFullCatalogModels(supabase);
         const planes = data.map(p => {
@@ -262,7 +263,7 @@ export async function getMyPlanes(req, res, next) {
       }
     }
 
-    console.warn('⚠️ [Hangar] No se encontraron aeronaves registradas o base de datos offline');
+    logger.warn('⚠️ [Hangar] No se encontraron aeronaves registradas o base de datos offline');
     return res.json({
       success: true,
       message: 'Hangar vacío o sin telemetría disponible',
@@ -272,7 +273,7 @@ export async function getMyPlanes(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error crítico en getMyPlanes:', err);
+    logger.error('❌ [Hangar] Error crítico en getMyPlanes:', err);
     return res.status(500).json({
       success: false,
       message: 'Error al cargar las aeronaves del hangar',
@@ -296,7 +297,7 @@ export async function addPlane(req, res, next) {
     const resolvedName = model?.name || (data.name && !/^\d+$/.test(data.name) ? data.name : null) || data.avion_id;
     const resolvedType = model?.type || data.type || 'Caza de Combate';
 
-    console.log(`➕ [Hangar] Registrando nueva aeronave (${resolvedName} [${data.avion_id}]) para usuario ID: ${userId}`);
+    logger.info(`➕ [Hangar] Registrando nueva aeronave (${resolvedName} [${data.avion_id}]) para usuario ID: ${userId}`);
 
     const nf = data.nivel_fuselaje || 0;
     const nm = data.nivel_motor || 0;
@@ -341,7 +342,7 @@ export async function addPlane(req, res, next) {
       .single();
 
     if (insertError) {
-      console.error('❌ [Hangar] Error insertando aeronave:', insertError);
+      logger.error('❌ [Hangar] Error insertando aeronave:', insertError);
       throw insertError;
     }
 
@@ -361,7 +362,7 @@ export async function addPlane(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error en addPlane:', err);
+    logger.error('❌ [Hangar] Error en addPlane:', err);
     return res.status(400).json({
       success: false,
       message: 'No se pudo registrar la aeronave',
@@ -449,7 +450,7 @@ export async function updatePlane(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error en updatePlane:', err);
+    logger.error('❌ [Hangar] Error en updatePlane:', err);
     return res.status(400).json({ success: false, message: 'Error actualizando aeronave', error: err.message });
   }
 }
@@ -517,7 +518,7 @@ export async function updatePlaneSystem(req, res, next) {
         // Verificar si el sistema está disponible
         // Caso 1: null o false → No disponible
         if (sistemaDisponible === null || sistemaDisponible === false || sistemaDisponible === undefined) {
-          console.warn(`⚠️ [Upgrade] Sistema ${sistema} no disponible para ${modelData.name}`);
+          logger.warn(`⚠️ [Upgrade] Sistema ${sistema} no disponible para ${modelData.name}`);
           
           return res.status(400).json({
             success: false,
@@ -537,9 +538,9 @@ export async function updatePlaneSystem(req, res, next) {
         }
 
         // Log de confirmación
-        console.log(`✅ [Upgrade] Sistema ${sistema} disponible para ${modelData.name}`);
+        logger.info(`✅ [Upgrade] Sistema ${sistema} disponible para ${modelData.name}`);
       } else {
-        console.warn(`⚠️ [Upgrade] No se pudo verificar sistemas_disponibles para avion_id=${plane.avion_id}`);
+        logger.warn(`⚠️ [Upgrade] No se pudo verificar sistemas_disponibles para avion_id=${plane.avion_id}`);
       }
     }
 
@@ -593,7 +594,7 @@ export async function updatePlaneSystem(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error en updatePlaneSystem:', err);
+    logger.error('❌ [Hangar] Error en updatePlaneSystem:', err);
     return res.status(400).json({ success: false, message: 'Error calibrando subsistema', error: err.message });
   }
 }
@@ -783,7 +784,7 @@ export async function updatePlaneSystems(req, res) {
       .single();
 
     if (updateErr) {
-      console.error('❌ [Hangar] Error actualizando planes en Supabase:', updateErr.message);
+      logger.error('❌ [Hangar] Error actualizando planes en Supabase:', updateErr.message);
       // Fallback si la columna rutas_sistemas aún no existiese en la BD
       if (updateErr.message && updateErr.message.includes('rutas_sistemas')) {
         const fallbackPayload = { ...updatePayload };
@@ -823,7 +824,7 @@ export async function updatePlaneSystems(req, res) {
         await supabase.from('plane_upgrades').insert(auditEntries);
       }
     } catch (auditErr) {
-      console.warn('⚠️ [Hangar] Advertencia registrando auditoría en plane_upgrades:', auditErr.message);
+      logger.warn('⚠️ [Hangar] Advertencia registrando auditoría en plane_upgrades:', auditErr.message);
     }
 
     // Registrar en auditoría de seguridad
@@ -839,7 +840,7 @@ export async function updatePlaneSystems(req, res) {
       });
     } catch (_) {}
 
-    console.log(`✅ [Hangar] Subsistemas Upgrades 2.0 actualizados para avión ${planeId}`);
+    logger.info(`✅ [Hangar] Subsistemas Upgrades 2.0 actualizados para avión ${planeId}`);
 
     return res.json({
       success: true,
@@ -848,7 +849,7 @@ export async function updatePlaneSystems(req, res) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error en updatePlaneSystems:', err);
+    logger.error('❌ [Hangar] Error en updatePlaneSystems:', err);
     return res.status(500).json({ success: false, message: 'Error al actualizar sistemas', error: err.message });
   }
 }
@@ -1131,7 +1132,7 @@ export async function getPlaneDetails(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error en getPlaneDetails:', err);
+    logger.error('❌ [Hangar] Error en getPlaneDetails:', err);
     return res.status(500).json({ success: false, message: 'Error interno en telemetría', error: err.message });
   }
 }
@@ -1166,7 +1167,7 @@ export async function deletePlane(req, res, next) {
 
     await supabase.from('planes').delete().eq('id', planeId);
 
-    console.log(`🗑️ [Hangar] Aeronave con ID ${planeId} eliminada del hangar militar`);
+    logger.info(`🗑️ [Hangar] Aeronave con ID ${planeId} eliminada del hangar militar`);
 
     return res.json({
       success: true,
@@ -1174,7 +1175,7 @@ export async function deletePlane(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error en deletePlane:', err);
+    logger.error('❌ [Hangar] Error en deletePlane:', err);
     return res.status(500).json({ success: false, message: 'Error al eliminar aeronave', error: err.message });
   }
 }
@@ -1244,7 +1245,7 @@ export async function exportPlanesCSV(req, res, next) {
     return res.send(csv);
 
   } catch (err) {
-    console.error('❌ [Hangar] Error exportando flota a CSV:', err);
+    logger.error('❌ [Hangar] Error exportando flota a CSV:', err);
     return res.status(500).json({ success: false, message: 'Error exportando flota', error: err.message });
   }
 }
@@ -1532,7 +1533,7 @@ export async function getPlaneStats(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Hangar] Error calculando estadísticas de aeronave:', err);
+    logger.error('❌ [Hangar] Error calculando estadísticas de aeronave:', err);
     return res.status(500).json({ success: false, message: 'Error interno en estadísticas', error: err.message });
   }
 }
@@ -1619,7 +1620,7 @@ export async function getRecommendedBuild(req, res) {
       }
     });
   } catch (err) {
-    console.error('❌ Error en getRecommendedBuild:', err);
+    logger.error('❌ Error en getRecommendedBuild:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
 }

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import WebSocket from 'ws';
 import { ENV } from '../config/env.js';
 
+import { logger } from '../config/logger.js';
 // Polyfill native WebSocket in Node.js runtime if not present
 if (!globalThis.WebSocket) {
   globalThis.WebSocket = WebSocket;
@@ -20,12 +21,12 @@ if (ENV.SUPABASE_URL && ENV.SUPABASE_KEY) {
       }
     });
     isConfigured = true;
-    console.log(`⚡ [Supabase] Cliente inicializado apuntando a: ${ENV.SUPABASE_URL.substring(0, 30)}...`);
+    logger.info(`⚡ [Supabase] Cliente inicializado apuntando a: ${ENV.SUPABASE_URL.substring(0, 30)}...`);
   } catch (err) {
-    console.error('⚠️ [Supabase] Error crítico al inicializar cliente:', err.message);
+    logger.error('⚠️ [Supabase] Error crítico al inicializar cliente:', err.message);
   }
 } else {
-  console.warn('⚠️ [Supabase] Variables SUPABASE_URL o SUPABASE_KEY no detectadas.');
+  logger.warn('⚠️ [Supabase] Variables SUPABASE_URL o SUPABASE_KEY no detectadas.');
 }
 
 /**
@@ -46,10 +47,10 @@ export async function checkSupabaseHealth() {
       .limit(5);
 
     if (usersErr) {
-      console.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "users":', usersErr.message);
+      logger.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "users":', usersErr.message);
       results.users = { ok: false, error: usersErr.message };
     } else {
-      console.log(`✅ [Supabase Diagnostic] Tabla "users" accesible. Registros recuperados: ${users?.length || 0}`);
+      logger.info(`✅ [Supabase Diagnostic] Tabla "users" accesible. Registros recuperados: ${users?.length || 0}`);
       results.users = { ok: true, count: userCount || users?.length || 0 };
     }
 
@@ -60,10 +61,10 @@ export async function checkSupabaseHealth() {
       .limit(5);
 
     if (perfsErr) {
-      console.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "performances":', perfsErr.message);
+      logger.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "performances":', perfsErr.message);
       results.performances = { ok: false, error: perfsErr.message };
     } else {
-      console.log(`✅ [Supabase Diagnostic] Tabla "performances" accesible. Registros recuperados: ${perfs?.length || 0}`);
+      logger.info(`✅ [Supabase Diagnostic] Tabla "performances" accesible. Registros recuperados: ${perfs?.length || 0}`);
       results.performances = { ok: true, count: perfs?.length || 0 };
     }
 
@@ -74,16 +75,16 @@ export async function checkSupabaseHealth() {
       .limit(5);
 
     if (eventsErr) {
-      console.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "events":', eventsErr.message);
+      logger.warn('⚠️ [Supabase Diagnostic] Error consultando tabla "events":', eventsErr.message);
       results.events = { ok: false, error: eventsErr.message };
     } else {
-      console.log(`✅ [Supabase Diagnostic] Tabla "events" accesible. Registros recuperados: ${events?.length || 0}`);
+      logger.info(`✅ [Supabase Diagnostic] Tabla "events" accesible. Registros recuperados: ${events?.length || 0}`);
       results.events = { ok: true, count: events?.length || 0 };
     }
 
     return { ok: true, results };
   } catch (e) {
-    console.error('❌ [Supabase Diagnostic] Error general de conexión:', e.message);
+    logger.error('❌ [Supabase Diagnostic] Error general de conexión:', e.message);
     return { ok: false, error: e.message };
   }
 }
@@ -123,7 +124,7 @@ export async function checkReadiness() {
 // Execute health check asynchronously on server startup
 if (supabaseClient) {
   checkSupabaseHealth().catch(err => {
-    console.error('❌ [Supabase Startup Check Failed]:', err.message);
+    logger.error('❌ [Supabase Startup Check Failed]:', err.message);
   });
 }
 

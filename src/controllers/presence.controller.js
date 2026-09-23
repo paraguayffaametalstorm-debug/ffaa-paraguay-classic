@@ -25,6 +25,7 @@
 
 import { getSupabase } from '../db/supabase.js';
 
+import { logger } from '../config/logger.js';
 // ========== CONSTANTES DE NEGOCIO ==========
 const PRESENCE_TTL_MINUTES = 5;
 const CLEANUP_AFTER_MINUTES = 60;
@@ -127,7 +128,7 @@ export async function markOnline(req, res) {
             );
 
         if (upsertError) {
-            console.error('❌ [presence.markOnline] Error:', upsertError);
+            logger.error('❌ [presence.markOnline] Error:', upsertError);
             return res.status(500).json({
                 success: false,
                 error: 'Error al registrar presencia',
@@ -148,7 +149,7 @@ export async function markOnline(req, res) {
             message: 'Presencia registrada como ONLINE'
         });
     } catch (err) {
-        console.error('❌ [presence.markOnline] Excepción:', err);
+        logger.error('❌ [presence.markOnline] Excepción:', err);
         return res.status(500).json({
             success: false,
             error: 'Error interno del servidor',
@@ -195,7 +196,7 @@ export async function markOffline(req, res) {
             .eq('user_id', uuid);
 
         if (updateError) {
-            console.error('❌ [presence.markOffline] Error:', updateError);
+            logger.error('❌ [presence.markOffline] Error:', updateError);
             return res.status(500).json({
                 success: false,
                 error: 'Error al actualizar presencia',
@@ -215,7 +216,7 @@ export async function markOffline(req, res) {
             message: 'Presencia registrada como OFFLINE'
         });
     } catch (err) {
-        console.error('❌ [presence.markOffline] Excepción:', err);
+        logger.error('❌ [presence.markOffline] Excepción:', err);
         return res.status(500).json({
             success: false,
             error: 'Error interno del servidor',
@@ -246,7 +247,7 @@ export async function getActiveCount(req, res) {
             .gt('last_seen', minutesAgo(PRESENCE_TTL_MINUTES));
 
         if (error) {
-            console.error('❌ [presence.getActiveCount] Error:', error);
+            logger.error('❌ [presence.getActiveCount] Error:', error);
             return res.status(500).json({
                 success: false,
                 error: 'Error al consultar presencia',
@@ -259,7 +260,7 @@ export async function getActiveCount(req, res) {
             ttl_minutes: PRESENCE_TTL_MINUTES
         });
     } catch (err) {
-        console.error('❌ [presence.getActiveCount] Excepción:', err);
+        logger.error('❌ [presence.getActiveCount] Excepción:', err);
         return res.status(500).json({
             success: false,
             error: 'Error interno del servidor',
@@ -278,7 +279,7 @@ export async function cleanupPresence() {
     try {
         const supabase = getSupabase();
         if (!supabase) {
-            console.warn('⚠️ [presence.cleanup] Supabase no disponible');
+            logger.warn('⚠️ [presence.cleanup] Supabase no disponible');
             return { deleted: 0 };
         }
 
@@ -288,16 +289,16 @@ export async function cleanupPresence() {
             .lt('last_seen', minutesAgo(CLEANUP_AFTER_MINUTES));
 
         if (error) {
-            console.error('❌ [presence.cleanup] Error:', error);
+            logger.error('❌ [presence.cleanup] Error:', error);
             return { deleted: 0, error: error.message };
         }
 
         if (count > 0) {
-            console.log(`🧹 [presence.cleanup] ${count} registros obsoletos eliminados`);
+            logger.info(`🧹 [presence.cleanup] ${count} registros obsoletos eliminados`);
         }
         return { deleted: count || 0 };
     } catch (err) {
-        console.error('❌ [presence.cleanup] Excepción:', err);
+        logger.error('❌ [presence.cleanup] Excepción:', err);
         return { deleted: 0, error: err.message };
     }
 }

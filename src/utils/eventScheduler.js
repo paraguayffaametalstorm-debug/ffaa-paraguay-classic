@@ -43,6 +43,7 @@
 import cron from 'node-cron';
 import { getSupabase } from '../db/supabase.js';
 
+import { logger } from '../config/logger.js';
 // ============================================================
 // CONSTANTES DE TIMEZONE
 // ============================================================
@@ -223,12 +224,12 @@ async function tryAcquireLock(supabase) {
   try {
     const { data, error } = await supabase.rpc('acquire_scheduler_lock');
     if (error) {
-      console.warn('⚠️ [Scheduler] Error adquiriendo lock:', error.message);
+      logger.warn('⚠️ [Scheduler] Error adquiriendo lock:', error.message);
       return false;
     }
     return Boolean(data);
   } catch (err) {
-    console.warn('⚠️ [Scheduler] Excepción adquiriendo lock:', err.message);
+    logger.warn('⚠️ [Scheduler] Excepción adquiriendo lock:', err.message);
     return false;
   }
 }
@@ -237,7 +238,7 @@ async function releaseLock(supabase) {
   try {
     await supabase.rpc('release_scheduler_lock');
   } catch (err) {
-    console.warn('⚠️ [Scheduler] Excepción liberando lock:', err.message);
+    logger.warn('⚠️ [Scheduler] Excepción liberando lock:', err.message);
   }
 }
 
@@ -265,7 +266,7 @@ async function openScheduledEvents(supabase) {
     .lte('start_date', now);
 
   if (error) {
-    console.error('❌ [Scheduler] Error consultando SCHEDULED:', error.message);
+    logger.error('❌ [Scheduler] Error consultando SCHEDULED:', error.message);
     return;
   }
 
@@ -281,7 +282,7 @@ async function openScheduledEvents(supabase) {
     .limit(1);
 
   if (openErr) {
-    console.error('❌ [Scheduler] Error consultando OPEN actual:', openErr.message);
+    logger.error('❌ [Scheduler] Error consultando OPEN actual:', openErr.message);
     return;
   }
 
@@ -289,7 +290,7 @@ async function openScheduledEvents(supabase) {
 
   for (const ev of toOpen) {
     if (hasOpen) {
-      console.warn(
+      logger.warn(
         `⚠️ [Scheduler] No puedo abrir ${ev.name}: ya hay un evento OPEN ` +
         `(${currentOpen[0].name}). Requiere revisión manual (HALL-066).`
       );
@@ -305,9 +306,9 @@ async function openScheduledEvents(supabase) {
       .eq('id', ev.id);
 
     if (updateErr) {
-      console.error(`❌ [Scheduler] Error abriendo ${ev.name}:`, updateErr.message);
+      logger.error(`❌ [Scheduler] Error abriendo ${ev.name}:`, updateErr.message);
     } else {
-      console.log(`🟢 [Scheduler] Evento abierto: ${ev.legacy_event_id || ev.name}`);
+      logger.info(`🟢 [Scheduler] Evento abierto: ${ev.legacy_event_id || ev.name}`);
     }
   }
 }
@@ -333,7 +334,7 @@ async function closeExpiredEvents(supabase) {
     .lte('end_date', now);
 
   if (error) {
-    console.error('❌ [Scheduler] Error consultando OPEN expirados:', error.message);
+    logger.error('❌ [Scheduler] Error consultando OPEN expirados:', error.message);
     return;
   }
 
@@ -352,9 +353,9 @@ async function closeExpiredEvents(supabase) {
       .eq('id', ev.id);
 
     if (updateErr) {
-      console.error(`❌ [Scheduler] Error cerrando ${ev.name}:`, updateErr.message);
+      logger.error(`❌ [Scheduler] Error cerrando ${ev.name}:`, updateErr.message);
     } else {
-      console.log(`🔴 [Scheduler] Evento cerrado: ${ev.legacy_event_id || ev.name}`);
+      logger.info(`🔴 [Scheduler] Evento cerrado: ${ev.legacy_event_id || ev.name}`);
     }
   }
 }
@@ -379,11 +380,11 @@ async function ensureNextSquadronEvent(supabase) {
 
   const exists = await eventExists(supabase, isoWeek, isoYear);
   if (exists) {
-    console.log(`✅ [Scheduler] Evento SQ ${isoYear}-W${isoWeek} ya existe. Nada que hacer.`);
+    logger.info(`✅ [Scheduler] Evento SQ ${isoYear}-W${isoWeek} ya existe. Nada que hacer.`);
     return;
   }
 
-  console.log(`🔧 [Scheduler] Preparando evento SQ ${isoYear}-W${isoWeek} (SCHEDULED)...`);
+  logger.info(`🔧 [Scheduler] Preparando evento SQ ${isoYear}-W${isoWeek} (SCHEDULED)...`);
   await createSquadronEvent(supabase, isoWeek, isoYear, 'SCHEDULED', false);
 }
 
@@ -405,7 +406,7 @@ async function eventExists(supabase, isoWeek, isoYear) {
     .limit(1);
 
   if (error) {
-    console.warn('⚠️ [Scheduler] Error verificando existencia:', error.message);
+    logger.warn('⚠️ [Scheduler] Error verificando existencia:', error.message);
     return false;
   }
 
@@ -443,7 +444,7 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'SCHEDUL
   // ⚠️ GUARDA DE SEGURIDAD HALL-066:
   // Un evento futuro NUNCA debe crearse como OPEN.
   if (status === 'OPEN' && start > new Date()) {
-    console.warn(
+    logger.warn(
       `⚠️ [Scheduler] Intento de crear evento futuro como OPEN. Forzando a SCHEDULED. ` +
       `(isoWeek=${isoWeek}, isoYear=${isoYear}, start=${start.toISOString()})`
     );
@@ -485,11 +486,11 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'SCHEDUL
     .single();
 
   if (error) {
-    console.error('❌ [Scheduler] Error creando evento:', error.message);
+    logger.error('❌ [Scheduler] Error creando evento:', error.message);
     return null;
   }
 
-  console.log(`✨ [Scheduler] Evento creado: ${legacyId} (${status})`);
+  logger.info(`✨ [Scheduler] Evento creado: ${legacyId} (${status})`);
   return data;
 }
 
@@ -512,13 +513,13 @@ async function createSquadronEvent(supabase, isoWeek, isoYear, status = 'SCHEDUL
 export async function schedulerTick() {
   const supabase = getSupabase();
   if (!supabase) {
-    console.warn('⚠️ [Scheduler] Supabase no disponible, saltando tick.');
+    logger.warn('⚠️ [Scheduler] Supabase no disponible, saltando tick.');
     return;
   }
 
   const lockAcquired = await tryAcquireLock(supabase);
   if (!lockAcquired) {
-    console.log('⏳ [Scheduler] Lock no adquirido (otra réplica está ejecutando).');
+    logger.info('⏳ [Scheduler] Lock no adquirido (otra réplica está ejecutando).');
     return;
   }
 
@@ -527,7 +528,7 @@ export async function schedulerTick() {
     const isoWeek = getISOWeek(now);
     const isoYear = getISOYear(now);
 
-    console.log(`🕐 [Scheduler] Tick — Semana ISO actual: ${isoYear}-W${isoWeek}`);
+    logger.info(`🕐 [Scheduler] Tick — Semana ISO actual: ${isoYear}-W${isoWeek}`);
 
     // TAREA 1: Abrir eventos SCHEDULED que llegaron a su hora
     await openScheduledEvents(supabase);
@@ -538,14 +539,14 @@ export async function schedulerTick() {
     // TAREA 3: Preparar el evento de la próxima semana
     await ensureNextSquadronEvent(supabase);
 
-    console.log('✅ [Scheduler] Tick completado.');
+    logger.info('✅ [Scheduler] Tick completado.');
 
     // FIX-306: registrar tick exitoso para healthchecks
     schedulerState.lastTickAt = new Date();
     schedulerState.lastTickStatus = 'OK';
     schedulerState.lastTickError = null;
   } catch (err) {
-    console.error('❌ [Scheduler] Error en tick:', err.message);
+    logger.error('❌ [Scheduler] Error en tick:', err.message);
     // FIX-306: registrar tick fallido para healthchecks
     schedulerState.lastTickAt = new Date();
     schedulerState.lastTickStatus = 'ERROR';
@@ -567,18 +568,18 @@ export async function schedulerTick() {
 export async function backfillRecentWeeks(weeksBack = 12) {
   const supabase = getSupabase();
   if (!supabase) {
-    console.warn('⚠️ [Scheduler Backfill] Supabase no disponible.');
+    logger.warn('⚠️ [Scheduler Backfill] Supabase no disponible.');
     return;
   }
 
   const lockAcquired = await tryAcquireLock(supabase);
   if (!lockAcquired) {
-    console.log('⏳ [Scheduler Backfill] Lock no adquirido.');
+    logger.info('⏳ [Scheduler Backfill] Lock no adquirido.');
     return;
   }
 
   try {
-    console.log(`🔧 [Scheduler Backfill] Verificando últimas ${weeksBack} semanas...`);
+    logger.info(`🔧 [Scheduler Backfill] Verificando últimas ${weeksBack} semanas...`);
     const now = new Date();
     let createdCount = 0;
 
@@ -597,9 +598,9 @@ export async function backfillRecentWeeks(weeksBack = 12) {
       createdCount++;
     }
 
-    console.log(`✅ [Scheduler Backfill] Completado. Eventos creados: ${createdCount}`);
+    logger.info(`✅ [Scheduler Backfill] Completado. Eventos creados: ${createdCount}`);
   } catch (err) {
-    console.error('❌ [Scheduler Backfill] Error:', err.message);
+    logger.error('❌ [Scheduler Backfill] Error:', err.message);
   } finally {
     await releaseLock(supabase);
   }
@@ -615,9 +616,9 @@ export async function backfillRecentWeeks(weeksBack = 12) {
  * - Registra el cron job cada 1 hora.
  */
 export function startEventScheduler() {
-  console.log('🕐 [Scheduler] Iniciando scheduler de eventos SQ (v2.0 — HALL-066 fix)...');
-  console.log(`🕐 [Scheduler] Timezone PY offset: UTC-${PY_OFFSET_HOURS} (Jue 09:00 PY → Lun 08:59 PY)`);
-  console.log(`🕐 [Scheduler] Ventana de carga SQ: 7 días (Jue 09:00 PY → Jue 08:59 PY)`);
+  logger.info('🕐 [Scheduler] Iniciando scheduler de eventos SQ (v2.0 — HALL-066 fix)...');
+  logger.info(`🕐 [Scheduler] Timezone PY offset: UTC-${PY_OFFSET_HOURS} (Jue 09:00 PY → Lun 08:59 PY)`);
+  logger.info(`🕐 [Scheduler] Ventana de carga SQ: 7 días (Jue 09:00 PY → Jue 08:59 PY)`);
 
   // FIX-306: registrar arranque para healthchecks
   schedulerState.started = true;
@@ -625,13 +626,13 @@ export function startEventScheduler() {
 
   // Cron: cada 1 hora en punto
   cron.schedule('0 * * * *', () => {
-    console.log('🕐 [Scheduler] Tick horario...');
+    logger.info('🕐 [Scheduler] Tick horario...');
     schedulerTick().catch(err => {
-      console.error('❌ [Scheduler] Error en tick horario:', err.message);
+      logger.error('❌ [Scheduler] Error en tick horario:', err.message);
     });
   });
 
-  console.log('✅ [Scheduler] Scheduler v2.0 iniciado. Cron: cada 1 hora.');
+  logger.info('✅ [Scheduler] Scheduler v2.0 iniciado. Cron: cada 1 hora.');
 }
 
 // ============================================================
