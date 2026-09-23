@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura del Sistema - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.5.2-hotfix).**
+> **Especificación Técnica de Arquitectura de Software, Seguridad C4ISR, Modelado de Datos, Resiliencia y Flujos Operativos (Versión v4.5.8).**
 
 ---
 
@@ -1002,6 +1002,6 @@ Para optimizar la experiencia operativa de los pilotos en desktop y mobile, el H
 
 ---
 
-*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*
+*Versión: v4.5.8 · Actualizado: 2026-09-22*
 
 

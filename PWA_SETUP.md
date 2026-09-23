@@ -1,6 +1,6 @@
 # 📱 Configuración PWA y Modo Offline - PARAGUAY-FFAA | METALSTORM
 
-> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v4.5.2-hotfix.**
+> **Especificación y Guía de Despliegue de la Progressive Web App (PWA) Táctica y Service Worker v4.5.8.**
 
 ---
 
@@ -84,4 +84,4 @@ Cuando se despliega una nueva versión del sistema (v4.3.0):
 
 ---
 
-*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*
+*Versión: v4.5.8 · Actualizado: 2026-09-22*

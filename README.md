@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v4.5.3-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Version](https://img.shields.io/badge/version-v4.5.8-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
 [![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.fly.dev/)
@@ -648,6 +648,6 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 ## 📜 Licencia y Confidencialidad
 
 © 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.
-*Versión: v4.5.3 · Actualizado: 2026-09-22*  
+*Versión: v4.5.8 · Actualizado: 2026-09-22*  
 *Uso exclusivo y reservado para los miembros del escuadrón militar.*
 

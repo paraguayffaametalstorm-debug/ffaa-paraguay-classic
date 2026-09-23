@@ -1,6 +1,6 @@
 # 📖 Manual de Usuario y Piloto - PARAGUAY-FFAA | METALSTORM
 
-> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v4.5.2-hotfix).**
+> **Manual Operativo Oficial para Pilotos y Oficiales del Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm (Versión v4.5.8).**
 
 ---
 
@@ -447,4 +447,4 @@ A partir de la versión v3.9.9, las descripciones in-game, historias y recomenda
 ---
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**  
-*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*
+*Versión: v4.5.8 · Actualizado: 2026-09-22*
