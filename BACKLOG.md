@@ -183,3 +183,4 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **HALL-066** | 🐛 | Cadena de 6 bugs bloqueando carga de W38 (v4.5.2-hotfix) | 2026-09-22 | `7157492` |
 | **HALL-S2-02** | 🐛 | Dropdown de rol frontend no permitía seleccionar ADMIN | 2026-09-22 | `13501af` |
 | **FIX-PARTICIPATION-EDIT** | ✨ | Edición de participaciones existentes con jerarquía + self-mod check | 2026-09-22 | `ed6b45e` |
+| **HALL-070** | 🐛 | Script de migración inserta imports dentro de imports multilínea | 2026-09-23 | (resuelto en FIX-308) |
