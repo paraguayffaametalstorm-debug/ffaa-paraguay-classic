@@ -31,4 +31,4 @@ primary_region = "gru"
   interval = "10s"
   timeout = "5s"
   method = "GET"
-  path = "/api/health"
+  path = "/health"    # ← FIX-306: Liveness puro (sin dependencias). Fly.io reinicia si el proceso muere, NO si Supabase tiene un blip.

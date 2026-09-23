@@ -16,7 +16,7 @@ import { logger } from '../config/logger.js';
 // ========== LÍMITES DE ROL CENTRALIZADOS ==========
 // HALL-053/054: Fuente única de verdad para cuotas jerárquicas.
 // ADMIN actualizado de 3 → 5 por decisión del OWNER (2026-09-16).
-const ROLE_LIMITS = {
+export const ROLE_LIMITS = {
   OWNER: 1,
   ADMIN: 5,
   VETERANO: 8

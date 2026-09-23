@@ -81,6 +81,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-022** | 🧪 | Tests de integración para /api/dashboard/summary | 📋 Priorizado | S (4h) | Evitaría recurrencia de HALL-067. Cubrir: status 200, campos obligatorios (meta_tokens_sq, pilots_without_load, eventType), caso usuario sin perfil. |
 | **BL-023** | 🏗️ | Unificar encoding de archivos JS a LF (.editorconfig + .gitattributes) | 📋 Priorizado | XS (1h) | Causa raíz de HALL-068. Agregar * text=auto eol=lf en .gitattributes y end_of_line = lf en .editorconfig. |
 | **BL-024** | 🔐 | Eliminar `'unsafe-inline'` del CSP (FIX-103) | 📋 Diferido | L (2-3 días) | Requiere migrar ~200 `onclick` inline a `addEventListener` + nonce/hash. Diferido del Sprint 2 al Sprint 3 por bajo riesgo residual y mayor valor del Sprint 3 (tests + observabilidad). |
+| **BL-025** | 🧪 | Re-implementar tests de admin/owner/auth/rbac con schemas reales | 📋 Priorizado | M (1 día) | 69 tests skipeados en Sprint 3 (FIX-301/302/303/304) porque asumen schemas de respuesta que no coinciden con el controller real (ej: `backup.users_count` vs `backup.file`, `400` vs `409` en conflictos, supertest+MSW no matchea con `127.0.0.1:PORT`). Requiere mapear el contrato real de cada controller y actualizar los `expect()`. Ref: Sprint 3. |
 
 ### 🟡 Prioridad Baja (Could Have)
 
@@ -145,7 +146,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 17 |
+| Items activos | 18 |
 | Items completados | 9 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
@@ -184,3 +185,5 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **HALL-S2-02** | 🐛 | Dropdown de rol frontend no permitía seleccionar ADMIN | 2026-09-22 | `13501af` |
 | **FIX-PARTICIPATION-EDIT** | ✨ | Edición de participaciones existentes con jerarquía + self-mod check | 2026-09-22 | `ed6b45e` |
 | **HALL-070** | 🐛 | Script de migración inserta imports dentro de imports multilínea | 2026-09-23 | (resuelto en FIX-308) |
+| **FIX-306** | 🧪 | Health checks separados (liveness vs readiness) | 2026-09-23 | (Sprint 3) |
+| **Sprint 3 (parcial)** | 🧪 | 287 tests pasando · 69 skipeados (BL-025) | 2026-09-23 | (Sprint 3) |
