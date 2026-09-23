@@ -722,9 +722,34 @@ Carga una participación (tokens para SQ, misiones para BM).
 
 - **Acceso:** Autenticado.
 - **Reglas:**
-  - Solo en eventos `OPEN`.
+  - Solo en eventos `OPEN` (o `CLOSED` con ventana de carga abierta — ADR-008).
   - Un usuario puede tener máximo **1 participación activa** por evento.
   - Los `computed_points` se calculan según tipo de evento (SQ: tokens; BM: fórmula 25 pts/misión + bonus diario).
+
+**Conflicto de duplicado (FIX-PARTICIPATION-EDIT, v4.5.9):**
+
+Si el piloto ya tiene una participación en el evento, el endpoint devuelve
+`409` con el **registro existente** en el campo `existing`, para que el
+cliente pueda resolver el conflicto (sobrescribir vía PUT o cancelar).
+Sigue las recomendaciones de **RFC 9110 §15.5.10**.
+
+```json
+{
+  "success": false,
+  "error": "Ya existe una participación para este piloto en este evento.",
+  "code": "PARTICIPATION_EXISTS",
+  "existing": {
+    "id": "uuid",
+    "user_id": "uuid-piloto",
+    "nick": "Viper_PY",
+    "data": { "tokens": 185, "days_connected": 6, "flew_in_group": true, "notes": "..." },
+    "computed_points": 185,
+    "status": "PENDING",
+    "created_at": "2026-09-22T14:30:00Z",
+    "updated_at": "2026-09-22T14:30:00Z"
+  }
+}
+```
 - **Request Body (SQ):**
   ```json
   {
@@ -755,15 +780,24 @@ Carga una participación (tokens para SQ, misiones para BM).
 
 Edita una participación existente.
 
-- **Acceso:** Autenticado (solo el propio usuario o `ADMIN`/`OWNER`).
+- **Acceso:** Solo `ADMIN` o `OWNER` (FIX-PARTICIPATION-EDIT, v4.5.9).
+- **Restricción de jerarquía:**
+  - Solo ADMIN/OWNER pueden modificar participaciones existentes.
+  - Un ADMIN/OWNER **NO puede modificar su propio registro** (Separación de Deberes).
 - **Request Body:** igual que el POST pero con modo reemplazo total.
 - **Response Exitosa (200 OK):**
   ```json
   {
     "success": true,
+    "message": "Participación actualizada exitosamente",
     "participation": { "...participación actualizada..." }
   }
   ```
+- **Errores Posibles:**
+  - `403 UPDATE_FORBIDDEN`: MIEMBRO/VETERANO intenta modificar un registro existente.
+  - `403 SELF_MODIFICATION_FORBIDDEN`: un ADMIN/OWNER intenta modificar su propio registro.
+  - `404 PARTICIPATION_NOT_FOUND`: la participación no existe.
+  - `409 SUBMISSION_WINDOW_CLOSED`: la ventana de carga ya cerró (ADR-008).
 
 #### `DELETE /api/events-v2/:id/participations/:userId`
 
