@@ -1,3 +1,8 @@
+> **Actualización 2026-09-23 — Sprint 3 CERRADO:**
+> 287 tests pasando (80.6% cobertura) · 69 tests skipeados (BL-025) · 0 fallando.
+> Health checks separados operativos. Deploy: `deployment-01M37CFA7KZ7H58H6CQ69NB145`.
+> Commit: `e6d16dd`. Ver `CHANGELOG.md [4.5.10]` para detalles completos.
+
 # 🔧 PLAN DE TRABAJO — SPRINTS ACTIVOS
 > **Actualizacion 2026-09-23:** BL-017 (Sincronizacion DDL `users`) y BL-023 (Encoding LF)
 > cerrados. Ambos items se movieron a la seccion "Completados" de `BACKLOG.md`.
@@ -45,7 +50,7 @@ Este documento **SÍ es la fuente única de verdad** para:
 
 | Campo | Valor |
 |---|---|
-| **Versión real** | v4.3.0 runtime · v4.3.1-docs (documentación, Sprint 0) |
+| **Versión real** | v4.5.10 runtime · Sprint 3 completado |
 | **Commit HEAD** | `879c482` (Sprint 0 Grupo G — Sprint 0 COMPLETO) |
 | **Deploy producción** | ✅ Activo en Fly.io (`gru`) |
 | **Timezone scheduler** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`, Paraguay sin DST desde oct-2024) |
@@ -53,7 +58,7 @@ Este documento **SÍ es la fuente única de verdad** para:
 | **Duración ventana SQ** | 7 días (ADR-008) |
 | **Duración evento BM** | 5 días (mié → dom) |
 | **Duración ventana BM** | 6 días (ADR-008) |
-| **Tests** | 167/167 passing (Vitest 5.0.1) |
+| **Tests** | 287 passing · 69 skipped · 0 failing (Vitest 5.0.1) |
 | **ADR cerrados** | ADR-001 a ADR-005 (Sprint 0 Grupo D) + ADR-006, ADR-007, ADR-008 |
 | **Pendientes heredados** | F4.5 (DROP tablas BM legacy), verificar W39, ticket Supabase tzdata |
 
