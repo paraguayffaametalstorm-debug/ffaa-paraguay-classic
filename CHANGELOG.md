@@ -1,4 +1,123 @@
 
+## [4.5.9] - 2026-09-22
+
+### 🎖️ FIX-PARTICIPATION-EDIT — Edición de participaciones existentes
+
+#### Objetivo Cumplido
+
+Permitir que un ADMIN/OWNER pueda **modificar una participación existente** cuando
+un piloto ya fue registrado en un evento. Antes, la API devolvía un 409 seco
+sin información del registro previo, y el frontend no ofrecía resolverlo.
+
+Se aplican **mejores prácticas de diseño de API (RFC 9110)**:
+- El `409 Conflict` incluye el **registro existente** para permitir al cliente
+  resolver el conflicto con contexto.
+- Solo ADMIN/OWNER pueden modificar (Principio de Menor Privilegio).
+- Ningún ADMIN/OWNER puede modificar su **propio registro** (Separación de Deberes).
+
+#### Problema Detectado
+
+- **Backend:** `createParticipation` devolvía `409 PARTICIPATION_EXISTS`
+  sin el registro existente en el body.
+- **Backend:** `updateParticipation` no validaba jerarquía ni self-modification.
+- **Frontend:** `savePerformance()` mostraba solo un toast de error al 409,
+  sin ofrecer al usuario actualizar el registro.
+
+#### Solución Implementada
+
+**Capa 1 — Backend (`createParticipation`):**
+
+En el `409 PARTICIPATION_EXISTS`, ahora se devuelve el registro existente
+completo en el campo `existing`:
+
+```json
+{
+  "success": false,
+  "error": "Ya existe una participación para este piloto en este evento.",
+  "code": "PARTICIPATION_EXISTS",
+  "existing": {
+    "id": "uuid-participacion",
+    "event_id": "uuid-evento",
+    "user_id": "uuid-piloto",
+    "nick": "Viper_PY",
+    "data": { "tokens": 185, "days_connected": 6, ... },
+    "computed_points": 185,
+    "status": "PENDING",
+    "created_at": "...",
+    "updated_at": "..."
+  }
+}
+```
+
+**Capa 2 — Backend (`updateParticipation`):**
+
+Se agregaron 2 validaciones al inicio:
+
+1. **`UPDATE_FORBIDDEN` (403):** Solo `ADMIN` y `OWNER` pueden modificar
+   participaciones. MIEMBRO/VETERANO reciben 403 con mensaje claro.
+2. **`SELF_MODIFICATION_FORBIDDEN` (403):** Un ADMIN/OWNER no puede modificar
+   su **propio registro**. Debe pedirle a otro ADMIN.
+
+**Capa 3 — Frontend (`savePerformance`):**
+
+Cuando el POST devuelve `409 PARTICIPATION_EXISTS`:
+
+1. Toast informativo: *"⚠️ Ya existe un registro previo para este piloto..."*
+2. `confirm()` con **comparación lado a lado**:
+   ```
+   📊 Registro actual:
+     • Tokens:       185
+     • Días:         6
+     • Grupo:        Sí
+     • Estado:       PENDING
+     • Creado:       2026-09-22 14:30
+     • Actualizado:  2026-09-22 15:45
+     • Notas:        "Patrulla CAP"
+
+   🆕 Datos nuevos a cargar:
+     • Tokens:       210
+     • Días:         7
+     • Grupo:        Sí
+     • Notas:        "Revisión post-misión"
+
+   ¿Reemplazar el registro anterior?
+   ```
+3. Si confirma → `PUT /api/events-v2/:id/participations/:uid` con los nuevos datos.
+4. Si cancela → toast informativo sin cambios.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `src/controllers/events-v2.controller.js` | `createParticipation` incluye `existing` en 409. `updateParticipation` con validación jerarquía + self-mod. |
+| `js/performance.js` | `savePerformance` maneja 409 con confirm + PUT. |
+
+#### Comportamiento Visible (UI)
+
+- **Antes:** el usuario veía *"Ya existe una participación..."* y no podía hacer nada.
+- **Ahora:** ve el registro previo completo, puede decidir reemplazarlo o cancelar.
+- **MIEMBRO/VETERANO:** reciben un error claro si intentan modificar (no aplica desde el form).
+- **ADMIN/OWNER:** pueden modificar registros ajenos, pero **no el propio**.
+
+#### Rollback
+
+- **Sin redeploy (30 seg):** `git revert <hash> && git push origin main && fly deploy`
+- Los backups de código están en `*.bak-participation-edit`.
+
+#### Verificación
+
+- ✅ `node --check` OK en los 2 archivos modificados.
+- ✅ `git diff --stat`: 2 files changed, +157 insertions, -1 deletion.
+- ✅ Commit `ed6b45e`.
+- ⏳ Smoke test end-to-end pendiente.
+
+#### Referencias
+
+- `API_REFERENCE.md` — actualizado con `existing` en 409 y `SELF_MODIFICATION_FORBIDDEN` en PUT.
+- Commit `ed6b45e`.
+
+---
+
 ## [4.5.8] - 2026-09-22
 
 ### 🎖️ FIX-105 — Cambio de status de evento atómico (RPC + fallback)
