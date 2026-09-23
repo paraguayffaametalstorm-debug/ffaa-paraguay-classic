@@ -64,6 +64,38 @@ const SQ_CLOSE_MINUTE_PY = 59;
 const SQ_TYPE = 'SQUADRON';
 
 // ============================================================
+// FIX-306: Estado del scheduler para healthchecks
+// ============================================================
+// El scheduler reporta su estado en /api/health pero NO bloquea el
+// readiness (es una tarea de mantenimiento, no de servicio al usuario).
+// ============================================================
+
+const schedulerState = {
+  started: false,
+  startedAt: null,
+  lastTickAt: null,
+  lastTickStatus: null,   // 'OK' | 'ERROR' | null
+  lastTickError: null
+};
+
+/**
+ * FIX-306: Devuelve el estado actual del scheduler para healthchecks.
+ * @returns {object}
+ */
+export function getSchedulerStatus() {
+  return {
+    started: schedulerState.started,
+    started_at: schedulerState.startedAt ? schedulerState.startedAt.toISOString() : null,
+    last_tick_at: schedulerState.lastTickAt ? schedulerState.lastTickAt.toISOString() : null,
+    last_tick_status: schedulerState.lastTickStatus,
+    last_tick_error: schedulerState.lastTickError,
+    uptime_seconds: schedulerState.startedAt
+      ? Math.round((Date.now() - schedulerState.startedAt.getTime()) / 1000)
+      : 0
+  };
+}
+
+// ============================================================
 // HELPERS DE FECHA / ISO WEEK
 // ============================================================
 
@@ -507,8 +539,17 @@ export async function schedulerTick() {
     await ensureNextSquadronEvent(supabase);
 
     console.log('✅ [Scheduler] Tick completado.');
+
+    // FIX-306: registrar tick exitoso para healthchecks
+    schedulerState.lastTickAt = new Date();
+    schedulerState.lastTickStatus = 'OK';
+    schedulerState.lastTickError = null;
   } catch (err) {
     console.error('❌ [Scheduler] Error en tick:', err.message);
+    // FIX-306: registrar tick fallido para healthchecks
+    schedulerState.lastTickAt = new Date();
+    schedulerState.lastTickStatus = 'ERROR';
+    schedulerState.lastTickError = err?.message || String(err);
   } finally {
     await releaseLock(supabase);
   }
@@ -578,6 +619,10 @@ export function startEventScheduler() {
   console.log(`🕐 [Scheduler] Timezone PY offset: UTC-${PY_OFFSET_HOURS} (Jue 09:00 PY → Lun 08:59 PY)`);
   console.log(`🕐 [Scheduler] Ventana de carga SQ: 7 días (Jue 09:00 PY → Jue 08:59 PY)`);
 
+  // FIX-306: registrar arranque para healthchecks
+  schedulerState.started = true;
+  schedulerState.startedAt = new Date();
+
   // Cron: cada 1 hora en punto
   cron.schedule('0 * * * *', () => {
     console.log('🕐 [Scheduler] Tick horario...');
@@ -607,3 +652,5 @@ export {
   buildEventName,
   buildLegacyEventId
 };
+// Nota: getSchedulerStatus se exporta como named export arriba (FIX-306),
+// no se duplica acá para evitar conflictos.
