@@ -1,4 +1,9 @@
 # 🔧 PLAN DE TRABAJO — SPRINTS ACTIVOS
+> **Actualizacion 2026-09-23:** BL-017 (Sincronizacion DDL `users`) y BL-023 (Encoding LF)
+> cerrados. Ambos items se movieron a la seccion "Completados" de `BACKLOG.md`.
+> Ver `CHANGELOG.md` `[4.5.9]` para detalles completos.
+
+
 ## PARAGUAY-FFAA | METALSTORM
 
 > **Documento operativo de correcciones, sincronización documental y deuda técnica.**

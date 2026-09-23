@@ -1,4 +1,77 @@
 
+> **Nota de higiene del repo (2026-09-23):** El commit `aa4e951` contiene
+> los archivos de **BL-017** (`sql/001_users.sql` + `sql/039_sync_users_schema.sql`)
+> pero su mensaje dice `chore(hall-s2-02)` por un error de tipeo durante el
+> commit. El codigo es correcto, funcional y desplegado; solo el mensaje del
+> commit es cosmeticamente incorrecto. No se reescribe la historia (sin force
+> push sobre `main`). El script `apply-hall-s2-02.cjs` fue versionado
+> correctamente en `8f57a82`.
+
+---
+
+## [4.5.9] - 2026-09-23
+
+### Sincronizacion del Schema `users` + Higiene del Repo
+
+#### Objetivo Cumplido
+
+1. **BL-023 - Encoding LF:** Unificar line endings a LF en todo el repo (causa raiz de HALL-068).
+2. **BL-017 - Sincronizacion DDL `users`:** Alinear `sql/001_users.sql` con la BD real (HALL-061 + 4 discrepancias adicionales detectadas durante la verificacion).
+
+#### BL-023 - Encoding LF
+
+| Archivo | Cambio |
+|---|---|
+| `.editorconfig` | NUEVO. `end_of_line = lf` para todo el repo. |
+| `.gitattributes` | NUEVO. `text=auto eol=lf` + binarios explicitos. |
+| Commit | `18c1183` |
+
+**Objetivo:** eliminar la causa raiz de HALL-068 (scripts `.cjs` con anchors fragiles por CRLF/LF mixtos).
+
+#### BL-017 - Sincronizacion DDL `users` (HALL-061)
+
+| Cambio | DDL antes | DDL despues | BD real | Accion |
+|---|---|---|---|---|
+| `google_id` | `TEXT` (declarado) | `TEXT` | Ausente | **Agregado a BD** + indice parcial |
+| `must_change_password` | `DEFAULT true` | `DEFAULT false` | `DEFAULT false` | DDL alineado a BD |
+| `token_version` | `DEFAULT 1` | `DEFAULT 1 NOT NULL` | `DEFAULT 0` | BD alineada a DDL |
+| `last_activity` | `TIMESTAMP` | `TIMESTAMPTZ` | `TIMESTAMPTZ` | DDL alineado a BD |
+| `created_at` | `TIMESTAMP` | `TIMESTAMPTZ` | `TIMESTAMPTZ` | DDL alineado a BD |
+| `updated_at` | `TIMESTAMP` | `TIMESTAMPTZ` | `TIMESTAMPTZ` | DDL alineado a BD |
+| `temporary_password_expires_at` | Ausente | `TIMESTAMPTZ` | Presente (v4.4.0) | Reflejado en DDL |
+| `nick_self_changed_at` | Ausente | `TIMESTAMPTZ` | Presente (v4.5.0) | Reflejado en DDL |
+
+#### Verificacion Previa
+
+- `token_version IS NULL`: **0 filas** (63 totales) -> `SET NOT NULL` seguro.
+- `must_change_password`: 13 `false` / 50 `true` -> cambio de default no afecta filas existentes.
+- **3 INSERTs en codigo** (`register`, `addMember`, `bulkUploadEvent`) fuerzan `must_change_password: true` explicitamente -> default nunca se usa.
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| `sql/039_sync_users_schema.sql` | NUEVO. Migracion idempotente. |
+| `sql/001_users.sql` | DDL sincronizado con BD real + v4.4.0 + v4.5.0. |
+| Commit | `aa4e951` (mensaje incorrecto, contenido correcto) |
+
+#### Verificacion Post-Migracion
+
+- BD: 63 usuarios, 0 filas con `token_version = NULL`.
+- Defaults: `must_change_password=false`, `token_version=1 NOT NULL`.
+- `google_id` agregada + indice `idx_users_google_id`.
+- Health check: `OK`.
+- Sistema 100% operativo.
+
+#### Referencias
+
+- `sql/039_sync_users_schema.sql`
+- `sql/001_users.sql`
+- `BACKLOG.md` - BL-017, BL-023 (movidos a Completados)
+- Commits: `18c1183`, `aa4e951`, `8f57a82`
+
+---
+
 ## [4.5.9] - 2026-09-22
 
 ### 🎖️ FIX-PARTICIPATION-EDIT — Edición de participaciones existentes

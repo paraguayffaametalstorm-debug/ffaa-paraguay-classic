@@ -1,8 +1,31 @@
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
+---
+
+## Cambios Recientes (2026-09-23)
+
+### BL-017 + BL-023 Completados
+
+| Tarea | Descripcion | Commit |
+|---|---|---|
+| **BL-023** | Encoding LF unificado (`.editorconfig` + `.gitattributes`) | `18c1183` |
+| **BL-017** | Sincronizacion DDL `users` con BD real (HALL-061 + defaults) | `aa4e951` |
+| **Higiene** | Versionar script historico HALL-S2-02 | `8f57a82` |
+
+**Migracion `sql/039_sync_users_schema.sql` aplicada en Supabase:**
+
+- `google_id TEXT` agregada + indice parcial (HALL-061).
+- `must_change_password` DEFAULT `true` -> `false`.
+- `token_version` DEFAULT `0` -> `1` + `NOT NULL`.
+
+**Verificacion:** 63 usuarios, 0 filas con `token_version = NULL`, health check `OK`.
+
+---
+
+
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión Activa:** v4.5.8 (FIX-101 + FIX-105: RPCs atómicas con fallback)
+> **Versión Activa:** v4.5.9 (FIX-101 + FIX-105: RPCs atómicas con fallback)
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 

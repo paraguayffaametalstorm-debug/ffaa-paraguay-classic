@@ -90,6 +90,10 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Presence** | `/api/presence/active` | `GET` | Público | Conteo de pilotos actualmente en línea |
 | **Profile** | `/api/profile` o `/me` | `GET` | Autenticado | Obtener expediente táctico del piloto |
 | **Profile** | `/api/profile` o `/me` | `PUT` | Autenticado | Actualizar Callsign, teléfono o bio. Acepta cambio de nick (v4.5.0). |
+> **Campo `google_id` (v4.5.8+):** La tabla `users` incluye la columna
+> `google_id TEXT` (nullable) con indice parcial `idx_users_google_id`. Almacena el
+> `sub` claim de Google OAuth 2.0. Agregado el 2026-09-23 como parte de BL-017 (HALL-061).
+
 ### `PUT /api/profile` — Actualización con cambio de nick (v4.5.0)
 
 - **Acceso:** Autenticado.
@@ -1661,6 +1665,6 @@ acepta eventos con `status === 'CLOSED'` si la ventana de carga está abierta
 
 ---
 
-*Versión: v4.5.8 · Actualizado: 2026-09-22*
+*Versión: v4.5.9 · Actualizado: 2026-09-23*
 
 

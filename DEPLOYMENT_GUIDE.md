@@ -277,4 +277,4 @@ Si se detecta una anomalía crítica tras el despliegue:
 
 ---
 
-*Versión: v4.5.8 · Actualizado: 2026-09-22*
+*Versión: v4.5.9 · Actualizado: 2026-09-23*

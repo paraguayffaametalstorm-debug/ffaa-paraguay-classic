@@ -41,6 +41,7 @@
 | 028 | `028_events_master.sql` | Tabla unificada de eventos (SQ, BM, futuros) — Rediseño |
 | 029 | `029_event_participations.sql` | Tabla unificada de participaciones — Rediseño |
 | 030 | `030_scheduler_locks.sql` | Advisory locks para scheduler de eventos |
+| 039 | `039_sync_users_schema.sql` | Sincronizacion DDL `users` con BD real (HALL-061 + defaults) |
 
 **Archivos legacy (no ejecutar):** `legacy/updates_v3.4.0.sql` — versión obsoleta de `password_resets` con tipos incorrectos. Conservado como referencia histórica.
 
