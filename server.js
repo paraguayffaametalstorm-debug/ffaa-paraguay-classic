@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { ENV } from './src/config/env.js';
 import { apiLimiter } from './src/middlewares/rateLimiter.js';
 import { errorHandler } from './src/middlewares/errorHandler.js';
+import { correlationIdMiddleware } from './src/middlewares/correlationId.js';
 import passport, { configurePassport } from './src/config/passport.js';
 
 // Route imports
@@ -297,6 +298,15 @@ app.use(
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
+// ============================================================
+// CORRELATION ID (FIX-307)
+// ============================================================
+// Asigna req.id (UUID) a cada request y devuelve X-Request-Id.
+// Se monta ANTES del apiLimiter para que incluso las requests
+// rechazadas por rate limit tengan un ID trazable.
+// ============================================================
+app.use(correlationIdMiddleware);
+
 // Global API rate limiter
 app.use('/api', apiLimiter);
 
@@ -341,7 +351,8 @@ app.use(['/api', '/auth'], (req, res) => {
   res.status(404).json({
     success: false,
     error: `Ruta de API no encontrada: ${req.method} ${req.originalUrl}`,
-    code: 'API_ENDPOINT_NOT_FOUND'
+    code: 'API_ENDPOINT_NOT_FOUND',
+    request_id: req.id || 'no-request-id' // FIX-307
   });
 });
 
