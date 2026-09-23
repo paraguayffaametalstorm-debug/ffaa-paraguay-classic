@@ -11,7 +11,25 @@
     </div>
   </div>
 
-  <!-- Admin General Stats -->
+  
+  <!-- =============================================================== -->
+  <!-- NAVEGACIÓN POR TABS (Fase 1 — Reorganización Panel Admin)      -->
+  <!-- =============================================================== -->
+  <div class="admin-tabs" role="tablist" aria-label="Secciones del Panel de Comandancia">
+    <button type="button" class="admin-tab-btn active" data-tab="Resumen" onclick="switchAdminTab('Resumen')" role="tab" aria-selected="true">
+      <span>📊</span> <span>Resumen</span>
+    </button>
+    <button type="button" class="admin-tab-btn" data-tab="Pilotos" onclick="switchAdminTab('Pilotos')" role="tab" aria-selected="false">
+      <span>👥</span> <span>Pilotos</span>
+    </button>
+    <button type="button" class="admin-tab-btn" data-tab="Eventos" onclick="switchAdminTab('Eventos')" role="tab" aria-selected="false">
+      <span>📅</span> <span>Eventos</span>
+    </button>
+  </div>
+
+  <!-- --- TAB 1: RESUMEN ------------------------------------------- -->
+  <div id="adminTabResumen" class="admin-tab-content active" data-tab-content="Resumen">
+<!-- Admin General Stats -->
   <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
     <div class="card stat-card" style="border-left:4px solid #2ecc71;">
       <h4>Pilotos Activos</h4>
@@ -37,9 +55,11 @@
     <div id="pilotsByStatus"></div>
   </div>
 
-  <!-- (Black Market Control eliminado en F4.3 · absorbido por #adminEventsV2Container) -->
+  </div>
 
-  <!-- Members Management Section -->
+  <!-- --- TAB 2: PILOTOS -------------------------------------------- -->
+  <div id="adminTabPilotos" class="admin-tab-content" data-tab-content="Pilotos">
+<!-- Members Management Section -->
   <div class="card" style="margin-bottom:1.5rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleMembersSection()">
       <h3>👥 Registro Oficial de Pilotos</h3>
@@ -186,7 +206,11 @@
     </div>
   </div>
 
-  <!-- Eventos Unificados v2 (F4.3) -->
+  </div>
+
+  <!-- --- TAB 3: EVENTOS -------------------------------------------- -->
+  <div id="adminTabEventos" class="admin-tab-content" data-tab-content="Eventos">
+<!-- Eventos Unificados v2 (F4.3) -->
   <div class="card" style="margin-top:1.5rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
       <div>
@@ -203,7 +227,32 @@
     </div>
   </div>
 
-  <!-- Modal Crear Evento (F4.3) -->
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- FIN DE LOS TABS                                                 -->
+  <!-- =============================================================== -->
+
+  <!-- Script: switchAdminTab (Fase 1 — aditivo, no toca nada existente) -->
+  <script>
+    window.switchAdminTab = function(tabName) {
+      document.querySelectorAll('#adminPanel .admin-tab-content').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      document.querySelectorAll('#adminPanel .admin-tab-btn').forEach(function(el) {
+        el.classList.remove('active');
+        el.setAttribute('aria-selected', 'false');
+      });
+      var content = document.getElementById('adminTab' + tabName);
+      var button  = document.querySelector('#adminPanel .admin-tab-btn[data-tab="' + tabName + '"]');
+      if (content) content.classList.add('active');
+      if (button) {
+        button.classList.add('active');
+        button.setAttribute('aria-selected', 'true');
+      }
+    };
+  </script>
+<!-- Modal Crear Evento (F4.3) -->
   <div id="adminEventCreateModal" class="modal">
     <div class="modal-content" style="max-width:620px;">
       <div class="modal-header">

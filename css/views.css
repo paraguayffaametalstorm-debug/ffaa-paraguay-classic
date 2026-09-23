@@ -1215,3 +1215,60 @@ body[data-theme="clasico"] .view h4  { color: #212529; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ===============================================================
+   ADMIN TABS (Fase 1 — Reorganización Panel Admin)
+   Aditivo. No modifica estilos existentes.
+   =============================================================== */
+
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.15);
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.admin-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #94a3b8;
+  font-family: var(--font-tactical, 'Rajdhani', sans-serif);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.admin-tab-btn:hover {
+  color: #cbd5e1;
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.admin-tab-btn.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+}
+
+.admin-tab-content {
+  display: none;
+}
+
+.admin-tab-content.active {
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .admin-tab-btn {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+}
