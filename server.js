@@ -26,9 +26,9 @@ import eventsV2Routes from './src/routes/events-v2.routes.js';
 import eventsV2BmRoutes from './src/routes/events-v2-bm.routes.js';
 import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
-import { startEventScheduler, getSchedulerStatus } from './src/utils/eventScheduler.js';
+import healthRoutes from './src/routes/health.routes.js';
+import { startEventScheduler } from './src/utils/eventScheduler.js';
 import { cleanupPresence } from './src/controllers/presence.controller.js';
-import { checkReadiness } from './src/db/supabase.js';
 import cron from 'node-cron';
 
 import { logger } from './src/config/logger.js';
@@ -133,62 +133,14 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ============================================================
-// IMMEDIATE FAST HEALTH CHECKS (Before heavy middlewares)
+// HEALTH CHECKS (FIX-306) — Liveness + Readiness
 // ============================================================
-
-// Lightweight plain text probe for Fly.io
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-
+// - GET /health       → Liveness puro (texto "OK", sin I/O). Fly.io check.
+// - GET /api/health   → Readiness real (verifica Supabase + scheduler).
+// Se monta ANTES de los middlewares pesados para respuesta instantánea.
+// Ver: src/routes/health.routes.js
 // ============================================================
-// READINESS HEALTHCHECK (FIX-306)
-// ============================================================
-// Diferencia con /health:
-//   - /health       → liveness puro (200 si el proceso responde).
-//   - /api/health   → readiness real. Chequea Supabase.
-//                     Si Supabase falla → 503 (Fly.io saca del LB).
-//
-// Query params:
-//   ?deep=false     → omite el chequeo de Supabase (respuesta rápida).
-//
-// El estado del scheduler se reporta pero NO bloquea el readiness
-// (es una tarea de mantenimiento, no de servicio al usuario).
-// ============================================================
-app.get('/api/health', async (req, res) => {
-  const startedAt = Date.now();
-  const deep = req.query.deep !== 'false';
-
-  const health = {
-    status: 'online',
-    system: 'PARAGUAY-FFAA | METALSTORM Tactical Core',
-    uptime: Math.round(process.uptime()),
-    timestamp: new Date().toISOString(),
-    checks: {}
-  };
-
-  if (deep) {
-    // Supabase: readiness real
-    const supa = await checkReadiness();
-    health.checks.supabase = {
-      ok: supa.ok,
-      reason: supa.reason || null,
-      message: supa.message || null,
-      duration_ms: Date.now() - startedAt
-    };
-
-    // Scheduler: informativo, no bloqueante
-    health.checks.scheduler = getSchedulerStatus();
-
-    // Supabase caído → readiness degradado
-    if (!supa.ok) {
-      health.status = 'degraded';
-      return res.status(503).json(health);
-    }
-  }
-
-  return res.status(200).json(health);
-});
+app.use(healthRoutes);
 
 // ============================================================
 // SECURITY & PERFORMANCE MIDDLEWARES

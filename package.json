@@ -34,6 +34,8 @@
   },
   "devDependencies": {
     "cloudinary": "^2.11.0",
+    "msw": "^2.15.0",
+    "supertest": "^7.3.0",
     "vitest": "^5.0.1"
   }
 }
