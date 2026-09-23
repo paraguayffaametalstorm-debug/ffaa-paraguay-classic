@@ -19,6 +19,7 @@
 
 import { randomUUID } from 'crypto';
 
+import { logger } from '../config/logger.js';
 /**
  * Genera un ID único. Fallback si crypto.randomUUID no está
  * disponible (Node < 14.17 o entornos exóticos).
@@ -46,13 +47,13 @@ export function correlationIdMiddleware(req, res, next) {
 
   // 2. Log de entrada
   const startTime = process.hrtime.bigint();
-  console.log(`[REQ] ${req.method} ${req.originalUrl || req.url} id=${requestId}`);
+  logger.info(`[REQ] ${req.method} ${req.originalUrl || req.url} id=${requestId}`);
 
   // 3. Log de salida (se dispara cuando la respuesta termina)
   res.on('finish', () => {
     const durationMs = Number(process.hrtime.bigint() - startTime) / 1_000_000;
     const status = res.statusCode;
-    console.log(
+    logger.info(
       `[RES] ${req.method} ${req.originalUrl || req.url} status=${status} duration=${durationMs.toFixed(1)}ms id=${requestId}`
     );
   });

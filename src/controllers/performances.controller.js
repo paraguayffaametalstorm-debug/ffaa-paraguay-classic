@@ -2,6 +2,7 @@ import { getSupabase } from '../db/supabase.js';
 import { PerformanceSchema } from '../utils/schemas.js';
 import { buildSanitizedCSV } from '../utils/csv.js';
 
+import { logger } from '../config/logger.js';
 // ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
 function buildUserQuery(supabase, userId, userNick, selectFields = '*') {
     let query = supabase.from('users').select(selectFields);
@@ -338,7 +339,7 @@ export async function getPilotsList(req, res, next) {
 
     const supabase = getSupabase();
     if (!supabase) {
-      console.warn('⚠️ [getPilotsList] Base de datos Supabase no disponible');
+      logger.warn('⚠️ [getPilotsList] Base de datos Supabase no disponible');
       return res.status(500).json({
         success: false,
         message: 'Cliente de base de datos no disponible',
@@ -351,7 +352,7 @@ export async function getPilotsList(req, res, next) {
     let pilots = [];
 
     if (isAdminOrOwner) {
-      console.log(`📋 [getPilotsList] Solicitud de escuadra autorizada para ${callerRole} (${caller.nick || caller.email})`);
+      logger.info(`📋 [getPilotsList] Solicitud de escuadra autorizada para ${callerRole} (${caller.nick || caller.email})`);
 
       const { data, error } = await supabase
         .from('users')
@@ -359,7 +360,7 @@ export async function getPilotsList(req, res, next) {
         .order('nick', { ascending: true });
 
       if (error) {
-        console.error('❌ [getPilotsList] Error al consultar usuarios en Supabase:', error.message);
+        logger.error('❌ [getPilotsList] Error al consultar usuarios en Supabase:', error.message);
         throw error;
       }
 
@@ -379,9 +380,9 @@ export async function getPilotsList(req, res, next) {
           avg_tokens: typeof u.avg_tokens === 'number' ? u.avg_tokens : 0
         }));
 
-      console.log(`✅ [getPilotsList] ${pilots.length} pilotos activos cargados para el selector militar`);
+      logger.info(`✅ [getPilotsList] ${pilots.length} pilotos activos cargados para el selector militar`);
     } else {
-      console.log(`👤 [getPilotsList] Solicitud restringida a piloto individual para MIEMBRO (${caller.nick || caller.email})`);
+      logger.info(`👤 [getPilotsList] Solicitud restringida a piloto individual para MIEMBRO (${caller.nick || caller.email})`);
 
       pilots = [{
         id: caller.id || caller.user_id,
@@ -406,7 +407,7 @@ export async function getPilotsList(req, res, next) {
       }
     });
   } catch (err) {
-    console.error('❌ [getPilotsList] Error inesperado:', err.message);
+    logger.error('❌ [getPilotsList] Error inesperado:', err.message);
     return res.status(500).json({
       success: false,
       message: 'Error al obtener la lista de pilotos',

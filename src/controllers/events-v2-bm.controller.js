@@ -49,6 +49,7 @@ import {
   validateSubmissionWindow,
   getSubmissionWindowStatus
 } from '../utils/submissionWindow.js';
+import { logger } from '../config/logger.js';
 
 // ============================================================
 // CONSTANTES LOCALES
@@ -365,7 +366,7 @@ export const getBmActiveEventV2 = async (req, res) => {
       days_left: Math.ceil(remainingMs / (24 * 3600 * 1000))
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmActiveEventV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmActiveEventV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -439,7 +440,7 @@ export const getBmEventByIdV2 = async (req, res) => {
       })
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmEventByIdV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmEventByIdV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -543,7 +544,7 @@ export const createBmEventV2 = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2/BM] Error en createBmEventV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en createBmEventV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -682,7 +683,7 @@ export const updateBmEventV2 = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2/BM] Error en updateBmEventV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en updateBmEventV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -820,7 +821,7 @@ export const getBmProgressV2 = async (req, res) => {
       by_day: byDay
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmProgressV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmProgressV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1030,7 +1031,7 @@ export const updateBmProgressV2 = async (req, res) => {
       }
     });
 
-    console.log(
+    logger.info(
       `🎯 [Events-v2/BM] ${userNick} ${wasCreated ? 'inició' : 'actualizó'} progreso en ${event.name} ` +
       `→ ${finalData.total_points} pts (${finalData.discount_percentage}%)`
     );
@@ -1057,7 +1058,7 @@ export const updateBmProgressV2 = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2/BM] Error en updateBmProgressV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en updateBmProgressV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1175,7 +1176,7 @@ export const getBmLeaderboardV2 = async (req, res) => {
       data: leaderboard
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmLeaderboardV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmLeaderboardV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1299,7 +1300,7 @@ export const getBmDiscountV2 = async (req, res) => {
           .maybeSingle();
         if (planeDb) aircraft = planeDb;
       } catch (planeErr) {
-        console.warn('⚠️ [Events-v2/BM] No se pudo leer plane_models:', planeErr.message);
+        logger.warn('⚠️ [Events-v2/BM] No se pudo leer plane_models:', planeErr.message);
       }
     }
 
@@ -1343,7 +1344,7 @@ export const getBmDiscountV2 = async (req, res) => {
       data: finalData
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmDiscountV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmDiscountV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1407,7 +1408,7 @@ export const getBmEventsV2 = async (req, res) => {
       data: normalized
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmEventsV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmEventsV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1535,7 +1536,7 @@ export const getBmStatsV2 = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmStatsV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmStatsV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1605,7 +1606,7 @@ export const getBmSubmissionWindowV2 = async (req, res) => {
       can_submit: windowStatus.can_submit
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en getBmSubmissionWindowV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en getBmSubmissionWindowV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1753,7 +1754,7 @@ export const purchaseBmDiscountV2 = async (req, res) => {
       }
     });
 
-    console.log(
+    logger.info(
       `💎 [Events-v2/BM] ${req.user?.nick || 'Piloto'} reclamó aeronave de ${event.name} ` +
         `con ${stats.total_points} pts (${stats.discount_percentage}%)`
     );
@@ -1769,7 +1770,7 @@ export const purchaseBmDiscountV2 = async (req, res) => {
       data: newData
     });
   } catch (error) {
-    console.error('❌ [Events-v2/BM] Error en purchaseBmDiscountV2:', error);
+    logger.error('❌ [Events-v2/BM] Error en purchaseBmDiscountV2:', error);
     return res.status(500).json({
       success: false,
       error: error.message,

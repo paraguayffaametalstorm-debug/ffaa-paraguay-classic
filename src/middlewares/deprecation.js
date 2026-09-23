@@ -16,6 +16,8 @@
  * Autor: PJPIROVANI (OWNER)
  * ============================================================================
  */
+import { logger } from '../config/logger.js';
+
 
 /**
  * Crea un middleware de deprecación para una ruta específica.
@@ -41,7 +43,7 @@ export function deprecationMiddleware({ sunsetDate, successorVersion, name }) {
     const path = req.originalUrl;
     const ip = req.ip || req.headers['x-forwarded-for'] || 'desconocida';
 
-    console.warn(
+    logger.warn(
       `⚠️ [DEPRECATION] [${name}] ${timestamp} | ${method} ${path} | ` +
       `Usuario: ${user} | IP: ${ip} | Sunset: ${sunsetDate} | ` +
       `Sucesor: ${successorVersion || 'N/A'}`

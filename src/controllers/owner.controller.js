@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { getSupabase } from '../db/supabase.js';
 
+import { logger } from '../config/logger.js';
 // ============================================================================
 // CONFIGURACIÓN DE BACKUPS
 // ============================================================================
@@ -106,13 +107,13 @@ async function pruneOldBackups(supabase) {
       .in('id', idsToDelete);
 
     if (delError) {
-      console.error('⚠️ [Backup] Error al podar backups antiguos:', delError.message);
+      logger.error('⚠️ [Backup] Error al podar backups antiguos:', delError.message);
       return 0;
     }
 
     return idsToDelete.length;
   } catch (err) {
-    console.error('⚠️ [Backup] Excepción en pruneOldBackups:', err.message);
+    logger.error('⚠️ [Backup] Excepción en pruneOldBackups:', err.message);
     return 0;
   }
 }
@@ -222,7 +223,7 @@ export async function getBackupList(req, res) {
       .limit(MAX_BACKUPS);
 
     if (error) {
-      console.error('❌ [Backup] Error al listar:', error.message);
+      logger.error('❌ [Backup] Error al listar:', error.message);
       return res.status(500).json({ error: 'Error al consultar backups', files: [] });
     }
 
@@ -232,7 +233,7 @@ export async function getBackupList(req, res) {
       max_allowed: MAX_BACKUPS
     });
   } catch (err) {
-    console.error('❌ [Backup] Excepción en getBackupList:', err.message);
+    logger.error('❌ [Backup] Excepción en getBackupList:', err.message);
     res.status(500).json({ error: err.message, files: [] });
   }
 }
@@ -299,7 +300,7 @@ export async function runManualBackup(req, res) {
       .single();
 
     if (insertError) {
-      console.error('❌ [Backup] Error al insertar:', insertError.message);
+      logger.error('❌ [Backup] Error al insertar:', insertError.message);
       return res.status(500).json({
         error: 'Error al persistir la copia de seguridad',
         code: 'BACKUP_INSERT_FAILED'
@@ -327,7 +328,7 @@ export async function runManualBackup(req, res) {
         }
       });
     } catch (auditErr) {
-      console.warn('⚠️ [Backup] Auditoría no registrada:', auditErr.message);
+      logger.warn('⚠️ [Backup] Auditoría no registrada:', auditErr.message);
     }
 
     res.json({
@@ -340,7 +341,7 @@ export async function runManualBackup(req, res) {
       pruned_old_backups: pruned
     });
   } catch (err) {
-    console.error('❌ [Backup] Excepción en runManualBackup:', err.message);
+    logger.error('❌ [Backup] Excepción en runManualBackup:', err.message);
     res.status(500).json({ error: err.message, code: 'BACKUP_INTERNAL_ERROR' });
   }
 }
@@ -375,7 +376,7 @@ export async function downloadBackup(req, res) {
     const computedHash = computeSha256(payloadStr);
 
     if (computedHash !== data.hash_sha256) {
-      console.error(`❌ [Backup] Hash mismatch para ${id}: esperado=${data.hash_sha256} calculado=${computedHash}`);
+      logger.error(`❌ [Backup] Hash mismatch para ${id}: esperado=${data.hash_sha256} calculado=${computedHash}`);
       return res.status(500).json({
         error: 'Integridad del backup comprometida',
         code: 'BACKUP_INTEGRITY_FAILED'
@@ -394,14 +395,14 @@ export async function downloadBackup(req, res) {
         meta: { name: data.name, size_bytes: data.size_bytes }
       });
     } catch (auditErr) {
-      console.warn('⚠️ [Backup] Auditoría no registrada:', auditErr.message);
+      logger.warn('⚠️ [Backup] Auditoría no registrada:', auditErr.message);
     }
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="${data.name}"`);
     res.send(payloadStr);
   } catch (err) {
-    console.error('❌ [Backup] Excepción en downloadBackup:', err.message);
+    logger.error('❌ [Backup] Excepción en downloadBackup:', err.message);
     res.status(500).json({ error: err.message });
   }
 }
@@ -438,7 +439,7 @@ export async function deleteBackup(req, res) {
       .eq('id', id);
 
     if (delErr) {
-      console.error('❌ [Backup] Error al eliminar:', delErr.message);
+      logger.error('❌ [Backup] Error al eliminar:', delErr.message);
       return res.status(500).json({ error: 'Error al eliminar backup', code: 'BACKUP_DELETE_FAILED' });
     }
 
@@ -454,7 +455,7 @@ export async function deleteBackup(req, res) {
         meta: { name: existing.name, size_bytes: existing.size_bytes }
       });
     } catch (auditErr) {
-      console.warn('⚠️ [Backup] Auditoría no registrada:', auditErr.message);
+      logger.warn('⚠️ [Backup] Auditoría no registrada:', auditErr.message);
     }
 
     res.json({
@@ -463,7 +464,7 @@ export async function deleteBackup(req, res) {
       name: existing.name
     });
   } catch (err) {
-    console.error('❌ [Backup] Excepción en deleteBackup:', err.message);
+    logger.error('❌ [Backup] Excepción en deleteBackup:', err.message);
     res.status(500).json({ error: err.message });
   }
 }

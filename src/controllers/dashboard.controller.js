@@ -1,5 +1,6 @@
 import { getSupabase } from '../db/supabase.js';
 
+import { logger } from '../config/logger.js';
 export const getSummary = async (req, res, next) => {
   try {
     const user = req.user || { user_id: 1, email: 'admin@ffaa.py', role: 'OWNER', avg_tokens: 0, perf_status: 'VERDE' };
@@ -87,7 +88,7 @@ export const getSummary = async (req, res, next) => {
           }
         }
       } catch (err) {
-        console.warn('⚠️ [Dashboard] Error leyendo datos de Supabase:', err.message);
+        logger.warn('⚠️ [Dashboard] Error leyendo datos de Supabase:', err.message);
       }
     }
 

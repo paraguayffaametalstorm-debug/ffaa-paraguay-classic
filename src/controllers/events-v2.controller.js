@@ -39,6 +39,7 @@ import {
   validateSubmissionWindow,
   getSubmissionWindowStatus
 } from '../utils/submissionWindow.js';
+import { logger } from '../config/logger.js';
 
 // ============================================================
 // HELPERS
@@ -114,7 +115,7 @@ export const getEvents = async (req, res) => {
       windowCloseMs: normalizedActive ? normalizedActive.windowCloseMs : 86400000
     });
   } catch (error) {
-    console.error('❌ [Events-v2] Error en getEvents:', error);
+    logger.error('❌ [Events-v2] Error en getEvents:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -204,7 +205,7 @@ export const getActiveEvent = async (req, res) => {
     // PASO 3: Log de diagnóstico si no hay nada
     // -------------------------------------------------------------
     if (!activeEvent) {
-      console.log(
+      logger.info(
         '⚠️ [Events-v2] Sin evento activo. ' +
         '(No hay OPEN dentro de ventana ni CLOSED con ventana abierta).'
       );
@@ -224,7 +225,7 @@ export const getActiveEvent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [Events-v2] Error en getActiveEvent:', error);
+    logger.error('❌ [Events-v2] Error en getActiveEvent:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -272,7 +273,7 @@ export const getEventById = async (req, res) => {
       data: normalized
     });
   } catch (error) {
-    console.error('❌ [Events-v2] Error en getEventById:', error);
+    logger.error('❌ [Events-v2] Error en getEventById:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -334,7 +335,7 @@ export const createEvent = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2] Error en createEvent:', error);
+    logger.error('❌ [Events-v2] Error en createEvent:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -412,7 +413,7 @@ export const updateEvent = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2] Error en updateEvent:', error);
+    logger.error('❌ [Events-v2] Error en updateEvent:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -455,7 +456,7 @@ export const changeEventStatus = async (req, res) => {
 
         if (rpcError) {
           // Error de infraestructura → fallback a legacy (log + continue)
-          console.error('⚠️ [changeEventStatus] RPC falló, aplicando fallback legacy:', rpcError.message);
+          logger.error('⚠️ [changeEventStatus] RPC falló, aplicando fallback legacy:', rpcError.message);
         } else {
           const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
@@ -498,7 +499,7 @@ export const changeEventStatus = async (req, res) => {
                 responsePayload.data.event = responsePayload.event;
               }
             } catch (fetchErr) {
-              console.warn('⚠️ [changeEventStatus] No se pudo traer el evento fresco post-RPC:', fetchErr.message);
+              logger.warn('⚠️ [changeEventStatus] No se pudo traer el evento fresco post-RPC:', fetchErr.message);
             }
 
             return res.json(responsePayload);
@@ -520,11 +521,11 @@ export const changeEventStatus = async (req, res) => {
             });
           }
           // Error code desconocido → fallback a legacy
-          console.warn('⚠️ [changeEventStatus] Error code inesperado de RPC:', errorCode, '→ fallback legacy');
+          logger.warn('⚠️ [changeEventStatus] Error code inesperado de RPC:', errorCode, '→ fallback legacy');
         }
       } catch (rpcException) {
         // Excepción de red/parsing → fallback a legacy
-        console.error('⚠️ [changeEventStatus] Excepción en RPC, aplicando fallback legacy:', rpcException.message);
+        logger.error('⚠️ [changeEventStatus] Excepción en RPC, aplicando fallback legacy:', rpcException.message);
       }
     }
 
@@ -599,7 +600,7 @@ export const changeEventStatus = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2] Error en changeEventStatus:', error);
+    logger.error('❌ [Events-v2] Error en changeEventStatus:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -660,7 +661,7 @@ export const deleteEvent = async (req, res) => {
       deleted_id: id
     });
   } catch (error) {
-    console.error('❌ [Events-v2] Error en deleteEvent:', error);
+    logger.error('❌ [Events-v2] Error en deleteEvent:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -713,7 +714,7 @@ export const getParticipations = async (req, res) => {
       count: (participations || []).length
     });
   } catch (error) {
-    console.error('❌ [Events-v2] Error en getParticipations:', error);
+    logger.error('❌ [Events-v2] Error en getParticipations:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -877,7 +878,7 @@ export const createParticipation = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2] Error en createParticipation:', error);
+    logger.error('❌ [Events-v2] Error en createParticipation:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -1013,7 +1014,7 @@ export const updateParticipation = async (req, res) => {
         details: error.issues
       });
     }
-    console.error('❌ [Events-v2] Error en updateParticipation:', error);
+    logger.error('❌ [Events-v2] Error en updateParticipation:', error);
     return res.status(500).json({
       success: false,
       error: error.message
@@ -1075,7 +1076,7 @@ export const getSubmissionWindow = async (req, res) => {
       can_submit: windowStatus.can_submit
     });
   } catch (error) {
-    console.error('❌ [Events-v2] Error en getSubmissionWindow:', error);
+    logger.error('❌ [Events-v2] Error en getSubmissionWindow:', error);
     return res.status(500).json({
       success: false,
       error: error.message,
@@ -1129,7 +1130,7 @@ export const deleteParticipation = async (req, res) => {
       deleted_user_id: userId
     });
   } catch (error) {
-    console.error('❌ [Events-v2] Error en deleteParticipation:', error);
+    logger.error('❌ [Events-v2] Error en deleteParticipation:', error);
     return res.status(500).json({
       success: false,
       error: error.message

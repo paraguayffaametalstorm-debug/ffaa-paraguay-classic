@@ -4,6 +4,7 @@ import { ENV } from './env.js';
 import { getSupabase } from '../db/supabase.js';
 import { logSecurityEvent } from '../utils/audit.js';
 
+import { logger } from './logger.js';
 let isGoogleOAuthConfigured = false;
 
 /**
@@ -11,7 +12,7 @@ let isGoogleOAuthConfigured = false;
  */
 export function configurePassport() {
     if (!ENV.GOOGLE_CLIENT_ID || !ENV.GOOGLE_CLIENT_SECRET) {
-        console.warn('⚠️ [Passport] GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET no configurados. Google OAuth deshabilitado temporalmente.');
+        logger.warn('⚠️ [Passport] GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET no configurados. Google OAuth deshabilitado temporalmente.');
         return false;
     }
 
@@ -68,7 +69,7 @@ export function configurePassport() {
 
                 // Si NO existe en users -> Redirigir al flujo de vinculación táctica
                 if (!users || users.length === 0) {
-                    console.log(`ℹ️ [Passport Google] Gmail ${email} no registrado. Procediendo a vinculación de cuenta.`);
+                    logger.info(`ℹ️ [Passport Google] Gmail ${email} no registrado. Procediendo a vinculación de cuenta.`);
                     return done(null, false, { 
                         code: 'NOT_LINKED',
                         email: email,
@@ -105,16 +106,16 @@ export function configurePassport() {
                 return done(null, user);
 
             } catch (err) {
-                console.error('❌ [Passport Google] Excepción en verificación de usuario:', err);
+                logger.error('❌ [Passport Google] Excepción en verificación de usuario:', err);
                 return done(err);
             }
         }));
 
         isGoogleOAuthConfigured = true;
-        console.log(`✅ [Passport] Estrategia Google OAuth 2.0 registrada exitosamente (Callback: ${callbackURL})`);
+        logger.info(`✅ [Passport] Estrategia Google OAuth 2.0 registrada exitosamente (Callback: ${callbackURL})`);
         return true;
     } catch (err) {
-        console.error('❌ [Passport] Error inicializando Google Strategy:', err.message);
+        logger.error('❌ [Passport] Error inicializando Google Strategy:', err.message);
         return false;
     }
 }

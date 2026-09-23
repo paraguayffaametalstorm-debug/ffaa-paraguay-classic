@@ -13,6 +13,10 @@ if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
 
 // ========== CONFIGURACIÓN DE ENTORNO ==========
 export const ENV = {
+  // FIX-308: Nivel de logging (trace, debug, info, warn, error, fatal).
+  // Default: info. Override en prod: fly secrets set LOG_LEVEL=debug
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+
   PORT: parseInt(process.env.PORT || '3000', 10),
   NODE_ENV: process.env.NODE_ENV || 'production',
   JWT_SECRET: JWT_SECRET || 'dev-only-insecure-secret-change-me',

@@ -12,6 +12,7 @@ import { logAuditChange, logNickChange } from '../utils/audit.js';
 import { ENV } from '../config/env.js';
 import { generateTemporaryPassword, getNextUserId, getTemporaryPasswordExpiry } from '../utils/security.js';
 
+import { logger } from '../config/logger.js';
 // ========== LÍMITES DE ROL CENTRALIZADOS ==========
 // HALL-053/054: Fuente única de verdad para cuotas jerárquicas.
 // ADMIN actualizado de 3 → 5 por decisión del OWNER (2026-09-16).
@@ -76,7 +77,7 @@ export async function getUsers(req, res, next) {
           });
         }
       } catch (nickErr) {
-        console.warn('⚠️ [Admin getUsers] No se pudieron obtener los nicks de inactive_by:', nickErr.message);
+        logger.warn('⚠️ [Admin getUsers] No se pudieron obtener los nicks de inactive_by:', nickErr.message);
       }
     }
 
@@ -108,7 +109,7 @@ export async function getUsers(req, res, next) {
         });
       }
     } catch (perfErr) {
-      console.warn('⚠️ [Admin getUsers] No se pudieron calcular métricas de performances:', perfErr.message);
+      logger.warn('⚠️ [Admin getUsers] No se pudieron calcular métricas de performances:', perfErr.message);
     }
 
     const safeUsers = (users || []).map(u => {
@@ -859,7 +860,7 @@ export async function getInactiveUsers(req, res, next) {
           });
         }
       } catch (nickErr) {
-        console.warn('⚠️ [Admin getInactiveUsers] No se pudieron obtener los nicks de inactive_by:', nickErr.message);
+        logger.warn('⚠️ [Admin getInactiveUsers] No se pudieron obtener los nicks de inactive_by:', nickErr.message);
       }
     }
 

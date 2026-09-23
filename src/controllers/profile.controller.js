@@ -9,6 +9,7 @@ import { getSupabase } from '../db/supabase.js';
 import { ProfileUpdateSchema, NickChangeSchema } from '../utils/schemas.js';
 import { logNickChange } from '../utils/audit.js';
 
+import { logger } from '../config/logger.js';
 // ========== FUNCIÓN AUXILIAR PARA CONSULTAS TIPADAS ==========
 function buildUserQuery(supabase, userId, userEmail, userNick, selectFields) {
     let query = supabase.from('users').select(selectFields);
@@ -39,7 +40,7 @@ export async function getProfile(req, res, next) {
     const userEmail = req.user.email;
     const userNick = req.user.nick;
 
-    console.log(`🎖️ [Perfil] Solicitando expediente para combatiente: ID=${userId}, Nick=${userNick || 'Desconocido'}`);
+    logger.info(`🎖️ [Perfil] Solicitando expediente para combatiente: ID=${userId}, Nick=${userNick || 'Desconocido'}`);
 
     if (supabase) {
       // ✅ CONSULTA TIPADA
@@ -54,7 +55,7 @@ export async function getProfile(req, res, next) {
       const { data, error } = await query.limit(1).single();
 
       if (error) {
-        console.warn('⚠️ [Perfil] Error en consulta de usuario en Supabase:', error.message);
+        logger.warn('⚠️ [Perfil] Error en consulta de usuario en Supabase:', error.message);
       }
 
       if (!error && data) {
@@ -84,7 +85,7 @@ export async function getProfile(req, res, next) {
             lastEvent = perfData[0].event_id;
           }
         } catch (e) {
-          console.warn('⚠️ [Perfil] No se pudo obtener la última operación militar:', e.message);
+          logger.warn('⚠️ [Perfil] No se pudo obtener la última operación militar:', e.message);
         }
 
         const { password_hash, password, encrypted_password, ...safe } = data;
@@ -110,7 +111,7 @@ export async function getProfile(req, res, next) {
       }
     }
 
-    console.warn('⚠️ [Perfil] Utilizando datos de sesión local como fallback');
+    logger.warn('⚠️ [Perfil] Utilizando datos de sesión local como fallback');
     const { password_hash, password, encrypted_password, ...safe } = req.user;
     const fallbackProfile = {
       ...safe,
@@ -131,7 +132,7 @@ export async function getProfile(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Perfil] Error crítico en getProfile:', err);
+    logger.error('❌ [Perfil] Error crítico en getProfile:', err);
     return res.status(500).json({
       success: false,
       message: 'Error interno al consultar el expediente militar',
@@ -187,7 +188,7 @@ export async function updateProfile(req, res, next) {
     const { data: currentUserArr, error: lookupErr } = await userLookupQuery;
 
     if (lookupErr || !currentUserArr || currentUserArr.length === 0) {
-      console.warn('⚠️ [Perfil] Usuario no encontrado para updateProfile:', lookupErr?.message);
+      logger.warn('⚠️ [Perfil] Usuario no encontrado para updateProfile:', lookupErr?.message);
       return res.status(404).json({
         success: false,
         message: 'Usuario no encontrado',
@@ -252,7 +253,7 @@ export async function updateProfile(req, res, next) {
         .limit(1);
 
       if (nickErr) {
-        console.error('❌ [Perfil] Error validando unicidad de nick:', nickErr.message);
+        logger.error('❌ [Perfil] Error validando unicidad de nick:', nickErr.message);
       }
 
       if (nickConflict && nickConflict.length > 0) {
@@ -299,7 +300,7 @@ export async function updateProfile(req, res, next) {
           .limit(1);
 
         if (emailConflict && emailConflict.length > 0) {
-          console.warn('⚠️ [Perfil] Auto-email colisiona, se mantiene el anterior:', newAutoEmail);
+          logger.warn('⚠️ [Perfil] Auto-email colisiona, se mantiene el anterior:', newAutoEmail);
           // No bloqueamos el cambio de nick por esto — el admin puede ajustar después
         } else {
           updateFields.email_institucional = newAutoEmail;
@@ -322,7 +323,7 @@ export async function updateProfile(req, res, next) {
     const { data: updated, error } = await updateQuery.select().single();
 
     if (error) {
-      console.error('❌ [Perfil] Error al actualizar expediente en Supabase:', error);
+      logger.error('❌ [Perfil] Error al actualizar expediente en Supabase:', error);
       throw error;
     }
 
@@ -342,16 +343,16 @@ export async function updateProfile(req, res, next) {
         });
 
         if (!auditResult.ok) {
-          console.warn('⚠️ [Perfil] Nick cambiado pero auditoría falló:', auditResult.error);
+          logger.warn('⚠️ [Perfil] Nick cambiado pero auditoría falló:', auditResult.error);
         }
       } catch (auditErr) {
-        console.warn('⚠️ [Perfil] Excepción en logNickChange:', auditErr.message);
+        logger.warn('⚠️ [Perfil] Excepción en logNickChange:', auditErr.message);
       }
     }
 
     const { password_hash, password, encrypted_password, ...safe } = updated || { ...req.user, ...updateFields };
 
-    console.log(`✅ [Perfil] Expediente actualizado con éxito para ID: ${userId}${isNickChange ? ` (nick: ${currentNick} → ${requestedNick})` : ''}`);
+    logger.info(`✅ [Perfil] Expediente actualizado con éxito para ID: ${userId}${isNickChange ? ` (nick: ${currentNick} → ${requestedNick})` : ''}`);
 
     return res.json({
       success: true,
@@ -367,7 +368,7 @@ export async function updateProfile(req, res, next) {
     });
 
   } catch (err) {
-    console.error('❌ [Perfil] Error al actualizar perfil:', err);
+    logger.error('❌ [Perfil] Error al actualizar perfil:', err);
     return res.status(400).json({
       success: false,
       message: 'Error al procesar la actualización del expediente militar',
