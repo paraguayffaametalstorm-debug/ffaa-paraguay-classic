@@ -2,7 +2,7 @@
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión Activa:** v4.5.6 (HALL-S2-02: dropdown de roles frontend)
+> **Versión Activa:** v4.5.8 (FIX-101 + FIX-105: RPCs atómicas con fallback)
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 

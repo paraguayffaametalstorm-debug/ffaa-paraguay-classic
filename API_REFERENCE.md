@@ -1,6 +1,6 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.3.0 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.5.8 del núcleo táctico.**
 
 ---
 
@@ -1627,6 +1627,6 @@ acepta eventos con `status === 'CLOSED'` si la ventana de carga está abierta
 
 ---
 
-*Versión: v4.5.2-hotfix · Actualizado: 2026-09-22*
+*Versión: v4.5.8 · Actualizado: 2026-09-22*
 
 
