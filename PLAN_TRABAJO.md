@@ -554,6 +554,37 @@ Si algún valor de la sección 1 (Estado Actual de Referencia) resulta incorrect
 
 ---
 
+
+## FEATURE v4.6.0 - Exportacion de Resultados + Fixes Render (2026-10-08)
+
+**Estado:** CERRADO
+
+**Contexto:** Feature completa de exportacion de resultados en imagen + 3 bugs
+resueltos tras la migracion a Render.
+
+**Feature implementada:**
+- Backend: GET /api/admin/results/:eventId/export.
+- Frontend: nueva seccion en panel admin + preview + descarga JPG/PNG/PDF.
+- Mockup: docs/mockups/mockup-resultados.html.
+
+**Bugs resueltos:**
+- HALL-073 (CORS Render): env var ALLOWED_ORIGINS actualizada.
+- HALL-074 (loadExportEventsList): invocacion faltante en loadAdminPanel().
+- HALL-075 (nick incorrecto): priorizar users.nick sobre event_participations.nick.
+
+**Commits:**
+- 480bb0e - feat(export): endpoint de exportacion de resultados
+- 53a679f - feat(export): UI + mockup
+- 54f428d - chore(cache): bump assets y SW cache a v4.6.0
+- a722509 - fix(export): llamar loadExportEventsList en loadAdminPanel
+- fe0294c - fix(export): priorizar nick real de users
+
+**Referencias:**
+- docs/incidentes/HALL-073-cors-render.md
+- docs/incidentes/HALL-074-export-load.md
+- docs/incidentes/HALL-075-nick-participation.md
+- CHANGELOG.md - [4.6.0]
+
 ## 16b. HOTFIX v4.5.3 — HALL-066-septies (2026-09-22)
 
 **Estado:** ✅ CERRADO

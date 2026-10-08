@@ -9,6 +9,35 @@
 
 ---
 
+## [4.6.0] - 2026-10-08
+
+### Agregado
+- Feature "Exportar Resultados de Evento": nueva seccion en el panel admin
+  para generar imagenes (JPG/PNG/PDF) del reporte de rendimiento de un evento.
+  - Backend: GET /api/admin/results/:eventId/export (src/controllers/export.controller.js).
+  - Frontend: seccion en components/admin-panel.html + funciones en js/views.js.
+  - API client: apiExportEventResults() en js/api.js.
+  - Estilos del reporte en css/views.css (report-header, badge-verde, etc.).
+  - Mockup de referencia: docs/mockups/mockup-resultados.html.
+
+### Corregido
+- HALL-073: CORS bloqueaba el login en Render. Se actualizo ALLOWED_ORIGINS
+  para incluir la URL de onrender.com. (Config, sin cambios de codigo).
+- HALL-074: loadExportEventsList() no se invocaba en loadAdminPanel().
+  El dropdown de eventos quedaba en "Cargando eventos..." eternamente.
+- HALL-075: El reporte de exportacion mostraba todos los pilotos con el
+  nick del OWNER. Ahora se prioriza users.nick sobre event_participations.nick.
+
+### Cambiado
+- Bump de assets: v4.4.0 -> v4.6.0 en index.html.
+- Bump de Service Worker: CACHE_NAME -> v4.6.0 en sw.js.
+
+### Documentacion
+- HALL-073, HALL-074, HALL-075 documentados en docs/incidentes/.
+- BL-025 agregado a BACKLOG.md (auditoria de event_participations.nick).
+
+---
+
 ## [4.5.12] - 2026-10-08
 
 ### HALL-072 — Fix del scheduler en Render (cold start)

@@ -149,7 +149,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 18 |
+| Items activos | 19 |
 | Items completados | 9 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
