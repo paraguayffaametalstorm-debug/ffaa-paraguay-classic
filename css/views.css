@@ -1215,3 +1215,324 @@ body[data-theme="clasico"] .view h4  { color: #212529; }
     grid-template-columns: 1fr;
   }
 }
+/* ============================================================
+   EXPORTACIÓN DE RESULTADOS DE EVENTO (v4.6.0)
+   Estilos para el reporte visual
+   ============================================================ */
+
+#report {
+  width: 1080px;
+  background: #0B132B;
+  border: 2px solid #D4AF37;
+  box-shadow: 0 0 60px rgba(212, 175, 55, 0.15);
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+#report::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: linear-gradient(90deg,
+    #D52B1E 0%, #D52B1E 33%,
+    #0B132B 33%, #0B132B 66%,
+    #0038A8 66%, #0038A8 100%);
+}
+
+#report .report-header {
+  padding: 40px 50px 30px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+#report .report-header .logo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(0, 56, 168, 0.5));
+  flex-shrink: 0;
+}
+
+#report .report-header .identity h1 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin: 0 0 8px 0;
+}
+
+#report .report-header .identity h2 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #D4AF37;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  line-height: 1;
+  margin: 0 0 6px 0;
+}
+
+#report .report-header .identity p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 1px;
+  font-style: italic;
+  margin: 0;
+}
+
+#report .report-title {
+  padding: 30px 50px 20px;
+}
+
+#report .report-title h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0 0 8px 0;
+}
+
+#report .report-title .event-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #D4AF37;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+#report .report-title .period {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 1px;
+}
+
+#report .separator {
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.5) 20%,
+    rgba(212, 175, 55, 0.5) 80%,
+    transparent 100%);
+  margin: 0 50px;
+}
+
+#report .table-container {
+  padding: 20px 50px;
+}
+
+#report table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+}
+
+#report thead th {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #D4AF37;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+}
+
+#report thead th.col-rank { width: 60px; text-align: center; }
+#report thead th.col-tokens { width: 120px; text-align: right; }
+#report thead th.col-days { width: 100px; text-align: center; }
+#report thead th.col-status { width: 150px; text-align: center; }
+
+#report tbody td {
+  padding: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#report tbody td.col-rank {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #D4AF37;
+}
+
+#report tbody td.col-nick {
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 0.5px;
+}
+
+#report tbody td.col-tokens {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+#report tbody td.col-days {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+#report tbody td.col-status { text-align: center; }
+
+#report .badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 2px;
+  min-width: 80px;
+  text-align: center;
+}
+
+#report .badge-verde {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22C55E;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+#report .badge-naranja {
+  background: rgba(249, 115, 22, 0.15);
+  color: #F97316;
+  border: 1px solid rgba(249, 115, 22, 0.5);
+}
+
+#report .badge-rojo {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+#report .badge-negro {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9CA3AF;
+  border: 1px solid rgba(107, 114, 128, 0.5);
+}
+
+#report .no-load-section {
+  margin: 20px 50px;
+  padding: 20px 24px;
+  background: rgba(107, 114, 128, 0.08);
+  border-left: 3px solid rgba(212, 175, 55, 0.5);
+}
+
+#report .no-load-section h4 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #D4AF37;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+}
+
+#report .no-load-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+#report .no-load-list span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+#report .summary {
+  padding: 30px 50px;
+  background: rgba(0, 56, 168, 0.08);
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+#report .summary h4 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin: 0 0 20px 0;
+}
+
+#report .summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 40px;
+}
+
+#report .summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+#report .summary-item .label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 1px;
+}
+
+#report .summary-item .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: #D4AF37;
+}
+
+#report .summary-item .value.success { color: #22C55E; }
+#report .summary-item .value.warning { color: #F97316; }
+#report .summary-item .value.danger { color: #EF4444; }
+
+#report .report-footer {
+  padding: 20px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#report .report-footer .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+}
+
+#report .report-footer .version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(212, 175, 55, 0.6);
+  letter-spacing: 1px;
+}
+
+#report .watermark {
+  position: absolute;
+  bottom: 8px;
+  right: 50px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  color: rgba(212, 175, 55, 0.2);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}

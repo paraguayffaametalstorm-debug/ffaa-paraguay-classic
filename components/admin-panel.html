@@ -203,6 +203,65 @@
     </div>
   </div>
 
+  <!-- ============================================ -->
+  <!-- EXPORTAR RESULTADOS (v4.6.0)                 -->
+  <!-- ============================================ -->
+  <div class="card" style="margin-top:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+      <div>
+        <h3 style="margin:0;">📊 Exportar Resultados de Evento</h3>
+        <p style="margin:4px 0 0 0;font-size:0.82rem;color:#94a3b8;">
+          Generá una imagen del reporte para compartir por WhatsApp/Discord
+        </p>
+      </div>
+    </div>
+
+    <!-- Controles -->
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1.2rem;align-items:end;">
+      <div>
+        <label for="exportEventSelect" style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">
+          Evento a Exportar
+        </label>
+        <select id="exportEventSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
+          <option value="">Cargando eventos...</option>
+        </select>
+      </div>
+      <div>
+        <label for="exportFormatSelect" style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">
+          Formato
+        </label>
+        <select id="exportFormatSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
+          <option value="jpg" selected>JPG (predeterminado)</option>
+          <option value="png">PNG (alta calidad)</option>
+          <option value="pdf">PDF (archivo oficial)</option>
+        </select>
+      </div>
+      <div>
+        <button type="button" onclick="generateEventReport()" class="btn-primary" style="width:100%;padding:8px 12px;font-weight:600;">
+          📸 Generar Reporte
+        </button>
+      </div>
+    </div>
+
+    <!-- Preview del reporte (oculto hasta generar) -->
+    <div id="exportPreviewContainer" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:0.85rem;color:#94a3b8;">Vista previa del reporte:</span>
+        <div style="display:flex;gap:8px;">
+          <button type="button" onclick="downloadEventReport()" class="btn-primary" style="padding:6px 14px;font-size:0.85rem;background:#1B4D3E;border:1.5px solid #2ECC71;color:#fff;font-weight:600;">
+            📥 Descargar
+          </button>
+          <button type="button" onclick="closeExportPreview()" class="btn-secondary" style="padding:6px 14px;font-size:0.85rem;">
+            ✕ Cerrar
+          </button>
+        </div>
+      </div>
+      <div style="overflow:auto;max-height:70vh;background:#050816;padding:20px;border-radius:8px;border:1px solid #1E293B;">
+        <div id="exportPreviewTarget" style="display:inline-block;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Crear Evento (F4.3) -->
   <div id="adminEventCreateModal" class="modal">
     <div class="modal-content" style="max-width:620px;">

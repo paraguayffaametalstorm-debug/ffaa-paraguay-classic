@@ -7501,8 +7501,355 @@ window.handleSavePlaneModel = handleSavePlaneModel;
 window.togglePlaneModelStatus = togglePlaneModelStatus;
 window.viewPlaneModelFullDetails = viewPlaneModelFullDetails;
 
-console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
+/* ============================================================================
+   EXPORTACIÓN DE RESULTADOS DE EVENTO (v4.6.0)
+   Genera un reporte visual en formato imagen (JPG/PNG/PDF).
+   ============================================================================ */
 
+/**
+ * Carga la lista de eventos disponibles para el selector de exportación.
+ * Se llama al entrar al panel admin (loadAdminPanel).
+ */
+async function loadExportEventsList() {
+  const select = document.getElementById('exportEventSelect');
+  if (!select) return;
+
+  // Solo cargar si está vacío o tiene el placeholder
+  if (select.options.length > 1 && select.dataset.loaded === 'true') return;
+
+  select.innerHTML = '<option value="">Cargando eventos...</option>';
+
+  try {
+    const res = await apiEventsV2List({ limit: 50 });
+    if (!res.success) {
+      select.innerHTML = '<option value="">Error al cargar eventos</option>';
+      return;
+    }
+
+    const events = res.events || [];
+    if (events.length === 0) {
+      select.innerHTML = '<option value="">No hay eventos disponibles</option>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">— Seleccionar evento —</option>';
+    events.forEach(ev => {
+      const opt = document.createElement('option');
+      opt.value = ev.id;
+      const typeLabel = ev.type === 'BLACK_MARKET' ? '⚡ BM' : '✈️ SQ';
+      const statusBadge = ev.status === 'OPEN' ? ' [ABIERTO]' :
+                          ev.status === 'CLOSED' ? ' [CERRADO]' :
+                          ev.status === 'SCHEDULED' ? ' [PROGRAMADO]' : '';
+      opt.textContent = `${typeLabel} ${ev.name}${statusBadge}`;
+      select.appendChild(opt);
+    });
+
+    select.dataset.loaded = 'true';
+  } catch (err) {
+    console.error('❌ [Export] Error cargando eventos:', err);
+    select.innerHTML = '<option value="">Error al cargar eventos</option>';
+  }
+}
+
+/**
+ * Genera el reporte visual del evento seleccionado.
+ * Llama al backend, renderiza el HTML del reporte, y lo muestra en el preview.
+ */
+async function generateEventReport() {
+  const select = document.getElementById('exportEventSelect');
+  const preview = document.getElementById('exportPreviewContainer');
+  const target = document.getElementById('exportPreviewTarget');
+
+  if (!select || !preview || !target) return;
+
+  const eventId = select.value;
+  if (!eventId) {
+    showToast('⚠️ Seleccioná un evento primero', 'warning');
+    return;
+  }
+
+  // Mostrar loading
+  preview.style.display = 'block';
+  target.innerHTML = `
+    <div style="padding:60px 40px;text-align:center;color:#94a3b8;">
+      <div style="font-size:2rem;margin-bottom:10px;">⏳</div>
+      <div>Generando reporte...</div>
+    </div>
+  `;
+
+  // Scroll al preview
+  preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  try {
+    const res = await apiExportEventResults(eventId);
+    if (!res.success) {
+      target.innerHTML = `
+        <div style="padding:40px;text-align:center;color:#e74c3c;">
+          <div style="font-size:2rem;margin-bottom:10px;">❌</div>
+          <div>Error al generar reporte: ${escapeHTML(res.error || 'desconocido')}</div>
+        </div>
+      `;
+      return;
+    }
+
+    // Renderizar el reporte con datos reales
+    target.innerHTML = renderEventReportHTML(res);
+    window._exportReportData = res;
+
+    // Refrescar iconos si aplica
+    if (typeof refreshLucideIcons === 'function') {
+      setTimeout(refreshLucideIcons, 50);
+    }
+  } catch (err) {
+    console.error('❌ [Export] Error generando reporte:', err);
+    target.innerHTML = `
+      <div style="padding:40px;text-align:center;color:#e74c3c;">
+        <div style="font-size:2rem;margin-bottom:10px;">❌</div>
+        <div>Error: ${escapeHTML(err.message || 'desconocido')}</div>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Renderiza el HTML del reporte con los datos del backend.
+ * Mantiene el diseño del mockup (docs/mockups/mockup-resultados.html).
+ */
+function renderEventReportHTML(data) {
+  const ev = data.event || {};
+  const withData = data.pilots_with_data || [];
+  const withoutData = data.pilots_without_data || [];
+  const summary = data.summary || {};
+
+  // Badges de semáforo
+  const badgeClass = (status) => {
+    const map = {
+      'VERDE': 'badge-verde',
+      'NARANJA': 'badge-naranja',
+      'ROJO': 'badge-rojo',
+      'NEGRO': 'badge-negro'
+    };
+    return map[status] || 'badge-negro';
+  };
+
+  const rowsHtml = withData.map(p => `
+    <tr>
+      <td class="col-rank">${p.rank}</td>
+      <td class="col-nick">${escapeHTML(p.nick || '')}</td>
+      <td class="col-tokens">${p.tokens || 0}</td>
+      <td class="col-days">${p.days_connected || 0}</td>
+      <td class="col-status"><span class="badge ${badgeClass(p.perf_status)}">${escapeHTML(p.perf_status || 'NEGRO')}</span></td>
+    </tr>
+  `).join('');
+
+  const noLoadHtml = withoutData.length > 0
+    ? `
+      <div class="no-load-section">
+        <h4>Sin Carga (${withoutData.length} piloto${withoutData.length !== 1 ? 's' : ''})</h4>
+        <div class="no-load-list">
+          ${withoutData.map(p => `<span>▸ ${escapeHTML(p.nick || '')}</span>`).join('')}
+        </div>
+      </div>
+    `
+    : '';
+
+  const goalText = summary.goal_reached ? 'SÍ' : 'NO';
+  const goalClass = summary.goal_reached ? 'success' : 'danger';
+
+  const generalClass = summary.general_status === 'VERDE' ? 'success' :
+                       summary.general_status === 'NARANJA' ? 'warning' : 'danger';
+
+  const generatedDate = new Date(data.generated_at || Date.now()).toLocaleString('es-PY', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'America/Asuncion'
+  });
+
+  return `
+    <div id="report">
+      <!-- HEADER -->
+      <div class="report-header">
+        <img src="/logo-escuadron.png" alt="Escuadrón" class="logo" crossorigin="anonymous">
+        <div class="identity">
+          <h1>PARAGUAY FFAA [PRY]</h1>
+          <h2>METALSTORM</h2>
+          <p>Escuadrón Oficial MetalStorm</p>
+        </div>
+      </div>
+
+      <!-- TÍTULO -->
+      <div class="report-title">
+        <h3>Reporte de Rendimiento</h3>
+        <div class="event-name">${escapeHTML(ev.name || 'Evento sin nombre')}</div>
+        <div class="period">PERÍODO: ${escapeHTML(ev.period_formatted || '—')}</div>
+      </div>
+
+      <div class="separator"></div>
+
+      <!-- TABLA -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-nick">Piloto</th>
+              <th class="col-tokens">Tokens</th>
+              <th class="col-days">Días</th>
+              <th class="col-status">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:20px;">Sin datos de carga para este evento</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+
+      ${noLoadHtml}
+
+      <div class="separator"></div>
+
+      <!-- RESUMEN -->
+      <div class="summary">
+        <h4>Resumen del Escuadrón</h4>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="label">Pilotos cargados</span>
+            <span class="value">${summary.total_loaded || 0} / ${summary.total_active || 0}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Promedio de tokens</span>
+            <span class="value">${summary.avg_tokens || 0}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Meta alcanzada</span>
+            <span class="value ${goalClass}">${goalText}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Semáforo general</span>
+            <span class="value ${generalClass}">${escapeHTML(summary.general_status || 'NEGRO')}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Pilotos en VERDE</span>
+            <span class="value success">${summary.count_verde || 0}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Pilotos en ROJO/NEGRO</span>
+            <span class="value danger">${(summary.count_rojo || 0) + (summary.count_negro || 0)}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="report-footer">
+        <div class="meta">Generado: ${generatedDate} PY</div>
+        <div class="version">PARAGUAY-FFAA | METALSTORM v4.5.12</div>
+      </div>
+
+      <div class="watermark">Documento Oficial del Escuadrón</div>
+    </div>
+  `;
+}
+
+/**
+ * Descarga el reporte generado en el formato elegido (JPG/PNG/PDF).
+ */
+async function downloadEventReport() {
+  const target = document.getElementById('exportPreviewTarget');
+  const format = document.getElementById('exportFormatSelect')?.value || 'jpg';
+
+  if (!target) {
+    showToast('⚠️ Primero generá el reporte', 'warning');
+    return;
+  }
+
+  const reportEl = target.querySelector('#report');
+  if (!reportEl) {
+    showToast('⚠️ Reporte no disponible', 'warning');
+    return;
+  }
+
+  const data = window._exportReportData;
+  const eventName = data?.event?.name || 'Reporte';
+  const cleanName = eventName.replace(/[^a-z0-9]/gi, '_');
+  const timestamp = new Date().toISOString().split('T')[0];
+  const filename = `${cleanName}_${timestamp}`;
+
+  showToast('⏳ Generando imagen...', 'info');
+
+  try {
+    if (typeof html2canvas === 'undefined') {
+      throw new Error('html2canvas no disponible');
+    }
+
+    const canvas = await html2canvas(reportEl, {
+      backgroundColor: '#0B132B',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false
+    });
+
+    if (format === 'jpg') {
+      const link = document.createElement('a');
+      link.download = `${filename}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+      showToast('✅ Reporte descargado (JPG)', 'success');
+    } else if (format === 'png') {
+      const link = document.createElement('a');
+      link.download = `${filename}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('✅ Reporte descargado (PNG)', 'success');
+    } else if (format === 'pdf') {
+      // PDF: usar jsPDF si está disponible, o descargar como PNG
+      if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+        const { jsPDF } = window.jspdf;
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdfWidth = 210; // A4 mm
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pdf = new jsPDF({
+          orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${filename}.pdf`);
+        showToast('✅ Reporte descargado (PDF)', 'success');
+      } else {
+        // Fallback: descargar PNG
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('⚠️ jsPDF no disponible, descargado como PNG', 'warning');
+      }
+    }
+  } catch (err) {
+    console.error('❌ [Export] Error generando imagen:', err);
+    showToast('❌ Error al generar la imagen: ' + err.message, 'error');
+  }
+}
+
+/**
+ * Cierra la vista previa del reporte.
+ */
+function closeExportPreview() {
+  const preview = document.getElementById('exportPreviewContainer');
+  const target = document.getElementById('exportPreviewTarget');
+  if (preview) preview.style.display = 'none';
+  if (target) target.innerHTML = '';
+  window._exportReportData = null;
+}
+
+// Exponer globalmente
+window.loadExportEventsList  = loadExportEventsList;
+window.generateEventReport   = generateEventReport;
+window.downloadEventReport   = downloadEventReport;
+window.closeExportPreview    = closeExportPreview;
+window.renderEventReportHTML = renderEventReportHTML;
+
+console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
 
 /* ============================================================================
    HANGAR REDESIGN — VISTA 1 (GRID) + VISTA 2 (PANTALLA DEDICADA)

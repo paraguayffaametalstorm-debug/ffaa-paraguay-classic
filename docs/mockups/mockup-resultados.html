@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mockup — Reporte de Rendimiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050816;
+    font-family: 'Inter', sans-serif;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  #report {
+    width: 1080px;
+    background: #0B132B;
+    border: 2px solid #D4AF37;
+    box-shadow: 0 0 60px rgba(212, 175, 55, 0.15);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #report::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg,
+      #D52B1E 0%, #D52B1E 33%,
+      #0B132B 33%, #0B132B 66%,
+      #0038A8 66%, #0038A8 100%);
+  }
+
+  .report-header {
+    padding: 40px 50px 30px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .report-header .logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(0, 56, 168, 0.5));
+    flex-shrink: 0;
+  }
+
+  .report-header .identity h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .report-header .identity h2 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: #D4AF37;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .report-header .identity p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+    font-style: italic;
+  }
+
+  .report-title {
+    padding: 30px 50px 20px;
+  }
+
+  .report-title h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .report-title .event-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #D4AF37;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .report-title .period {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 1px;
+  }
+
+  .separator {
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(212, 175, 55, 0.5) 20%,
+      rgba(212, 175, 55, 0.5) 80%,
+      transparent 100%);
+    margin: 0 50px;
+  }
+
+  .table-container {
+    padding: 20px 50px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Inter', sans-serif;
+  }
+
+  thead th {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #D4AF37;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+  }
+
+  thead th.col-rank { width: 60px; text-align: center; }
+  thead th.col-tokens { width: 120px; text-align: right; }
+  thead th.col-days { width: 100px; text-align: center; }
+  thead th.col-status { width: 150px; text-align: center; }
+
+  tbody td {
+    padding: 10px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  tbody td.col-rank {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: #D4AF37;
+  }
+
+  tbody td.col-nick {
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: 0.5px;
+  }
+
+  tbody td.col-tokens {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: #FFFFFF;
+  }
+
+  tbody td.col-days {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  tbody td.col-status {
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  .badge-verde {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22C55E;
+    border: 1px solid rgba(34, 197, 94, 0.5);
+  }
+
+  .badge-naranja {
+    background: rgba(249, 115, 22, 0.15);
+    color: #F97316;
+    border: 1px solid rgba(249, 115, 22, 0.5);
+  }
+
+  .badge-rojo {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+  }
+
+  .badge-negro {
+    background: rgba(107, 114, 128, 0.15);
+    color: #9CA3AF;
+    border: 1px solid rgba(107, 114, 128, 0.5);
+  }
+
+  .no-load-section {
+    margin: 20px 50px;
+    padding: 20px 24px;
+    background: rgba(107, 114, 128, 0.08);
+    border-left: 3px solid rgba(212, 175, 55, 0.5);
+  }
+
+  .no-load-section h4 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #D4AF37;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .no-load-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+
+  .no-load-list span {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .summary {
+    padding: 30px 50px;
+    background: rgba(0, 56, 168, 0.08);
+    border-top: 1px solid rgba(212, 175, 55, 0.3);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+  }
+
+  .summary h4 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 40px;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  }
+
+  .summary-item .label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 1px;
+  }
+
+  .summary-item .value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: #D4AF37;
+  }
+
+  .summary-item .value.success { color: #22C55E; }
+  .summary-item .value.warning { color: #F97316; }
+  .summary-item .value.danger { color: #EF4444; }
+
+  .report-footer {
+    padding: 20px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .report-footer .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+  }
+
+  .report-footer .version {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: rgba(212, 175, 55, 0.6);
+    letter-spacing: 1px;
+  }
+
+  .watermark {
+    position: absolute;
+    bottom: 8px;
+    right: 50px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    color: rgba(212, 175, 55, 0.2);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div id="report">
+
+  <div class="report-header">
+    <img src="../../logo-escuadron.png" alt="Escuadrón PARAGUAY-FFAA" class="logo">
+    <div class="identity">
+      <h1>PARAGUAY FFAA [PRY]</h1>
+      <h2>METALSTORM</h2>
+      <p>Escuadrón Oficial MetalStorm</p>
+    </div>
+  </div>
+
+  <div class="report-title">
+    <h3>Reporte de Rendimiento</h3>
+    <div class="event-name">Squadron Event 2026-W41</div>
+    <div class="period">PERÍODO: 08/10/2026 — 12/10/2026</div>
+  </div>
+
+  <div class="separator"></div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-rank">#</th>
+          <th class="col-nick">Piloto</th>
+          <th class="col-tokens">Tokens</th>
+          <th class="col-days">Días</th>
+          <th class="col-status">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-rank">1</td>
+          <td class="col-nick">Viper_PY</td>
+          <td class="col-tokens">225</td>
+          <td class="col-days">6</td>
+          <td class="col-status"><span class="badge badge-verde">Verde</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">2</td>
+          <td class="col-nick">Condor_01</td>
+          <td class="col-tokens">210</td>
+          <td class="col-days">7</td>
+          <td class="col-status"><span class="badge badge-verde">Verde</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">3</td>
+          <td class="col-nick">Guarani_Ace</td>
+          <td class="col-tokens">185</td>
+          <td class="col-days">5</td>
+          <td class="col-status"><span class="badge badge-verde">Verde</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">4</td>
+          <td class="col-nick">Furtivo</td>
+          <td class="col-tokens">175</td>
+          <td class="col-days">4</td>
+          <td class="col-status"><span class="badge badge-verde">Verde</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">5</td>
+          <td class="col-nick">Astartes</td>
+          <td class="col-tokens">160</td>
+          <td class="col-days">4</td>
+          <td class="col-status"><span class="badge badge-naranja">Naranja</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">6</td>
+          <td class="col-nick">Gennomax</td>
+          <td class="col-tokens">155</td>
+          <td class="col-days">4</td>
+          <td class="col-status"><span class="badge badge-naranja">Naranja</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">7</td>
+          <td class="col-nick">Ruben</td>
+          <td class="col-tokens">140</td>
+          <td class="col-days">3</td>
+          <td class="col-status"><span class="badge badge-naranja">Naranja</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">8</td>
+          <td class="col-nick">Barba19</td>
+          <td class="col-tokens">135</td>
+          <td class="col-days">3</td>
+          <td class="col-status"><span class="badge badge-naranja">Naranja</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">9</td>
+          <td class="col-nick">Halcon_PY</td>
+          <td class="col-tokens">130</td>
+          <td class="col-days">3</td>
+          <td class="col-status"><span class="badge badge-rojo">Rojo</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">10</td>
+          <td class="col-nick">Tigre_Guarani</td>
+          <td class="col-tokens">120</td>
+          <td class="col-days">2</td>
+          <td class="col-status"><span class="badge badge-rojo">Rojo</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">11</td>
+          <td class="col-nick">Piloto_Demo_11</td>
+          <td class="col-tokens">115</td>
+          <td class="col-days">2</td>
+          <td class="col-status"><span class="badge badge-rojo">Rojo</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">12</td>
+          <td class="col-nick">Piloto_Demo_12</td>
+          <td class="col-tokens">110</td>
+          <td class="col-days">2</td>
+          <td class="col-status"><span class="badge badge-rojo">Rojo</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">13</td>
+          <td class="col-nick">Piloto_Demo_13</td>
+          <td class="col-tokens">100</td>
+          <td class="col-days">2</td>
+          <td class="col-status"><span class="badge badge-rojo">Rojo</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">14</td>
+          <td class="col-nick">Piloto_Demo_14</td>
+          <td class="col-tokens">85</td>
+          <td class="col-days">1</td>
+          <td class="col-status"><span class="badge badge-negro">Negro</span></td>
+        </tr>
+        <tr>
+          <td class="col-rank">15</td>
+          <td class="col-nick">Piloto_Demo_15</td>
+          <td class="col-tokens">75</td>
+          <td class="col-days">1</td>
+          <td class="col-status"><span class="badge badge-negro">Negro</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="no-load-section">
+    <h4>Sin Carga (3 pilotos)</h4>
+    <div class="no-load-list">
+      <span>▸ Piloto_Nuevo</span>
+      <span>▸ Piloto_Ausente</span>
+      <span>▸ Piloto_Reciente</span>
+    </div>
+  </div>
+
+  <div class="separator"></div>
+
+  <div class="summary">
+    <h4>Resumen del Escuadrón</h4>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="label">Pilotos cargados</span>
+        <span class="value">15 / 18</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Promedio de tokens</span>
+        <span class="value">145</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Meta alcanzada</span>
+        <span class="value success">SÍ</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Semáforo general</span>
+        <span class="value success">VERDE</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Pilotos en VERDE</span>
+        <span class="value success">4</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Pilotos en ROJO/NEGRO</span>
+        <span class="value danger">7</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="report-footer">
+    <div class="meta">Generado: 08/10/2026 03:15 UTC</div>
+    <div class="version">PARAGUAY-FFAA | METALSTORM v4.5.12</div>
+  </div>
+
+  <div class="watermark">Documento Oficial del Escuadrón</div>
+
+</div>
+
+</body>
+</html>

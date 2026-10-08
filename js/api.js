@@ -1247,6 +1247,38 @@ async function apiEventsV2BmPurchase(eventId) {
 
 // ─── EXPOSICIÓN GLOBAL ──────────────────────────────────────
 
+// ============================================================
+// EXPORTACIÓN DE RESULTADOS DE EVENTO (v4.6.0)
+// ============================================================
+/**
+ * Obtiene el payload de datos para generar el reporte visual de un evento.
+ * @param {string} eventId - UUID del evento (events_master.id).
+ * @returns {Promise<Object>}
+ */
+async function apiExportEventResults(eventId) {
+  if (!eventId) {
+    return { success: false, error: 'eventId requerido', code: 'MISSING_ID' };
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/results/${encodeURIComponent(eventId)}/export`, {
+      headers: getAuthHeaders()
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        success: false,
+        error: json.error || `Error HTTP ${res.status}`,
+        code: json.code || 'HTTP_ERROR'
+      };
+    }
+    return json;
+  } catch (err) {
+    console.error('❌ [API] Error en apiExportEventResults:', err);
+    return { success: false, error: err.message, code: 'NETWORK_ERROR' };
+  }
+}
+
+window.apiExportEventResults = apiExportEventResults;
 window.apiEventsV2BmList           = apiEventsV2BmList;
 window.apiEventsV2BmActive         = apiEventsV2BmActive;
 window.apiEventsV2BmGetById        = apiEventsV2BmGetById;
