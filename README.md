@@ -13,6 +13,15 @@
 
 ---
 
+> **⚠️ PRODUCCIÓN MIGRADA A RENDER.COM (2026-10-08)**
+>
+> - **URL activa:** https://paraguay-ffaa-metalstorm.onrender.com
+> - **Hosting legacy:** Fly.io (en proceso de baja por falta de pago)
+> - **Razón:** Plan $0 sin tarjeta en Render.com
+> - **Trade-off:** Cold start de 30-50s después de 15 min sin uso
+> - **ADR completo:** [`docs/adr/ADR-009-migracion-render.md`](./docs/adr/ADR-009-migracion-render.md)
+
+
 ## 📋 Descripción General
 
 **PARAGUAY-FFAA | METALSTORM** es una plataforma web táctica de grado militar diseñada para la administración, registro y supervisión del escuadrón paraguayo en el simulador de combate aéreo *MetalStorm*.

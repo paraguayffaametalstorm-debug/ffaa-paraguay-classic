@@ -473,3 +473,32 @@ Zod rechazaba con 400 "Invalid UUID" al cargar para otro piloto.
 
 - `CHANGELOG.md` sección `[4.5.3]`
 - Commit `4da002b`
+
+
+---
+
+## 🚀 Migración de Hosting (2026-10-08)
+
+### Cambio de Fly.io a Render.com
+
+| Aspecto | Antes (Fly.io) | Ahora (Render.com) |
+|---|---|---|
+| **URL** | `paraguay-ffaa-metalstorm.fly.dev` | `paraguay-ffaa-metalstorm.onrender.com` |
+| **Costo** | ~US$5.62/mes | **$0/mes** |
+| **Tarjeta** | Requerida | **No requerida** |
+| **Cold start** | 3-5s | **30-50s** |
+| **Plan** | shared-cpu-1x 512MB | Free 0.1 CPU 512MB |
+| **Auto-deploy** | No (manual con `fly deploy`) | **Sí (git push → auto-deploy)** |
+| **Estado** | ⏳ Impago (se apagará solo) | ✅ **Activo** |
+
+**Razón:** Fly.io rechazó la tarjeta del OWNER. Migración a Render.com para lograr costo $0 real sin tarjeta.
+
+**Configuración clave en Render:**
+- **Language:** Node
+- **Build Command:** `npm install --legacy-peer-deps --omit=dev`
+- **Start Command:** `node server.js`
+- **Instance Type:** Free ($0/mes)
+- **Env vars:** 22 cargadas vía `.env` copy/paste
+
+**ADR completo:** [`docs/adr/ADR-009-migracion-render.md`](./docs/adr/ADR-009-migracion-render.md)
+

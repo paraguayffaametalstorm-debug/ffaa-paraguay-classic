@@ -5,6 +5,20 @@
 
 ---
 
+> **⚠️ PRODUCCIÓN MIGRADA A RENDER.COM (2026-10-08)**
+>
+> La producción fue migrada de **Fly.io** a **Render.com** (plan Free, $0/mes).
+> Este documento sigue describiendo el flujo original de Fly.io. Para la operación actual:
+>
+> - **URL activa:** https://paraguay-ffaa-metalstorm.onrender.com
+> - **Deploy:** automático en cada `git push origin main`
+> - **Panel:** https://dashboard.render.com
+> - **Costo:** $0/mes (plan Free)
+> - **ADR:** [`docs/adr/ADR-009-migracion-render.md`](./docs/adr/ADR-009-migracion-render.md)
+>
+> La sección de Fly.io se mantiene como **referencia histórica**.
+
+
 ## 1. 📋 Requisitos Previos y Entorno Operacional
 
 El sistema opera bajo un contenedor Docker optimizado sobre **Node.js 22 Alpine**, respaldado por **Express 5** y una base de datos **PostgreSQL** administrada en **Supabase**.

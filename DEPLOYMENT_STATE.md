@@ -1,6 +1,18 @@
 # 🚀 DEPLOYMENT STATE - PARAGUAY-FFAA | METALSTORM
 
 > **Actualizacion BL-017 (2026-09-23):** Se sincronizo el schema `users` con la BD
+> **⚠️ PRODUCCIÓN MIGRADA A RENDER.COM (2026-10-08)**
+>
+> El hosting de producción cambió de **Fly.io** a **Render.com** (plan Free, $0/mes).
+> La URL activa ahora es:
+>
+> - **https://paraguay-ffaa-metalstorm.onrender.com**
+>
+> El esquema de base de datos (Supabase) permanece **sin cambios**. Todas las tablas,
+> columnas, índices y políticas RLS siguen iguales.
+>
+> **ADR:** [`docs/adr/ADR-009-migracion-render.md`](./docs/adr/ADR-009-migracion-render.md)
+
 > real. Cambios aplicados via `sql/039_sync_users_schema.sql`:
 >
 > - `google_id TEXT` agregada + indice `idx_users_google_id` (HALL-061).

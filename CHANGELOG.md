@@ -9,6 +9,87 @@
 
 ---
 
+## [4.5.11] - 2026-10-08
+
+### 🚀 Migración de Hosting: Fly.io → Render.com
+
+#### Objetivo Cumplido
+
+Migrar la aplicación de **Fly.io** a **Render.com** para eliminar el costo mensual
+de ~US$5.62 (que requería tarjeta internacional) y lograr **$0/mes real** sin tarjeta.
+
+#### Contexto
+
+- **Fly.io** facturaba ~US$5.62/mes por la máquina `min_machines_running = 1`.
+- La tarjeta del OWNER fue rechazada por el banco emisor.
+- **Plazo de Fly.io:** 3 semanas hasta quedar `delinquent`, 6 semanas hasta apagado.
+- **Alternativas evaluadas:** Render.com, Koyeb, Railway, Vercel, Supabase Edge Functions.
+
+#### Decisión
+
+**Render.com (plan Free)** — costo $0/mes, sin tarjeta, cold start de 30-50s aceptable.
+
+#### Cambios Aplicados
+
+| Aspecto | Antes (Fly.io) | Ahora (Render.com) |
+|---|---|---|
+| URL | `paraguay-ffaa-metalstorm.fly.dev` | `paraguay-ffaa-metalstorm.onrender.com` |
+| Costo | ~$5.62/mes | **$0/mes** |
+| Tarjeta | Requerida | **No requerida** |
+| Cold start | 3-5s | 30-50s |
+| Auto-deploy | No (manual) | **Sí (git push)** |
+
+#### Configuración en Render
+
+- **Language:** `Node`
+- **Build Command:** `npm install --legacy-peer-deps --omit=dev`
+- **Start Command:** `node server.js`
+- **Instance Type:** `Free` ($0/mes, 0.1 CPU, 512 MB RAM)
+- **Region:** `Oregon (US West)`
+- **Env vars:** 22 cargadas vía `.env` copy/paste
+
+#### Google OAuth
+
+Se actualizó el callback en Google Cloud Console:
+
+- **Nuevo:** `https://paraguay-ffaa-metalstorm.onrender.com/api/auth/google/callback`
+- **Origen JS autorizado:** `https://paraguay-ffaa-metalstorm.onrender.com`
+- **URL legacy (Fly.io):** se mantiene registrada como respaldo.
+
+#### Verificación
+
+- ✅ App live en Render.com
+- ✅ Supabase conectado
+- ✅ Login con email funcional
+- ✅ Login con Google OAuth funcional
+- ✅ 22 env vars cargadas
+- ✅ Costo mensual: $0
+
+#### Archivos Afectados
+
+- `docs/adr/ADR-009-migracion-render.md` (NUEVO)
+- `docs/adr/README.md` (agregado al índice)
+- `README.md` (aviso al inicio)
+- `CURRENT_STATE.md` (sección de migración)
+- `DEPLOYMENT_GUIDE.md` (nota de migración)
+- `DEPLOYMENT_STATE.md` (nota de migración)
+- `CHANGELOG.md` (esta entrada)
+
+#### Pendientes
+
+- **Fly.io:** dejar que se apague sola (~6 semanas). No pagar.
+- **Cold start:** monitorear que los pilotos acepten el delay.
+
+#### Referencias
+
+- `docs/adr/ADR-009-migracion-render.md`
+- `DEPLOYMENT_GUIDE.md`
+- Repo: `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
+
+---
+
+
+
 ## [4.5.10] - 2026-09-23
 
 ### 🎯 FIX-308 — Logging estructurado con Pino
