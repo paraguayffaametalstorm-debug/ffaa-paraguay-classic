@@ -4812,6 +4812,11 @@ async function loadAdminPanel() {
     // Cargar eventos para el panel de eventos y Black Market
     loadAdminEvents();
 
+    // v4.6.0 — Cargar eventos para el selector de exportación
+    if (typeof loadExportEventsList === 'function') {
+      loadExportEventsList();
+    }
+
   } catch (err) {
     console.error('Error cargando admin panel:', err);
     showToast('❌ Error al cargar panel de administración', 'error');
