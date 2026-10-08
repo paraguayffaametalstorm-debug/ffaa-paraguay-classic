@@ -1,6 +1,5 @@
 # ============================================================
 # PARAGUAY-FFAA | METALSTORM — .gitignore
-# Actualizado: 2026-09-20
 # ============================================================
 
 # ---------- Entorno y credenciales ----------
@@ -40,11 +39,17 @@ Desktop.ini
 *.tmp
 *.temp
 
-# ---------- Archivos residuales ----------
-start_date 
-
-# Backups locales generados por scripts/update-docs-*.cjs
-*.bak
-
+# ---------- Python ----------
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+
+# ---------- Node/Python misceláneos ----------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
