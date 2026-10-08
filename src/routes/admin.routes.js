@@ -10,6 +10,7 @@ import {
   bulkUploadEvent,
   activateBlackMarket
 } from '../controllers/admin.controller.js';
+import { exportEventResults } from '../controllers/export.controller.js';
 import { getActiveMembers, getEvents } from '../controllers/events.controller.js';
 import { getAllPerformances, exportPerformancesCSV, savePerformance } from '../controllers/performances.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.js';
@@ -236,5 +237,10 @@ router.get('/scheduler/status', async (req, res) => {
     });
   }
 });
+
+// ========== 5. EXPORTAR RESULTADOS DE EVENTO (v4.6.0) ==========
+// Genera el payload de datos para el reporte visual del evento.
+// El frontend renderiza el JSON en HTML y lo exporta como imagen (JPG/PNG).
+router.get('/results/:eventId/export', exportEventResults);
 
 export default router;
