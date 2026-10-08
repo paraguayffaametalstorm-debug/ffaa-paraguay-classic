@@ -188,12 +188,13 @@ export async function exportEventResults(req, res, next) {
           days = Object.keys(data).filter(k => k.startsWith('day_')).length;
         }
 
-        // Buscar el user en el mapa para obtener el rol actual
+        // v4.6.1 — Priorizar SIEMPRE el nick real de users (no el guardado en la participación).
+        // El `p.nick` histórico puede estar desactualizado (era el nick del cargador, no del piloto).
         const user = userMap.get(String(p.user_id));
 
         return {
           user_id: p.user_id,
-          nick: p.nick || user?.nick || 'Piloto',
+          nick: user?.nick || p.nick || 'Piloto',
           role: (user?.role || 'MIEMBRO').toUpperCase(),
           tokens,
           days_connected: days,
