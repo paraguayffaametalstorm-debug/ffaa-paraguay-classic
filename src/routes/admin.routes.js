@@ -19,6 +19,7 @@ import bcrypt from 'bcryptjs';
 import { generateTemporaryPassword, getTemporaryPasswordExpiry } from '../utils/security.js';
 import { logSecurityEvent } from '../utils/audit.js';
 import { ENV } from '../config/env.js';
+import { logger } from '../config/logger.js';
 
 const router = Router();
 
@@ -190,6 +191,50 @@ router.post('/users/:userId/reset-password', async (req, res) => {
         console.error('❌ Error en reset-password:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
+});
+
+// ========== 4. SCHEDULER MANUAL (HALL-072) ==========
+// Endpoint para forzar un tick del scheduler.
+// Útil cuando Render duerme la app y el cron no corre.
+// Solo OWNER (acción de mantenimiento crítica).
+router.post('/scheduler/run', requireRole('OWNER'), async (req, res) => {
+  try {
+    const { schedulerTick, getSchedulerStatus } = await import('../utils/eventScheduler.js');
+    
+    logger.info('🔧 [Admin] Tick manual del scheduler solicitado por ' + (req.user.nick || 'OWNER'));
+    
+    await schedulerTick();
+    
+    const status = getSchedulerStatus();
+    res.json({
+      success: true,
+      message: 'Tick del scheduler ejecutado',
+      scheduler_status: status
+    });
+  } catch (error) {
+    logger.error('❌ [Admin] Error en tick manual:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'SCHEDULER_TICK_FAILED'
+    });
+  }
+});
+
+// Endpoint para consultar el estado del scheduler sin ejecutarlo
+router.get('/scheduler/status', async (req, res) => {
+  try {
+    const { getSchedulerStatus } = await import('../utils/eventScheduler.js');
+    res.json({
+      success: true,
+      scheduler_status: getSchedulerStatus()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 export default router;

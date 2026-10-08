@@ -6,6 +6,7 @@
 //
 import { getSupabase } from '../db/supabase.js';
 import { logger } from '../config/logger.js';
+import { getSchedulerStatus } from '../utils/eventScheduler.js';
 
 const SERVER_START_TIME = Date.now();
 const APP_VERSION = process.env.APP_VERSION || '4.5.9';
@@ -37,7 +38,8 @@ export const readiness = async (req, res) => {
         timestamp: new Date().toISOString(),
         uptime_seconds: uptimeSec,
         checks: {
-            supabase: { status: 'unknown', latency_ms: null }
+            supabase: { status: 'unknown', latency_ms: null },
+            scheduler: buildSchedulerCheck()
         }
     };
 
@@ -88,3 +90,65 @@ export const readiness = async (req, res) => {
         return res.status(503).json(health);
     }
 };
+
+// ============================================================
+// HALL-072 — Health check del scheduler
+// ============================================================
+// El scheduler reporta su estado en /api/health pero NO bloquea el
+// readiness (es una tarea de mantenimiento, no de servicio al usuario).
+//
+// Reglas:
+//   - Si el scheduler no arrancó → status: 'starting' (warning).
+//   - Si el último tick fue hace más de 2h → status: 'STALE' (warning).
+//   - Si el último tick fue OK → status: 'OK'.
+//   - Si el último tick fue ERROR → status: 'ERROR'.
+// ============================================================
+
+const SCHEDULER_STALE_THRESHOLD_SECONDS = 2 * 60 * 60; // 2 horas
+
+function buildSchedulerCheck() {
+    try {
+        const status = getSchedulerStatus();
+
+        // Scheduler no arrancó todavía
+        if (!status.started) {
+            return {
+                status: 'starting',
+                started: false,
+                last_tick_at: null,
+                last_tick_ago_seconds: null,
+                last_tick_status: null
+            };
+        }
+
+        // Calcular cuánto hace del último tick
+        const lastTickAgo = status.last_tick_at
+            ? Math.round((Date.now() - new Date(status.last_tick_at).getTime()) / 1000)
+            : null;
+
+        // Determinar status
+        let schedulerStatus = 'OK';
+        if (status.last_tick_status === 'ERROR') {
+            schedulerStatus = 'ERROR';
+        } else if (lastTickAgo === null || lastTickAgo > SCHEDULER_STALE_THRESHOLD_SECONDS) {
+            schedulerStatus = 'STALE';
+        }
+
+        return {
+            status: schedulerStatus,
+            started: true,
+            started_at: status.started_at,
+            uptime_seconds: status.uptime_seconds,
+            last_tick_at: status.last_tick_at,
+            last_tick_ago_seconds: lastTickAgo,
+            last_tick_status: status.last_tick_status,
+            last_tick_error: status.last_tick_error
+        };
+    } catch (err) {
+        logger.warn('⚠️ [Health] No se pudo obtener estado del scheduler:', err.message);
+        return {
+            status: 'unknown',
+            error: err.message
+        };
+    }
+}
