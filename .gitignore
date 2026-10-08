@@ -45,3 +45,6 @@ start_date
 
 # Backups locales generados por scripts/update-docs-*.cjs
 *.bak
+
+__pycache__/
+*.pyc
