@@ -1,9 +1,9 @@
 # 🔄 SESSION HANDOFF — PARAGUAY-FFAA | METALSTORM
 
 > **Documento de traspaso entre sesiones de trabajo.**
-> **Actualizado:** 2026-09-23 (cierre Sprint 3)
-> **Última sesión:** Sprint 3 — Tests + Health Checks
-> **Próximo paso:** Sprint 4 — Deuda técnica (BL-024 + BL-025)
+> **Actualizado:** 2026-10-08 (post-migración a Render)
+> **Última sesión:** Fix del scheduler en Render (HALL-072)
+> **Próximo paso:** Verificar 24h de funcionamiento + Sprint 4 (Deuda técnica)
 
 ---
 
@@ -13,9 +13,9 @@
 
 - **Backend:** Node.js 22 + Express 5 + Supabase PostgreSQL
 - **Frontend:** Vanilla JS SPA + PWA
-- **Deploy:** Fly.io (región `gru` - São Paulo)
+- **Deploy:** Render.com (plan Free, $0/mes) — migrado desde Fly.io el 2026-10-08 (ADR-009)
 - **Repo:** `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
-- **Producción:** `https://paraguay-ffaa-metalstorm.fly.dev`
+- **Producción:** `https://paraguay-ffaa-metalstorm.onrender.com`
 - **Tests:** Vitest 5.0.1 (**287 passing · 69 skipped**)
 
 ---
@@ -24,13 +24,52 @@
 
 | Aspecto | Valor |
 |---|---|
-| **Versión en producción** | v4.5.10 |
-| **Commit HEAD** | `e6d16dd` |
+| **Versión en producción** | v4.5.12 |
+| **Commit HEAD** | `84771b2` |
 | **Branch** | `main` (sincronizada con origin) |
-| **Deploy** | ✅ Activo en Fly.io (`gru`) |
+| **Deploy** | ✅ Activo en Render.com |
+| **URL producción** | `https://paraguay-ffaa-metalstorm.onrender.com` |
 | **Sistema** | 100% funcional |
 | **Tests** | 287 passing · 69 skipped · 0 failing |
 | **Sprint 3** | ✅ Cerrado |
+| **Fix HALL-072** | ✅ Completado |
+
+---
+
+## 3.5. TRABAJO COMPLETADO — Sesión 2026-10-08 (Post-Migración Render)
+
+### HALL-072 — Fix del scheduler en Render
+
+**Contexto:** Después de la migración a Render.com, el scheduler dejó de
+correr porque Render Free duerme la app a los 15 min de inactividad.
+
+**Fix aplicado (3 capas):**
+
+| Capa | Componente | Archivo |
+|---|---|---|
+| 1 | Endpoint manual | `src/routes/admin.routes.js` |
+| 2 | Cron externo (cron-job.org) | config externa |
+| 3 | Health check extendido | `src/controllers/health.controller.js` |
+
+**Verificación:**
+- ✅ `POST /api/admin/scheduler/run` → 200 OK
+- ✅ `/api/health` → `scheduler.status: "OK"`
+- ✅ W41 en `OPEN`, W42 en `SCHEDULED`
+- ✅ Cron-job.org configurado cada 10 min
+
+### HALL-071 — Schema drift (detectado)
+
+- Columna `closed_reason` documentada pero inexistente en `events_master`.
+- Pendiente decisión: agregar columna o corregir docs.
+
+**Pendiente de verificación 24h:**
+- ⏳ Cron-job.org mantiene la app despierta.
+- ⏳ W42 se abre solo el jueves 15/10.
+- ⏳ W43 se crea solo el lunes 12/10.
+
+**Commits de esta sesión:**
+- `2c7e8df` — fix(hall-072): endpoint manual de scheduler + status
+- `84771b2` — docs(hall-071-072): documentación completa
 
 ---
 
@@ -156,21 +195,21 @@ En una nueva conversación:
 ## 8. COMANDOS DE VERIFICACIÓN RÁPIDA
 
 ```cmd
-cd C:\Users\pirov\paraguay-ffaa
+cd C:\Users\Admin\proyectos\ffaa-paraguay-classic
 git log --oneline -5
 git status
 npm test
-curl -s https://paraguay-ffaa-metalstorm.fly.dev/health
-curl -s https://paraguay-ffaa-metalstorm.fly.dev/api/health
+curl -s https://paraguay-ffaa-metalstorm.onrender.com/health
+curl -s https://paraguay-ffaa-metalstorm.onrender.com/api/health
 ```
 
 **Esperado:**
-- **Log:** `e6d16dd` en top.
+- **Log:** `84771b2` en top.
 - **Status:** working tree limpio.
 - **Tests:** 287 passing / 69 skipped.
 - **Health:** `OK`.
-- **API Health:** JSON con `status: healthy`.
+- **API Health:** JSON con `status: healthy` y `scheduler.status: "OK"`.
 
 ---
 
-**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-09-23 · Commit e6d16dd**
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-08 · Commit 84771b2**

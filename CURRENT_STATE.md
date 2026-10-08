@@ -2,6 +2,39 @@
 
 ---
 
+## Cambios Recientes (2026-10-08)
+
+### HALL-071 + HALL-072 Completados
+
+| Hallazgo | Descripción | Estado |
+|---|---|---|
+| **HALL-071** | Columna `closed_reason` documentada pero inexistente en BD | 🟡 Detectado |
+| **HALL-072** | Scheduler no corría en Render (cold start) | ✅ Resuelto |
+
+**Fix HALL-072 (3 capas):**
+
+1. Endpoint manual `POST /api/admin/scheduler/run` (solo OWNER).
+2. Cron externo (cron-job.org) → ping a `/api/health` cada 10 min.
+3. Health check extendido con `scheduler.status` (`OK` | `STALE` | `ERROR`).
+
+**Estado del sistema (2026-10-08 01:59 UTC):**
+
+- `scheduler.status: "OK"`
+- `last_tick_ago_seconds: 26`
+- W41 en `OPEN`, W42 en `SCHEDULED`
+
+**Migración de Hosting:**
+
+La app migró de Fly.io a **Render.com** el 2026-10-08 (ADR-009). Costo $0/mes. Cold start ~30-50s (mitigado con cron externo).
+
+**Referencias:**
+
+- `docs/incidentes/HALL-071-closed-reason.md`
+- `docs/incidentes/HALL-072-scheduler-render.md`
+- `docs/adr/ADR-009-migracion-render.md`
+
+---
+
 ## Cambios Recientes (2026-09-23)
 
 ### BL-017 + BL-023 Completados
