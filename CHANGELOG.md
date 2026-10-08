@@ -9,6 +9,63 @@
 
 ---
 
+## [4.5.12] - 2026-10-08
+
+### HALL-072 — Fix del scheduler en Render (cold start)
+
+#### Objetivo Cumplido
+
+Restaurar el funcionamiento del scheduler de eventos SQ despues de la
+migracion a Render.com (ADR-009). El scheduler dejo de correr porque
+Render Free duerme la app despues de 15 min de inactividad.
+
+#### Solucion Aplicada (3 capas)
+
+**Capa 1 — Endpoint manual de emergencia:**
+- POST /api/admin/scheduler/run (solo OWNER).
+- Fuerza un tick del scheduler a demanda.
+
+**Capa 2 — Cron externo (cron-job.org):**
+- Ping a /api/health cada 10 minutos.
+- Mantiene la app despierta -> el scheduler corre cada 1h.
+- Costo: $0.
+
+**Capa 3 — Health check extendido:**
+- /api/health ahora reporta el estado del scheduler.
+- Campos: status, started, last_tick_at, last_tick_ago_seconds, last_tick_status.
+- Regla STALE: si el ultimo tick fue hace >2h -> status "STALE".
+
+#### Archivos Modificados
+
+| Archivo | Cambio |
+|---|---|
+| src/routes/admin.routes.js | Endpoints /scheduler/run y /scheduler/status |
+| src/controllers/health.controller.js | buildSchedulerCheck() + integracion |
+
+#### Fix Adicional — HALL-071
+
+Detectado: la columna closed_reason esta documentada en ARCHITECTURE.md,
+API_REFERENCE.md, ADR-007 y CHANGELOG.md, pero no existe en events_master.
+
+- Severidad: BAJA.
+- Accion: Documentado para fix posterior.
+
+#### Verificacion
+
+- OK POST /api/admin/scheduler/run -> 200 con last_tick_at actualizado.
+- OK GET /api/health -> scheduler.status "OK", last_tick_ago_seconds 26.
+- OK Evento W41 en OPEN, W42 en SCHEDULED.
+- OK Cron-job.org configurado cada 10 min.
+- Pendiente verificar 24h de funcionamiento continuo.
+
+#### Referencias
+
+- docs/incidentes/HALL-071-closed-reason.md
+- docs/incidentes/HALL-072-scheduler-render.md
+- docs/adr/ADR-009-migracion-render.md
+
+---
+
 ## [4.5.11] - 2026-10-08
 
 ### 🚀 Migración de Hosting: Fly.io → Render.com

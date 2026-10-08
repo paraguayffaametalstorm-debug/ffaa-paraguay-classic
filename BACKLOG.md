@@ -142,6 +142,9 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 ---
 
+| **HALL-071** | bug | Columna closed_reason documentada pero inexistente en BD | 2026-10-08 | (detectado) |
+| **HALL-072** | bug | Scheduler no corria en Render (cold start) -> fix con cron externo | 2026-10-08 | 2c7e8df |
+
 ## 📊 Métricas del Backlog
 
 | Métrica | Valor |

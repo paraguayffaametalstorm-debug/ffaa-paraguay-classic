@@ -99,6 +99,31 @@ Situación:
 - Repo: `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
 - Producción: `https://paraguay-ffaa-metalstorm.onrender.com`
 
+## Lecciones Aprendidas (actualizado 2026-10-08)
+
+### HALL-072 — El cold start rompio el scheduler
+
+La migracion a Render.com Free tuvo un efecto colateral no anticipado:
+el scheduler de eventos dejo de correr.
+
+**Causa:** Render Free duerme la app despues de 15 min de inactividad.
+Los cron jobs node-cron internos no se ejecutan mientras la app esta dormida.
+
+**Solucion (3 capas):**
+
+1. Endpoint manual POST /api/admin/scheduler/run (solo OWNER).
+2. Cron externo (cron-job.org) -> ping a /api/health cada 10 min.
+3. Health check extendido con info del scheduler.
+
+**Regla para futuras migraciones:**
+
+> Antes de migrar de plataforma, verificar TODOS los cron jobs internos.
+> En plataformas serverless/Free tier, los cron jobs internos NO son confiables.
+
+**Referencia:** docs/incidentes/HALL-072-scheduler-render.md.
+
+---
+
 ---
 
 > ADR redactado según formato **MADR 4.0** (https://adr.github.io/madr/).
