@@ -5533,10 +5533,13 @@ function showTemporaryPasswordModal(nick, tempPass, options = {}) {
   document.body.appendChild(modal);
 
   // Generar QR de acceso rápido
+  // v4.6.1 — FIX: QR siempre apunta al dominio de producción (Render).
+  // Evita que el QR apunte a fly.dev (máquinas detenidas) o localhost (no compartible).
   try {
     const qrContainer = document.getElementById('credentialQrContainer');
     if (qrContainer && typeof QRCode === 'function') {
-      const qrUrl = `${location.origin}/?nick=${encodeURIComponent(nick || '')}&temp_pass=${encodeURIComponent(tempPass || '')}&must_change_password=true`;
+      const QR_PRODUCTION_ORIGIN = 'https://paraguay-ffaa-metalstorm.onrender.com';
+      const qrUrl = `${QR_PRODUCTION_ORIGIN}/?nick=${encodeURIComponent(nick || '')}&temp_pass=${encodeURIComponent(tempPass || '')}&must_change_password=true`;
       qrContainer.innerHTML = '';
       new QRCode(qrContainer, {
         text: qrUrl,
