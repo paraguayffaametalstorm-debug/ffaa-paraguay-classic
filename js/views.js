@@ -4780,6 +4780,13 @@ let currentMembersTab = 'all';  // 'active' | 'inactive' | 'all'
 let adminMembersCacheFiltered = [];  // filtro aplicado por pestaña + filtros existentes
 
 async function loadAdminPanel() {
+  // ═══════════════════════════════════════════════════════════════
+  // F2: Restaurar el estado del sidebar (sección activa + colapsado)
+  // ═══════════════════════════════════════════════════════════════
+  if (typeof restoreAdminSidebarState === 'function') {
+    restoreAdminSidebarState();
+  }
+
   const tableBody = document.getElementById('membersTableBody');
   if (tableBody && (!adminMembersCache || adminMembersCache.length === 0)) {
     const isInactiveTab = currentMembersTab === 'inactive';
@@ -7856,6 +7863,10 @@ window.generateEventReport   = generateEventReport;
 window.downloadEventReport   = downloadEventReport;
 window.closeExportPreview    = closeExportPreview;
 window.renderEventReportHTML = renderEventReportHTML;
+
+
+
+
 
 console.log('✅ [Views] Todas las funciones de vistas expuestas correctamente en window');
 

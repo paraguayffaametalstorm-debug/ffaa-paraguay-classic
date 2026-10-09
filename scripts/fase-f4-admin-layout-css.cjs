@@ -1,0 +1,1026 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  FASE 4 — CSS del Layout del Panel Admin
+ *  ─────────────────────────────────────────────────────────────
+ *  Este script hace TODO lo que necesita la Fase 4:
+ *
+ *    [1] Crea css/admin-layout.css con los estilos del panel
+ *    [2] Remueve el bloque F2 de css/views.css (migrado)
+ *    [3] Agrega el link al nuevo CSS en index.html
+ *    [4] Backup de los archivos modificados → .bak-f4
+ *
+ *  Uso:      node scripts/fase-f4-admin-layout-css.cjs
+ *
+ *  Rollback:
+ *    copy css\views.css.bak-f4      css\views.css
+ *    copy index.html.bak-f4         index.html
+ *    del  css\admin-layout.css
+ *  ─────────────────────────────────────────────────────────────
+ *  Fecha: 2026-10-09 · Proyecto: PARAGUAY-FFAA | METALSTORM
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+// ── Rutas ──
+const ROOT = path.resolve(__dirname, '..');
+const FILE_ADMIN_LAYOUT_CSS = path.join(ROOT, 'css', 'admin-layout.css');
+const FILE_VIEWS_CSS = path.join(ROOT, 'css', 'views.css');
+const FILE_INDEX_HTML = path.join(ROOT, 'index.html');
+
+// ── Marcas para idempotencia ──
+const F2_BLOCK_START = '/* ═══════════════════════════════════════════════════════════════\n   FASE 2 — Layout del Panel Admin';
+const F2_BLOCK_END = '\n/* ═══════════════════════════════════════════════════════════════\n   HANGAR REDESIGN'; // marca del bloque siguiente para saber dónde termina
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+function log(msg)   { console.log(msg); }
+function ok(msg)    { console.log(`   ✅ ${msg}`); }
+function warn(msg)  { console.log(`   ⚠️  ${msg}`); }
+function err(msg)   { console.error(`   ❌ ${msg}`); }
+function title(msg) { console.log(`\n🔷 ${msg}`); }
+
+function crearBackupSiNoExiste(filepath) {
+  const backup = filepath + '.bak-f4';
+  if (fs.existsSync(backup)) {
+    warn(`Backup ya existía: ${path.basename(backup)} (no se toca)`);
+    return false;
+  }
+  const content = fs.readFileSync(filepath, 'utf8');
+  fs.writeFileSync(backup, content, 'utf8');
+  ok(`Backup creado: ${path.basename(backup)} (${content.length} bytes)`);
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONTENIDO DEL NUEVO admin-layout.css
+// ═══════════════════════════════════════════════════════════════
+
+const ADMIN_LAYOUT_CSS = `/**
+ * ═══════════════════════════════════════════════════════════════
+ *  PARAGUAY-FFAA | METALSTORM
+ *  admin-layout.css — Layout del Panel de Comandancia
+ *  ─────────────────────────────────────────────────────────────
+ *  Estilos del sidebar, content area, secciones y responsive.
+ *  Migrado de views.css (bloque F2) + ampliado en F4.
+ *
+ *  Estructura:
+ *   1. Variables del sidebar
+ *   2. Layout base (sidebar + content)
+ *   3. Sidebar (header, nav, botones, toggle)
+ *   4. Content area
+ *   5. Header de sección
+ *   6. Tabs internos
+ *   7. Filtros y grid de KPIs
+ *   8. Tabla modo compacto
+ *   9. Quick access + Distribución
+ *  10. Health grid (sección Estado)
+ *  11. Skeleton screens + Empty states
+ *  12. Animaciones y transiciones
+ *  13. Accesibilidad (focus visible)
+ *  14. Responsive (3 breakpoints)
+ *
+ *  Fase 4 · v4.7.0 · 2026-10-09
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   1. VARIABLES DEL SIDEBAR
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --admin-sidebar-w: 240px;
+  --admin-sidebar-collapsed-w: 64px;
+  --admin-section-transition: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. LAYOUT BASE (sidebar + content)
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-layout {
+  display: flex;
+  min-height: calc(100vh - 8rem);
+  position: relative;
+  gap: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. SIDEBAR
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-sidebar {
+  width: var(--admin-sidebar-w);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #0B132B 0%, #0F172A 100%);
+  border-right: 1.5px solid rgba(212, 175, 55, 0.25);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--admin-section-transition);
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 8rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 50;
+}
+
+#adminPanel .admin-sidebar.collapsed {
+  width: var(--admin-sidebar-collapsed-w);
+}
+
+/* Header del sidebar */
+#adminPanel .admin-sidebar-header {
+  padding: var(--sp-4) var(--sp-3);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 4rem;
+  overflow: hidden;
+}
+
+#adminPanel .admin-sidebar-logo {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: var(--radius);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+}
+
+#adminPanel .admin-sidebar-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: opacity 0.2s ease;
+}
+
+#adminPanel .admin-sidebar.collapsed .admin-sidebar-title {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+}
+
+#adminPanel .admin-sidebar-title strong {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--pry-gold);
+  letter-spacing: 1px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+#adminPanel .admin-sidebar-title small {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: #64748B;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* Nav del sidebar */
+#adminPanel .admin-sidebar-nav {
+  flex: 1;
+  padding: var(--sp-3) var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#adminPanel .admin-sidebar-btn {
+  width: 100%;
+  min-height: 44px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #CBD5E1;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  justify-content: flex-start;
+  transition: all 0.18s ease;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+#adminPanel .admin-sidebar-btn:hover {
+  background: rgba(30, 41, 59, 0.5);
+  color: #FFFFFF;
+}
+
+#adminPanel .admin-sidebar-btn.active {
+  background: linear-gradient(90deg, rgba(0, 56, 168, 0.45) 0%, rgba(15, 23, 42, 0.7) 100%);
+  color: #FFFFFF;
+  border-left-color: var(--pry-gold);
+  box-shadow: inset 0 0 15px rgba(0, 56, 168, 0.3);
+}
+
+#adminPanel .admin-sidebar-btn .asb-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  width: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+#adminPanel .admin-sidebar-btn.active .asb-icon {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.6));
+}
+
+#adminPanel .admin-sidebar-btn .asb-label {
+  flex: 1;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+#adminPanel .admin-sidebar.collapsed .asb-label,
+#adminPanel .admin-sidebar.collapsed .asb-badge {
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  overflow: hidden;
+}
+
+#adminPanel .admin-sidebar-btn .asb-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Footer del sidebar (toggle) */
+#adminPanel .admin-sidebar-footer {
+  padding: var(--sp-3) var(--sp-2);
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+#adminPanel .admin-sidebar-toggle {
+  width: 100%;
+  min-height: 40px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  color: #94A3B8;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+#adminPanel .admin-sidebar-toggle:hover {
+  color: var(--pry-gold);
+  border-color: rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+#adminPanel .admin-sidebar.collapsed .admin-sidebar-toggle .toggle-label {
+  display: none;
+}
+
+#adminPanel .admin-sidebar-toggle .toggle-icon {
+  transition: transform 0.3s ease;
+  font-size: 0.9rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   4. CONTENT AREA
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-5) var(--sp-6);
+  max-width: 1400px;
+  width: 100%;
+  position: relative;
+}
+
+/* Contenedor de secciones dinámicas */
+#adminPanel #adminSectionContent {
+  min-height: 60vh;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5. HEADER DE SECCIÓN
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#adminPanel .admin-section-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+#adminPanel .admin-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   6. TABS INTERNOS DE SECCIÓN
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+
+#adminPanel .admin-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1.5px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-body);
+  min-height: 40px;
+}
+
+#adminPanel .admin-tab-btn:hover {
+  border-color: #64748b;
+  color: #cbd5e1;
+}
+
+#adminPanel .admin-tab-btn.active {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: #94a3b8;
+  color: #cbd5e1;
+}
+
+#adminPanel .admin-tab-btn.active-green {
+  background: rgba(46, 204, 113, 0.15);
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+#adminPanel .admin-tab-btn.active-red {
+  background: rgba(231, 76, 60, 0.15);
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+#adminPanel .admin-tab-btn .tab-count {
+  background: rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+#adminPanel .admin-tab-btn.active-green .tab-count {
+  background: rgba(46, 204, 113, 0.25);
+  color: #2ecc71;
+}
+
+#adminPanel .admin-tab-btn.active-red .tab-count {
+  background: rgba(231, 76, 60, 0.25);
+  color: #e74c3c;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   7. FILTROS Y GRID DE KPIs
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 1.2rem;
+  align-items: end;
+}
+
+#adminPanel .admin-filters label {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  display: block;
+  margin-bottom: 4px;
+}
+
+#adminPanel .stats-grid-tactical {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 480px) {
+  #adminPanel .stats-grid-tactical {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #adminPanel .stats-grid-tactical {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8. TABLA — MODO COMPACTO
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .data-table td {
+  height: 48px;
+  transition: height 0.2s ease, padding 0.2s ease;
+}
+
+#adminPanel .table-compact .data-table td,
+#adminPanel .table-compact .data-table th {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 0.8rem;
+}
+
+#adminPanel .table-compact .data-table td {
+  height: 32px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   9. QUICK ACCESS + DISTRIBUCIÓN
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+#adminPanel .quick-access-btn {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 4.5rem;
+  color: #fff;
+  font-family: var(--font-body);
+}
+
+#adminPanel .quick-access-btn:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: rgba(212, 175, 55, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+#adminPanel .qa-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+#adminPanel .qa-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#adminPanel .qa-title {
+  font-size: 0.88rem;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+#adminPanel .qa-desc {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  line-height: 1.3;
+}
+
+/* Distribución de rendimiento (barras) */
+#adminPanel .distribution-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+#adminPanel .dist-card {
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  border: 1px solid;
+}
+
+#adminPanel .dist-card .dist-count {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+#adminPanel .dist-card .dist-label {
+  font-size: 0.72rem;
+  color: #a0aec0;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   10. HEALTH GRID (Sección Estado)
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+#adminPanel .health-item {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+#adminPanel .health-item .health-label {
+  font-size: 0.72rem;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+#adminPanel .health-item .health-value {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   11. SKELETON SCREENS + EMPTY STATES
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .skeleton-line {
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.08) 25%,
+    rgba(148, 163, 184, 0.18) 50%,
+    rgba(148, 163, 184, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: adminSkeletonShimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+@keyframes adminSkeletonShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+#adminPanel .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px dashed rgba(100, 116, 139, 0.3);
+  border-radius: var(--radius-lg);
+}
+
+#adminPanel .empty-state .empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
+#adminPanel .empty-state h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: #e2e8f0;
+  margin: 0 0 0.5rem 0;
+}
+
+#adminPanel .empty-state p {
+  font-size: 0.88rem;
+  color: #94a3b8;
+  margin: 0 0 1rem 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   12. ANIMACIONES Y TRANSICIONES
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-section {
+  animation: adminSectionFade 0.3s ease;
+}
+
+@keyframes adminSectionFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   13. ACCESIBILIDAD — Focus Visible (WCAG AA)
+   ═══════════════════════════════════════════════════════════════ */
+
+#adminPanel .admin-sidebar-btn:focus-visible,
+#adminPanel .admin-sidebar-toggle:focus-visible,
+#adminPanel .admin-tab-btn:focus-visible,
+#adminPanel .quick-access-btn:focus-visible {
+  outline: 2px solid var(--pry-gold);
+  outline-offset: 2px;
+}
+
+#adminPanel .admin-sidebar-btn:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   14. RESPONSIVE — 3 BREAKPOINTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Tablet: 768-1024px → sidebar colapsado por defecto ── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #adminPanel .admin-sidebar {
+    width: var(--admin-sidebar-collapsed-w);
+  }
+
+  #adminPanel .admin-sidebar .asb-label,
+  #adminPanel .admin-sidebar .asb-badge,
+  #adminPanel .admin-sidebar .admin-sidebar-title {
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    overflow: hidden;
+  }
+
+  #adminPanel .admin-sidebar-toggle .toggle-label {
+    display: none;
+  }
+
+  #adminPanel .admin-content {
+    padding: var(--sp-4) var(--sp-5);
+  }
+}
+
+/* ── Mobile: < 768px → sidebar = drawer ── */
+@media (max-width: 767px) {
+  #adminPanel .admin-layout {
+    min-height: auto;
+  }
+
+  #adminPanel .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 85vw);
+    height: 100vh;
+    transform: translateX(-105%);
+    transition: transform var(--admin-section-transition);
+    z-index: 1000;
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+    padding-top: var(--sat, 0px);
+  }
+
+  #adminPanel .admin-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  #adminPanel .admin-sidebar.collapsed {
+    width: min(300px, 85vw);
+  }
+
+  #adminPanel .admin-sidebar.collapsed .asb-label,
+  #adminPanel .admin-sidebar.collapsed .asb-badge,
+  #adminPanel .admin-sidebar.collapsed .admin-sidebar-title {
+    opacity: 1;
+    pointer-events: auto;
+    width: auto;
+    overflow: visible;
+  }
+
+  #adminPanel .admin-sidebar.collapsed .admin-sidebar-toggle .toggle-label {
+    display: inline;
+  }
+
+  #adminPanel .admin-content {
+    padding: var(--sp-4);
+    padding-top: 5rem;
+  }
+
+  /* Header de sección en mobile: apilado */
+  #adminPanel .admin-section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #adminPanel .admin-section-actions {
+    justify-content: flex-start;
+  }
+
+  /* Tabs internos: scroll horizontal si no caben */
+  #adminPanel .admin-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  #adminPanel .admin-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  #adminPanel .admin-tab-btn {
+    flex-shrink: 0;
+  }
+
+  /* Filtros: una columna */
+  #adminPanel .admin-filters {
+    grid-template-columns: 1fr;
+  }
+
+  /* Quick access: una columna en mobile */
+  #adminPanel .quick-access-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Health grid: una columna */
+  #adminPanel .health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* KPIs: 2 columnas en mobile */
+  #adminPanel .stats-grid-tactical {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Distribución: 2 columnas */
+  #adminPanel .distribution-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Desktop grande: > 1400px → más aire ── */
+@media (min-width: 1400px) {
+  #adminPanel .admin-content {
+    padding: var(--sp-6) var(--sp-8);
+  }
+}
+`;
+
+// ═══════════════════════════════════════════════════════════════
+//  PASO 1 — Crear css/admin-layout.css
+// ═══════════════════════════════════════════════════════════════
+
+function paso1_crearAdminLayoutCss() {
+  title('PASO 1 — Crear css/admin-layout.css');
+
+  if (fs.existsSync(FILE_ADMIN_LAYOUT_CSS)) {
+    warn('admin-layout.css ya existía, se sobreescribirá');
+  }
+
+  fs.writeFileSync(FILE_ADMIN_LAYOUT_CSS, ADMIN_LAYOUT_CSS, 'utf8');
+  const bytes = Buffer.byteLength(ADMIN_LAYOUT_CSS, 'utf8');
+  ok(`admin-layout.css creado (${bytes} bytes)`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PASO 2 — Remover el bloque F2 de views.css
+// ═══════════════════════════════════════════════════════════════
+
+function paso2_limpiarViewsCss() {
+  title('PASO 2 — Remover el bloque F2 de css/views.css');
+
+  if (!fs.existsSync(FILE_VIEWS_CSS)) {
+    err('No existe: css/views.css');
+    process.exit(1);
+  }
+
+  const content = fs.readFileSync(FILE_VIEWS_CSS, 'utf8');
+
+  // Buscar el inicio del bloque F2
+  const startIdx = content.indexOf(F2_BLOCK_START);
+  if (startIdx === -1) {
+    warn('No se encontró el bloque F2 en views.css (¿ya fue limpiado?)');
+    return { skipped: true };
+  }
+
+  // Buscar el final del bloque F2 usando marcas ROBUSTAS
+  // (evita problemas de codificación con caracteres Unicode de caja)
+  const endMarkers = [
+    'HANGAR REDESIGN — CAMBIO 1',
+    'HANGAR REDESIGN — CAMBIO 2',
+    'HANGAR REDESIGN — CAMBIO 3',
+    'HANGAR REDESIGN — CAMBIO 5',
+    'HANGAR REDESIGN',
+  ];
+
+  let endIdx = -1;
+  let markerUsado = null;
+  for (const marker of endMarkers) {
+    const idx = content.indexOf(marker, startIdx);
+    if (idx !== -1) {
+      endIdx = idx;
+      markerUsado = marker;
+      break;
+    }
+  }
+
+  if (endIdx === -1) {
+    err('❌ No se encontró NINGÚN marcador de fin del bloque F2.');
+    err('   Marcadores buscados: ' + endMarkers.join(' | '));
+    err('   Por SEGURIDAD, NO se modifica views.css.');
+    err('   Revisá manualmente el archivo.');
+    process.exit(1);
+  }
+
+  // Retroceder hasta el comienzo del comentario /* que precede al marcador
+  const comentarioStart = content.lastIndexOf('/*', endIdx);
+  if (comentarioStart !== -1 && comentarioStart > startIdx) {
+    endIdx = comentarioStart;
+  }
+
+  ok(`Marcador de fin encontrado: "${markerUsado}" (offset ${endIdx})`);
+
+  // Remover desde startIdx hasta endIdx
+  crearBackupSiNoExiste(FILE_VIEWS_CSS);
+  const nuevoContenido = content.slice(0, startIdx) + content.slice(endIdx);
+
+  const bytesEliminados = content.length - nuevoContenido.length;
+  const bytesRestantes = nuevoContenido.length;
+  const bytesOriginales = content.length;
+
+  // ⚠️ GUARDA: el archivo resultante debe pesar AL MENOS el 90% del original
+  // (el bloque F2 es chico, ~4-5 KB, no debería afectar más del 15%)
+  const porcentajeRestante = (bytesRestantes / bytesOriginales) * 100;
+  if (porcentajeRestante < 90) {
+    err(`❌ ABORTADO: views.css quedaría con solo ${bytesRestantes} bytes (${porcentajeRestante.toFixed(1)}% del original).`);
+    err(`   Solo se removieron ${bytesEliminados} bytes, pero el límite de seguridad es 90%.`);
+    err('   Esto indica que se está removiendo DEMASIADO contenido.');
+    err('   NO se modificó views.css.');
+    process.exit(1);
+  }
+
+  fs.writeFileSync(FILE_VIEWS_CSS, nuevoContenido, 'utf8');
+  ok(`Bloque F2 removido de views.css (${bytesEliminados} bytes eliminados, ${bytesRestantes} bytes restantes, ${porcentajeRestante.toFixed(1)}% del original)`);
+  return { skipped: false };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PASO 3 — Agregar el link en index.html
+// ═══════════════════════════════════════════════════════════════
+
+function paso3_agregarLinkEnIndex() {
+  title('PASO 3 — Agregar link en index.html');
+
+  if (!fs.existsSync(FILE_INDEX_HTML)) {
+    err('No existe: index.html');
+    process.exit(1);
+  }
+
+  let content = fs.readFileSync(FILE_INDEX_HTML, 'utf8');
+
+  // ¿Ya está el link?
+  if (content.includes('/css/admin-layout.css')) {
+    warn('El link ya estaba en index.html (skip)');
+    return { skipped: true };
+  }
+
+  // Buscar el último <link rel="stylesheet"> de css/ y agregar el nuevo después
+  const marker = '<link rel="stylesheet" href="/css/help.css?v=4.6.1">';
+  if (!content.includes(marker)) {
+    err('No se encontró el marcador help.css en index.html');
+    process.exit(1);
+  }
+
+  const nuevoLink = '<link rel="stylesheet" href="/css/admin-layout.css?v=4.7.0">';
+  content = content.replace(marker, marker + '\n  ' + nuevoLink);
+
+  crearBackupSiNoExiste(FILE_INDEX_HTML);
+  fs.writeFileSync(FILE_INDEX_HTML, content, 'utf8');
+  ok('Link agregado a index.html');
+  return { skipped: false };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN
+// ═══════════════════════════════════════════════════════════════
+
+function main() {
+  console.log('\n═══════════════════════════════════════════════════════');
+  console.log('  🚀 FASE 4 — CSS del Layout del Panel Admin');
+  console.log('═══════════════════════════════════════════════════════');
+
+  paso1_crearAdminLayoutCss();
+  const r2 = paso2_limpiarViewsCss();
+  const r3 = paso3_agregarLinkEnIndex();
+
+  console.log('\n═══════════════════════════════════════════════════════');
+  console.log('  ✅ FASE 4 — Completada');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('  css/admin-layout.css:  creado (14 bloques de estilos)');
+  console.log(`  css/views.css:         ${r2.skipped ? 'sin cambios' : 'bloque F2 removido'}`);
+  console.log(`  index.html:            ${r3.skipped ? 'sin cambios' : 'link agregado'}`);
+  console.log('');
+  console.log('  📁 Backups:');
+  console.log('     css/views.css.bak-f4');
+  console.log('     index.html.bak-f4');
+  console.log('');
+  console.log('  🌐 Próximo paso:');
+  console.log('     F5 — JS del sidebar (switchAdminSection real)');
+  console.log('');
+  console.log('  🔙 Rollback:');
+  console.log('     copy css\\views.css.bak-f4  css\\views.css');
+  console.log('     copy index.html.bak-f4     index.html');
+  console.log('     del  css\\admin-layout.css');
+  console.log('═══════════════════════════════════════════════════════\n');
+}
+
+main();

@@ -1,0 +1,204 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SECCIÓN: DOTACIÓN del Panel Admin
+     ─────────────────────────────────────────────────────────────
+     - Tabs (Activos / Inactivos / Todos) → Activos por defecto
+     - Filtros de búsqueda
+     - Tabla de miembros con acciones inline
+     - Formulario de alta de piloto
+     ─────────────────────────────────────────────────────────────
+     IDs únicos:
+       #membersTableBody, #noResultsMessage
+       #tabActive, #tabInactive, #tabAll
+       #tabActiveCount, #tabInactiveCount, #tabAllCount
+       #memberSearch, #roleFilter, #weeksFilter, #perfStatusFilter, #statusFilter
+       #newMemberNick, #newMemberEmailLocal, #newMemberRole
+       #newMemberEmailFullPreview
+       #membersSectionBody, #membersSectionToggleIcon
+     ─────────────────────────────────────────────────────────────
+     Dependencias JS (existentes):
+       switchMembersTab(), filterMembers(), resetMemberFilters()
+       addNewMember(), toggleMembersSection()
+       handleNewMemberNickInput(), handleNewMemberEmailInput()
+     ─────────────────────────────────────────────────────────────
+     Fase 3 · v4.7.0 · 2026-10-09
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-section-header">
+  <div>
+    <div class="badge-tag">PERSONNEL · ROSTER</div>
+    <h2>👥 Dotación del Escuadrón</h2>
+    <p class="subtitle">Gestión de pilotos, rangos y estados de servicio</p>
+  </div>
+  <div class="admin-section-actions">
+    <button type="button" class="btn-secondary btn-sm" id="dotacionCompactToggle" onclick="toggleDotacionCompactMode()">
+      <span id="compactToggleLabel">⬜ Modo Compacto</span>
+    </button>
+    <button type="button" class="btn-secondary btn-sm" onclick="resetMemberFilters()">
+      🔄 Limpiar Filtros
+    </button>
+  </div>
+</div>
+
+<!-- Tabs de Estado (Activos por defecto) -->
+<div id="membersTabsContainer" class="admin-tabs">
+  <button type="button" id="tabActive" class="admin-tab-btn active-green" onclick="switchMembersTab('active')">
+    <span>🟢 Activos</span>
+    <span id="tabActiveCount" class="tab-count">(0)</span>
+  </button>
+  <button type="button" id="tabInactive" class="admin-tab-btn" onclick="switchMembersTab('inactive')">
+    <span>🔴 Inactivos</span>
+    <span id="tabInactiveCount" class="tab-count">(0)</span>
+  </button>
+  <button type="button" id="tabAll" class="admin-tab-btn" onclick="switchMembersTab('all')">
+    <span>📋 Todos</span>
+    <span id="tabAllCount" class="tab-count">(0)</span>
+  </button>
+</div>
+
+<!-- Filtros -->
+<div class="admin-filters">
+  <div>
+    <label for="memberSearch">Buscar Piloto</label>
+    <input type="text" id="memberSearch" placeholder="Nick o email..." oninput="filterMembers()" />
+  </div>
+  <div>
+    <label for="roleFilter">Rango / Rol</label>
+    <select id="roleFilter" onchange="filterMembers()">
+      <option value="">Todos</option>
+      <option value="MIEMBRO">Miembro</option>
+      <option value="VETERANO">Veterano</option>
+      <option value="ADMIN">Admin</option>
+      <option value="OWNER">Owner</option>
+    </select>
+  </div>
+  <div>
+    <label for="weeksFilter">Semanas Evaluadas</label>
+    <select id="weeksFilter" onchange="filterMembers()">
+      <option value="">Todas</option>
+      <option value="1">1 sem</option>
+      <option value="2">2 sem</option>
+      <option value="3">3 sem</option>
+      <option value="4+">4+ sem</option>
+    </select>
+  </div>
+  <div>
+    <label for="perfStatusFilter">Estado Rendimiento</label>
+    <select id="perfStatusFilter" onchange="filterMembers()">
+      <option value="">Todos</option>
+      <option value="VERDE">🟢 Verde</option>
+      <option value="NARANJA">🟠 Naranja</option>
+      <option value="ROJO">🔴 Rojo</option>
+      <option value="NEGRO">⚫ Negro</option>
+      <option value="PENDIENTE">⏸ Pendiente</option>
+    </select>
+  </div>
+  <div>
+    <label for="statusFilter">Estado de Cuenta</label>
+    <select id="statusFilter" onchange="filterMembers()">
+      <option value="">Todos</option>
+      <option value="ACTIVE">ACTIVE</option>
+      <option value="INACTIVE">INACTIVE</option>
+    </select>
+  </div>
+</div>
+
+<!-- Tabla de Pilotos -->
+<div id="membersSectionBody">
+  <div id="dotacionTableWrapper" style="overflow-x:auto;">
+    <table class="data-table" style="width:100%;font-size:0.88rem;">
+      <thead>
+        <tr>
+          <th>Piloto</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Últ. Actividad</th>
+          <th>Prom. Tokens</th>
+          <th style="text-align:center;">Gestión & Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="membersTableBody">
+        <tr>
+          <td colspan="7" style="text-align:center;padding:2rem;color:#a0aec0;">
+            ⏳ Sincronizando registros militares de la escuadra...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div id="noResultsMessage" style="display:none;padding:1.5rem;text-align:center;color:#a0aec0;">
+      No se encontraron pilotos con los filtros seleccionados
+    </div>
+  </div>
+</div>
+
+<!-- Formulario de Alta de Piloto -->
+<div class="card tactical-corners" style="margin-top:1.5rem;">
+  <div class="card-header">
+    <h3 style="margin:0;">➕ Registrar Nuevo Piloto</h3>
+    <span class="badge-tag">ALTA C4ISR</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
+    <div>
+      <label for="newMemberNick" style="font-size:0.8rem;color:#a0aec0;">
+        Nickname en MetalStorm
+      </label>
+      <input
+        type="text"
+        id="newMemberNick"
+        placeholder="Ej: PRY_Viper"
+        autocomplete="off"
+        spellcheck="false"
+        oninput="window.handleNewMemberNickInput && window.handleNewMemberNickInput()"
+      />
+    </div>
+    <div>
+      <label for="newMemberEmailLocal" style="font-size:0.8rem;color:#a0aec0;">
+        Correo Institucional
+        <span style="font-size:0.7rem;color:#64748b;font-weight:normal;">(auto-generado, editable)</span>
+      </label>
+      <div style="display:flex;align-items:stretch;width:100%;">
+        <input
+          type="text"
+          id="newMemberEmailLocal"
+          placeholder="piloto"
+          autocomplete="off"
+          spellcheck="false"
+          style="flex:1;min-width:0;border-top-right-radius:0;border-bottom-right-radius:0;"
+          oninput="window.handleNewMemberEmailInput && window.handleNewMemberEmailInput()"
+        />
+        <span style="display:flex;align-items:center;padding:0 10px;background:rgba(15,23,42,0.9);border:1px solid #334155;border-left:none;border-top-right-radius:6px;border-bottom-right-radius:6px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:0.82rem;white-space:nowrap;">
+          @ffaa.py
+        </span>
+      </div>
+      <div id="newMemberEmailFullPreview" style="font-size:0.72rem;color:#64748b;margin-top:4px;font-family:'JetBrains Mono',monospace;min-height:14px;"></div>
+    </div>
+    <div>
+      <label for="newMemberRole" style="font-size:0.8rem;color:#a0aec0;">Rol Inicial</label>
+      <select id="newMemberRole">
+        <option value="MIEMBRO">MIEMBRO</option>
+        <option value="VETERANO">VETERANO</option>
+        <option value="ADMIN">ADMIN</option>
+      </select>
+    </div>
+    <div>
+      <button type="button" onclick="addNewMember()" class="btn-primary" style="width:100%;">
+        ➕ Registrar Piloto
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Modo compacto de tabla (exclusivo de la sección Dotación)
+  (function() {
+    'use strict';
+    let _compactMode = false;
+    window.toggleDotacionCompactMode = function() {
+      _compactMode = !_compactMode;
+      const wrapper = document.getElementById('dotacionTableWrapper');
+      if (wrapper) wrapper.classList.toggle('table-compact', _compactMode);
+      const label = document.getElementById('compactToggleLabel');
+      if (label) label.textContent = _compactMode ? '✅ Modo Compacto' : '⬜ Modo Compacto';
+    };
+  })();
+</script>

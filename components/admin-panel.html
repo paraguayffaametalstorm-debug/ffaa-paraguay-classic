@@ -1,269 +1,327 @@
 <div id="adminPanel" class="view" style="display:none;">
-  <div class="view-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
-    <div>
-      <h2>🛡️ Panel de Comandancia & Administración</h2>
-      <p class="subtitle">Supervisión táctica de miembros, eventos y auditoría de escuadrón</p>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button onclick="refreshAdminStats()" class="btn-secondary">🔄 Actualizar</button>
-      <button onclick="showView('adminPlaneModels')" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;">✈️ Catálogo Aeronaves</button>
-      <button onclick="showUploadEventModal()" class="btn-primary">⚡ Carga Masiva de Evento</button>
-    </div>
-  </div>
+  <!-- ═══════════════════════════════════════════════════════════════
+       PANEL ADMIN v4.7.0 — FASE 2: Shell + Sidebar
+       ─────────────────────────────────────────────────────────────
+       Estructura:
+         .admin-layout
+           ├── .admin-sidebar  (5 secciones navegables)
+           └── .admin-content  (contenedor dinámico de secciones)
 
-  <!-- Admin General Stats -->
-  <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;">
-    <div class="card stat-card" style="border-left:4px solid #2ecc71;">
-      <h4>Pilotos Activos</h4>
-      <div id="totalMembers" style="font-size:1.8rem;font-weight:700;color:#2ecc71;">-</div>
-    </div>
-    <div class="card stat-card" style="border-left:4px solid #d4af37;">
-      <h4>Promedio de Escuadrón</h4>
-      <div id="adminAvgTokens" style="font-size:1.8rem;font-weight:700;color:#d4af37;">-</div>
-    </div>
-    <div class="card stat-card" style="border-left:4px solid #e74c3c;">
-      <h4>Pilotos en Riesgo</h4>
-      <div id="atRiskMembers" style="font-size:1.8rem;font-weight:700;color:#e74c3c;">-</div>
-    </div>
-    <div class="card stat-card" style="border-left:4px solid #3498db;">
-      <h4>Última Sincronización</h4>
-      <div id="lastUpdate" style="font-size:1rem;font-weight:600;color:#cbd5e0;margin-top:8px;">-</div>
-    </div>
-  </div>
+       Las secciones se inyectan vía switchAdminSection() en F3/F5.
+       Estado actual F2: contenedor con placeholder "en construcción".
+       ─────────────────────────────────────────────────────────────
+       Rollback: copiar admin-panel.html.bak-f2 sobre este archivo.
+       ═══════════════════════════════════════════════════════════════ -->
 
-  <!-- Distribution of Pilots by Status -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <h3 style="margin-bottom:1rem;">📊 Distribución de Rendimiento Actual</h3>
-    <div id="pilotsByStatus"></div>
-  </div>
+  <div class="admin-layout">
 
-  <!-- (Black Market Control eliminado en F4.3 · absorbido por #adminEventsV2Container) -->
+    <!-- ═══════════════════════════════════════════════════════
+         SIDEBAR DE COMANDANCIA
+         ═══════════════════════════════════════════════════════ -->
+    <aside class="admin-sidebar" id="adminSidebar" aria-label="Navegación del Panel de Comandancia">
 
-  <!-- Members Management Section -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleMembersSection()">
-      <h3>👥 Registro Oficial de Pilotos</h3>
-      <span id="membersSectionToggleIcon" style="font-size:1.2rem;transition:transform 0.2s ease;">▼</span>
-    </div>
-
-    <div id="membersSectionBody" style="margin-top:1.2rem;">
-      <!-- Pestañas de Estado de Pilotos -->
-      <div id="membersTabsContainer" style="display:flex;gap:10px;margin-bottom:1.2rem;flex-wrap:wrap;">
-        <button type="button" id="tabActive" class="tab-btn" onclick="switchMembersTab('active')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:transparent;border:1.5px solid #334155;border-radius:6px;color:#94a3b8;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s ease;">
-          <span>🟢 Activos</span>
-          <span id="tabActiveCount" style="background:rgba(46,204,113,0.2);color:#2ecc71;padding:1px 6px;border-radius:10px;font-size:0.75rem;">(0)</span>
-        </button>
-        <button type="button" id="tabInactive" class="tab-btn" onclick="switchMembersTab('inactive')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:transparent;border:1.5px solid #334155;border-radius:6px;color:#94a3b8;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s ease;">
-          <span>🔴 Inactivos</span>
-          <span id="tabInactiveCount" style="background:rgba(231,76,60,0.2);color:#e74c3c;padding:1px 6px;border-radius:10px;font-size:0.75rem;">(0)</span>
-        </button>
-        <button type="button" id="tabAll" class="tab-btn active" onclick="switchMembersTab('all')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(148,163,184,0.15);border:1.5px solid #94a3b8;border-radius:6px;color:#cbd5e1;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s ease;">
-          <span>📋 Todos</span>
-          <span id="tabAllCount" style="background:rgba(148,163,184,0.25);color:#cbd5e1;padding:1px 6px;border-radius:10px;font-size:0.75rem;">(0)</span>
-        </button>
-      </div>
-
-      <!-- Filters -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.2rem;align-items:end;">
-        <div>
-          <label for="memberSearch" style="font-size:0.8rem;color:#a0aec0;">Buscar Piloto</label>
-          <input type="text" id="memberSearch" placeholder="Nick..." oninput="filterMembers()" />
-        </div>
-        <div>
-          <label for="roleFilter" style="font-size:0.8rem;color:#a0aec0;">Rango / Rol</label>
-          <select id="roleFilter" onchange="filterMembers()">
-            <option value="">Todos</option>
-            <option value="MIEMBRO">Miembro</option>
-            <option value="VETERANO">Veterano</option>
-            <option value="ADMIN">Admin</option>
-            <option value="OWNER">Owner</option>
-          </select>
-        </div>
-        <div>
-          <label for="weeksFilter" style="font-size:0.8rem;color:#a0aec0;">Semanas</label>
-          <select id="weeksFilter" onchange="filterMembers()">
-            <option value="">Todas</option>
-            <option value="1">1 sem</option>
-            <option value="2">2 sem</option>
-            <option value="3">3 sem</option>
-            <option value="4+">4+ sem</option>
-          </select>
-        </div>
-        <div>
-          <label for="perfStatusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado Rendimiento</label>
-          <select id="perfStatusFilter" onchange="filterMembers()">
-            <option value="">Todos</option>
-            <option value="VERDE">Verde</option>
-            <option value="NARANJA">Naranja</option>
-            <option value="ROJO">Rojo</option>
-            <option value="NEGRO">Negro</option>
-            <option value="PENDIENTE">Pendiente</option>
-          </select>
-        </div>
-        <div>
-          <label for="statusFilter" style="font-size:0.8rem;color:#a0aec0;">Estado</label>
-          <select id="statusFilter" onchange="filterMembers()">
-            <option value="">Todos</option>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
-        <div>
-          <button onclick="resetMemberFilters()" class="btn-secondary" style="width:100%;">🔄 Limpiar</button>
+      <!-- Header del sidebar -->
+      <div class="admin-sidebar-header">
+        <div class="admin-sidebar-logo" aria-hidden="true">🛡️</div>
+        <div class="admin-sidebar-title">
+          <strong>COMANDANCIA</strong>
+          <small>Panel Admin · v4.7</small>
         </div>
       </div>
 
-      <div style="overflow-x:auto;">
-        <table class="data-table" style="width:100%;font-size:0.88rem;">
-          <thead>
-            <tr>
-              <th>Piloto</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Últ. Actividad</th>
-              <th>Prom. Tokens</th>
-              <th style="text-align:center;">Gestión & Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="membersTableBody">
-          </tbody>
-        </table>
-        <div id="noResultsMessage" style="display:none;padding:1.5rem;text-align:center;color:#a0aec0;">
-          No se encontraron pilotos con los filtros seleccionados
+      <!-- Navegación entre secciones -->
+      <nav class="admin-sidebar-nav" aria-label="Secciones del panel">
+        <button type="button"
+                class="admin-sidebar-btn active"
+                data-section="resumen"
+                onclick="switchAdminSection('resumen')"
+                aria-current="page">
+          <span class="asb-icon" aria-hidden="true">📊</span>
+          <span class="asb-label">Resumen</span>
+        </button>
+
+        <button type="button"
+                class="admin-sidebar-btn"
+                data-section="dotacion"
+                onclick="switchAdminSection('dotacion')">
+          <span class="asb-icon" aria-hidden="true">👥</span>
+          <span class="asb-label">Dotación</span>
+          <span class="asb-badge" id="sidebarDotacionCount">—</span>
+        </button>
+
+        <button type="button"
+                class="admin-sidebar-btn"
+                data-section="eventos"
+                onclick="switchAdminSection('eventos')">
+          <span class="asb-icon" aria-hidden="true">📅</span>
+          <span class="asb-label">Eventos</span>
+        </button>
+
+        <button type="button"
+                class="admin-sidebar-btn"
+                data-section="catalogo"
+                onclick="switchAdminSection('catalogo')">
+          <span class="asb-icon" aria-hidden="true">✈️</span>
+          <span class="asb-label">Catálogo</span>
+        </button>
+
+        <button type="button"
+                class="admin-sidebar-btn"
+                data-section="estado"
+                onclick="switchAdminSection('estado')">
+          <span class="asb-icon" aria-hidden="true">⚙️</span>
+          <span class="asb-label">Estado</span>
+        </button>
+      </nav>
+
+      <!-- Toggle colapsable -->
+      <div class="admin-sidebar-footer">
+        <button type="button"
+                class="admin-sidebar-toggle"
+                id="adminSidebarToggle"
+                onclick="toggleAdminSidebar()"
+                aria-label="Colapsar o expandir sidebar">
+          <span class="toggle-icon" aria-hidden="true">◀</span>
+          <span class="toggle-label">Colapsar</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CONTENIDO DINÁMICO DE SECCIONES
+         ═══════════════════════════════════════════════════════ -->
+    <main class="admin-content" id="adminContent" role="main">
+
+      <!-- Overlay para mobile drawer -->
+      <div class="admin-mobile-overlay" id="adminMobileOverlay" onclick="closeAdminMobileSidebar()" aria-hidden="true"></div>
+
+      <!-- Botón hamburguesa mobile -->
+      <button type="button"
+              class="admin-mobile-trigger btn-secondary"
+              onclick="openAdminMobileSidebar()"
+              aria-label="Abrir menú lateral">
+        ☰
+      </button>
+
+      <!-- Contenedor donde se inyectan las secciones -->
+      <div id="adminSectionContent" aria-live="polite">
+        <!-- F2: placeholder · F3 inyectará aquí las 5 secciones -->
+        <div class="admin-f2-placeholder" style="
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          min-height:60vh;
+          text-align:center;
+          padding:3rem 1.5rem;
+          color:#94a3b8;
+        ">
+          <div style="font-size:3rem;margin-bottom:1rem;">🛡️</div>
+          <h2 style="
+            font-family:var(--font-display);
+            color:var(--pry-gold);
+            font-size:1.6rem;
+            letter-spacing:2px;
+            margin:0 0 0.75rem 0;
+          ">PANEL DE COMANDANCIA</h2>
+          <p style="
+            font-size:0.95rem;
+            max-width:520px;
+            line-height:1.6;
+            color:#cbd5e1;
+            margin:0 0 0.5rem 0;
+          ">
+            <strong style="color:#38BDF8;">Fase 2 completada</strong> · Shell + Sidebar operativos.
+          </p>
+          <p style="
+            font-size:0.85rem;
+            max-width:520px;
+            line-height:1.6;
+            color:#94a3b8;
+            margin:0;
+          ">
+            Las 5 secciones se construirán en <strong style="color:#D4AF37;">Fase 3</strong>
+            y se inyectarán en <code style="
+              background:rgba(15,23,42,0.8);
+              padding:2px 6px;
+              border-radius:4px;
+              font-family:var(--font-mono);
+              font-size:0.8rem;
+              color:#60a5fa;
+            ">#adminSectionContent</code>.
+          </p>
+          <div style="
+            margin-top:1.5rem;
+            padding:10px 16px;
+            background:rgba(212,175,55,0.08);
+            border:1px dashed rgba(212,175,55,0.4);
+            border-radius:6px;
+            font-family:var(--font-mono);
+            font-size:0.78rem;
+            color:#d4af37;
+            letter-spacing:0.5px;
+          ">
+            ⚠️ El panel real estará operativo al cierre de F5
+          </div>
         </div>
       </div>
-    </div>
+
+    </main>
+
   </div>
 
-  <!-- Add New Member Form -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <h3 style="margin-bottom:1rem;">➕ Registrar Nuevo Piloto al Escuadrón</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
+  <!-- ═══════════════════════════════════════════════════════════════
+       MODALES PRESERVADOS INTACTOS (no se tocan en F2)
+       ═══════════════════════════════════════════════════════════════ -->
+
+<!-- ═══ MODAL PRESERVADO: inactivateUserModal ═══ -->
+<div id="inactivateUserModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(231,76,60,0.3);">
       <div>
-        <label for="newMemberNick" style="font-size:0.8rem;color:#a0aec0;">Nickname en MetalStorm</label>
-        <input
-          type="text"
-          id="newMemberNick"
-          placeholder="Ej: PRY_Viper"
-          autocomplete="off"
-          spellcheck="false"
-          oninput="window.handleNewMemberNickInput && window.handleNewMemberNickInput()"
-        />
+        <h3 style="color:#e74c3c;margin:0;">🔴 Inactivar Piloto</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="inactivateUserNickDisplay" style="color:#f8fafc;">-</strong></p>
       </div>
-      <div>
-        <label for="newMemberEmailLocal" style="font-size:0.8rem;color:#a0aec0;">
-          Correo Institucional
-          <span style="font-size:0.7rem;color:#64748b;font-weight:normal;">(auto-generado, editable)</span>
+      <span class="close-btn" onclick="closeModal('inactivateUserModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="inactivateUserId" />
+      <input type="hidden" id="inactivateUserNick" />
+
+      <div style="padding:10px 12px;background:rgba(231,76,60,0.1);border-left:3px solid #e74c3c;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fca5a5;line-height:1.4;">
+        ⚠️ El piloto perderá acceso inmediato a la plataforma. Todos sus datos se conservan.
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="inactivateReasonSelect" style="display:block;margin-bottom:6px;font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+          Motivo Principal <span style="color:#e74c3c;">*</span>
         </label>
-        <div style="display:flex;align-items:stretch;width:100%;">
-          <input
-            type="text"
-            id="newMemberEmailLocal"
-            placeholder="piloto"
-            autocomplete="off"
-            spellcheck="false"
-            style="flex:1;min-width:0;border-top-right-radius:0;border-bottom-right-radius:0;"
-            oninput="window.handleNewMemberEmailInput && window.handleNewMemberEmailInput()"
-          />
-          <span style="display:flex;align-items:center;padding:0 10px;background:rgba(15,23,42,0.9);border:1px solid #334155;border-left:none;border-top-right-radius:6px;border-bottom-right-radius:6px;color:#94a3b8;font-family:'JetBrains Mono',monospace;font-size:0.82rem;white-space:nowrap;">
-            @ffaa.py
-          </span>
-        </div>
-        <div id="newMemberEmailFullPreview" style="font-size:0.72rem;color:#64748b;margin-top:4px;font-family:'JetBrains Mono',monospace;min-height:14px;"></div>
-      </div>
-      <div>
-        <label for="newMemberRole" style="font-size:0.8rem;color:#a0aec0;">Rol Inicial</label>
-        <select id="newMemberRole">
-          <option value="MIEMBRO">MIEMBRO</option>
-          <option value="VETERANO">VETERANO</option>
-          <option value="ADMIN">ADMIN</option>
+        <select id="inactivateReasonSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;">
+          <option value="">Seleccioná un motivo...</option>
+          <option value="Baja temporal">Baja temporal</option>
+          <option value="Bajo rendimiento">Bajo rendimiento</option>
+          <option value="Inactividad prolongada">Inactividad prolongada</option>
+          <option value="Expulsión disciplinaria">Expulsión disciplinaria</option>
+          <option value="Renuncia voluntaria">Renuncia voluntaria</option>
+          <option value="Otro (especificar)">Otro (especificar)</option>
         </select>
       </div>
-      <div>
-        <button onclick="addNewMember()" class="btn-primary" style="width:100%;">Registrar Piloto</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Eventos Unificados v2 (F4.3) -->
-  <div class="card" style="margin-top:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
-      <div>
-        <h3 style="margin:0;">📅 Eventos del Escuadrón (Unificado)</h3>
-        <p style="margin:4px 0 0 0;font-size:0.82rem;color:#94a3b8;">
-          SQ + Black Market en un solo panel · fuente: <code style="color:#60a5fa;">/api/events-v2</code>
-        </p>
-      </div>
-    </div>
-    <div id="adminEventsV2Container">
-      <div style="text-align:center;padding:2rem;color:#94a3b8;">
-        Cargando panel unificado de eventos...
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================ -->
-  <!-- EXPORTAR RESULTADOS (v4.6.0)                 -->
-  <!-- ============================================ -->
-  <div class="card" style="margin-top:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
-      <div>
-        <h3 style="margin:0;">📊 Exportar Resultados de Evento</h3>
-        <p style="margin:4px 0 0 0;font-size:0.82rem;color:#94a3b8;">
-          Generá una imagen del reporte para compartir por WhatsApp/Discord
-        </p>
-      </div>
-    </div>
-
-    <!-- Controles -->
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1.2rem;align-items:end;">
-      <div>
-        <label for="exportEventSelect" style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">
-          Evento a Exportar
-        </label>
-        <select id="exportEventSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
-          <option value="">Cargando eventos...</option>
-        </select>
-      </div>
-      <div>
-        <label for="exportFormatSelect" style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">
-          Formato
-        </label>
-        <select id="exportFormatSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
-          <option value="jpg" selected>JPG (predeterminado)</option>
-          <option value="png">PNG (alta calidad)</option>
-          <option value="pdf">PDF (archivo oficial)</option>
-        </select>
-      </div>
-      <div>
-        <button type="button" onclick="generateEventReport()" class="btn-primary" style="width:100%;padding:8px 12px;font-weight:600;">
-          📸 Generar Reporte
-        </button>
-      </div>
-    </div>
-
-    <!-- Preview del reporte (oculto hasta generar) -->
-    <div id="exportPreviewContainer" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
-        <span style="font-size:0.85rem;color:#94a3b8;">Vista previa del reporte:</span>
-        <div style="display:flex;gap:8px;">
-          <button type="button" onclick="downloadEventReport()" class="btn-primary" style="padding:6px 14px;font-size:0.85rem;background:#1B4D3E;border:1.5px solid #2ECC71;color:#fff;font-weight:600;">
-            📥 Descargar
-          </button>
-          <button type="button" onclick="closeExportPreview()" class="btn-secondary" style="padding:6px 14px;font-size:0.85rem;">
-            ✕ Cerrar
-          </button>
+      <div class="form-group" style="margin-bottom:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="inactivateReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+            Detalle del Motivo <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(mínimo 10 caracteres)</span>
+          </label>
+          <span id="inactivateReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 500</span>
         </div>
-      </div>
-      <div style="overflow:auto;max-height:70vh;background:#050816;padding:20px;border-radius:8px;border:1px solid #1E293B;">
-        <div id="exportPreviewTarget" style="display:inline-block;"></div>
+        <textarea id="inactivateReasonText" rows="4" maxlength="500" placeholder="Detalle del motivo (mínimo 10 caracteres)..." oninput="updateInactivateReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
       </div>
     </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="closeModal('inactivateUserModal')" class="btn-secondary">Cancelar</button>
+      <button type="button" onclick="confirmInactivateUser()" class="btn-danger" style="background:#e74c3c;border-color:#c0392b;">🔴 Confirmar Inactivación</button>
+    </div>
   </div>
+</div>
 
-  <!-- Modal Crear Evento (F4.3) -->
-  <div id="adminEventCreateModal" class="modal">
+<!-- ═══ MODAL PRESERVADO: reactivateUserModal ═══ -->
+<div id="reactivateUserModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(46,204,113,0.3);">
+      <div>
+        <h3 style="color:#2ecc71;margin:0;">🟢 Reactivar Piloto</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="reactivateUserNickDisplay" style="color:#f8fafc;">-</strong></p>
+      </div>
+      <span class="close-btn" onclick="closeModal('reactivateUserModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reactivateUserId" />
+      <input type="hidden" id="reactivateUserNick" />
+
+      <div style="padding:10px 12px;background:rgba(46,204,113,0.1);border-left:3px solid #2ecc71;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#86efac;line-height:1.4;">
+        ℹ️ Al reactivar, el motivo de baja se limpia y el piloto recupera acceso.
+      </div>
+
+      <div class="form-group" style="margin-bottom:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="reactivateReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+            Motivo de Reactivación <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(opcional)</span>
+          </label>
+          <span id="reactivateReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 300</span>
+        </div>
+        <textarea id="reactivateReasonText" rows="3" maxlength="300" placeholder="Motivo de reactivación (opcional)..." oninput="updateReactivateReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="closeModal('reactivateUserModal')" class="btn-secondary">Cancelar</button>
+      <button type="button" onclick="confirmReactivateUser()" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;color:#2ecc71;">🟢 Confirmar Reactivación</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL PRESERVADO: completeReasonModal ═══ -->
+<div id="completeReasonModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(212,175,55,0.3);">
+      <div>
+        <h3 style="color:#d4af37;margin:0;">✏️ Completar Motivo de Inactivación</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="completeReasonUserNickDisplay" style="color:#f8fafc;">-</strong></p>
+      </div>
+      <span class="close-btn" onclick="closeModal('completeReasonModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="completeReasonUserId" />
+      <input type="hidden" id="completeReasonUserNick" />
+
+      <div style="padding:10px 12px;background:rgba(212,175,55,0.1);border-left:3px solid #d4af37;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fde047;line-height:1.4;">
+        ℹ️ Registrá el motivo histórico de la baja para mantener el legajo militar completo.
+      </div>
+
+      <div class="form-group" style="margin-bottom:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label for="completeReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+            Motivo Histórico <span style="font-size:0.75rem;color:#e74c3c;font-weight:normal;">*(mínimo 10 caracteres)</span>
+          </label>
+          <span id="completeReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 500</span>
+        </div>
+        <textarea id="completeReasonText" rows="4" maxlength="500" placeholder="Motivo histórico (mínimo 10 caracteres)..." oninput="updateCompleteReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="closeModal('completeReasonModal')" class="btn-secondary">Cancelar</button>
+      <button type="button" onclick="confirmCompleteReason()" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;">💾 Guardar Motivo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL PRESERVADO: uploadEventModal ═══ -->
+<div id="uploadEventModal" class="modal">
+  <div class="modal-content" style="max-width:550px;">
+    <div class="modal-header">
+      <h3>⚡ Carga Masiva de Evento</h3>
+      <span class="close-btn" onclick="closeModal('uploadEventModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="eventIdInput">Identificador de Evento</label>
+        <input type="text" id="eventIdInput" placeholder="Ej: SQUADRON-2026-07" required />
+      </div>
+
+      <div class="form-group">
+        <label for="eventBulkData">Datos (Formato: Nick, Tokens, Rol por línea)</label>
+        <textarea id="eventBulkData" rows="6" placeholder="PRY_Alpha, 195, MIEMBRO&#10;PRY_Bravo, 180, VETERANO" style="font-family:monospace;font-size:0.85rem;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('uploadEventModal')" class="btn-secondary">Cancelar</button>
+      <button onclick="uploadEventBulk()" class="btn-primary">Procesar Carga Masiva</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL PRESERVADO: adminEventCreateModal ═══ -->
+<div id="adminEventCreateModal" class="modal">
     <div class="modal-content" style="max-width:620px;">
       <div class="modal-header">
         <h3>➕ Crear Evento</h3>
@@ -375,173 +433,3 @@
     </div>
   </div>
 </div>
-
-<!-- Modal Inactivar Piloto -->
-<div id="inactivateUserModal" class="modal">
-  <div class="modal-content" style="max-width:550px;">
-    <div class="modal-header" style="border-bottom:1px solid rgba(231,76,60,0.3);">
-      <div>
-        <h3 style="color:#e74c3c;margin:0;">🔴 Inactivar Piloto</h3>
-        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="inactivateUserNickDisplay" style="color:#f8fafc;">-</strong></p>
-      </div>
-      <span class="close-btn" onclick="closeModal('inactivateUserModal')">&times;</span>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="inactivateUserId" />
-      <input type="hidden" id="inactivateUserNick" />
-
-      <div style="padding:10px 12px;background:rgba(231,76,60,0.1);border-left:3px solid #e74c3c;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fca5a5;line-height:1.4;">
-        ⚠️ El piloto perderá acceso inmediato a la plataforma. Todos sus datos se conservan.
-      </div>
-
-      <div class="form-group" style="margin-bottom:1rem;">
-        <label for="inactivateReasonSelect" style="display:block;margin-bottom:6px;font-size:0.85rem;color:#cbd5e1;font-weight:600;">
-          Motivo Principal <span style="color:#e74c3c;">*</span>
-        </label>
-        <select id="inactivateReasonSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;">
-          <option value="">Seleccioná un motivo...</option>
-          <option value="Baja temporal">Baja temporal</option>
-          <option value="Bajo rendimiento">Bajo rendimiento</option>
-          <option value="Inactividad prolongada">Inactividad prolongada</option>
-          <option value="Expulsión disciplinaria">Expulsión disciplinaria</option>
-          <option value="Renuncia voluntaria">Renuncia voluntaria</option>
-          <option value="Otro (especificar)">Otro (especificar)</option>
-        </select>
-      </div>
-
-      <div class="form-group" style="margin-bottom:0.5rem;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <label for="inactivateReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
-            Detalle del Motivo <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(mínimo 10 caracteres)</span>
-          </label>
-          <span id="inactivateReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 500</span>
-        </div>
-        <textarea id="inactivateReasonText" rows="4" maxlength="500" placeholder="Detalle del motivo (mínimo 10 caracteres)..." oninput="updateInactivateReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
-      <button type="button" onclick="closeModal('inactivateUserModal')" class="btn-secondary">Cancelar</button>
-      <button type="button" onclick="confirmInactivateUser()" class="btn-danger" style="background:#e74c3c;border-color:#c0392b;">🔴 Confirmar Inactivación</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Reactivar Piloto -->
-<div id="reactivateUserModal" class="modal">
-  <div class="modal-content" style="max-width:550px;">
-    <div class="modal-header" style="border-bottom:1px solid rgba(46,204,113,0.3);">
-      <div>
-        <h3 style="color:#2ecc71;margin:0;">🟢 Reactivar Piloto</h3>
-        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="reactivateUserNickDisplay" style="color:#f8fafc;">-</strong></p>
-      </div>
-      <span class="close-btn" onclick="closeModal('reactivateUserModal')">&times;</span>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="reactivateUserId" />
-      <input type="hidden" id="reactivateUserNick" />
-
-      <div style="padding:10px 12px;background:rgba(46,204,113,0.1);border-left:3px solid #2ecc71;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#86efac;line-height:1.4;">
-        ℹ️ Al reactivar, el motivo de baja se limpia y el piloto recupera acceso.
-      </div>
-
-      <div class="form-group" style="margin-bottom:0.5rem;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <label for="reactivateReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
-            Motivo de Reactivación <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(opcional)</span>
-          </label>
-          <span id="reactivateReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 300</span>
-        </div>
-        <textarea id="reactivateReasonText" rows="3" maxlength="300" placeholder="Motivo de reactivación (opcional)..." oninput="updateReactivateReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
-      <button type="button" onclick="closeModal('reactivateUserModal')" class="btn-secondary">Cancelar</button>
-      <button type="button" onclick="confirmReactivateUser()" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;color:#2ecc71;">🟢 Confirmar Reactivación</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Completar Motivo Histórico -->
-<div id="completeReasonModal" class="modal">
-  <div class="modal-content" style="max-width:550px;">
-    <div class="modal-header" style="border-bottom:1px solid rgba(212,175,55,0.3);">
-      <div>
-        <h3 style="color:#d4af37;margin:0;">✏️ Completar Motivo de Inactivación</h3>
-        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">Piloto: <strong id="completeReasonUserNickDisplay" style="color:#f8fafc;">-</strong></p>
-      </div>
-      <span class="close-btn" onclick="closeModal('completeReasonModal')">&times;</span>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="completeReasonUserId" />
-      <input type="hidden" id="completeReasonUserNick" />
-
-      <div style="padding:10px 12px;background:rgba(212,175,55,0.1);border-left:3px solid #d4af37;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fde047;line-height:1.4;">
-        ℹ️ Registrá el motivo histórico de la baja para mantener el legajo militar completo.
-      </div>
-
-      <div class="form-group" style="margin-bottom:0.5rem;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <label for="completeReasonText" style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
-            Motivo Histórico <span style="font-size:0.75rem;color:#e74c3c;font-weight:normal;">*(mínimo 10 caracteres)</span>
-          </label>
-          <span id="completeReasonCounter" style="font-size:0.75rem;color:#94a3b8;font-family:monospace;">0 / 500</span>
-        </div>
-        <textarea id="completeReasonText" rows="4" maxlength="500" placeholder="Motivo histórico (mínimo 10 caracteres)..." oninput="updateCompleteReasonCounter()" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.88rem;resize:vertical;"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:10px;">
-      <button type="button" onclick="closeModal('completeReasonModal')" class="btn-secondary">Cancelar</button>
-      <button type="button" onclick="confirmCompleteReason()" class="btn-primary" style="background:#1b4d3e;border-color:#2ecc71;">💾 Guardar Motivo</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Carga Masiva de Evento -->
-<div id="uploadEventModal" class="modal">
-  <div class="modal-content" style="max-width:550px;">
-    <div class="modal-header">
-      <h3>⚡ Carga Masiva de Evento</h3>
-      <span class="close-btn" onclick="closeModal('uploadEventModal')">&times;</span>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="eventIdInput">Identificador de Evento</label>
-        <input type="text" id="eventIdInput" placeholder="Ej: SQUADRON-2026-07" required />
-      </div>
-
-      <div class="form-group">
-        <label for="eventBulkData">Datos (Formato: Nick, Tokens, Rol por línea)</label>
-        <textarea id="eventBulkData" rows="6" placeholder="PRY_Alpha, 195, MIEMBRO&#10;PRY_Bravo, 180, VETERANO" style="font-family:monospace;font-size:0.85rem;"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button onclick="closeModal('uploadEventModal')" class="btn-secondary">Cancelar</button>
-      <button onclick="uploadEventBulk()" class="btn-primary">Procesar Carga Masiva</button>
-    </div>
-  </div>
-</div>
-
-<!-- TEMPLATE OCULTO: Estructura de fila para la generación dinámica (Referencia) -->
-<template id="memberTableRowTemplate">
-  <tr>
-    <td class="pilot-name-cell">
-      <div class="pilot-info-mini">
-        <span class="pilot-nick">NICKNAME</span>
-        <span class="pilot-email">email@ffaa.py</span>
-      </div>
-    </td>
-    <td><span class="role-badge">ROL</span></td>
-    <td class="last-activity">-</td>
-    <td class="avg-tokens">0</td>
-    <td class="weeks-count">0</td>
-    <td class="trend-indicator">➡️</td>
-    <td><span class="status-badge">ESTADO</span></td>
-    <td><span class="squad-status-badge">ESTADO</span></td>
-    <td>
-      <!-- BOTÓN AGREGADO SEGÚN SOLICITUD -->
-      <button onclick="resetUserPassword('USER_ID_PLACEHOLDER')" class="btn-warning" style="padding: 4px 12px; font-size: 0.75rem;">
-        🔄 Reset Pass
-      </button>
-    </td>
-  </tr>
-</template>

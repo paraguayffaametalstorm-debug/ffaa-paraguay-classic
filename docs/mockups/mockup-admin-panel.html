@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MOCKUP — Panel de Comandancia | PARAGUAY-FFAA [PRY]</title>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TIPOGRAFÍA REAL DEL PROYECTO (Google Fonts)
+       ═══════════════════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons (mismo CDN que usa el proyecto real) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       DESIGN TOKENS REALES DEL PROYECTO (copiados de global.css
+       + tactical-design.css). NO se inventó ningún color.
+       ═══════════════════════════════════════════════════════════ */
+    :root {
+      /* Paraguay Official & Tactical Military Colors */
+      --pry-red:         #D52B1E;
+      --pry-red-glow:    rgba(213, 43, 30, 0.35);
+      --pry-blue:        #0038A8;
+      --pry-blue-glow:   rgba(0, 56, 168, 0.35);
+      --pry-white:       #F8FAFC;
+      --pry-gold:        #D4AF37;
+      --pry-gold-light:  #F59E0B;
+      --pry-gold-glow:   rgba(212, 175, 55, 0.35);
+
+      /* Tactical Dark Canvas & Elevation */
+      --bg-core:         #0B132B;
+      --bg-surface:      #0F172A;
+      --bg-card:         rgba(15, 23, 42, 0.88);
+      --bg-card-hover:   rgba(30, 41, 59, 0.95);
+      --bg-input:        rgba(15, 23, 42, 0.9);
+      --bg-panel:        #111827;
+      --bg-card-secondary: #1A2235;
+      --border-subtle:   rgba(255, 255, 255, 0.08);
+      --border-tactical: rgba(212, 175, 55, 0.3);
+      --border-active:   rgba(0, 56, 168, 0.8);
+
+      /* Primary, Secondary, Feedback */
+      --color-primary:   #0038A8;
+      --color-secondary: #D4AF37;
+      --color-success:   #10B981;
+      --color-warning:   #F59E0B;
+      --color-danger:    #D52B1E;
+      --color-info:      #38BDF8;
+      --color-dark:      #0B132B;
+      --color-light:     #F8FAFC;
+      --color-gray:      #94A3B8;
+
+      /* Military Status Tokens */
+      --status-verde-bg:   rgba(16, 185, 129, 0.16);
+      --status-verde-text: #34D399;
+      --status-verde-border: rgba(16, 185, 129, 0.5);
+      --status-verde-glow: rgba(16, 185, 129, 0.3);
+
+      --status-naranja-bg:   rgba(245, 158, 11, 0.16);
+      --status-naranja-text: #FBBF24;
+      --status-naranja-border: rgba(245, 158, 11, 0.5);
+      --status-naranja-glow: rgba(245, 158, 11, 0.3);
+
+      --status-rojo-bg:   rgba(213, 43, 30, 0.18);
+      --status-rojo-text: #F87171;
+      --status-rojo-border: rgba(213, 43, 30, 0.6);
+      --status-rojo-glow: rgba(213, 43, 30, 0.4);
+
+      --status-negro-bg:   rgba(15, 23, 42, 0.95);
+      --status-negro-text: #CBD5E1;
+      --status-negro-border: rgba(71, 85, 105, 0.8);
+
+      /* Typography */
+      --font-display: 'Rajdhani', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      --fs-xs:   0.75rem;
+      --fs-sm:   0.875rem;
+      --fs-base: 1rem;
+      --fs-md:   1.125rem;
+      --fs-lg:   1.25rem;
+      --fs-xl:   1.5rem;
+      --fs-2xl:  1.875rem;
+      --fs-3xl:  2.25rem;
+
+      /* Spacing Scale (4px) */
+      --sp-1: 0.25rem;
+      --sp-2: 0.5rem;
+      --sp-3: 0.75rem;
+      --sp-4: 1rem;
+      --sp-5: 1.25rem;
+      --sp-6: 1.5rem;
+      --sp-8: 2rem;
+      --sp-10: 2.5rem;
+
+      /* Radii */
+      --radius-sm: 0.375rem;
+      --radius:    0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+
+      /* Touch Targets */
+      --touch-min: 2.75rem; /* 44px */
+
+      /* Safe areas (iOS notch) */
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+
+      /* Sidebar del admin (NUEVO) */
+      --admin-sidebar-w: 240px;
+      --admin-sidebar-collapsed-w: 64px;
+
+      /* HUD Glows */
+      --hud-glow-green: 0 0 15px rgba(74, 222, 128, 0.25);
+      --hud-glow-blue:  0 0 15px rgba(96, 165, 250, 0.25);
+      --hud-glow-gold:  0 0 15px rgba(212, 175, 55, 0.3);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESET + BASE (equivalente a global.css)
+       ═══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      font-size: 100%;
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+      background-color: var(--bg-core);
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: radial-gradient(circle at 50% 0%, #152238 0%, #0B132B 65%, #070B19 100%);
+      background-attachment: fixed;
+      color: var(--pry-white);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding-top: var(--sat);
+      padding-left: var(--sal);
+      padding-right: var(--sar);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      line-height: 1.25;
+      color: var(--pry-white);
+    }
+
+    h2 { font-size: var(--fs-xl); color: #FFFFFF; }
+    h3 { font-size: var(--fs-lg); color: var(--pry-gold); }
+    h4 { font-size: var(--fs-md); color: #E2E8F0; }
+
+    p { color: #CBD5E1; font-size: var(--fs-base); margin-bottom: var(--sp-3); }
+
+    .subtitle {
+      font-size: var(--fs-sm);
+      color: #94A3B8;
+      margin-top: 2px;
+    }
+
+    /* Scrollbar táctico */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(11, 19, 43, 0.6); }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(212, 175, 55, 0.3);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--pry-gold); }
+
+    /* ═══════════════════════════════════════════════════════════
+       CLASES REUTILIZABLES DEL PROYECTO (copiadas de
+       global.css + components.css + tactical-design.css)
+       ═══════════════════════════════════════════════════════════ */
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { border-color: rgba(212, 175, 55, 0.25); }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: var(--sp-3);
+      margin-bottom: var(--sp-4);
+    }
+
+    /* ── Esquinas tácticas biseladas ── */
+    .tactical-corners { position: relative; }
+    .tactical-corners::before,
+    .tactical-corners::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-color: var(--color-info);
+      pointer-events: none;
+      z-index: 3;
+    }
+    .tactical-corners::before {
+      top: -1px; left: -1px;
+      border-top: 2px solid var(--color-info);
+      border-left: 2px solid var(--color-info);
+    }
+    .tactical-corners::after {
+      bottom: -1px; right: -1px;
+      border-bottom: 2px solid var(--color-info);
+      border-right: 2px solid var(--color-info);
+    }
+
+    /* ── Stat Cards Tácticas ── */
+    .stat-card-tactical {
+      background: var(--bg-card-secondary);
+      border: 1px solid var(--border-tactical);
+      border-radius: 6px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      padding: 1.1rem 1.25rem;
+      transition: all 0.2s ease-in-out;
+    }
+    .stat-card-tactical:hover {
+      border-color: var(--color-info);
+      box-shadow: var(--hud-glow-blue), 0 8px 24px rgba(0, 0, 0, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .stat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #94A3B8;
+    }
+
+    .stat-main {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 0.4rem 0;
+    }
+
+    .stat-number-gold {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--pry-gold);
+      line-height: 1;
+    }
+    .stat-number-blue {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #38BDF8;
+      line-height: 1;
+    }
+    .stat-number-green {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #34D399;
+      line-height: 1;
+    }
+    .stat-number-red {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #F87171;
+      line-height: 1;
+    }
+
+    .stat-unit {
+      font-size: 0.75rem;
+      color: #64748B;
+      font-family: var(--font-body);
+    }
+
+    .stat-footer {
+      font-size: 0.78rem;
+      color: #94A3B8;
+      margin-top: 4px;
+    }
+
+    /* ── Status Badges (semáforo militar) ── */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--fs-sm);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .status-badge::before {
+      content: '';
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .status-verde {
+      background: var(--status-verde-bg);
+      color: var(--status-verde-text);
+      border-color: var(--status-verde-border);
+      box-shadow: 0 0 10px var(--status-verde-glow);
+    }
+    .status-verde::before { background: var(--status-verde-text); box-shadow: 0 0 6px var(--status-verde-text); }
+
+    .status-naranja {
+      background: var(--status-naranja-bg);
+      color: var(--status-naranja-text);
+      border-color: var(--status-naranja-border);
+      box-shadow: 0 0 10px var(--status-naranja-glow);
+    }
+    .status-naranja::before { background: var(--status-naranja-text); box-shadow: 0 0 6px var(--status-naranja-text); }
+
+    .status-rojo {
+      background: var(--status-rojo-bg);
+      color: var(--status-rojo-text);
+      border-color: var(--status-rojo-border);
+      box-shadow: 0 0 10px var(--status-rojo-glow);
+    }
+    .status-rojo::before { background: var(--status-rojo-text); box-shadow: 0 0 6px var(--status-rojo-text); }
+
+    .status-negro {
+      background: var(--status-negro-bg);
+      color: var(--status-negro-text);
+      border-color: var(--status-negro-border);
+    }
+    .status-negro::before { background: #64748B; }
+
+    /* ── Role Badges (rangos militares) ── */
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-display);
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .role-OWNER {
+      background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.1) 100%);
+      color: var(--pry-gold);
+      border: 1px solid rgba(212, 175, 55, 0.6);
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+    }
+    .role-ADMIN {
+      background: linear-gradient(135deg, rgba(213, 43, 30, 0.25) 0%, rgba(213, 43, 30, 0.1) 100%);
+      color: #F87171;
+      border: 1px solid rgba(213, 43, 30, 0.6);
+    }
+    .role-VETERANO {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25) 0%, rgba(56, 189, 248, 0.1) 100%);
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+    }
+    .role-MIEMBRO {
+      background: rgba(148, 163, 184, 0.15);
+      color: #CBD5E1;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* ── Botones (idénticos al proyecto real) ── */
+    button, .btn {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0 var(--sp-5);
+      min-height: var(--touch-min);
+      font-family: var(--font-display);
+      font-size: var(--fs-base);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-2);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      user-select: none;
+    }
+    button:active { transform: scale(0.97); }
+    button:focus-visible { outline: 2px solid var(--pry-gold); outline-offset: 2px; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0038A8 0%, #002570 100%);
+      color: #FFFFFF;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      box-shadow: 0 4px 14px rgba(0, 56, 168, 0.4);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0047D4 0%, #00308F 100%);
+      box-shadow: 0 6px 20px rgba(0, 56, 168, 0.6);
+      border-color: var(--pry-gold);
+    }
+
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.8);
+      color: #E2E8F0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.9);
+      color: #FFFFFF;
+      border-color: rgba(212, 175, 55, 0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #D52B1E 0%, #A61E14 100%);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 14px rgba(213, 43, 30, 0.4);
+    }
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #E6392D 0%, #BD2317 100%);
+      box-shadow: 0 6px 20px rgba(213, 43, 30, 0.6);
+    }
+
+    .btn-sm {
+      min-height: 2rem;
+      padding: 0 10px;
+      font-size: 0.8rem;
+    }
+
+    /* ── Tabla Data (C4ISR) ── */
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-tactical);
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 0.88rem;
+    }
+    .data-table th {
+      background: rgba(10, 14, 26, 0.9);
+      color: var(--pry-gold);
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-tactical);
+      text-align: left;
+    }
+    .data-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(42, 58, 92, 0.4);
+      font-size: 0.88rem;
+      color: #E2E8F0;
+    }
+    .data-table tbody tr:hover { background: rgba(96, 165, 250, 0.05); }
+
+    /* ── Badge Tag (etiquetas C4ISR) ── */
+    .badge-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--pry-gold);
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYOUT DEL PANEL ADMIN (sidebar + content)
+       ═══════════════════════════════════════════════════════════ */
+    #adminPanel {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header del mockup (simula el header global del proyecto) */
+    .mock-header {
+      background: linear-gradient(180deg, rgba(11, 19, 43, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+      backdrop-filter: blur(16px);
+      border-bottom: 2px solid rgba(212, 175, 55, 0.35);
+      padding: var(--sp-3) var(--sp-4);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .mock-header-logo {
+      height: 2.75rem;
+      width: auto;
+      border: 1.5px solid var(--pry-gold);
+      border-radius: var(--radius);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      padding: 0 8px;
+    }
+
+    .mock-header-text h1 {
+      font-family: var(--font-display);
+      font-size: var(--fs-lg);
+      color: var(--pry-gold);
+      margin: 0;
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+    .mock-header-text span {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: #94A3B8;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .mock-header-spacer { flex: 1; }
+
+    /* ── Layout del admin: sidebar + contenido ── */
+    .admin-layout {
+      display: flex;
+      flex: 1;
+      min-height: calc(100vh - 5rem);
+      position: relative;
+    }
+
+    /* ── SIDEBAR ── */
+    .admin-sidebar {
+      width: var(--admin-sidebar-w);
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #0B132B 0%, #0F172A 100%);
+      border-right: 1.5px solid rgba(212, 175, 55, 0.25);
+      display: flex;
+      flex-direction: column;
+      transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      position: sticky;
+      top: 5rem;
+      height: calc(100vh - 5rem);
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 50;
+    }
+
+    .admin-sidebar.collapsed {
+      width: var(--admin-sidebar-collapsed-w);
+    }
+
+    /* Header del sidebar */
+    .admin-sidebar-header {
+      padding: var(--sp-4) var(--sp-3);
+      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 4rem;
+      overflow: hidden;
+    }
+
+    .admin-sidebar-logo {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      width: 2.4rem;
+      height: 2.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: var(--radius);
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+    }
+
+    .admin-sidebar-title {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      transition: opacity 0.2s ease;
+    }
+    .admin-sidebar.collapsed .admin-sidebar-title {
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+    }
+
+    .admin-sidebar-title strong {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--pry-gold);
+      letter-spacing: 1px;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .admin-sidebar-title small {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: #64748B;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    /* Nav del sidebar */
+    .admin-sidebar-nav {
+      flex: 1;
+      padding: var(--sp-3) var(--sp-2);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .admin-sidebar-btn {
+      width: 100%;
+      min-height: 44px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-left: 3px solid transparent;
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #CBD5E1;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-align: left;
+      justify-content: flex-start;
+      transition: all 0.18s ease;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .admin-sidebar-btn:hover {
+      background: rgba(30, 41, 59, 0.5);
+      color: #FFFFFF;
+    }
+
+    .admin-sidebar-btn.active {
+      background: linear-gradient(90deg, rgba(0, 56, 168, 0.45) 0%, rgba(15, 23, 42, 0.7) 100%);
+      color: #FFFFFF;
+      border-left-color: var(--pry-gold);
+      box-shadow: inset 0 0 15px rgba(0, 56, 168, 0.3);
+    }
+
+    .admin-sidebar-btn .asb-icon {
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      width: 1.5rem;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .admin-sidebar-btn.active .asb-icon {
+      transform: scale(1.12);
+      filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.6));
+    }
+
+    .admin-sidebar-btn .asb-label {
+      flex: 1;
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+    }
+
+    .admin-sidebar.collapsed .asb-label,
+    .admin-sidebar.collapsed .asb-badge {
+      opacity: 0;
+      pointer-events: none;
+      width: 0;
+      overflow: hidden;
+    }
+
+    .admin-sidebar-btn .asb-badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      flex-shrink: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Footer del sidebar (toggle) */
+    .admin-sidebar-footer {
+      padding: var(--sp-3) var(--sp-2);
+      border-top: 1px solid rgba(212, 175, 55, 0.2);
+    }
+
+    .admin-sidebar-toggle {
+      width: 100%;
+      min-height: 40px;
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      color: #94A3B8;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .admin-sidebar-toggle:hover {
+      color: var(--pry-gold);
+      border-color: rgba(212, 175, 55, 0.4);
+      background: rgba(212, 175, 55, 0.08);
+    }
+
+    .admin-sidebar.collapsed .admin-sidebar-toggle .toggle-label {
+      display: none;
+    }
+
+    .admin-sidebar-toggle .toggle-icon {
+      transition: transform 0.3s ease;
+      font-size: 0.9rem;
+    }
+    .admin-sidebar.collapsed .admin-sidebar-toggle .toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    /* ── CONTENIDO PRINCIPAL ── */
+    .admin-content {
+      flex: 1;
+      min-width: 0;
+      padding: var(--sp-5) var(--sp-6);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Header de sección */
+    .admin-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .admin-section-header h2 {
+      font-family: var(--font-display);
+      font-size: var(--fs-xl);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .admin-section-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Secciones (toggle display) */
+    .admin-section {
+      display: none;
+      animation: adminSectionFade 0.3s ease;
+    }
+    .admin-section.active { display: block; }
+
+    @keyframes adminSectionFade {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid de KPIs */
+    .stats-grid-tactical {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 480px) {
+      .stats-grid-tactical { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    }
+    @media (min-width: 1024px) {
+      .stats-grid-tactical { grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+    }
+
+    /* Tabs internos (Dotación, Eventos) */
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .admin-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 6px;
+      color: #94a3b8;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-body);
+      min-height: 40px;
+    }
+
+    .admin-tab-btn:hover {
+      border-color: #64748b;
+      color: #cbd5e1;
+    }
+
+    .admin-tab-btn.active {
+      background: rgba(148, 163, 184, 0.15);
+      border-color: #94a3b8;
+      color: #cbd5e1;
+    }
+
+    .admin-tab-btn .tab-count {
+      background: rgba(148, 163, 184, 0.25);
+      color: #cbd5e1;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    .admin-tab-btn.active-green {
+      background: rgba(46, 204, 113, 0.15);
+      border-color: #2ecc71;
+      color: #2ecc71;
+    }
+    .admin-tab-btn.active-green .tab-count {
+      background: rgba(46, 204, 113, 0.25);
+      color: #2ecc71;
+    }
+
+    .admin-tab-btn.active-red {
+      background: rgba(231, 76, 60, 0.15);
+      border-color: #e74c3c;
+      color: #e74c3c;
+    }
+    .admin-tab-btn.active-red .tab-count {
+      background: rgba(231, 76, 60, 0.25);
+      color: #e74c3c;
+    }
+
+    /* Barra de búsqueda y filtros */
+    .admin-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.2rem;
+      align-items: end;
+    }
+
+    .admin-filters label {
+      font-size: 0.8rem;
+      color: #a0aec0;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"], select, textarea {
+      width: 100%;
+      min-height: 40px;
+      background: var(--bg-input);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius);
+      padding: 0 var(--sp-3);
+      color: #FFFFFF;
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    input[type="text"]:focus, select:focus, textarea:focus {
+      border-color: var(--pry-gold);
+      box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+      background: rgba(15, 23, 42, 1);
+    }
+    input[type="text"]::placeholder { color: #64748B; }
+
+    /* Modo compacto de tabla */
+    .table-compact .data-table td,
+    .table-compact .data-table th {
+      padding-top: 6px;
+      padding-bottom: 6px;
+      font-size: 0.8rem;
+    }
+    .table-compact .data-table td {
+      height: 32px;
+    }
+
+    .data-table tbody tr {
+      transition: height 0.2s ease;
+    }
+    .data-table td {
+      height: 48px;
+      transition: all 0.2s ease;
+    }
+
+    /* Accesos rápidos (grid de operaciones) */
+    .quick-access-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .quick-access-btn {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: 4.5rem;
+      color: #fff;
+      font-family: var(--font-body);
+    }
+    .quick-access-btn:hover {
+      background: rgba(51, 65, 85, 0.8);
+      border-color: rgba(212, 175, 55, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    }
+
+    .qa-icon-box {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      border: 1px solid transparent;
+      flex-shrink: 0;
+    }
+
+    .qa-content { display: flex; flex-direction: column; gap: 2px; }
+    .qa-title { font-size: 0.88rem; color: #FFFFFF; font-weight: 700; }
+    .qa-desc { font-size: 0.75rem; color: #94A3B8; line-height: 1.3; }
+
+    /* Distribución de rendimiento (barras) */
+    .distribution-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .dist-card {
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid;
+    }
+    .dist-card .dist-count {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+    .dist-card .dist-label {
+      font-size: 0.72rem;
+      color: #a0aec0;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    /* Mobile drawer */
+    .admin-mobile-trigger {
+      display: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESPONSIVE — 3 BREAKPOINTS REALES DEL PROYECTO
+       mobile <768px | tablet 768-1024px | desktop >1024px
+       ═══════════════════════════════════════════════════════════ */
+
+    /* Desktop > 1024px: sidebar visible, colapsable manualmente */
+    @media (min-width: 1025px) {
+      .admin-sidebar { position: sticky; }
+    }
+
+    /* Tablet 768-1024px: sidebar COLAPSADO por defecto (solo íconos) */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .admin-sidebar {
+        width: var(--admin-sidebar-collapsed-w);
+      }
+      .admin-sidebar .asb-label,
+      .admin-sidebar .asb-badge,
+      .admin-sidebar .admin-sidebar-title {
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        overflow: hidden;
+      }
+      .admin-sidebar-toggle .toggle-label { display: none; }
+    }
+
+    /* Mobile < 768px: sidebar = drawer oculto, se abre con botón */
+    @media (max-width: 767px) {
+      .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(300px, 85vw);
+        height: 100vh;
+        transform: translateX(-105%);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 1000;
+        box-shadow: 10px 0 40px rgba(0, 0, 0, 0.8);
+        padding-top: var(--sat);
+      }
+      .admin-sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      .admin-sidebar.collapsed {
+        width: min(300px, 85vw);
+      }
+      .admin-sidebar.collapsed .asb-label,
+      .admin-sidebar.collapsed .asb-badge,
+      .admin-sidebar.collapsed .admin-sidebar-title {
+        opacity: 1;
+        pointer-events: auto;
+        width: auto;
+        overflow: visible;
+      }
+      .admin-sidebar.collapsed .admin-sidebar-toggle .toggle-label { display: inline; }
+
+      .admin-content {
+        padding: var(--sp-4);
+      }
+
+      .admin-mobile-trigger {
+        display: inline-flex;
+      }
+
+      .admin-mobile-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 11, 25, 0.8);
+        backdrop-filter: blur(6px);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.28s ease, visibility 0.28s ease;
+      }
+      .admin-mobile-overlay.open {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    /* Contenido dummy de cada sección */
+    .dummy-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .event-active-card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(26, 42, 74, 0.6) 100%);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: var(--radius-lg);
+      padding: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 1rem;
+    }
+
+    .event-active-card .event-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .event-active-card .event-name {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .event-active-card .event-sub {
+      font-size: 0.82rem;
+      color: #94A3B8;
+    }
+
+    /* Catálogo grid */
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+
+    /* Estado del sistema */
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .health-item {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .health-item .health-label {
+      font-size: 0.72rem;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .health-item .health-value {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Skeleton (ejemplo visual) */
+    .skeleton-line {
+      height: 12px;
+      background: linear-gradient(90deg, rgba(148,163,184,0.08) 25%, rgba(148,163,184,0.18) 50%, rgba(148,163,184,0.08) 75%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes skeletonShimmer {
+      from { background-position: 200% 0; }
+      to   { background-position: -200% 0; }
+    }
+
+    /* Aviso de demo */
+    .mock-notice {
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px dashed rgba(212, 175, 55, 0.45);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      color: #d4af37;
+      margin-bottom: 1rem;
+      font-family: var(--font-mono);
+      letter-spacing: 0.3px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="adminPanel">
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HEADER SIMULADO (en producción lo provee components/header.html)
+       ═══════════════════════════════════════════════════════════ -->
+  <header class="mock-header">
+    <button class="btn-secondary btn-sm admin-mobile-trigger" onclick="toggleMobileSidebar()" title="Abrir menú lateral">
+      ☰
+    </button>
+    <div class="mock-header-logo">🛡️</div>
+    <div class="mock-header-text">
+      <h1>PARAGUAY-FFAA</h1>
+      <span>[PRY] · METALSTORM · C4ISR</span>
+    </div>
+    <div class="mock-header-spacer"></div>
+    <div class="user-header-pill" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:9999px;padding:3px 10px;">
+      <span style="font-weight:700;font-size:0.85rem;color:#fff;font-family:var(--font-display);">PRY_OWNER</span>
+      <span class="role-badge role-OWNER">OWNER</span>
+    </div>
+  </header>
+
+  <!-- Overlay para mobile drawer -->
+  <div class="admin-mobile-overlay" id="adminMobileOverlay" onclick="toggleMobileSidebar()"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       LAYOUT PRINCIPAL: SIDEBAR + CONTENIDO
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="admin-layout">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="admin-sidebar" id="adminSidebar">
+
+      <!-- Header del sidebar -->
+      <div class="admin-sidebar-header">
+        <div class="admin-sidebar-logo">🛡️</div>
+        <div class="admin-sidebar-title">
+          <strong>COMANDANCIA</strong>
+          <small>Panel Admin · v4.7</small>
+        </div>
+      </div>
+
+      <!-- Navegación de secciones -->
+      <nav class="admin-sidebar-nav">
+        <button class="admin-sidebar-btn active" data-section="resumen" onclick="switchAdminSection('resumen')">
+          <span class="asb-icon">📊</span>
+          <span class="asb-label">Resumen</span>
+        </button>
+
+        <button class="admin-sidebar-btn" data-section="dotacion" onclick="switchAdminSection('dotacion')">
+          <span class="asb-icon">👥</span>
+          <span class="asb-label">Dotación</span>
+          <span class="asb-badge">28</span>
+        </button>
+
+        <button class="admin-sidebar-btn" data-section="eventos" onclick="switchAdminSection('eventos')">
+          <span class="asb-icon">📅</span>
+          <span class="asb-label">Eventos</span>
+        </button>
+
+        <button class="admin-sidebar-btn" data-section="catalogo" onclick="switchAdminSection('catalogo')">
+          <span class="asb-icon">✈️</span>
+          <span class="asb-label">Catálogo</span>
+        </button>
+
+        <button class="admin-sidebar-btn" data-section="estado" onclick="switchAdminSection('estado')">
+          <span class="asb-icon">⚙️</span>
+          <span class="asb-label">Estado</span>
+        </button>
+      </nav>
+
+      <!-- Toggle colapsable -->
+      <div class="admin-sidebar-footer">
+        <button class="admin-sidebar-toggle" onclick="toggleAdminSidebar()" title="Colapsar/Expandir sidebar">
+          <span class="toggle-icon">◀</span>
+          <span class="toggle-label">Colapsar</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+    <main class="admin-content" id="adminContent">
+
+      <!-- Aviso de que es mockup -->
+      <div class="mock-notice">
+        ⚠️ MOCKUP VISUAL — Datos 100% ficticios · Sin backend · Solo para aprobación de diseño (Fase 1)
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECCIÓN 1: RESUMEN
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-section active" id="section-resumen">
+        <div class="admin-section-header">
+          <div>
+            <div class="badge-tag">C4ISR · OVERVIEW</div>
+            <h2>📊 Resumen del Escuadrón</h2>
+            <p class="subtitle">Estado operacional general y métricas clave de [PRY]</p>
+          </div>
+          <div class="admin-section-actions">
+            <button class="btn-secondary btn-sm">🔄 Actualizar</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="stats-grid-tactical">
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #2ecc71;">
+            <div class="stat-card-header">
+              <span class="stat-label">Pilotos Activos</span>
+              <span style="font-size:1.1rem;">🟢</span>
+            </div>
+            <div class="stat-main">
+              <span class="stat-number-green">28</span>
+              <span class="stat-unit">/ 30</span>
+            </div>
+            <div class="stat-footer">2 inactivos en reserva</div>
+          </div>
+
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #d4af37;">
+            <div class="stat-card-header">
+              <span class="stat-label">Promedio Escuadrón</span>
+              <span style="font-size:1.1rem;">📈</span>
+            </div>
+            <div class="stat-main">
+              <span class="stat-number-gold">192.4</span>
+              <span class="stat-unit">tokens</span>
+            </div>
+            <div class="stat-footer">Meta mínima: 175 tokens</div>
+          </div>
+
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #e74c3c;">
+            <div class="stat-card-header">
+              <span class="stat-label">Pilotos en Riesgo</span>
+              <span style="font-size:1.1rem;">⚠️</span>
+            </div>
+            <div class="stat-main">
+              <span class="stat-number-red">5</span>
+              <span class="stat-unit">pilotos</span>
+            </div>
+            <div class="stat-footer">3 ROJO · 2 NEGRO</div>
+          </div>
+
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #3498db;">
+            <div class="stat-card-header">
+              <span class="stat-label">Última Sincronización</span>
+              <span style="font-size:1.1rem;">🕐</span>
+            </div>
+            <div class="stat-main">
+              <span style="font-size:1.1rem;font-weight:700;color:#cbd5e0;font-family:var(--font-mono);">
+                09:47:23
+              </span>
+            </div>
+            <div class="stat-footer">Hoy · Hora Paraguay (PY)</div>
+          </div>
+        </div>
+
+        <!-- Distribución de rendimiento -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <h3 style="margin-bottom:1rem;">📊 Distribución de Rendimiento Actual</h3>
+          <div class="distribution-grid">
+            <div class="dist-card" style="background:rgba(46,204,113,0.1);border-color:#2ecc71;">
+              <div class="dist-count" style="color:#2ecc71;">18</div>
+              <div class="dist-label">🟢 VERDE (60%)</div>
+            </div>
+            <div class="dist-card" style="background:rgba(243,156,18,0.1);border-color:#f39c12;">
+              <div class="dist-count" style="color:#f39c12;">5</div>
+              <div class="dist-label">🟠 NARANJA (17%)</div>
+            </div>
+            <div class="dist-card" style="background:rgba(231,76,60,0.1);border-color:#e74c3c;">
+              <div class="dist-count" style="color:#e74c3c;">3</div>
+              <div class="dist-label">🔴 ROJO (10%)</div>
+            </div>
+            <div class="dist-card" style="background:rgba(148,163,184,0.1);border-color:#64748b;">
+              <div class="dist-count" style="color:#94a3b8;">2</div>
+              <div class="dist-label">⚫ NEGRO (7%)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accesos rápidos -->
+        <div class="card">
+          <h3 style="margin-bottom:1rem;">⚡ Accesos Rápidos</h3>
+          <div class="quick-access-grid">
+            <button class="quick-access-btn" onclick="switchAdminSection('dotacion')">
+              <div class="qa-icon-box" style="background:rgba(46,204,113,0.15);border-color:#2ecc71;">
+                <span>➕</span>
+              </div>
+              <div class="qa-content">
+                <strong class="qa-title">Registrar Piloto</strong>
+                <span class="qa-desc">Alta de nuevo combatiente</span>
+              </div>
+            </button>
+
+            <button class="quick-access-btn" onclick="switchAdminSection('eventos')">
+              <div class="qa-icon-box" style="background:rgba(212,175,55,0.15);border-color:#d4af37;">
+                <span>⚡</span>
+              </div>
+              <div class="qa-content">
+                <strong class="qa-title">Crear Evento</strong>
+                <span class="qa-desc">SQ o Black Market</span>
+              </div>
+            </button>
+
+            <button class="quick-access-btn" onclick="switchAdminSection('catalogo')">
+              <div class="qa-icon-box" style="background:rgba(96,165,250,0.15);border-color:#60a5fa;">
+                <span>✈️</span>
+              </div>
+              <div class="qa-content">
+                <strong class="qa-title">Catálogo Aeronaves</strong>
+                <span class="qa-desc">CRUD de modelos</span>
+              </div>
+            </button>
+
+            <button class="quick-access-btn" onclick="switchAdminSection('estado')">
+              <div class="qa-icon-box" style="background:rgba(56,189,248,0.15);border-color:#38bdf8;">
+                <span>⚙️</span>
+              </div>
+              <div class="qa-content">
+                <strong class="qa-title">Estado del Sistema</strong>
+                <span class="qa-desc">Scheduler · Health · Logs</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECCIÓN 2: DOTACIÓN (tabs Activos default + modo compacto)
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-section" id="section-dotacion">
+        <div class="admin-section-header">
+          <div>
+            <div class="badge-tag">PERSONNEL · ROSTER</div>
+            <h2>👥 Dotación del Escuadrón</h2>
+            <p class="subtitle">Gestión de pilotos, rangos y estados de servicio</p>
+          </div>
+          <div class="admin-section-actions">
+            <button class="btn-secondary btn-sm" onclick="toggleCompactMode()">
+              <span id="compactToggleLabel">⬜ Modo Compacto</span>
+            </button>
+            <button class="btn-primary btn-sm">➕ Registrar Piloto</button>
+          </div>
+        </div>
+
+        <!-- Tabs internos: Activos por defecto -->
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active-green" data-tab="active" onclick="switchDotacionTab('active')">
+            <span>🟢 Activos</span>
+            <span class="tab-count">(28)</span>
+          </button>
+          <button class="admin-tab-btn" data-tab="inactive" onclick="switchDotacionTab('inactive')">
+            <span>🔴 Inactivos</span>
+            <span class="tab-count">(2)</span>
+          </button>
+          <button class="admin-tab-btn" data-tab="all" onclick="switchDotacionTab('all')">
+            <span>📋 Todos</span>
+            <span class="tab-count">(30)</span>
+          </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="admin-filters">
+          <div>
+            <label for="memberSearch">Buscar Piloto</label>
+            <input type="text" id="memberSearch" placeholder="Nick..." />
+          </div>
+          <div>
+            <label for="roleFilter">Rango / Rol</label>
+            <select id="roleFilter">
+              <option>Todos</option>
+              <option>MIEMBRO</option>
+              <option>VETERANO</option>
+              <option>ADMIN</option>
+              <option>OWNER</option>
+            </select>
+          </div>
+          <div>
+            <label for="perfStatusFilter">Estado Rendimiento</label>
+            <select id="perfStatusFilter">
+              <option>Todos</option>
+              <option>VERDE</option>
+              <option>NARANJA</option>
+              <option>ROJO</option>
+              <option>NEGRO</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn-secondary" style="width:100%;">🔄 Limpiar</button>
+          </div>
+        </div>
+
+        <!-- Tabla de pilotos (dummy) -->
+        <div style="overflow-x:auto;" id="dotacionTableWrapper">
+          <table class="data-table" id="dotacionTable">
+            <thead>
+              <tr>
+                <th>Piloto</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Últ. Actividad</th>
+                <th>Prom. Tokens</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;color:#f8fafc;">PRY_Alpha</td>
+                <td style="font-size:0.82rem;color:#94a3b8;">alpha@ffaa.py</td>
+                <td><span class="role-badge role-OWNER">OWNER</span></td>
+                <td><span class="status-badge status-verde">ACTIVE</span></td>
+                <td style="font-size:0.8rem;">09/10/2026 09:30</td>
+                <td><span style="font-family:var(--font-mono);font-weight:600;color:#f8fafc;">210</span> <span class="status-badge status-verde" style="font-size:0.68rem;padding:1px 6px;">VERDE</span></td>
+                <td style="text-align:center;">
+                  <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn-danger btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔴 Inactivar</button>
+                    <button class="btn-secondary btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔑 Clave</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:#f8fafc;">PRY_Bravo</td>
+                <td style="font-size:0.82rem;color:#94a3b8;">bravo@ffaa.py</td>
+                <td><span class="role-badge role-ADMIN">ADMIN</span></td>
+                <td><span class="status-badge status-verde">ACTIVE</span></td>
+                <td style="font-size:0.8rem;">09/10/2026 08:15</td>
+                <td><span style="font-family:var(--font-mono);font-weight:600;color:#f8fafc;">185</span> <span class="status-badge status-verde" style="font-size:0.68rem;padding:1px 6px;">VERDE</span></td>
+                <td style="text-align:center;">
+                  <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn-danger btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔴 Inactivar</button>
+                    <button class="btn-secondary btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔑 Clave</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:#f8fafc;">PRY_Charlie</td>
+                <td style="font-size:0.82rem;color:#94a3b8;">charlie@ffaa.py</td>
+                <td><span class="role-badge role-VETERANO">VETERANO</span></td>
+                <td><span class="status-badge status-verde">ACTIVE</span></td>
+                <td style="font-size:0.8rem;">08/10/2026 22:40</td>
+                <td><span style="font-family:var(--font-mono);font-weight:600;color:#f8fafc;">168</span> <span class="status-badge status-naranja" style="font-size:0.68rem;padding:1px 6px;">NARANJA</span></td>
+                <td style="text-align:center;">
+                  <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn-danger btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔴 Inactivar</button>
+                    <button class="btn-secondary btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔑 Clave</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:#f8fafc;">PRY_Delta</td>
+                <td style="font-size:0.82rem;color:#94a3b8;">delta@ffaa.py</td>
+                <td><span class="role-badge role-MIEMBRO">MIEMBRO</span></td>
+                <td><span class="status-badge status-verde">ACTIVE</span></td>
+                <td style="font-size:0.8rem;">08/10/2026 19:10</td>
+                <td><span style="font-family:var(--font-mono);font-weight:600;color:#f8fafc;">142</span> <span class="status-badge status-rojo" style="font-size:0.68rem;padding:1px 6px;">ROJO</span></td>
+                <td style="text-align:center;">
+                  <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn-danger btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔴 Inactivar</button>
+                    <button class="btn-secondary btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔑 Clave</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:#f8fafc;">PRY_Echo</td>
+                <td style="font-size:0.82rem;color:#94a3b8;">echo@ffaa.py</td>
+                <td><span class="role-badge role-MIEMBRO">MIEMBRO</span></td>
+                <td><span class="status-badge status-verde">ACTIVE</span></td>
+                <td style="font-size:0.8rem;">08/10/2026 15:22</td>
+                <td><span style="font-family:var(--font-mono);font-weight:600;color:#f8fafc;">95</span> <span class="status-badge status-negro" style="font-size:0.68rem;padding:1px 6px;">NEGRO</span></td>
+                <td style="text-align:center;">
+                  <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn-danger btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔴 Inactivar</button>
+                    <button class="btn-secondary btn-sm" style="font-size:0.7rem;padding:3px 8px;">🔑 Clave</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECCIÓN 3: EVENTOS (activo + tabs Lista/Carga/Export)
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-section" id="section-eventos">
+        <div class="admin-section-header">
+          <div>
+            <div class="badge-tag">OPERATIONS · EVENTS</div>
+            <h2>📅 Eventos del Escuadrón</h2>
+            <p class="subtitle">Gestión de eventos Squadron y Black Market · Exportación integrada</p>
+          </div>
+          <div class="admin-section-actions">
+            <button class="btn-primary btn-sm">➕ Crear Evento</button>
+          </div>
+        </div>
+
+        <!-- Evento activo -->
+        <div class="event-active-card tactical-corners">
+          <div class="event-meta">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="status-badge status-verde" style="font-size:0.72rem;">🟢 OPEN</span>
+              <span style="color:#3498db;font-weight:600;font-size:0.85rem;">✈️ SQUADRON</span>
+            </div>
+            <div class="event-name">Squadron Event 2026-W40</div>
+            <div class="event-sub">Cierra: domingo 13/10/2026 09:00 PY</div>
+          </div>
+          <button class="btn-danger btn-sm">🔒 Cerrar Evento</button>
+        </div>
+
+        <!-- Tabs internas: Lista / Carga masiva / Export -->
+        <div class="admin-tabs">
+          <button class="admin-tab-btn active" data-etab="lista" onclick="switchEventoTab('lista')">
+            <span>📋 Lista de Eventos</span>
+          </button>
+          <button class="admin-tab-btn" data-etab="carga" onclick="switchEventoTab('carga')">
+            <span>⚡ Carga Masiva</span>
+          </button>
+          <button class="admin-tab-btn" data-etab="export" onclick="switchEventoTab('export')">
+            <span>📊 Exportar Resultados</span>
+          </button>
+        </div>
+
+        <!-- Sub-panel: Lista -->
+        <div class="evento-panel" id="evento-panel-lista">
+          <div class="card">
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tipo</th>
+                    <th>Nombre</th>
+                    <th>Estado</th>
+                    <th>Inicio</th>
+                    <th>Cierre</th>
+                    <th style="text-align:center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span style="color:#3498db;font-weight:600;">✈️ SQ</span></td>
+                    <td style="font-weight:600;color:#f8fafc;">Squadron Event 2026-W40</td>
+                    <td><span class="status-badge status-verde">OPEN</span></td>
+                    <td style="font-size:0.8rem;">07/10/2026 09:00</td>
+                    <td style="font-size:0.8rem;">13/10/2026 09:00</td>
+                    <td style="text-align:center;"><button class="btn-danger btn-sm" style="font-size:0.72rem;">🔒 Cerrar</button></td>
+                  </tr>
+                  <tr>
+                    <td><span style="color:#e74c3c;font-weight:600;">⚡ BM</span></td>
+                    <td style="font-weight:600;color:#f8fafc;">Black Market 2026-W39</td>
+                    <td><span class="status-badge status-negro">CLOSED</span></td>
+                    <td style="font-size:0.8rem;">30/09/2026 17:00</td>
+                    <td style="font-size:0.8rem;">06/10/2026 17:00</td>
+                    <td style="text-align:center;"><span style="font-size:0.72rem;color:#64748b;font-style:italic;">—</span></td>
+                  </tr>
+                  <tr>
+                    <td><span style="color:#3498db;font-weight:600;">✈️ SQ</span></td>
+                    <td style="font-weight:600;color:#f8fafc;">Squadron Event 2026-W41</td>
+                    <td><span class="status-badge status-naranja">SCHEDULED</span></td>
+                    <td style="font-size:0.8rem;">14/10/2026 09:00</td>
+                    <td style="font-size:0.8rem;">20/10/2026 09:00</td>
+                    <td style="text-align:center;"><button class="btn-primary btn-sm" style="font-size:0.72rem;">▶️ Activar</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-panel: Carga masiva -->
+        <div class="evento-panel" id="evento-panel-carga" style="display:none;">
+          <div class="card">
+            <h3 style="margin-bottom:1rem;">⚡ Carga Masiva de Evento</h3>
+            <div class="form-group" style="margin-bottom:1rem;">
+              <label style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">Identificador de Evento</label>
+              <input type="text" placeholder="Ej: SQUADRON-2026-W40" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;" />
+            </div>
+            <div class="form-group" style="margin-bottom:1rem;">
+              <label style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">Datos (Formato: Nick, Tokens, Rol por línea)</label>
+              <textarea rows="6" placeholder="PRY_Alpha, 195, MIEMBRO&#10;PRY_Bravo, 180, VETERANO" style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-family:var(--font-mono);font-size:0.85rem;resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+              <button class="btn-secondary">Cancelar</button>
+              <button class="btn-primary">Procesar Carga Masiva</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-panel: Exportar -->
+        <div class="evento-panel" id="evento-panel-export" style="display:none;">
+          <div class="card">
+            <h3 style="margin-bottom:1rem;">📊 Exportar Resultados de Evento</h3>
+            <p style="font-size:0.82rem;color:#94a3b8;margin-bottom:1.2rem;">Generá una imagen del reporte para compartir por WhatsApp/Discord</p>
+
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1.2rem;align-items:end;">
+              <div>
+                <label style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">Evento a Exportar</label>
+                <select style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;">
+                  <option>✈️ SQ Squadron Event 2026-W40</option>
+                  <option>⚡ BM Black Market 2026-W39</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">Formato</label>
+                <select style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;">
+                  <option>JPG</option>
+                  <option>PNG</option>
+                  <option>PDF</option>
+                </select>
+              </div>
+              <div>
+                <button class="btn-primary" style="width:100%;">📸 Generar Reporte</button>
+              </div>
+            </div>
+
+            <div style="padding:2rem;text-align:center;color:#64748b;background:rgba(5,8,22,0.5);border-radius:8px;border:1px dashed rgba(100,116,139,0.3);font-size:0.85rem;">
+              La vista previa del reporte aparecerá aquí tras generar
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECCIÓN 4: CATÁLOGO
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-section" id="section-catalogo">
+        <div class="admin-section-header">
+          <div>
+            <div class="badge-tag">FLEET · CATALOG</div>
+            <h2>✈️ Catálogo de Aeronaves</h2>
+            <p class="subtitle">Modelos oficiales disponibles en el sistema (CRUD integrado)</p>
+          </div>
+          <div class="admin-section-actions">
+            <button class="btn-primary btn-sm">➕ Agregar Aeronave</button>
+          </div>
+        </div>
+
+        <!-- KPIs del catálogo -->
+        <div class="stats-grid-tactical" style="margin-bottom:1.5rem;">
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #3498db;">
+            <div class="stat-card-header"><span class="stat-label">Total Modelos</span></div>
+            <div class="stat-main"><span class="stat-number-blue">42</span></div>
+          </div>
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #2ecc71;">
+            <div class="stat-card-header"><span class="stat-label">Activos</span></div>
+            <div class="stat-main"><span class="stat-number-green">40</span></div>
+          </div>
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #e74c3c;">
+            <div class="stat-card-header"><span class="stat-label">Desactivados</span></div>
+            <div class="stat-main"><span class="stat-number-red">2</span></div>
+          </div>
+          <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #d4af37;">
+            <div class="stat-card-header"><span class="stat-label">Tier 4/5</span></div>
+            <div class="stat-main"><span class="stat-number-gold">8</span></div>
+          </div>
+        </div>
+
+        <!-- Grid de 3 aeronaves dummy -->
+        <div class="catalog-grid">
+          <div class="card tactical-corners" style="background:rgba(17,24,39,0.92);border:1px solid rgba(55,65,81,0.8);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="background:rgba(155,89,182,0.2);border:1px solid #9b59b6;color:#c084fc;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:3px;font-family:var(--font-display);">TIER 4 · PESADO</span>
+              <span style="background:rgba(255,255,255,0.08);color:#cbd5e0;font-size:0.7rem;padding:2px 6px;border-radius:3px;font-family:var(--font-mono);">ID: 125</span>
+            </div>
+            <h3 style="margin:0 0 4px 0;font-size:1.15rem;color:#ffffff;">F-15EX Eagle II</h3>
+            <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:12px;">🎯 Caza de Superioridad Aérea</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:rgba(10,15,25,0.8);padding:8px;border-radius:4px;border:1px solid #1e293b;margin-bottom:12px;text-align:center;">
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Vel</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#38bdf8;font-family:var(--font-mono);">2650</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Agi</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#4ade80;font-family:var(--font-mono);">78</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Blind</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#fbbf24;font-family:var(--font-mono);">1450</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Pwr</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#f87171;font-family:var(--font-mono);">1600</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+              <button class="btn-secondary btn-sm" style="flex:1;font-size:0.75rem;">✏️ Editar</button>
+              <button class="btn-secondary btn-sm" style="flex:1;font-size:0.75rem;">📋 Ficha</button>
+              <button class="btn-danger btn-sm" style="padding:4px 8px;">🚫</button>
+            </div>
+          </div>
+
+          <div class="card tactical-corners" style="background:rgba(17,24,39,0.92);border:1px solid rgba(55,65,81,0.8);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="background:rgba(212,175,55,0.2);border:1px solid #d4af37;color:#ffd700;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:3px;font-family:var(--font-display);">TIER 5 · ÉLITE</span>
+              <span style="background:rgba(255,255,255,0.08);color:#cbd5e0;font-size:0.7rem;padding:2px 6px;border-radius:3px;font-family:var(--font-mono);">ID: 101</span>
+            </div>
+            <h3 style="margin:0 0 4px 0;font-size:1.15rem;color:#ffffff;">F-22 Raptor</h3>
+            <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:12px;">🎯 Superioridad Aérea Sigilosa</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:rgba(10,15,25,0.8);padding:8px;border-radius:4px;border:1px solid #1e293b;margin-bottom:12px;text-align:center;">
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Vel</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#38bdf8;font-family:var(--font-mono);">2410</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Agi</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#4ade80;font-family:var(--font-mono);">95</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Blind</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#fbbf24;font-family:var(--font-mono);">1250</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Pwr</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#f87171;font-family:var(--font-mono);">1800</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+              <button class="btn-secondary btn-sm" style="flex:1;font-size:0.75rem;">✏️ Editar</button>
+              <button class="btn-secondary btn-sm" style="flex:1;font-size:0.75rem;">📋 Ficha</button>
+              <button class="btn-danger btn-sm" style="padding:4px 8px;">🚫</button>
+            </div>
+          </div>
+
+          <div class="card tactical-corners" style="background:rgba(17,24,39,0.92);border:1px solid rgba(55,65,81,0.8);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="background:rgba(52,152,219,0.2);border:1px solid #3498db;color:#60a5fa;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:3px;font-family:var(--font-display);">TIER 3 · MULTIRROL</span>
+              <span style="background:rgba(255,255,255,0.08);color:#cbd5e0;font-size:0.7rem;padding:2px 6px;border-radius:3px;font-family:var(--font-mono);">ID: 067</span>
+            </div>
+            <h3 style="margin:0 0 4px 0;font-size:1.15rem;color:#ffffff;">Rafale C</h3>
+            <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:12px;">🎯 Caza Polivalente</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:rgba(10,15,25,0.8);padding:8px;border-radius:4px;border:1px solid #1e293b;margin-bottom:12px;text-align:center;">
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Vel</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#38bdf8;font-family:var(--font-mono);">2130</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Agi</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#4ade80;font-family:var(--font-mono);">88</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Blind</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#fbbf24;font-family:var(--font-mono);">1180</div>
+              </div>
+              <div>
+                <div style="font-size:0.6rem;color:#64748b;text-transform:uppercase;">Pwr</div>
+                <div style="font-size:0.85rem;font-weight:700;color:#f87171;font-family:var(--font-mono);">1420</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+              <button class="btn-secondary btn-sm" style="flex:1;font-size:0.75rem;">✏️ Editar</button>
+              <button class="btn-secondary btn-sm" style="flex:1;font-size:0.75rem;">📋 Ficha</button>
+              <button class="btn-danger btn-sm" style="padding:4px 8px;">🚫</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════════
+           SECCIÓN 5: ESTADO (health + scheduler + versión)
+           ═══════════════════════════════════════════════════════ -->
+      <section class="admin-section" id="section-estado">
+        <div class="admin-section-header">
+          <div>
+            <div class="badge-tag">SYSTEM · HEALTH</div>
+            <h2>⚙️ Estado del Sistema</h2>
+            <p class="subtitle">Scheduler, health-check, versión y logs del servidor</p>
+          </div>
+          <div class="admin-section-actions">
+            <button class="btn-primary btn-sm">🔄 Forzar Tick (OWNER)</button>
+          </div>
+        </div>
+
+        <!-- Health grid -->
+        <div class="health-grid">
+          <div class="health-item">
+            <div class="health-label">Estado del Scheduler</div>
+            <div class="health-value">
+              <span style="width:10px;height:10px;background:#10B981;border-radius:50%;box-shadow:0 0 8px #10B981;display:inline-block;"></span>
+              🟢 ONLINE
+            </div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Último Tick</div>
+            <div class="health-value" style="font-family:var(--font-mono);font-size:1rem;">09/10/2026 09:45:00</div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Base de Datos</div>
+            <div class="health-value">
+              <span style="width:10px;height:10px;background:#10B981;border-radius:50%;box-shadow:0 0 8px #10B981;display:inline-block;"></span>
+              🟢 CONNECTED
+            </div>
+          </div>
+          <div class="health-item">
+            <div class="health-label">Versión del Sistema</div>
+            <div class="health-value" style="font-family:var(--font-mono);font-size:1rem;color:var(--pry-gold);">v4.7.0</div>
+          </div>
+        </div>
+
+        <!-- Logs dummy -->
+        <div class="card">
+          <h3 style="margin-bottom:1rem;">📜 Logs Recientes</h3>
+          <div style="background:rgba(5,8,22,0.7);border:1px solid rgba(100,116,139,0.3);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:0.78rem;color:#94a3b8;line-height:1.7;max-height:250px;overflow-y:auto;">
+            <div><span style="color:#64748b;">09:45:00</span> <span style="color:#10B981;">[INFO]</span> Scheduler tick ejecutado correctamente</div>
+            <div><span style="color:#64748b;">09:44:30</span> <span style="color:#10B981;">[INFO]</span> Evento SQUADRON-2026-W40 marcado como OPEN</div>
+            <div><span style="color:#64748b;">09:42:15</span> <span style="color:#38BDF8;">[DEBUG]</span> 28 pilotos consultados · 0 errores</div>
+            <div><span style="color:#64748b;">09:40:00</span> <span style="color:#F59E0B;">[WARN]</span> Piloto PRY_Echo sin actividad en 5 días</div>
+            <div><span style="color:#64748b;">09:38:22</span> <span style="color:#10B981;">[INFO]</span> Backup automático generado (backup_2026-10-09.json)</div>
+            <div><span style="color:#64748b;">09:35:00</span> <span style="color:#10B981;">[INFO]</span> Health check OK · DB latency: 42ms</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     JS DE INTERACCIÓN (vanilla, sin dependencias)
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+  // ── Constantes ──
+  const LS_ACTIVE_SECTION = 'admin_active_section';
+  const LS_SIDEBAR_COLLAPSED = 'admin_sidebar_collapsed';
+
+  // ── Estado en memoria ──
+  let currentSection = 'resumen';
+  let sidebarCollapsed = false;
+
+  // ── Init: leer localStorage y aplicar estado ──
+  function initAdminMockup() {
+    // Sección activa
+    const savedSection = localStorage.getItem(LS_ACTIVE_SECTION);
+    if (savedSection && document.getElementById('section-' + savedSection)) {
+      currentSection = savedSection;
+    }
+    applySection(currentSection);
+
+    // Sidebar colapsado
+    const savedCollapsed = localStorage.getItem(LS_SIDEBAR_COLLAPSED);
+    if (savedCollapsed === 'true') {
+      sidebarCollapsed = true;
+      document.getElementById('adminSidebar').classList.add('collapsed');
+    }
+
+    // Refrescar iconos Lucide si están disponibles
+    if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();
+    }
+  }
+
+  // ── Cambiar de sección ──
+  function switchAdminSection(sectionId) {
+    if (!document.getElementById('section-' + sectionId)) return;
+    currentSection = sectionId;
+    localStorage.setItem(LS_ACTIVE_SECTION, sectionId);
+    applySection(sectionId);
+  }
+
+  function applySection(sectionId) {
+    // Ocultar todas
+    document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
+    // Mostrar la actual
+    const target = document.getElementById('section-' + sectionId);
+    if (target) target.classList.add('active');
+
+    // Marcar botón activo
+    document.querySelectorAll('.admin-sidebar-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.section === sectionId);
+    });
+
+    // Scroll top
+    document.getElementById('adminContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Si es mobile, cerrar drawer
+    if (window.innerWidth < 768) {
+      closeMobileSidebar();
+    }
+  }
+
+  // ── Toggle colapsable del sidebar (desktop/tablet) ──
+  function toggleAdminSidebar() {
+    if (window.innerWidth < 768) return; // en mobile no aplica
+    sidebarCollapsed = !sidebarCollapsed;
+    document.getElementById('adminSidebar').classList.toggle('collapsed', sidebarCollapsed);
+    localStorage.setItem(LS_SIDEBAR_COLLAPSED, String(sidebarCollapsed));
+  }
+
+  // ── Toggle mobile drawer ──
+  function toggleMobileSidebar() {
+    const sidebar = document.getElementById('adminSidebar');
+    const overlay = document.getElementById('adminMobileOverlay');
+    const isOpen = sidebar.classList.contains('mobile-open');
+    if (isOpen) {
+      closeMobileSidebar();
+    } else {
+      sidebar.classList.add('mobile-open');
+      overlay.classList.add('open');
+    }
+  }
+
+  function closeMobileSidebar() {
+    document.getElementById('adminSidebar').classList.remove('mobile-open');
+    document.getElementById('adminMobileOverlay').classList.remove('open');
+  }
+
+  // ── Modo compacto de tabla ──
+  let compactMode = false;
+  function toggleCompactMode() {
+    compactMode = !compactMode;
+    const wrapper = document.getElementById('dotacionTableWrapper');
+    if (wrapper) {
+      wrapper.classList.toggle('table-compact', compactMode);
+    }
+    const label = document.getElementById('compactToggleLabel');
+    if (label) {
+      label.textContent = compactMode ? '✅ Modo Compacto' : '⬜ Modo Compacto';
+    }
+  }
+
+  // ── Tabs de Dotación ──
+  function switchDotacionTab(tab) {
+    document.querySelectorAll('#section-dotacion .admin-tab-btn').forEach(btn => {
+      btn.classList.remove('active', 'active-green', 'active-red');
+      if (btn.dataset.tab === tab) {
+        if (tab === 'active') btn.classList.add('active-green');
+        else if (tab === 'inactive') btn.classList.add('active-red');
+        else btn.classList.add('active');
+      }
+    });
+    // En el mockup no cambiamos datos, solo el estado visual
+  }
+
+  // ── Tabs de Eventos ──
+  function switchEventoTab(tab) {
+    document.querySelectorAll('#section-eventos .admin-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.etab === tab);
+    });
+    document.querySelectorAll('.evento-panel').forEach(p => p.style.display = 'none');
+    const target = document.getElementById('evento-panel-' + tab);
+    if (target) target.style.display = 'block';
+  }
+
+  // ── Init al cargar ──
+  document.addEventListener('DOMContentLoaded', initAdminMockup);
+</script>
+
+</body>
+</html>

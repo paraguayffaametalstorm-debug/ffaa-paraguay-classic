@@ -1,0 +1,140 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SECCIÓN: RESUMEN del Panel Admin
+     ─────────────────────────────────────────────────────────────
+     - KPIs generales del escuadrón
+     - Distribución de rendimiento
+     - Accesos rápidos a otras secciones
+     ─────────────────────────────────────────────────────────────
+     IDs únicos (no chocan con otras secciones):
+       #adminTotalMembers, #adminAvgTokens, #adminAtRiskMembers, #adminLastUpdate
+       #adminPilotsByStatus
+     ─────────────────────────────────────────────────────────────
+     Dependencias JS (existentes):
+       renderAdminStats(), renderPilotsByStatus(), refreshAdminStats()
+     ─────────────────────────────────────────────────────────────
+     Fase 3 · v4.7.0 · 2026-10-09
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-section-header">
+  <div>
+    <div class="badge-tag">C4ISR · OVERVIEW</div>
+    <h2>📊 Resumen del Escuadrón</h2>
+    <p class="subtitle">Estado operacional general y métricas clave de [PRY]</p>
+  </div>
+  <div class="admin-section-actions">
+    <button type="button" onclick="refreshAdminStats()" class="btn-secondary btn-sm">
+      🔄 Actualizar
+    </button>
+    <button type="button" onclick="switchAdminSection('dotacion')" class="btn-primary btn-sm">
+      👥 Ver Dotación
+    </button>
+  </div>
+</div>
+
+<!-- KPIs Principales -->
+<div class="stats-grid-tactical">
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #2ecc71;">
+    <div class="stat-card-header">
+      <span class="stat-label">Pilotos Activos</span>
+      <span style="font-size:1.1rem;">🟢</span>
+    </div>
+    <div class="stat-main">
+      <span id="adminTotalMembers" class="stat-number-green">—</span>
+    </div>
+    <div class="stat-footer" id="adminActiveDetail">Sincronizando...</div>
+  </div>
+
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #d4af37;">
+    <div class="stat-card-header">
+      <span class="stat-label">Promedio Escuadrón</span>
+      <span style="font-size:1.1rem;">📈</span>
+    </div>
+    <div class="stat-main">
+      <span id="adminAvgTokens" class="stat-number-gold">—</span>
+    </div>
+    <div class="stat-footer">Meta mínima: 175 tokens</div>
+  </div>
+
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #e74c3c;">
+    <div class="stat-card-header">
+      <span class="stat-label">Pilotos en Riesgo</span>
+      <span style="font-size:1.1rem;">⚠️</span>
+    </div>
+    <div class="stat-main">
+      <span id="adminAtRiskMembers" class="stat-number-red">—</span>
+    </div>
+    <div class="stat-footer">Estado ROJO + NEGRO</div>
+  </div>
+
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #3498db;">
+    <div class="stat-card-header">
+      <span class="stat-label">Última Sincronización</span>
+      <span style="font-size:1.1rem;">🕐</span>
+    </div>
+    <div class="stat-main">
+      <span id="adminLastUpdate" style="font-size:1.1rem;font-weight:700;color:#cbd5e0;font-family:var(--font-mono);">—</span>
+    </div>
+    <div class="stat-footer">Hora Paraguay (PY)</div>
+  </div>
+</div>
+
+<!-- Distribución de Rendimiento -->
+<div class="card tactical-corners" style="margin-bottom:1.5rem;">
+  <div class="card-header">
+    <h3 style="margin:0;">📊 Distribución de Rendimiento Actual</h3>
+    <span class="badge-tag">SEMÁFORO MILITAR</span>
+  </div>
+  <div id="adminPilotsByStatus">
+    <div style="text-align:center;padding:1.5rem;color:#94a3b8;">
+      Cargando distribución de pilotos...
+    </div>
+  </div>
+</div>
+
+<!-- Accesos Rápidos -->
+<div class="card tactical-corners">
+  <div class="card-header">
+    <h3 style="margin:0;">⚡ Accesos Rápidos de Comandancia</h3>
+  </div>
+  <div class="quick-access-grid">
+    <button type="button" class="quick-access-btn" onclick="switchAdminSection('dotacion')">
+      <div class="qa-icon-box" style="background:rgba(46,204,113,0.15);border-color:#2ecc71;">
+        <span>👥</span>
+      </div>
+      <div class="qa-content">
+        <strong class="qa-title">Gestionar Dotación</strong>
+        <span class="qa-desc">Alta, baja y roles de pilotos</span>
+      </div>
+    </button>
+
+    <button type="button" class="quick-access-btn" onclick="switchAdminSection('eventos')">
+      <div class="qa-icon-box" style="background:rgba(212,175,55,0.15);border-color:#d4af37;">
+        <span>📅</span>
+      </div>
+      <div class="qa-content">
+        <strong class="qa-title">Eventos Activos</strong>
+        <span class="qa-desc">SQ + Black Market + Export</span>
+      </div>
+    </button>
+
+    <button type="button" class="quick-access-btn" onclick="switchAdminSection('catalogo')">
+      <div class="qa-icon-box" style="background:rgba(96,165,250,0.15);border-color:#60a5fa;">
+        <span>✈️</span>
+      </div>
+      <div class="qa-content">
+        <strong class="qa-title">Catálogo de Aeronaves</strong>
+        <span class="qa-desc">CRUD de modelos oficiales</span>
+      </div>
+    </button>
+
+    <button type="button" class="quick-access-btn" onclick="switchAdminSection('estado')">
+      <div class="qa-icon-box" style="background:rgba(56,189,248,0.15);border-color:#38bdf8;">
+        <span>⚙️</span>
+      </div>
+      <div class="qa-content">
+        <strong class="qa-title">Estado del Sistema</strong>
+        <span class="qa-desc">Scheduler · Health · Logs</span>
+      </div>
+    </button>
+  </div>
+</div>

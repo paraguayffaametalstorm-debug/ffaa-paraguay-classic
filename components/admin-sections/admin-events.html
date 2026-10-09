@@ -1,0 +1,176 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SECCIÓN: EVENTOS del Panel Admin
+     ─────────────────────────────────────────────────────────────
+     - Card del evento activo (auto-actualizable)
+     - Tabs internas: Lista | Carga Masiva | Exportar Resultados
+     ─────────────────────────────────────────────────────────────
+     IDs únicos:
+       #adminEventsV2Container
+       #adminEventCreateModal (modal de creación, se migra desde admin-panel viejo)
+       #eventIdInput, #eventBulkData (para carga masiva)
+       #exportEventSelect, #exportFormatSelect, #exportPreviewContainer, #exportPreviewTarget
+     ─────────────────────────────────────────────────────────────
+     Dependencias JS (existentes):
+       adminEventsLoad() [admin-events.js]
+       showUploadEventModal(), uploadEventBulk()
+       generateEventReport(), downloadEventReport(), closeExportPreview()
+       loadExportEventsList()
+     ─────────────────────────────────────────────────────────────
+     Fase 3 · v4.7.0 · 2026-10-09
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-section-header">
+  <div>
+    <div class="badge-tag">OPERATIONS · EVENTS</div>
+    <h2>📅 Eventos del Escuadrón</h2>
+    <p class="subtitle">SQ + Black Market en un solo panel · Exportación integrada</p>
+  </div>
+  <div class="admin-section-actions">
+    <button type="button" onclick="window.adminEventsReload && window.adminEventsReload()" class="btn-secondary btn-sm">
+      🔄 Actualizar
+    </button>
+    <button type="button" onclick="window.adminEventsOpenCreateModal && window.adminEventsOpenCreateModal()" class="btn-primary btn-sm">
+      ➕ Crear Evento
+    </button>
+  </div>
+</div>
+
+<!-- Tabs internas: Lista / Carga Masiva / Exportar -->
+<div class="admin-tabs" id="eventosTabsContainer">
+  <button type="button" class="admin-tab-btn active" data-etab="lista" onclick="switchEventoTab('lista')">
+    <span>📋 Lista de Eventos</span>
+  </button>
+  <button type="button" class="admin-tab-btn" data-etab="carga" onclick="switchEventoTab('carga')">
+    <span>⚡ Carga Masiva</span>
+  </button>
+  <button type="button" class="admin-tab-btn" data-etab="export" onclick="switchEventoTab('export')">
+    <span>📊 Exportar Resultados</span>
+  </button>
+</div>
+
+<!-- Sub-panel: Lista unificada (v2) -->
+<div class="evento-panel" id="evento-panel-lista">
+  <div id="adminEventsV2Container" class="card tactical-corners">
+    <div style="text-align:center;padding:2rem;color:#94a3b8;">
+      <i data-lucide="loader-2" class="spin"></i>
+      Cargando panel unificado de eventos...
+    </div>
+  </div>
+</div>
+
+<!-- Sub-panel: Carga Masiva -->
+<div class="evento-panel" id="evento-panel-carga" style="display:none;">
+  <div class="card tactical-corners">
+    <div class="card-header">
+      <h3 style="margin:0;">⚡ Carga Masiva de Evento</h3>
+      <span class="badge-tag">BULK IMPORT</span>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label for="eventIdInput" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Identificador de Evento
+      </label>
+      <input
+        type="text"
+        id="eventIdInput"
+        placeholder="Ej: SQUADRON-2026-W40"
+        style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;"
+      />
+    </div>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label for="eventBulkData" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Datos (Formato: Nick, Tokens, Rol por línea)
+      </label>
+      <textarea
+        id="eventBulkData"
+        rows="6"
+        placeholder="PRY_Alpha, 195, MIEMBRO&#10;PRY_Bravo, 180, VETERANO"
+        style="width:100%;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-family:'JetBrains Mono',monospace;font-size:0.85rem;resize:vertical;"
+      ></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" onclick="document.getElementById('eventBulkData').value=''" class="btn-secondary">
+        Limpiar
+      </button>
+      <button type="button" onclick="uploadEventBulk()" class="btn-primary">
+        ▶️ Procesar Carga Masiva
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Sub-panel: Exportar Resultados -->
+<div class="evento-panel" id="evento-panel-export" style="display:none;">
+  <div class="card tactical-corners">
+    <div class="card-header">
+      <h3 style="margin:0;">📊 Exportar Resultados de Evento</h3>
+      <span class="badge-tag">REPORT GENERATOR</span>
+    </div>
+    <p style="font-size:0.82rem;color:#94a3b8;margin-bottom:1.2rem;">
+      Generá una imagen del reporte para compartir por WhatsApp/Discord
+    </p>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;margin-bottom:1.2rem;align-items:end;">
+      <div>
+        <label for="exportEventSelect" style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">
+          Evento a Exportar
+        </label>
+        <select id="exportEventSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
+          <option value="">Cargando eventos...</option>
+        </select>
+      </div>
+      <div>
+        <label for="exportFormatSelect" style="font-size:0.8rem;color:#a0aec0;display:block;margin-bottom:6px;">
+          Formato
+        </label>
+        <select id="exportFormatSelect" style="width:100%;padding:8px 10px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#f8fafc;font-size:0.9rem;">
+          <option value="jpg" selected>JPG (predeterminado)</option>
+          <option value="png">PNG (alta calidad)</option>
+          <option value="pdf">PDF (archivo oficial)</option>
+        </select>
+      </div>
+      <div>
+        <button type="button" onclick="generateEventReport()" class="btn-primary" style="width:100%;padding:8px 12px;font-weight:600;">
+          📸 Generar Reporte
+        </button>
+      </div>
+    </div>
+
+    <!-- Preview (oculto hasta generar) -->
+    <div id="exportPreviewContainer" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:0.85rem;color:#94a3b8;">Vista previa del reporte:</span>
+        <div style="display:flex;gap:8px;">
+          <button type="button" onclick="downloadEventReport()" class="btn-primary" style="padding:6px 14px;font-size:0.85rem;background:#1B4D3E;border:1.5px solid #2ECC71;color:#fff;font-weight:600;">
+            📥 Descargar
+          </button>
+          <button type="button" onclick="closeExportPreview()" class="btn-secondary" style="padding:6px 14px;font-size:0.85rem;">
+            ✕ Cerrar
+          </button>
+        </div>
+      </div>
+      <div style="overflow:auto;max-height:70vh;background:#050816;padding:20px;border-radius:8px;border:1px solid #1E293B;">
+        <div id="exportPreviewTarget" style="display:inline-block;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tabs internas de Eventos (Lista / Carga / Export)
+  (function() {
+    'use strict';
+    window.switchEventoTab = function(tab) {
+      document.querySelectorAll('#eventosTabsContainer .admin-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.etab === tab);
+      });
+      document.querySelectorAll('.evento-panel').forEach(p => p.style.display = 'none');
+      const target = document.getElementById('evento-panel-' + tab);
+      if (target) target.style.display = 'block';
+
+      // Si cambia a Export, cargar la lista de eventos
+      if (tab === 'export' && typeof loadExportEventsList === 'function') {
+        loadExportEventsList();
+      }
+    };
+  })();
+</script>

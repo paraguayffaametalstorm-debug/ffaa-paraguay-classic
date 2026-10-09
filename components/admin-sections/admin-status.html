@@ -1,0 +1,170 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SECCIÓN: ESTADO del Panel Admin (NUEVA en v4.7.0)
+     ─────────────────────────────────────────────────────────────
+     - Health check de servicios
+     - Estado del scheduler
+     - Versión del sistema
+     - Logs recientes
+     - Botón "Forzar tick" (solo OWNER)
+     ─────────────────────────────────────────────────────────────
+     IDs únicos:
+       #adminHealthGrid, #adminSchedulerStatus, #adminDbStatus
+       #adminSystemVersion, #adminLogsContainer
+       #adminForceTickBtn
+     ─────────────────────────────────────────────────────────────
+     Dependencias JS (a crear en F5):
+       initAdminStatusSection(), renderAdminStatusSection()
+     ─────────────────────────────────────────────────────────────
+     Fase 3 · v4.7.0 · 2026-10-09
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-section-header">
+  <div>
+    <div class="badge-tag">SYSTEM · HEALTH</div>
+    <h2>⚙️ Estado del Sistema</h2>
+    <p class="subtitle">Scheduler, health-check, versión y logs del servidor</p>
+  </div>
+  <div class="admin-section-actions">
+    <button
+      type="button"
+      id="adminForceTickBtn"
+      onclick="adminForceTick()"
+      class="btn-primary btn-sm"
+      style="background:#1B4D3E;border-color:#2ECC71;color:#2ECC71;"
+    >
+      ⚡ Forzar Tick (OWNER)
+    </button>
+    <button
+      type="button"
+      onclick="renderAdminStatusSection && renderAdminStatusSection()"
+      class="btn-secondary btn-sm"
+    >
+      🔄 Actualizar
+    </button>
+  </div>
+</div>
+
+<!-- Health Grid -->
+<div class="health-grid" id="adminHealthGrid">
+  <div class="health-item">
+    <div class="health-label">Scheduler</div>
+    <div class="health-value" id="adminSchedulerStatus">
+      <span style="width:10px;height:10px;background:#10B981;border-radius:50%;box-shadow:0 0 8px #10B981;display:inline-block;"></span>
+      🟢 ONLINE
+    </div>
+  </div>
+
+  <div class="health-item">
+    <div class="health-label">Último Tick</div>
+    <div class="health-value" id="adminLastTick" style="font-family:var(--font-mono);font-size:1rem;">
+      — / — / — · —:—:—
+    </div>
+  </div>
+
+  <div class="health-item">
+    <div class="health-label">Base de Datos</div>
+    <div class="health-value" id="adminDbStatus">
+      <span style="width:10px;height:10px;background:#10B981;border-radius:50%;box-shadow:0 0 8px #10B981;display:inline-block;"></span>
+      🟢 CONNECTED
+    </div>
+  </div>
+
+  <div class="health-item">
+    <div class="health-label">Versión del Sistema</div>
+    <div class="health-value" id="adminSystemVersion" style="font-family:var(--font-mono);font-size:1rem;color:var(--pry-gold);">
+      v4.7.0
+    </div>
+  </div>
+
+  <div class="health-item">
+    <div class="health-label">Uptime</div>
+    <div class="health-value" id="adminUptime" style="font-family:var(--font-mono);font-size:1rem;">
+      — h
+    </div>
+  </div>
+
+  <div class="health-item">
+    <div class="health-label">Latencia DB</div>
+    <div class="health-value" id="adminDbLatency" style="font-family:var(--font-mono);font-size:1rem;">
+      — ms
+    </div>
+  </div>
+</div>
+
+<!-- Logs Recientes -->
+<div class="card tactical-corners">
+  <div class="card-header">
+    <h3 style="margin:0;">📜 Logs Recientes</h3>
+    <span class="badge-tag">SYSTEM LOGS</span>
+  </div>
+  <div
+    id="adminLogsContainer"
+    style="
+      background:rgba(5,8,22,0.7);
+      border:1px solid rgba(100,116,139,0.3);
+      border-radius:6px;
+      padding:12px;
+      font-family:var(--font-mono);
+      font-size:0.78rem;
+      color:#94a3b8;
+      line-height:1.7;
+      max-height:320px;
+      overflow-y:auto;
+    "
+  >
+    <div><span style="color:#64748b;">—:—:—</span> <span style="color:#10B981;">[INFO]</span> Esperando conexión con el servidor...</div>
+  </div>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════════════════
+  // STUB de la sección Estado (se reemplaza en F5)
+  // ═══════════════════════════════════════════════════════════════
+  (function() {
+    'use strict';
+
+    // Forzar tick del scheduler (STUB — solo UI)
+    window.adminForceTick = function() {
+      console.log('[Admin Status] Forzar tick solicitado (STUB F3)');
+      if (typeof showToast === 'function') {
+        showToast('⚡ Tick forzado (stub — F5 conectará al backend)', 'info');
+      }
+      // Escribir en el log visual
+      const container = document.getElementById('adminLogsContainer');
+      if (container) {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const ts = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+        const div = document.createElement('div');
+        div.innerHTML = '<span style="color:#64748b;">' + ts + '</span> <span style="color:#D4AF37;">[TICK]</span> Tick manual solicitado por OWNER (stub F3)';
+        container.insertBefore(div, container.firstChild);
+      }
+    };
+
+    // Render del estado (STUB — solo actualiza la hora actual)
+    window.renderAdminStatusSection = function() {
+      console.log('[Admin Status] Render (STUB F3)');
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+
+      const tickEl = document.getElementById('adminLastTick');
+      if (tickEl) {
+        tickEl.textContent =
+          pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() +
+          ' · ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+      }
+
+      const uptimeEl = document.getElementById('adminUptime');
+      if (uptimeEl) uptimeEl.textContent = Math.floor(performance.now() / 3600000) + ' h';
+
+      const latencyEl = document.getElementById('adminDbLatency');
+      if (latencyEl) latencyEl.textContent = '— ms (F5 conectará)';
+    };
+
+    // Init al cargar la sección (llamado por el switchAdminSection en F5)
+    window.initAdminStatusSection = function() {
+      console.log('[Admin Status] Init (STUB F3)');
+      window.renderAdminStatusSection();
+    };
+  })();
+</script>

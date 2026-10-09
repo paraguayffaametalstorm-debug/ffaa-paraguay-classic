@@ -1,0 +1,142 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SECCIÓN: CATÁLOGO del Panel Admin
+     ─────────────────────────────────────────────────────────────
+     Contenido migrado de: components/admin-plane-models.html
+     (sin el <div id="adminPlaneModels"> exterior, ahora lo provee
+     el contenedor dinámico del panel).
+
+     IMPORTANTE: los IDs de esta sección fueron RENOMBRADOS con prefijo
+     'catalog' para evitar colisiones con el antiguo admin-plane-models.html
+     que sigue existiendo en paralelo durante F3.
+     ─────────────────────────────────────────────────────────────
+     Dependencias JS (existentes):
+       loadAdminPlaneModels(), filterAdminPlaneModels(), resetCatalogFilters()
+       openCreatePlaneModelModal(), openEditPlaneModelModal()
+       handleSavePlaneModel(), togglePlaneModelStatus(), viewPlaneModelFullDetails()
+     ─────────────────────────────────────────────────────────────
+     Fase 3 · v4.7.0 · 2026-10-09
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-section-header">
+  <div>
+    <div class="badge-tag">FLEET · CATALOG</div>
+    <h2>✈️ Catálogo de Aeronaves</h2>
+    <p class="subtitle">Modelos oficiales disponibles en el sistema (CRUD integrado)</p>
+  </div>
+  <div class="admin-section-actions">
+    <button type="button" onclick="loadAdminPlaneModels(true)" class="btn-secondary btn-sm">
+      🔄 Actualizar
+    </button>
+    <button type="button" onclick="openCreatePlaneModelModal()" class="btn-primary btn-sm">
+      ➕ Agregar Aeronave
+    </button>
+  </div>
+</div>
+
+<!-- Resumen Métrico Rápido -->
+<div class="stats-grid-tactical" style="margin-bottom:1.5rem;">
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #3498db;">
+    <div class="stat-card-header">
+      <span class="stat-label">Total Modelos</span>
+      <span style="font-size:1.1rem;">📦</span>
+    </div>
+    <div class="stat-main">
+      <span id="catalogTotalModels" class="stat-number-blue">--</span>
+    </div>
+  </div>
+
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #2ecc71;">
+    <div class="stat-card-header">
+      <span class="stat-label">Activos</span>
+      <span style="font-size:1.1rem;">🟢</span>
+    </div>
+    <div class="stat-main">
+      <span id="catalogActiveModels" class="stat-number-green">--</span>
+    </div>
+  </div>
+
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #e74c3c;">
+    <div class="stat-card-header">
+      <span class="stat-label">Desactivados</span>
+      <span style="font-size:1.1rem;">🚫</span>
+    </div>
+    <div class="stat-main">
+      <span id="catalogInactiveModels" class="stat-number-red">--</span>
+    </div>
+  </div>
+
+  <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #d4af37;">
+    <div class="stat-card-header">
+      <span class="stat-label">Cazas Tier 4/5</span>
+      <span style="font-size:1.1rem;">⭐</span>
+    </div>
+    <div class="stat-main">
+      <span id="catalogHighTierModels" class="stat-number-gold">--</span>
+    </div>
+  </div>
+</div>
+
+<!-- Barra de Búsqueda y Filtros -->
+<div class="card tactical-corners" style="margin-bottom:1.5rem;padding:1.2rem;background:rgba(17,24,39,0.9);border:1px solid rgba(212,175,55,0.25);">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end;">
+    <div style="grid-column:span 2;">
+      <label for="catalogSearchInput" style="font-size:0.8rem;color:#cbd5e0;font-family:var(--font-tactical);display:block;margin-bottom:4px;">
+        🔍 BUSCAR MODELO O TIPO DE CAZA
+      </label>
+      <input
+        type="text"
+        id="catalogSearchInput"
+        placeholder="Ej: F-22, Rafale, Sigiloso..."
+        oninput="filterAdminPlaneModels()"
+        style="background:rgba(10,15,25,0.9);border:1px solid #374151;color:#fff;padding:0.65rem 0.85rem;border-radius:4px;width:100%;font-size:0.9rem;"
+      />
+    </div>
+    <div>
+      <label for="catalogTierFilter" style="font-size:0.8rem;color:#cbd5e0;font-family:var(--font-tactical);display:block;margin-bottom:4px;">
+        TIER MILITAR
+      </label>
+      <select
+        id="catalogTierFilter"
+        onchange="filterAdminPlaneModels()"
+        style="background:rgba(10,15,25,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;"
+      >
+        <option value="">Todos los Tiers</option>
+        <option value="5">Tier 5 (5ª Gen / Sigilo)</option>
+        <option value="4">Tier 4 (4ª Gen++ Pesados)</option>
+        <option value="3">Tier 3 (Polivalentes)</option>
+        <option value="2">Tier 2 (Especializados)</option>
+        <option value="1">Tier 1 (Ligeros Clásicos)</option>
+      </select>
+    </div>
+    <div>
+      <label for="catalogStatusFilter" style="font-size:0.8rem;color:#cbd5e0;font-family:var(--font-tactical);display:block;margin-bottom:4px;">
+        ESTADO OPERACIONAL
+      </label>
+      <select
+        id="catalogStatusFilter"
+        onchange="filterAdminPlaneModels()"
+        style="background:rgba(10,15,25,0.9);border:1px solid #374151;color:#fff;padding:0.65rem;border-radius:4px;width:100%;font-size:0.9rem;"
+      >
+        <option value="">Todos los Estados</option>
+        <option value="active" selected>Sólo Activos</option>
+        <option value="inactive">Sólo Desactivados</option>
+      </select>
+    </div>
+    <div>
+      <button type="button" onclick="resetCatalogFilters()" class="btn-secondary" style="width:100%;padding:0.65rem;">
+        Limpiar Filtros
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Grid de Modelos -->
+<div
+  id="adminPlaneModelsList"
+  style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.2rem;margin-bottom:2rem;"
+>
+  <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#a0aec0;">
+    <span style="font-size:2rem;display:block;margin-bottom:8px;">⏳</span>
+    Cargando catálogo táctico de aeronaves...
+  </div>
+</div>
