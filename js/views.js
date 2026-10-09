@@ -4813,7 +4813,8 @@ async function loadAdminPanel() {
     renderPilotsByStatus(members);
     filterMembers();
 
-    const updateEl = document.getElementById('lastUpdate');
+    // F6-FIX: actualizar #adminLastUpdate (ID nuevo en admin-summary.html)
+    const updateEl = document.getElementById('adminLastUpdate');
     if (updateEl) updateEl.textContent = new Date().toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
     // Cargar eventos para el panel de eventos y Black Market
@@ -4900,13 +4901,24 @@ function renderAdminEvents(events) {
 }
 
 function renderAdminStats(members) {
-  const totalEl = document.getElementById('totalMembers');
+  // F6-FIX: IDs actualizados para admin-summary.html (v4.7.0)
+  const totalEl = document.getElementById('adminTotalMembers');
   const avgEl = document.getElementById('adminAvgTokens');
-  const riskEl = document.getElementById('atRiskMembers');
+  const riskEl = document.getElementById('adminAtRiskMembers');
+  const lastUpdateEl = document.getElementById('adminLastUpdate');
 
   const activeCount = members.filter(m => (m.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length;
   if (totalEl) totalEl.textContent = `${activeCount} / ${members.length}`;
-  
+
+  // Actualizar subtítulo "X inactivos en reserva"
+  const detailEl = document.getElementById('adminActiveDetail');
+  if (detailEl) {
+    const inactiveCount = members.length - activeCount;
+    detailEl.textContent = inactiveCount > 0
+      ? `${inactiveCount} inactivo${inactiveCount !== 1 ? 's' : ''} en reserva`
+      : 'Todos en servicio activo';
+  }
+
   if (members.length > 0) {
     const sum = members.reduce((s, m) => s + (Number(m.avg_tokens) || 0), 0);
     const avg = (sum / members.length).toFixed(1);
@@ -4918,8 +4930,15 @@ function renderAdminStats(members) {
     if (avgEl) avgEl.textContent = `${avg} tokens`;
     if (riskEl) riskEl.textContent = atRisk;
   } else {
-    if (avgEl) avgEl.textContent = `0 tokens`;
+    if (avgEl) avgEl.textContent = '0 tokens';
     if (riskEl) riskEl.textContent = '0';
+  }
+
+  // Actualizar última sincronización
+  if (lastUpdateEl) {
+    lastUpdateEl.textContent = new Date().toLocaleTimeString('es-PY', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
   }
 }
 
