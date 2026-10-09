@@ -4726,9 +4726,9 @@ function renderNormativas(list) {
             <span>📅 Vigor: ${n.fecha_entrada_vigor ? new Date(n.fecha_entrada_vigor).toLocaleDateString() : 'Inmediato'}</span>
             <span style="margin-left:12px;">🔒 Confidencialidad: <strong>${escapeHTML(n.nivel_confidencialidad || 'PUBLICO')}</strong></span>
           </div>
-          ${n.file_name ? `
+          ${(n.archivo_nombre || n.file_name) ? `
             <button onclick="downloadNormativa(${n.id})" class="btn-secondary" style="padding:4px 10px;font-size:0.75rem;">
-              📥 Descargar (${escapeHTML(n.file_name)})
+              📥 Descargar (${escapeHTML(n.archivo_nombre || n.file_name)})
             </button>
           ` : ''}
         </div>
@@ -4761,6 +4761,57 @@ function applyNormativasFilters() {
 
   renderNormativas(filtered);
 }
+
+/**
+ * v4.7.2 — Descarga una normativa oficial desde el backend.
+ * Maneja el blob + Content-Disposition para preservar el nombre original.
+ * @param {number|string} normativaId
+ */
+async function downloadNormativa(normativaId) {
+  if (!normativaId) {
+    showToast('⚠️ ID de normativa inválido', 'warning');
+    return;
+  }
+
+  showToast('⏳ Preparando descarga...', 'info');
+
+  try {
+    const res = await fetch(`${API_BASE}/api/normativas/${normativaId}/download`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}`;
+      try {
+        const errData = await res.json();
+        errMsg = errData.error || errData.message || errMsg;
+      } catch (e) { /* respuesta no-JSON */ }
+      throw new Error(errMsg);
+    }
+
+    // Extraer nombre del archivo desde Content-Disposition
+    const cd = res.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const filename = match ? decodeURIComponent(match[1]) : `normativa-${normativaId}.pdf`;
+
+    // Descargar como blob
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    showToast(`✅ Descargando: ${filename}`, 'success');
+  } catch (err) {
+    console.error('❌ Error descargando normativa:', err);
+    showToast('❌ Error al descargar: ' + err.message, 'error');
+  }
+}
+window.downloadNormativa = downloadNormativa;
 
 function resetNormativasFilters() {
   ['normativasSearch', 'categoriaFilter', 'tipoDocFilter'].forEach(id => {

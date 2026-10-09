@@ -81,31 +81,68 @@ export async function uploadNormativa(req, res, next) {
 export async function downloadNormativa(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
     const supabase = getSupabase();
     let norm = null;
 
     if (supabase) {
-      const { data } = await supabase.from('normativas').select('*').eq('id', id).single();
-      if (data) norm = data;
+      const { data, error } = await supabase
+        .from('normativas')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (!error && data) norm = data;
     }
+
     if (!norm) {
       norm = DEFAULT_NORMATIVAS.find(n => n.id === id);
     }
 
-    const sampleDoc = `PARAGUAY-FFAA | METALSTORM
-Documento Oficial: ${norm ? norm.codigo : 'DOC-001'}
-Título: ${norm ? norm.titulo : 'Normativa de Escuadrón'}
-Ámbito: ${norm ? norm.ambito_aplicacion : 'General'}
+    if (!norm) {
+      return res.status(404).json({ error: 'Normativa no encontrada' });
+    }
+
+    // Si hay archivo_url, traer el archivo real desde Supabase Storage
+    if (norm.archivo_url) {
+      const fileRes = await fetch(norm.archivo_url);
+      if (!fileRes.ok) {
+        return res.status(502).json({ error: 'No se pudo recuperar el archivo desde el storage' });
+      }
+
+      const buffer = Buffer.from(await fileRes.arrayBuffer());
+      const fileName = norm.archivo_nombre || `normativa-${id}.pdf`;
+      const mimeType = norm.archivo_extension === 'pdf' ? 'application/pdf'
+                     : norm.archivo_extension === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                     : 'application/octet-stream';
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Length', buffer.length);
+      return res.send(buffer);
+    }
+
+    // Fallback si no hay archivo_url
+    const fallbackDoc = `PARAGUAY-FFAA | METALSTORM
+Documento Oficial: ${norm.codigo || 'DOC-001'}
+Título: ${norm.titulo || 'Normativa de Escuadrón'}
+Ámbito: ${norm.ambito_aplicacion || 'General'}
 
 Resumen Operativo:
-${norm ? norm.resumen : 'Contenido normativo oficial del Escuadrón Paraguay FFAA.'}
+${norm.resumen || 'Contenido normativo oficial del Escuadrón Paraguay FFAA.'}
 
-Fecha de Vigor: ${norm ? norm.fecha_entrada_vigor : new Date().toISOString()}
-Aprobado por: Comandancia General del Escuadrón.`;
+Fecha de Vigor: ${norm.fecha_entrada_vigor || new Date().toISOString()}
+Aprobado por: Comandancia General del Escuadrón.
 
+[NOTA: El archivo original no está disponible. Contactar a la Comandancia.]`;
+
+    const fallbackName = norm.archivo_nombre || `${norm.codigo || 'normativa'}.txt`;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${norm ? norm.file_name : 'normativa.txt'}"`);
-    res.send(sampleDoc);
+    res.setHeader('Content-Disposition', `attachment; filename="${fallbackName}"`);
+    res.send(fallbackDoc);
   } catch (err) {
     next(err);
   }
