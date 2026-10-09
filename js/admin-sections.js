@@ -322,4 +322,60 @@
   };
 
   console.log('✅ [Admin] Módulo admin-sections.js cargado (F5 con lazy loading)');
+
+  // ═══════════════════════════════════════════════════════════════
+  //  FUNCIONES AUXILIARES DE SECCIONES (F6-FIX)
+  //  ─────────────────────────────────────────────────────────────
+  //  Estas funciones estaban dentro de <script> embebidos en el
+  //  HTML inyectado vía innerHTML. Como el navegador NO ejecuta
+  //  los <script> de innerHTML, hay que definirlas acá.
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Cambia el sub-tab dentro de la sección Eventos.
+   * Tabs: "lista" | "carga" | "export"
+   */
+  function switchEventoTab(tab) {
+    // Actualizar botones de tabs
+    document.querySelectorAll('#eventosTabsContainer .admin-tab-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.etab === tab);
+    });
+    // Ocultar todos los panels
+    document.querySelectorAll('.evento-panel').forEach(function(p) {
+      p.style.display = 'none';
+    });
+    // Mostrar el panel seleccionado
+    const target = document.getElementById('evento-panel-' + tab);
+    if (target) target.style.display = 'block';
+
+    // Si se abre el tab "export", cargar la lista de eventos
+    if (tab === 'export' && typeof window.loadExportEventsList === 'function') {
+      window.loadExportEventsList();
+    }
+
+    // Refrescar iconos Lucide del panel nuevo
+    if (typeof window.refreshLucideIcons === 'function') {
+      setTimeout(window.refreshLucideIcons, 30);
+    }
+
+    console.log('[Admin][Eventos] Sub-tab activado:', tab);
+  }
+
+  /**
+   * Toggle del modo compacto en la tabla de Dotación.
+   */
+  let _compactMode = false;
+  function toggleDotacionCompactMode() {
+    _compactMode = !_compactMode;
+    const wrapper = document.getElementById('dotacionTableWrapper');
+    if (wrapper) wrapper.classList.toggle('table-compact', _compactMode);
+    const label = document.getElementById('compactToggleLabel');
+    if (label) label.textContent = _compactMode ? '✅ Modo Compacto' : '⬜ Modo Compacto';
+    console.log('[Admin][Dotación] Modo compacto:', _compactMode);
+  }
+
+  // Exponer globalmente
+  window.switchEventoTab = switchEventoTab;
+  window.toggleDotacionCompactMode = toggleDotacionCompactMode;
+
 })();
