@@ -189,10 +189,22 @@
 
   async function initAdminSummarySection() {
     console.log('[Admin][Resumen] Init');
-    const cache = window.adminMembersCache || [];
-    if (cache.length > 0) {
+
+    // F6-FIX: esperar hasta 3s a que loadAdminPanel() complete el fetch
+    let cache = window.adminMembersCache;
+    let intentos = 0;
+    while ((!cache || cache.length === 0) && intentos < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      cache = window.adminMembersCache;
+      intentos++;
+    }
+
+    if (cache && cache.length > 0) {
       if (typeof window.renderAdminStats === 'function') window.renderAdminStats(cache);
       if (typeof window.renderPilotsByStatus === 'function') window.renderPilotsByStatus(cache);
+      console.log(`[Admin][Resumen] KPIs + distribución renderizados con ${cache.length} pilotos`);
+    } else {
+      console.warn('[Admin][Resumen] Timeout esperando adminMembersCache');
     }
   }
 

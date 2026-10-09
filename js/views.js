@@ -4809,6 +4809,7 @@ async function loadAdminPanel() {
     }
 
     adminMembersCache = members;
+    window.adminMembersCache = members;   // F6-FIX: exponer en window
     renderAdminStats(members);
     renderPilotsByStatus(members);
     filterMembers();
