@@ -4944,7 +4944,7 @@ function renderAdminStats(members) {
 }
 
 function renderPilotsByStatus(members) {
-  const container = document.getElementById('pilotsByStatus');
+  const container = document.getElementById('adminPilotsByStatus') || document.getElementById('pilotsByStatus');
   if (!container) return;
 
   const counts = { VERDE: 0, NARANJA: 0, ROJO: 0, NEGRO: 0 };
