@@ -3,7 +3,7 @@ Documento de trabajo para el rediseño UX/UI del Panel de Comandancia.
 Fecha de inicio: 2026-10-09
 Responsable: Comando C4ISR
 Versión objetivo: v4.7.0
-Estado: 🟡 En planificación (Fase 1: Mockup)
+Estado: ✅ **COMPLETADA** (F6 cerrada el 2026-10-09)
 
 🎯 1. OBJETIVO
 Rediseñar el Panel de Administración (components/admin-panel.html) siguiendo mejores prácticas de UX/UI para dashboards administrativos (patrones de Linear, Vercel, Stripe Dashboard, Notion).
@@ -405,3 +405,55 @@ Si te gusta, arrancamos con la Fase 2 (refactor real). Si querés ajustes, los h
 
 PARAGUAY FFAA [PRY] — Escuadrón Oficial MetalStorm
 Plan de Mejora v1.0 · 2026-10-09 · Documento vivo
+
+---
+
+## ✅ 16. CIERRE F6 — 2026-10-09
+
+F6 quedó completada y desplegada en producción.
+
+### Criterios de cierre cumplidos
+
+- [x] Sidebar funcional con 5 secciones.
+- [x] Colapsable en desktop, drawer en mobile.
+- [x] Persistencia de sección activa en localStorage.
+- [x] Sección Dotación abre con tab "Activos" por defecto.
+- [x] Modo compacto de tabla funcional.
+- [x] Catálogo integrado como sección.
+- [x] Export integrado en Eventos.
+- [x] Sección Estado operativa (scheduler + health + logs).
+- [x] Acciones rápidas inline en tabla.
+- [x] Skeleton screens en carga.
+- [x] Empty states con acción.
+- [x] CACHE_NAME bumpeado.
+- [x] Deploy exitoso.
+- [x] Smoke test OK.
+- [x] Documentación sincronizada.
+- [x] Handoff generado.
+
+### Bugs corregidos en F6
+
+1. IDs de KPIs sin prefijo admin.
+2. `renderPilotsByStatus` buscaba ID viejo.
+3. `window.adminMembersCache` no expuesto.
+4. Race condition en init de sección.
+5. Service Worker cacheaba assets viejos.
+
+### Commits clave
+
+```
+3468fd1 fix(admin): renderPilotsByStatus usa ID adminPilotsByStatus
+cbbf3a2 fix(admin): exponer adminMembersCache + esperar carga
+d2e0d12 chore(cache): bump CACHE_NAME a v4.7.1
+55c3f48 feat(admin): rediseño del Panel de Comandancia v4.7.0
+```
+
+### Estado final
+
+| Item | Estado |
+|------|--------|
+| Panel Admin | ✅ Live en Render |
+| KPIs | ✅ Con datos reales |
+| Distribución | ✅ 4 cuadrantes |
+| Fly.io | ☠️ Destruida |
+| Costo mensual | $0 |

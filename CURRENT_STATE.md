@@ -1,3 +1,39 @@
+## Cambios Recientes (2026-10-09) — F6 Panel Admin v4.7.0
+
+### Rediseño Completo del Panel de Comandancia
+
+Se completó el rediseño del Panel Admin (F6) con las siguientes mejoras:
+
+| # | Item | Estado |
+|---|------|--------|
+| 1 | Sidebar colapsable con 5 secciones | ✅ |
+| 2 | Navegación interna con lazy loading | ✅ |
+| 3 | Persistencia en localStorage | ✅ |
+| 4 | KPIs en tiempo real (Activos/Promedio/Riesgo/Sync) | ✅ |
+| 5 | Distribución de Rendimiento (Semáforo Militar) | ✅ |
+| 6 | Tabs internos (Activos/Inactivos/Todos) | ✅ |
+| 7 | Modo compacto de tabla | ✅ |
+| 8 | Sub-tabs Eventos (Lista/Carga/Export) | ✅ |
+| 9 | Sección Estado (scheduler/health/versión) | ✅ |
+| 10 | Mobile drawer | ✅ |
+| 11 | Deploy en Render | ✅ Live |
+| 12 | Fly.io destruida | ✅ Sin costo |
+| 13 | Backup de secrets en Bitwarden | ✅ |
+
+**Commits clave:**
+- `3468fd1` fix(admin): renderPilotsByStatus usa ID adminPilotsByStatus (fix definitivo)
+- `cbbf3a2` fix(admin): exponer adminMembersCache + esperar carga para distribución
+- `d2e0d12` chore(cache): bump CACHE_NAME a v4.7.1
+- `55c3f48` feat(admin): rediseño del Panel de Comandancia v4.7.0
+
+**URL oficial:** https://paraguay-ffaa-metalstorm.onrender.com
+
+**Referencias:**
+- `docs/HANDOFF-v4.7.0.md` — handoff completo
+- `CHANGELOG.md` — entrada [4.7.0]
+
+---
+
 # 📊 CURRENT STATE - PARAGUAY-FFAA | METALSTORM
 
 ---

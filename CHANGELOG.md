@@ -9,6 +9,48 @@
 
 ---
 
+## [4.7.0] - 2026-10-09
+
+### ✨ Añadido — Panel de Comandancia (F6)
+
+- **Sidebar colapsable** con 5 secciones: Resumen, Dotación, Eventos, Catálogo, Estado.
+- **Navegación interna** con lazy loading de secciones.
+- **Persistencia en localStorage**: sección activa + estado del sidebar.
+- **KPIs en tiempo real** en la sección Resumen (Pilotos Activos, Promedio, Riesgo, Última Sync).
+- **Distribución de Rendimiento** (Semáforo Militar: VERDE/NARANJA/ROJO/NEGRO).
+- **Tabs internos** en Dotación (Activos/Inactivos/Todos) con contadores.
+- **Modo compacto** de tabla.
+- **Sub-tabs** en Eventos (Lista/Carga Masiva/Exportar Resultados).
+- **Sección Estado** con scheduler + health + versión.
+- **Mobile drawer** para el sidebar en <768px.
+
+### 🐛 Corregido
+
+- **IDs de KPIs unificados** (`adminTotalMembers`, `adminAtRiskMembers`, `adminLastUpdate`, `adminActiveDetail`).
+- **`renderPilotsByStatus()`** ahora usa `adminPilotsByStatus` con fallback al ID viejo.
+- **`renderAdminStats()`** actualiza los IDs correctos.
+- **`window.adminMembersCache`** expuesto para que admin-sections.js acceda a los datos.
+- **Race condition** en `initAdminSummarySection()`: espera activa hasta 3s por el cache.
+
+### 🔧 Infraestructura
+
+- **Migración completa a Render** como único entorno de producción.
+- **Fly.io app destruida** para evitar costos y confusión.
+- **Bump `CACHE_NAME`** a `v4.7.1` en `sw.js`.
+- **Backup de 19 variables** de entorno en Bitwarden.
+
+### ⚠️ URL oficial
+
+- **Nueva:** `https://paraguay-ffaa-metalstorm.onrender.com`
+- **Vieja (deprecada):** `https://paraguay-ffaa-metalstorm.fly.dev` (ya no existe)
+
+### 📋 Pendiente
+
+- Documentación de arquitectura F7.
+- Tests automatizados.
+
+---
+
 ## [4.6.1] - 2026-10-09
 
 ### Cambiado
