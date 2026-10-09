@@ -9,6 +9,27 @@
 
 ---
 
+## [4.6.1] - 2026-10-09
+
+### Cambiado
+- Infraestructura Fly.io: min_machines_running reducido de 1 a 0.
+  Las maquinas de paraguay-ffaa-metalstorm ahora permanecen detenidas.
+- Limpieza de recursos Fly.io: eliminada la app fantasma ffaa-monitor-v2
+  y sus 3 volumenes (3GB), liberadas 2 direcciones IPv6 dedicadas.
+
+### Agregado
+- Script check_health.py: verificacion de salud de la app en Render.
+- HALL-076: documentacion completa de la auditoria de recursos Fly.io.
+
+### Corregido
+- Costos recurrentes de Fly.io reducidos de ~$9.75/mes a ~$0.15/mes.
+
+### Documentacion
+- docs/incidentes/HALL-076-fly-audit.md creado.
+- BL-026 agregado a BACKLOG.md.
+
+---
+
 ## [4.6.0] - 2026-10-08
 
 ### Agregado

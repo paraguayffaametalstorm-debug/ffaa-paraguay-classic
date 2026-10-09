@@ -585,6 +585,33 @@ resueltos tras la migracion a Render.
 - docs/incidentes/HALL-075-nick-participation.md
 - CHANGELOG.md - [4.6.0]
 
+
+## AUDITORIA FLY.IO - Reduccion de Costos (2026-10-09)
+
+**Estado:** CERRADO
+
+**Contexto:** Tras la migracion a Render (2026-10-08), Fly.io seguia generando
+~$9.75/mes por recursos no eliminados (maquina 24/7, IPv6 dedicadas, app
+fantasma con volumenes).
+
+**Acciones ejecutadas:**
+- fly.toml: min_machines_running 1 -> 0 (commit 0138373).
+- fly deploy para aplicar la config.
+- Liberacion de 2 IPv6 dedicadas (una por app).
+- Eliminacion de app fantasma ffaa-monitor-v2.
+- Eliminacion automatica de 3 volumenes (3GB).
+
+**Resultado:**
+- Costo Fly.io: de ~$9.75/mes a ~$0.15/mes.
+- Ahorro: ~$9.60/mes (~$115/ano).
+- paraguay-ffaa-metalstorm conservado como backup (maquinas detenidas).
+
+**Referencias:**
+- docs/incidentes/HALL-076-fly-audit.md
+- CHANGELOG.md - [4.6.1]
+- BL-026 (eliminacion final post 2-3 meses)
+
+
 ## 16b. HOTFIX v4.5.3 — HALL-066-septies (2026-09-22)
 
 **Estado:** ✅ CERRADO
