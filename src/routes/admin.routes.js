@@ -10,6 +10,12 @@ import {
   bulkUploadEvent,
   activateBlackMarket
 } from '../controllers/admin.controller.js';
+import {
+  adminCreateMentorship,
+  adminUpdateMentorship,
+  adminListMentorships
+} from '../controllers/veteran.controller.js';
+import { requireMentorOwnership } from '../middlewares/mentorOwnership.js';
 import { exportEventResults } from '../controllers/export.controller.js';
 import { getActiveMembers, getEvents } from '../controllers/events.controller.js';
 import { getAllPerformances, exportPerformancesCSV, savePerformance } from '../controllers/performances.controller.js';
@@ -242,5 +248,16 @@ router.get('/scheduler/status', async (req, res) => {
 // Genera el payload de datos para el reporte visual del evento.
 // El frontend renderiza el JSON en HTML y lo exporta como imagen (JPG/PNG).
 router.get('/results/:eventId/export', exportEventResults);
+
+// ========== 6. MENTORÍAS — SECCIÓN VETERANOS (ADR-010) ==========
+// Gestión administrativa de mentorías (asignar, reasignar, cerrar, listar).
+// El PATCH pasa por requireMentorOwnership para popular req.mentorship
+// antes de que el controller valide y actualice.
+//
+// Nota: POST y GET podrían ir sin requireMentorOwnership (no hay :id),
+// pero PATCH sí lo necesita. Los tres viven acá por consistencia.
+router.get('/mentorships', adminListMentorships);
+router.post('/mentorships', adminCreateMentorship);
+router.patch('/mentorships/:id', requireMentorOwnership, adminUpdateMentorship);
 
 export default router;
