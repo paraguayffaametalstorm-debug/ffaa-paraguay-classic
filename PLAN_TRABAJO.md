@@ -648,6 +648,28 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 
 ---
 
+
+---
+
+## SPRINT 6 — Sección Veteranos (mentoría + RBAC fino)
+
+**Estado:** 📋 Planificado (ver `PLAN_TRABAJO_VETERANOS.md`)
+**ADR:** `docs/adr/ADR-010-seccion-veteranos.md`
+**Duración estimada:** 5-7 días
+**Riesgo:** Medio (tablas nuevas + RBAC fino, pero aditivo).
+
+**Objetivo:** Dar al rol VETERANO una vista propia para gestionar sus pupilos
+(mentoría) + agregar una sección "Veteranos" al Panel de Comandancia.
+
+**Fases:** F1 a F7 (ver `PLAN_TRABAJO_VETERANOS.md`).
+
+**Dependencias:**
+- Normativa v2.0 vigente (mentoría ya es reglamentaria).
+- Ninguna dependencia de normativa v3.0 no aprobada (el "Miembro en Prueba"
+  formal queda fuera de este sprint).
+
+**Ver plan detallado:** [`PLAN_TRABAJO_VETERANOS.md`](./PLAN_TRABAJO_VETERANOS.md).
+
 ## 15. REFERENCIAS
 
 - [`CHANGELOG.md`](./CHANGELOG.md) — Histórico de versiones.

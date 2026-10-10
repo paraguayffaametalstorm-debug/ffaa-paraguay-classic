@@ -38,6 +38,7 @@ Un ADR (Architecture Decision Record) es un documento que registra una **decisi�
 | ADR-007 | Rediseño de Eventos v2 (Unificación SQ + BM) | 2026-09-20 | ✅ Accepted |
 | ADR-008 | Ventanas de Carga Desacopladas del Ciclo de Evento | 2026-09-20 | ✅ Accepted |
 | ADR-009 | Migración de Fly.io a Render.com | 2026-10-08 | ✅ Accepted |
+| ADR-010 | Sección Veteranos (mentoría + RBAC fino) | 2026-10-10 | 📝 Proposed |
 
 ## Cómo crear un nuevo ADR
 
@@ -60,7 +61,7 @@ Un ADR (Architecture Decision Record) es un documento que registra una **decisi�
 
 | ID | Título | Prioridad |
 |---|---|---|
-| _(vacío — todos los ADRs planificados fueron aceptados)_ | | |
+| _(vacío — ADR-010 propuesto, pendiente de validación)_ | | |
 
 ---
 
