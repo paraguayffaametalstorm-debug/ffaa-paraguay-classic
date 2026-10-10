@@ -1,9 +1,9 @@
 # 🔄 SESSION HANDOFF — PARAGUAY-FFAA | METALSTORM
 
 > **Documento de traspaso entre sesiones de trabajo.**
-> **Actualizado:** 2026-10-08 (post-migración a Render)
-> **Última sesión:** Fix del scheduler en Render (HALL-072)
-> **Próximo paso:** Verificar 24h de funcionamiento + Sprint 4 (Deuda técnica)
+> **Actualizado:** 2026-10-10 (post-F6/F7 + Sprint 4 en curso)
+> **Última sesión:** Sprint 4 — Housekeeping (F4.0a + F4.0b)
+> **Próximo paso:** F4.5 (DROP BM legacy) · BL-027 (migrar frontend legacy) · BL-025 (tests)
 
 ---
 
@@ -24,8 +24,8 @@
 
 | Aspecto | Valor |
 |---|---|
-| **Versión en producción** | v4.5.12 |
-| **Commit HEAD** | `84771b2` |
+| **Versión en producción** | v4.7.0 |
+| **Commit HEAD** | `237d86c` |
 | **Branch** | `main` (sincronizada con origin) |
 | **Deploy** | ✅ Activo en Render.com |
 | **URL producción** | `https://paraguay-ffaa-metalstorm.onrender.com` |
@@ -33,6 +33,8 @@
 | **Tests** | 287 passing · 69 skipped · 0 failing |
 | **Sprint 3** | ✅ Cerrado |
 | **Fix HALL-072** | ✅ Completado |
+| **F6 (Panel Admin v4.7.0)** | ✅ Completado |
+| **F7 (Export resultados v4.6.0)** | ✅ Completado |
 
 ---
 
@@ -106,6 +108,47 @@ correr porque Render Free duerme la app a los 15 min de inactividad.
 
 ---
 
+## 3.6. TRABAJO POST-SPRINT 3 (F6 + F7 + Normativas)
+
+### F7 — Exportación de Resultados (v4.6.0 · 2026-10-08)
+
+Feature nueva de exportación visual de resultados de eventos:
+- Backend: `GET /api/admin/results/:eventId/export` (`src/controllers/export.controller.js`).
+- Frontend: sección integrada en panel admin + `apiExportEventResults()` en `js/api.js`.
+- Estilos en `css/views.css` (report-header, badge-verde, etc.).
+- Mockup: `docs/mockups/mockup-resultados.html`.
+
+**Bugs resueltos en el proceso:**
+- HALL-073 (CORS Render) → var `ALLOWED_ORIGINS` actualizada.
+- HALL-074 (`loadExportEventsList` no invocada) → fix en `loadAdminPanel()`.
+- HALL-075 (nick incorrecto) → priorizar `users.nick` sobre `event_participations.nick`.
+
+### F6 — Rediseño del Panel de Comandancia (v4.7.0 · 2026-10-09)
+
+- Sidebar colapsable con 5 secciones.
+- Lazy loading de secciones.
+- Persistencia en `localStorage` (sección activa + estado del sidebar).
+- KPIs en tiempo real.
+- Distribución de rendimiento (semáforo 4 cuadrantes).
+- Modo compacto de tabla.
+- Mobile drawer.
+
+**5 bugs corregidos** (ver `docs/HANDOFF-v4.7.0.md`).
+
+### Infraestructura
+
+- **Migración completa a Render.com** como único entorno de producción.
+- **Fly.io app destruida** (HALL-076, costo $0/mes).
+- **Backup de 19 variables** de entorno en Bitwarden.
+- **URL oficial:** `https://paraguay-ffaa-metalstorm.onrender.com`.
+
+### Pendientes documentales registrados
+
+- HALL-071: columna `closed_reason` documentada pero inexistente en BD.
+- `b48ca91` (fix normativas) + `e698cc1` (scripts F6) no figuran en CHANGELOG.
+
+---
+
 ## 4. DEUDA TÉCNICA REGISTRADA (BL-025)
 
 **69 tests skipeados** con `describe.skip()` en estos bloques:
@@ -125,23 +168,11 @@ correr porque Render Free duerme la app a los 15 min de inactividad.
 
 ## 5. PENDIENTES OPERATIVOS
 
-### 🔴 Jueves 24/09/2026 (MAÑANA)
+### ✅ Jueves 24/09/2026 — COMPLETADO
 
-**12:00 UTC (09:00 PY)** → el scheduler v2.0 debe abrir W39 automáticamente.
+El scheduler v2.0 abrió W39 correctamente. Verificado en producción.
 
-**Verificación (SQL en Supabase):**
-```sql
-SELECT name, start_date, end_date, status
-FROM events_master
-WHERE name LIKE '%W39%';
-```
-
-**Esperado:**
-- `start_date = 2026-09-24 12:00:00+00`
-- `end_date = 2026-09-28 11:59:59+00`
-- `status = OPEN` (el scheduler hace `SCHEDULED → OPEN`)
-
-### 🟡 Post-26/09/2026
+### 🟡 Post-26/09/2026 — PENDIENTE
 
 **F4.5 — DROP tablas BM legacy:**
 ```sql
@@ -150,6 +181,8 @@ WHERE name LIKE '%W39%';
 ```
 
 Tablas: `bm_events`, `bm_missions`, `bm_progress`, `bm_discounts` (0 filas cada una).
+
+**Estado actual:** script listo, pendiente de ejecución (Sprint 4).
 
 ### 🟢 ASAP — Ticket a Supabase
 
@@ -160,18 +193,27 @@ Workaround: usar `AT TIME ZONE 'UTC' - INTERVAL '3 hours'`.
 
 ## 6. PRÓXIMO PASO — Sprint 4 (Deuda Técnica)
 
-**Objetivo:** Cerrar deuda técnica acumulada del Sprint 2 y Sprint 3.
+**Objetivo:** Cerrar deuda técnica acumulada + terminar la migración legacy.
 
-**Items principales:**
+**Items principales (ordenados por prioridad):**
 
-| ID | Descripción | Esfuerzo |
-|---|---|---|
-| **BL-025** | Re-implementar 69 tests con contrato real de controllers | M (1 día) |
-| **BL-024** | Eliminar `'unsafe-inline'` del CSP (migrar ~200 onclick) | L (2-3 días) |
-| **FIX-305** | Tests de integración con Postgres real (Testcontainers) | L (2-3 días) |
-| **F4.5** | Ejecutar DROP de tablas BM legacy | XS (10 min) |
-| **BL-016** | Auditar claves localStorage en frontend | S (4h) |
-| **BL-018** | Completar §3.5.2-3.5.4 en API_REFERENCE.md | M (4h) |
+| ID | Descripción | Esfuerzo | Estado |
+|---|---|---|---|
+| **F4.0a** | Actualizar ADR-005 Proposed → Accepted | XS | ✅ Cerrado (`237d86c`) |
+| **F4.0b** | Actualizar SESSION_HANDOFF.md | XS | 🟡 En curso |
+| **F4.0c** | Limpiar .bak-* del disco | XS | ⏳ Pendiente |
+| **F4.5** | Ejecutar DROP de tablas BM legacy | XS | ⏳ Pendiente |
+| **BL-027** | Eliminar `savePerformance` muerta de `js/api.js` | S | ⏳ Pendiente |
+| **BL-028** | Crear `GET /api/events-v2/mine` | M | ⏳ Pendiente |
+| **BL-029** | Migrar `js/views.js` a v2 (history/my-history) | M | ⏳ Pendiente |
+| **BL-025** | Re-implementar 69 tests con contrato real | M (1 día) | ⏳ Pendiente |
+| **BL-024** | Eliminar `'unsafe-inline'` del CSP | L (2-3 días) | ⏳ Pendiente |
+| **FIX-305** | Tests de integración con Postgres real | L (2-3 días) | ⏳ Pendiente |
+| **BL-016** | Auditar claves localStorage en frontend | S (4h) | ⏳ Pendiente |
+| **BL-018** | Completar §3.5.2-3.5.4 en API_REFERENCE.md | M (4h) | ⏳ Pendiente |
+
+**Contexto crítico:** el proyecto tiene **2 arquitecturas paralelas** vivas (legacy + v2).
+La migración frontend/backend quedó al 50%. Antes de tocar legacy hay que completar la migración.
 
 ---
 
@@ -187,8 +229,8 @@ En una nueva conversación:
    - Los archivos a refactorizar
 
 **Excepciones operativas en paralelo:**
-- **Jueves 24/09/2026** → verificar W39.
-- **Post-26/09/2026** → ejecutar F4.5.
+- **Post-26/09/2026** → ejecutar F4.5 (DROP tablas BM legacy).
+- **Jueves de cada semana** → verificar que el scheduler abrió el evento semanal.
 
 ---
 
@@ -204,7 +246,7 @@ curl -s https://paraguay-ffaa-metalstorm.onrender.com/api/health
 ```
 
 **Esperado:**
-- **Log:** `84771b2` en top.
+- **Log:** `237d86c` en top.
 - **Status:** working tree limpio.
 - **Tests:** 287 passing / 69 skipped.
 - **Health:** `OK`.
@@ -212,4 +254,4 @@ curl -s https://paraguay-ffaa-metalstorm.onrender.com/api/health
 
 ---
 
-**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-08 · Commit 84771b2**
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-10 · Commit 237d86c**
