@@ -424,6 +424,26 @@ Para preservar la disciplina y el orden de mando, el sistema aplica cuotas máxi
 
 ---
 
+## 7. Guía para Veteranos: Mentoría
+
+A partir de la v4.8.0, los pilotos con rango **VETERANO** tienen acceso a un panel especial para gestionar a sus pupilos.
+
+### ¿Qué es un Pupilo?
+
+Un pupilo es un nuevo miembro del escuadrón que te ha sido asignado automáticamente para que lo guíes durante sus primeros pasos.
+
+### Acceso al Panel de Mentoría
+
+Si sos VETERANO y tenés pupilos asignados, verás una nueva opción en el menú principal: **"🎖️ Mi Mentoría"**.
+
+### Funcionalidades
+
+- **Ver mis pupilos:** Lista de todos los miembros a tu cargo, con su estado actual (tokens, días, semáforo).
+- **Registrar contacto:** Anotá cada vez que te comuniques con tu pupilo para llevar un historial.
+- **Evaluación consultiva:** Podés emitir una evaluación de tu pupilo (opcional, consultiva).
+
+---
+
 ## 6. Preguntas Frecuentes (FAQ)
 
 **¿Qué debo hacer si no puedo ingresar con mi clave temporal?**  

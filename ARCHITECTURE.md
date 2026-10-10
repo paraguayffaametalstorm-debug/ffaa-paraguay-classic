@@ -846,7 +846,47 @@ RESPUESTA: 200 OK + profile actualizado
 
 ---
 
-## 7. Integración con la Wiki de Metalstorm
+## 8.5. Sistema de Mentorías (ADR-010)
+
+A partir de la v4.8.0, el sistema incorpora un módulo de mentorías para formalizar la relación entre un Veterano y un nuevo Miembro, según la normativa v2.0.
+
+### Modelo de Datos
+
+Tres tablas nuevas soportan el sistema:
+
+- **`mentorships`:** Relación mentor ↔ pupilo.
+  - Columnas: `id`, `mentor_id`, `mentee_id`, `started_at`, `ended_at`, `status`, `ended_reason`, `created_by`, `created_at`.
+  - `status`: `'ACTIVE'` | `'ENDED'` | `'REASSIGNED'`.
+  - Índice único parcial: `(mentee_id) WHERE status = 'ACTIVE'`.
+- **`mentorship_logs`:** Registro de contactos entre mentor y pupilo.
+- **`mentor_evaluations`:** Evaluaciones consultivas.
+
+Todas las tablas tienen RLS con política `no_public_access` y `GRANT` explícito para `service_role` (requisito Supabase post-2026-10-30).
+
+### Flujo de Auto-asignación
+
+Al crear un nuevo miembro (`POST /api/admin/members`):
+1. Busca `role = 'VETERANO'` y `status = 'ACTIVE'`.
+2. Cuenta cuántos pupilos activos tiene cada uno.
+3. Asigna al Veterano con **menos pupilos**.
+4. Si no hay Veteranos, el miembro se crea sin mentor.
+5. Audita en `audit_logs` con acción `MENTORSHIP_AUTO_ASSIGNED`.
+
+### RBAC Fino
+
+El middleware `requireMentorOwnership` garantiza:
+- `VETERANO` solo ve/modifica **sus** mentorías.
+- `ADMIN` / `OWNER` ven/modifican **cualquiera**.
+- `MIEMBRO` recibe `403 MENTORSHIP_FORBIDDEN`.
+
+### Frontend
+
+- `components/veteran-panel.html`, `js/veteran.js` — vista del Veterano.
+- `components/admin-sections/admin-veterans.html`, `js/admin-veterans.js` — sección admin.
+
+---
+
+Integración con la Wiki de Metalstorm
 
 ### 7.1 Fuente de Datos
 - **URL:** https://metalstorm.wiki.gg/wiki/Aircraft

@@ -653,7 +653,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 
 ## SPRINT 6 — Sección Veteranos (mentoría + RBAC fino)
 
-**Estado:** 📋 Planificado (ver `PLAN_TRABAJO_VETERANOS.md`)
+**Estado:** ✅ CERRADO (v4.8.0) (ver `PLAN_TRABAJO_VETERANOS.md`)
 **ADR:** `docs/adr/ADR-010-seccion-veteranos.md`
 **Duración estimada:** 5-7 días
 **Riesgo:** Medio (tablas nuevas + RBAC fino, pero aditivo).

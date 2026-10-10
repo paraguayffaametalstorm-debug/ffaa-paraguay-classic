@@ -227,7 +227,7 @@ export async function getMyPupilos(req, res, next) {
       // 2. Agrupar pupilos por mentor_id
       const groupedMap = {};
       pupilos.forEach(p => {
-        const m = list.find(x => x.mentorship_id === p.mentorship_id);
+        const m = list.find(x => x.id === p.mentorship_id);
         const mid = m?.mentor_id || 'unknown';
         if (!groupedMap[mid]) {
           const mentor = mentorsById[mid] || {};

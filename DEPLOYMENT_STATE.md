@@ -720,6 +720,9 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | `plane_upgrades` | Hangar | 0 | ✅ Documentada |
 | `recovery_codes` | Seguridad | 0 | ✅ Documentada |
 | `user_settings` | Configuración | 0 | ✅ Documentada |
+| `mentorships` | Veteranos | 0 | ✅ Documentada (v4.8.0) |
+| `mentorship_logs` | Veteranos | 0 | ✅ Documentada (v4.8.0) |
+| `mentor_evaluations` | Veteranos | 0 | ✅ Documentada (v4.8.0) |
 
 #### 🆕 Tabla `user_nick_changes` (v4.5.0)
 

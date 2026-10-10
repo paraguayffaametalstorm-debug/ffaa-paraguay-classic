@@ -405,6 +405,7 @@ A partir de v3.9.9, el middleware `requireAuth` (`src/middlewares/auth.js`) impl
 | **Email Institucional Auto-generado (v4.5.0)** | ✅ Funcional | Al registrar un piloto, el email `<nick>@ffaa.py` se auto-genera desde el nick. Editable por el admin. Validación de unicidad. |
 | **Cambio de Nick Autogestionado (v4.5.0)** | ✅ Funcional | MIEMBRO/VETERANO: 1 cambio. ADMIN/OWNER: ilimitado. Auditoría en `user_nick_changes`. Regex permisivo con Unicode (`ñ`, tildes, espacios). |
 | **Health Checks Separados (v4.5.10)** | ✅ Funcional | `/health` (liveness puro) + `/api/health` (readiness con Supabase). Fly.io usa liveness. |
+| **Sección Veteranos (Mentorías) (v4.8.0)** | ✅ Funcional | Vista propia para VETERANO, auto-asignación, RBAC fino y sección admin. 55 tests. |
 | **Dropdown de Roles (HALL-S2-02, v4.5.6)** | ✅ Funcional | Opción ADMIN siempre habilitada en el `<select>` de `renderAdminMembersTable`. Backend valida cuota (5) y jerarquía. |
 | **Nick Permisivo con Unicode (v4.5.0)** | ✅ Funcional | Regex `/^[\p{L}\p{N}._\-\s]{3,30}$/u` acepta letras Unicode, números, espacios, `.`, `_`, `-`. |
 

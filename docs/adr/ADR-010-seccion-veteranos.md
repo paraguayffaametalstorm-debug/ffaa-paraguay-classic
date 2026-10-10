@@ -1,14 +1,13 @@
 # ADR-010: Sección Veteranos (mentoría + RBAC fino)
 
 - **Fecha:** 2026-10-10
-- **Estado:** 📝 Proposed (pendiente de validación del OWNER)
+- **Estado:** ✅ Accepted
 - **Decisores:** PJPIROVANI (OWNER) + Comando C4ISR
 - **Relacionado con:** ADR-002 (RBAC), ADR-004 (cuotas), normativa v2.0, normativa v3.0 (borrador)
 
 ## Estado
 
-**📝 Proposed** — pendiente de validación del OWNER.
-No se toca código de producción hasta que pase a `Accepted`.
+**✅ Accepted (v4.8.0)** — Implementado y validado por el OWNER.
 
 ## Contexto y problema
 

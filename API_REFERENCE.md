@@ -1331,7 +1331,81 @@ Genera un respaldo snapshot estructurado en memoria/JSON de las tablas maestras 
 
 ---
 
-## 7. Gestión de Catálogo de Aeronaves (`/api/plane-models`)
+## 8. Módulo de Veteranos (`/api/veteran`)
+
+> **Módulo nuevo (v4.8.0)** — Gestión de mentorías para el rol VETERANO según ADR-010.
+
+### `GET /api/veteran/my-pupilos`
+Lista los pupilos activos del Veterano autenticado.
+- **Acceso:** `VETERANO` (propios), `ADMIN`, `OWNER` (todos).
+- **Query Params:** `?mentor_id=UUID` (opcional, solo ADMIN/OWNER).
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "pupilos": [
+      {
+        "mentorship_id": "uuid-mentoria",
+        "mentee_id": "uuid-pupilo",
+        "mentee_nick": "PUPILO_NUEVO",
+        "started_at": "2026-09-15T10:00:00Z",
+        "last_contact_at": "2026-09-21T18:30:00Z",
+        "perf_status": "VERDE"
+      }
+    ],
+    "total": 1
+  }
+  ```
+
+### `GET /api/veteran/my-mentorships`
+Historial completo de mentorías (activas y pasadas).
+- **Acceso:** `VETERANO` (propios), `ADMIN`, `OWNER` (todos).
+
+### `GET /api/veteran/mentorship/:id`
+Detalle de una mentoría, incluyendo logs y evaluaciones.
+- **Acceso:** `VETERANO` dueño, `ADMIN`, `OWNER`.
+- **Middleware:** `requireMentorOwnership`.
+- **Errores:** `400 INVALID_MENTORSHIP_ID`, `404 MENTORSHIP_NOT_FOUND`, `403 MENTORSHIP_FORBIDDEN`.
+
+### `POST /api/veteran/mentorship/:id/log`
+Registra un contacto de mentoría.
+- **Acceso:** `VETERANO` dueño, `ADMIN`, `OWNER`.
+- **Request Body:**
+  ```json
+  { "note": "Revisión de tácticas de combate en equipo." }
+  ```
+- **Validaciones:** `note` requerido, 1-2000 chars. Mentoría debe estar `ACTIVE`.
+- **Errores:** `400 NOTE_REQUIRED`, `400 NOTE_TOO_LONG`, `400 MENTORSHIP_NOT_ACTIVE`.
+
+### `POST /api/veteran/mentorship/:id/evaluate`
+Emite una evaluación consultiva.
+- **Acceso:** `VETERANO` dueño, `ADMIN`, `OWNER`.
+- **Request Body:**
+  ```json
+  {
+    "criteria": { "participacion": 4, "cooperacion": 5, "conducta": 5, "integracion": 4, "disposicion": 5 },
+    "summary": "Pupilo con excelente actitud y rápida curva de aprendizaje."
+  }
+  ```
+- **Validaciones:** `criteria` con 5 campos (1-5), `summary` 1-4000 chars.
+- **Errores:** `400 INVALID_CRITERIA`, `400 SUMMARY_REQUIRED`, `400 SUMMARY_TOO_LONG`, `400 MENTORSHIP_NOT_ACTIVE`.
+
+### `GET /api/veteran/my-stats`
+Estadísticas del Veterano (o vista global para ADMIN/OWNER).
+
+### Endpoints Admin (`/api/admin/mentorships`)
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `POST` | `/api/admin/mentorships` | Crear mentoría manualmente |
+| `PATCH` | `/api/admin/mentorships/:id` | Cerrar o reasignar mentoría |
+| `GET` | `/api/admin/mentorships` | Listar todas las mentorías |
+
+**Acceso:** `ADMIN`, `OWNER`.
+
+---
+
+Gestión de Catálogo de Aeronaves (`/api/plane-models`)
 
 *(Módulo v3.6.0 para administración y calibración del catálogo de flota aérea oficial)*
 

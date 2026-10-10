@@ -9,6 +9,46 @@
 
 ---
 
+## [4.8.0] - 2026-10-10
+
+### ✅ F7-A — Tests de la Sección Veteranos (ADR-010)
+
+- **55 tests pasando** (100% de la suite F7-A).
+- **4 archivos de tests nuevos:**
+  - `tests/controllers/veteran.controller.test.js` (34 tests).
+  - `tests/middlewares/mentorOwnership.test.js` (10 tests).
+  - `tests/controllers/admin.controller.mentorship.test.js` (7 tests).
+  - `tests/frontend/admin-veterans.test.js` (4 tests).
+- **Fix del mock stateful** con contadores separados para `.then()` y `.single()`.
+- **Dependencia agregada:** `jsdom` (para tests de frontend).
+
+### 📚 F7-B — Documentación de la Sección Veteranos
+
+- `API_REFERENCE.md` — nueva sección `/api/veteran/*` (5 endpoints).
+- `ARCHITECTURE.md` — §8.5 Sistema de Mentorías.
+- `CURRENT_STATE.md` — fila del módulo de mentorías.
+- `DEPLOYMENT_STATE.md` — 3 tablas nuevas.
+- `USER_MANUAL.md` — §7 Guía para Veteranos.
+- `BACKLOG.md` — BL-031 movido a Completados.
+- `PLAN_TRABAJO.md` — Sprint 6 cerrado.
+- `docs/adr/ADR-010-seccion-veteranos.md` — Proposed → Accepted.
+- `docs/adr/README.md` — ADR-010 Accepted.
+
+### 🔧 F7-C — Bump de Versión
+
+- `sw.js` — `CACHE_NAME` → `v4.8.0` (normalizado desde v4.8.1).
+- `index.html` — assets unificados a `?v=4.8.0`.
+
+### 📋 Pendiente (F7-D)
+
+- Deploy a Render.
+- Smoke test en producción.
+
+- **Archivos:** `tests/**`, `js/**`, `components/**`, `sw.js`, `index.html`, `package.json`, 10 documentos `.md`.
+- **Commit:** `(pendiente)`.
+
+---
+
 ## [4.7.3] - 2026-10-10
 
 ### 🚀 Sprint 4 — BL-029: Migración del frontend legacy a events-v2
