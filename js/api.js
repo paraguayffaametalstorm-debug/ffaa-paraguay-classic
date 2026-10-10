@@ -15,122 +15,20 @@ function getAuthHeaders() {
 window.getAuthHeaders = getAuthHeaders;
 
 // ========== RENDIMIENTO ==========
-async function savePerformance() {
-  try {
-    const tokens        = parseInt(document.getElementById('tokens').value);
-    const daysConnected = parseInt(document.getElementById('daysConnected').value);
-    const flewInGroup   = document.getElementById('flewInGroup').checked;
-    const notes         = document.getElementById('notes').value.trim();
-    
-    // ── Determinar si es modo admin (otro piloto) ────────────────────────
-    const targetSel    = document.getElementById('performanceTarget');
-    const targetValue  = targetSel ? targetSel.value : 'self';
-    const isAdminMode  = targetValue !== 'self';
-    const targetUserId = isAdminMode ? parseInt(targetValue) : null;
-    
-    // ── Validaciones comunes ─────────────────────────────────────────────
-    if (!currentEvent) {
-      throw new Error('No hay evento activo');
-    }
-    
-    // Límites según tipo de evento (ACTA-2026-001)
-    const isBM      = currentEvent.type === 'BLACK_MARKET';
-    const maxTokens = isBM ? 250 : 200;
-    const maxDays   = isBM ? 5   : 4;
-    
-    if (isNaN(tokens) || tokens < 0 || tokens > maxTokens) {
-      throw new Error(`Tokens deben estar entre 0 y ${maxTokens} (evento ${currentEvent.type})`);
-    }
-    if (isNaN(daysConnected) || daysConnected < 0 || daysConnected > maxDays) {
-      throw new Error(`Días conectado deben estar entre 0 y ${maxDays} (evento ${currentEvent.type})`);
-    }
-    if (!flewInGroup) {
-      throw new Error('Vuelo en grupo es obligatorio según normativa');
-    }
-    
-    // ── Deshabilitar botón para evitar doble envío ───────────────────────
-    const saveBtn = document.getElementById('btnSavePerf');
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Guardando...'; }
-    
-    let res;
-    if (isAdminMode) {
-      // ── Ruta ADMIN: registra/sobrescribe en nombre de otro piloto ────────
-      const data = {
-        user_id:        targetUserId,
-        event_id:       currentEvent.id,
-        tokens,
-        days_connected: daysConnected,
-        flew_in_group:  flewInGroup,
-        notes:          notes || null
-      };
-      console.log(`📊 [ADMIN] Guardando performance para user_id: ${targetUserId}`, data);
-      res = await fetch(`${API_BASE}/api/admin/performances`, {
-        method:  'POST',
-        headers: getAuthHeaders(),
-        body:    JSON.stringify(data)
-      });
-    } else {
-      // ── Ruta NORMAL: registro propio ─────────────────────────────────────
-      const data = {
-        event_id:       currentEvent.id,
-        tokens,
-        days_connected: daysConnected,
-        flew_in_group:  flewInGroup,
-        notes:          notes || null
-      };
-      console.log(`📊 Guardando performance para user_id: ${currentUser.user_id}`, data);
-      res = await fetch(`${API_BASE}/api/performances`, {
-        method:  'POST',
-        headers: getAuthHeaders(),
-        body:    JSON.stringify(data)
-      });
-    }
-    
-    const resData = await res.json();
-    if (!res.ok) {
-      throw new Error(resData.error || 'Error al guardar rendimiento');
-    }
-    
-    const action  = resData.action === 'sobrescrito' ? 'Sobrescrito' : 'Registrado';
-    const statMsg = resData.status ? ` — Estado: ${resData.status}` : '';
-    showToast(`✅ ${action} correctamente${statMsg}`, 'success');
-    
-    // ── Limpiar formulario ───────────────────────────────────────────────
-    document.getElementById('tokens').value        = '';
-    document.getElementById('daysConnected').value = '';
-    document.getElementById('flewInGroup').checked = false;
-    document.getElementById('notes').value         = '';
-    document.querySelectorAll('#daysSelectorGroup .day-btn')
-      .forEach(btn => btn.classList.remove('active'));
-      
-    const statusEl = document.getElementById('calculatedStatus');
-    if (statusEl) statusEl.innerHTML = '<span class="status-badge">-</span>';
-    
-    // Resetear selector de piloto al propio usuario
-    if (targetSel) {
-      targetSel.value = 'self';
-      if (typeof onTargetPilotChange === 'function') onTargetPilotChange();
-    }
-    
-    // Re-habilitar botón ANTES de redirigir (el DOM de la SPA se preserva entre vistas)
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Guardar Rendimiento';
-    }
-    
-    // Volver al dashboard tras 1.5s
-    setTimeout(() => showView('appView'), 1500);
-  } catch (err) {
-    console.error('Error guardando rendimiento:', err);
-    showToast('❌ ' + err.message, 'error');
-    // Re-habilitar botón si hubo error
-    const saveBtn = document.getElementById('btnSavePerf');
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Guardar Rendimiento';
-    }
-  }
-}
+// BL-027 (2026-10-10): savePerformance() eliminado.
+//
+// Motivo: código muerto. No se exportaba a window, y js/performance.js
+// define la versión viva (`window.savePerformance = savePerformance;`, línea 738).
+//
+// Esta versión además usaba endpoints legacy:
+//   - POST /api/performances         (legacy, escribe en tabla `performances`)
+//   - POST /api/admin/performances   (endpoint inexistente, devolvía 404)
+//
+// La versión viva en js/performance.js usa el endpoint unificado:
+//   - POST /api/events-v2/:id/participations
+//
+// Ref: HALL-066 (v4.5.2), HALL-066-completo.md (lección #5).
+// Reemplaza este comentario si en el futuro se necesita una función auxiliar aquí.
 
 // ========== AERONAVES ==========
 async function savePlane() {
