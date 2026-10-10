@@ -44,6 +44,91 @@ function buildUserQuery(supabase, id, selectFields = 'id, user_id, nick, email, 
 }
 
 // ============================================================
+// ADR-010 — AUTO-ASIGNACIÓN DE MENTOR
+// ============================================================
+// Al crear un MIEMBRO nuevo, se le asigna automáticamente un VETERANO
+// (el que tenga menos pupilos ACTIVE). Si no hay Veteranos disponibles,
+// no falla: el miembro queda sin mentor y el ADMIN puede asignar después.
+//
+// Solo aplica a MIEMBRO. VETERANO/ADMIN/OWNER no necesitan mentor.
+//
+// Fuente de verdad: docs/adr/ADR-010-seccion-veteranos.md §Auto-asignación.
+//
+// @param {Object} supabase     - Cliente Supabase
+// @param {string} menteeId     - UUID del pupilo (users.id)
+// @param {string} createdBy    - UUID del actor (req.user.id)
+// @returns {Promise<{mentorship: Object, mentor: Object}|null>}
+//   null si no hay Veteranos, si el pupilo ya tiene mentor, o si hay error.
+// ============================================================
+async function assignMentorAuto(supabase, menteeId, createdBy) {
+  // 1. Buscar Veteranos ACTIVE
+  const { data: veterans, error: vErr } = await supabase
+    .from('users')
+    .select('id, nick')
+    .eq('role', 'VETERANO')
+    .eq('status', 'ACTIVE');
+
+  if (vErr) {
+    logger.warn('⚠️ [Admin] No se pudieron cargar Veteranos:', vErr.message);
+    return null;
+  }
+
+  if (!veterans || veterans.length === 0) {
+    logger.info('ℹ️ [Admin] Sin Veteranos ACTIVE — mentoría queda pendiente');
+    return null;
+  }
+
+  // 2. Contar pupilos ACTIVE por Veterano (en paralelo)
+  const counts = await Promise.all(
+    veterans.map(async (v) => {
+      const { count, error } = await supabase
+        .from('mentorships')
+        .select('*', { count: 'exact', head: true })
+        .eq('mentor_id', v.id)
+        .eq('status', 'ACTIVE');
+
+      if (error) {
+        logger.warn(`⚠️ [Admin] Error contando pupilos de ${v.nick}:`, error.message);
+        // Penalizar al Veterano con error: no elegirlo
+        return { mentor_id: v.id, nick: v.nick, count: Number.MAX_SAFE_INTEGER };
+      }
+      return { mentor_id: v.id, nick: v.nick, count: count || 0 };
+    })
+  );
+
+  // 3. Ordenar por cantidad de pupilos (asc) y elegir el primero
+  counts.sort((a, b) => a.count - b.count);
+  const chosen = counts[0];
+
+  // 4. Insertar mentoría (el índice único parcial protege contra races)
+  const { data: mentorship, error: mErr } = await supabase
+    .from('mentorships')
+    .insert({
+      mentor_id: chosen.mentor_id,
+      mentee_id: menteeId,
+      status: 'ACTIVE',
+      created_by: createdBy
+    })
+    .select()
+    .single();
+
+  if (mErr) {
+    // 23505 = unique_violation del índice parcial (el pupilo ya tiene mentor ACTIVE)
+    if (mErr.code === '23505') {
+      logger.warn(`⚠️ [Admin] El pupilo ya tiene mentor ACTIVE (${menteeId})`);
+      return null;
+    }
+    logger.error('❌ [Admin] Error insertando mentoría:', mErr.message);
+    return null;
+  }
+
+  logger.info(
+    `✅ [Admin] Mentor asignado: ${chosen.nick} → pupilo ${menteeId} (${chosen.count} pupilos previos)`
+  );
+  return { mentorship, mentor: chosen };
+}
+
+// ============================================================
 // 1. LISTAR USUARIOS / MIEMBROS
 // ============================================================
 export async function getUsers(req, res, next) {
@@ -637,12 +722,61 @@ export async function addMember(req, res, next) {
       }
     });
 
+    // ============================================================
+    // ADR-010 — Auto-asignación de mentor
+    // ============================================================
+    // No bloqueante: si falla, el miembro se crea igual sin mentor.
+    // Solo aplica a MIEMBRO (VETERANO/ADMIN/OWNER no son pupilos).
+    // ============================================================
+    let autoAssignedMentor = null;
+    if (assignedRole === 'MIEMBRO' && createdUser?.id) {
+      try {
+        autoAssignedMentor = await assignMentorAuto(
+          supabase,
+          createdUser.id,
+          req.user.id
+        );
+
+        if (autoAssignedMentor) {
+          await logAuditChange({
+            supabase,
+            actorId: req.user.user_id || req.user.id,
+            actorNick: req.user.nick,
+            targetId: createdUser.id,
+            targetNick: newMember.nick,
+            action: 'MENTORSHIP_AUTO_ASSIGNED',
+            details: {
+              mentor_id: autoAssignedMentor.mentor.mentor_id,
+              mentor_nick: autoAssignedMentor.mentor.nick,
+              mentee_id: createdUser.id,
+              mentee_nick: newMember.nick,
+              previous_pupilos: autoAssignedMentor.mentor.count,
+              mentorship_id: autoAssignedMentor.mentorship.id
+            }
+          });
+        }
+      } catch (autoErr) {
+        logger.error('❌ [Admin] Auto-asignación falló (no bloqueante):', autoErr.message);
+        autoAssignedMentor = null;
+      }
+    }
+
     const { password_hash, ...safe } = createdUser || newMember;
     res.status(201).json({
       success: true,
-      message: 'Piloto registrado con éxito. Contraseña táctica temporal generada.',
+      message: autoAssignedMentor
+        ? `Piloto registrado. Mentor asignado: ${autoAssignedMentor.mentor.nick}.`
+        : 'Piloto registrado con éxito. Contraseña táctica temporal generada.',
       temporaryPassword: tempPassword,
       expiresAt: tempExpiresAt,
+      mentor_assigned: autoAssignedMentor
+        ? {
+            mentor_id: autoAssignedMentor.mentor.mentor_id,
+            mentor_nick: autoAssignedMentor.mentor.nick,
+            mentorship_id: autoAssignedMentor.mentorship.id,
+            previous_pupilos: autoAssignedMentor.mentor.count
+          }
+        : null,
       data: {
         ...safe,
         temporaryPassword: tempPassword,
