@@ -82,6 +82,7 @@ function validateCriteria(criteria) {
 // ============================================================
 // Lista los pupilos con mentoría ACTIVE del Veterano autenticado.
 // Para ADMIN/OWNER, `?mentor_id=<uuid>` permite ver los de otro Veterano.
+// Para OWNER sin `?mentor_id`, devuelve TODOS los pupilos agrupados por Veterano.
 //
 export async function getMyPupilos(req, res, next) {
   try {
@@ -95,6 +96,7 @@ export async function getMyPupilos(req, res, next) {
 
     const actorRole = (req.user?.role || 'MIEMBRO').toUpperCase();
     let mentorId = req.user?.id; // UUID por defecto
+    let globalView = false;       // OWNER sin ?mentor_id → vista global
 
     // ADMIN/OWNER pueden consultar los pupilos de otro Veterano vía query
     if ((actorRole === 'ADMIN' || actorRole === 'OWNER') && req.query.mentor_id) {
@@ -106,23 +108,31 @@ export async function getMyPupilos(req, res, next) {
         });
       }
       mentorId = requested;
+    } else if (actorRole === 'OWNER' && !req.query.mentor_id) {
+      // ADR-010: OWNER sin ?mentor_id ve TODOS los pupilos agrupados por Veterano
+      globalView = true;
+      mentorId = null;
     }
 
-    if (!mentorId) {
+    if (!mentorId && !globalView) {
       return res.status(400).json({
         error: 'No se pudo determinar el Veterano',
         code: 'INVALID_MENTOR_ID'
       });
     }
 
-    // 1. Mentorías ACTIVE del mentor
-    const { data: mentorships, error: mErr } = await supabase
+    // 1. Mentorías ACTIVE (del mentor específico o de todos si globalView)
+    let mQuery = supabase
       .from('mentorships')
       .select('id, mentor_id, mentee_id, started_at, status')
-      .eq('mentor_id', mentorId)
       .eq('status', 'ACTIVE')
       .order('started_at', { ascending: false });
 
+    if (!globalView) {
+      mQuery = mQuery.eq('mentor_id', mentorId);
+    }
+
+    const { data: mentorships, error: mErr } = await mQuery;
     if (mErr) throw mErr;
 
     const list = mentorships || [];
@@ -201,6 +211,47 @@ export async function getMyPupilos(req, res, next) {
       };
     });
 
+    // ADR-010: si es vista global (OWNER), agrupar por Veterano
+    if (globalView) {
+      // 1. Cargar nicks de los mentores
+      const mentorIds = [...new Set(list.map(m => m.mentor_id).filter(Boolean))];
+      let mentorsById = {};
+      if (mentorIds.length > 0) {
+        const { data: mentors } = await supabase
+          .from('users')
+          .select('id, nick, status, role')
+          .in('id', mentorIds);
+        (mentors || []).forEach(m => { if (m.id) mentorsById[m.id] = m; });
+      }
+
+      // 2. Agrupar pupilos por mentor_id
+      const groupedMap = {};
+      pupilos.forEach(p => {
+        const m = list.find(x => x.mentorship_id === p.mentorship_id);
+        const mid = m?.mentor_id || 'unknown';
+        if (!groupedMap[mid]) {
+          const mentor = mentorsById[mid] || {};
+          groupedMap[mid] = {
+            mentor_id: mid,
+            mentor_nick: mentor.nick || 'Sin Nick',
+            mentor_status: (mentor.status || 'ACTIVE').toUpperCase(),
+            mentor_role: (mentor.role || 'VETERANO').toUpperCase(),
+            pupilos: []
+          };
+        }
+        groupedMap[mid].pupilos.push(p);
+      });
+
+      return res.json({
+        success: true,
+        global_view: true,
+        total: pupilos.length,
+        total_mentores: Object.keys(groupedMap).length,
+        grupos: Object.values(groupedMap),
+        pupilos  // mantener flat por compatibilidad
+      });
+    }
+
     return res.json({
       success: true,
       mentor_id: mentorId,
@@ -218,6 +269,7 @@ export async function getMyPupilos(req, res, next) {
 // 2. GET /api/veteran/my-mentorships
 // ============================================================
 // Historial de mentorías del Veterano (ACTIVE + ENDED + REASSIGNED).
+// Para OWNER sin `?mentor_id`, devuelve TODAS las mentorías.
 //
 export async function getMyMentorships(req, res, next) {
   try {
@@ -228,6 +280,7 @@ export async function getMyMentorships(req, res, next) {
 
     const actorRole = (req.user?.role || 'MIEMBRO').toUpperCase();
     let mentorId = req.user?.id;
+    let globalView = false;
 
     if ((actorRole === 'ADMIN' || actorRole === 'OWNER') && req.query.mentor_id) {
       const requested = toUuidOrNull(req.query.mentor_id);
@@ -235,21 +288,31 @@ export async function getMyMentorships(req, res, next) {
         return res.status(400).json({ error: 'mentor_id debe ser un UUID válido', code: 'INVALID_MENTOR_ID' });
       }
       mentorId = requested;
+    } else if (actorRole === 'OWNER' && !req.query.mentor_id) {
+      // ADR-010: OWNER sin ?mentor_id ve TODAS las mentorías
+      globalView = true;
+      mentorId = null;
     }
 
-    if (!mentorId) {
+    if (!mentorId && !globalView) {
       return res.status(400).json({ error: 'No se pudo determinar el Veterano', code: 'INVALID_MENTOR_ID' });
     }
 
-    const { data, error } = await supabase
+    let mQuery = supabase
       .from('mentorships')
       .select('id, mentor_id, mentee_id, started_at, ended_at, status, ended_reason, created_at')
-      .eq('mentor_id', mentorId)
       .order('started_at', { ascending: false });
 
+    if (!globalView) {
+      mQuery = mQuery.eq('mentor_id', mentorId);
+    }
+
+    const { data, error } = await mQuery;
     if (error) throw error;
 
     const list = data || [];
+
+    // Cargar mentees
     const menteeIds = [...new Set(list.map(m => m.mentee_id).filter(Boolean))];
     let usersById = {};
     if (menteeIds.length > 0) {
@@ -260,10 +323,26 @@ export async function getMyMentorships(req, res, next) {
       (users || []).forEach(u => { if (u.id) usersById[u.id] = u; });
     }
 
+    // Cargar mentores (solo si es globalView, para mostrar nick del mentor)
+    let mentorsById = {};
+    if (globalView) {
+      const mentorIds = [...new Set(list.map(m => m.mentor_id).filter(Boolean))];
+      if (mentorIds.length > 0) {
+        const { data: mentors } = await supabase
+          .from('users')
+          .select('id, nick, role')
+          .in('id', mentorIds);
+        (mentors || []).forEach(m => { if (m.id) mentorsById[m.id] = m; });
+      }
+    }
+
     const mentorships = list.map(m => {
       const u = usersById[m.mentee_id] || {};
+      const mentor = mentorsById[m.mentor_id] || {};
       return {
         id: m.id,
+        mentor_id: m.mentor_id,
+        mentor_nick: mentor.nick || null,
         mentee_id: m.mentee_id,
         mentee_nick: u.nick || 'Piloto',
         mentee_role: (u.role || 'MIEMBRO').toUpperCase(),
@@ -276,6 +355,7 @@ export async function getMyMentorships(req, res, next) {
 
     return res.json({
       success: true,
+      global_view: globalView,
       mentor_id: mentorId,
       total: mentorships.length,
       active_count: mentorships.filter(m => m.status === 'ACTIVE').length,
@@ -539,6 +619,11 @@ export async function evaluateMentorship(req, res, next) {
 // Resumen para el dashboard del Veterano:
 // pupilos activos, contactos del mes, evaluaciones del mes.
 //
+// ADR-010:
+//   - VETERANO: stats propios.
+//   - OWNER con ?mentor_id: stats de ese Veterano.
+//   - OWNER sin ?mentor_id: stats GLOBALES del escuadrón.
+//
 export async function getMyStats(req, res, next) {
   try {
     const supabase = getSupabase();
@@ -546,27 +631,95 @@ export async function getMyStats(req, res, next) {
       return res.status(500).json({ error: 'Database client unavailable', code: 'DB_UNAVAILABLE' });
     }
 
+    const actorRole = (req.user?.role || 'MIEMBRO').toUpperCase();
+    const isOwner = actorRole === 'OWNER';
     const mentorId = req.user?.id;
-    if (!mentorId) {
+
+    // Determinar el mentor objetivo y si es vista global
+    let targetMentorId = mentorId;
+    let globalView = false;
+
+    if (isOwner && req.query.mentor_id) {
+      const requested = toUuidOrNull(req.query.mentor_id);
+      if (!requested) {
+        return res.status(400).json({ error: 'mentor_id debe ser un UUID válido', code: 'INVALID_MENTOR_ID' });
+      }
+      targetMentorId = requested;
+    } else if (isOwner && !req.query.mentor_id) {
+      globalView = true;
+      targetMentorId = null;
+    }
+
+    if (!targetMentorId && !globalView) {
       return res.status(400).json({ error: 'No se pudo determinar el Veterano', code: 'INVALID_MENTOR_ID' });
     }
 
-    // 1. Mentorías ACTIVE
+    // ─────────────────────────────────────────────────────────
+    // Rama 1: OWNER con vista GLOBAL → stats del escuadrón
+    // ─────────────────────────────────────────────────────────
+    if (globalView) {
+      // 1. Contar Veteranos ACTIVE
+      const { count: vetCount } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('role', 'VETERANO')
+        .eq('status', 'ACTIVE');
+
+      // 2. Contar total de mentorías ACTIVE
+      const { count: totalActive } = await supabase
+        .from('mentorships')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ACTIVE');
+
+      // 3. Logs y evaluaciones del mes (todas)
+      const monthStart = new Date();
+      monthStart.setUTCDate(1);
+      monthStart.setUTCHours(0, 0, 0, 0);
+      const monthIso = monthStart.toISOString();
+
+      const { count: totalLogs } = await supabase
+        .from('mentorship_logs')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', monthIso);
+
+      const { count: totalEvals } = await supabase
+        .from('mentor_evaluations')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', monthIso);
+
+      return res.json({
+        success: true,
+        global_view: true,
+        stats: {
+          active_veteranos: vetCount || 0,
+          active_pupilos: totalActive || 0,
+          logs_this_month: totalLogs || 0,
+          evaluations_this_month: totalEvals || 0,
+          month_start: monthIso
+        }
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Rama 2: VETERANO (o OWNER filtrado) → stats propios del mentor
+    // ─────────────────────────────────────────────────────────
+
+    // 1. Mentorías ACTIVE del mentor objetivo
     const { count: activeCount } = await supabase
       .from('mentorships')
       .select('*', { count: 'exact', head: true })
-      .eq('mentor_id', mentorId)
+      .eq('mentor_id', targetMentorId)
       .eq('status', 'ACTIVE');
 
-    // 2. IDs de mentorías del Veterano
+    // 2. IDs de todas las mentorías (ACTIVE + ENDED + REASSIGNED) del mentor objetivo
     const { data: myMentorships } = await supabase
       .from('mentorships')
       .select('id')
-      .eq('mentor_id', mentorId);
+      .eq('mentor_id', targetMentorId);
 
     const ids = (myMentorships || []).map(m => m.id);
 
-    // 3. Logs y evaluaciones del mes (si hay mentorías)
+    // 3. Logs y evaluaciones del mes
     const monthStart = new Date();
     monthStart.setUTCDate(1);
     monthStart.setUTCHours(0, 0, 0, 0);
@@ -593,7 +746,7 @@ export async function getMyStats(req, res, next) {
 
     return res.json({
       success: true,
-      mentor_id: mentorId,
+      mentor_id: targetMentorId,
       stats: {
         active_pupilos: activeCount || 0,
         total_mentorships: ids.length,
