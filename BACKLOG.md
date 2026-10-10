@@ -85,6 +85,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **FIX-310** | 🔧 | `loadAllPerformances()` usa endpoint roto `/api/admin/all-performances` | 📋 Priorizado | S (4h) | Crear endpoint v2 `GET /api/events-v2/admin/participations` que devuelva TODAS las participaciones con `nick` + `role`. Dejado fuera de BL-029. Ref: `js/views.js` línea ~6708. |
 
 | **BL-026** | INFRA | Eliminacion final de Fly.io (post 2-3 meses sin uso) | IDEA | XS (30 min) | Si en 2-3 meses no se usa Fly.io como backup, eliminar la app paraguay-ffaa-metalstorm para ahorrar ~$0.15/mes residuales. Requiere backup previo de los 19 secretos. Ref: HALL-076. |
+| **BL-030** | Seguridad | Auditar GRANTs explicitos en tablas public/ (nuevas politicas Supabase 1-oct) | Priorizado | M (4h) | Supabase anuncio que desde el 30-oct-2026 deja de auto-exponer tablas nuevas al Data API. Los GRANT a anon, authenticated, service_role deben ser explicitos en cada CREATE TABLE nuevo. Las tablas existentes no se tocan, pero los scripts SQL futuros deben incluir GRANT SELECT ON tabla TO anon, authenticated; GRANT ALL ON tabla TO service_role;. Ref: supabase.com/changelog |
 
 ### 🟡 Prioridad Baja (Could Have)
 

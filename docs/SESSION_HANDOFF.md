@@ -257,3 +257,59 @@ curl -s https://paraguay-ffaa-metalstorm.onrender.com/api/health
 ---
 
 **PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-10 · Commit f001224**
+
+
+---
+
+## 4.5. BL-025 - Estado al 2026-10-10 (sesion parcial)
+
+### Cerrado esta sesion
+
+| Archivo | Antes | Ahora | Commit |
+|---|---|---|---|
+| tests/controllers/owner.controller.test.js | 15 skipped | 31/31 passing | f9cabea |
+| tests/controllers/admin.controller.test.js | 34/44 + 1 bloque + 6 it.skip | 44/44 passing | f9cabea |
+| tests/helpers/mockSupabaseHybrid.js | no existia | helper compartido | f9cabea |
+
+**Total acumulado:** 319 passing / 39 skipped / 0 failing (era 287/69/0).
+
+**Delta:** +32 passing, -30 skipped, 0 regresiones, 0 impacto en produccion.
+
+### Pendiente para proxima sesion
+
+**tests/controllers/auth.controller.test.js (8 tests)**
+
+- Bloques: changePassword (5 tests) + linkAccount (3 tests) + it.skip del login (1 test).
+- Causa raiz identificada: el controller usa buildUserQuery con logica tipada UUID ->
+  INTEGER -> email. Los handlers MSW actuales (5 duplicados) no discriminan por id, or,
+  nick, email. MSW usa el primero que matchea y siempre cae al fallback [].
+- Intentos fallidos: 3B.1, 3B.2 v1, 3B.2 v2, 3C, 3D, 3E (todos revertidos con git restore).
+- Estrategia recomendada proxima sesion: reemplazar los 5 handlers MSW por UNO SOLO que
+  parsee or, id, user_id, email, nick y devuelva el usuario correcto para cada caso.
+  NO usar el mock hibrido (no soporta RPCs ni queries complejas de auth).
+- Costo estimado: 30-45 min con cabeza fresca.
+
+**tests/middlewares/rbac.test.js (2 bloques, ~30 tests)**
+
+- Bloques: requireAuth + requireRole.
+- Causa raiz: los tests usan supertest + MSW. MSW no matchea el puerto dinamico
+  127.0.0.1:PORT que levanta supertest.
+- Estrategia recomendada proxima sesion: NO usar supertest. En su lugar, llamar
+  requireAuth / requireRole directamente con mockReq/mockRes y un getSupabase mockeado
+  con un objeto fluido simple. Los tests evaluan middleware puro, no necesitan HTTP real.
+- Costo estimado: 45-60 min.
+
+### Deuda tecnica derivada
+
+- FIX-311 (nuevo): los handlers MSW de auth.controller.test.js estan duplicados 5 veces.
+  MSW usa el primero y los otros 4 son codigo muerto. Resolver al implementar el fix de auth.
+- FIX-312 (nuevo): los scripts bl-025-admin-tests*.cjs son one-shot. Si el refactor de
+  tests se repite, considerar moverlos a scripts/legacy/.
+
+### Referencias
+
+- Commit f9cabea - test(bl-025): des-skipear owner + admin (319 passing).
+- tests/helpers/mockSupabaseHybrid.js - helper compartido.
+- docs/adr/ADR-003-backups-en-supabase.md - contrato de backups validado.
+
+---
