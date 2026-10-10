@@ -35,12 +35,12 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- ✅ Estilos modulares con cache-busting -->
-  <link rel="stylesheet" href="/css/global.cssv=4.8.0">
-  <link rel="stylesheet" href="/css/components.cssv=4.8.0">
-  <link rel="stylesheet" href="/css/views.cssv=4.8.0">
-  <link rel="stylesheet" href="/css/tactical-design.cssv=4.8.0">
-  <link rel="stylesheet" href="/css/help.cssv=4.8.0">
-  <link rel="stylesheet" href="/css/admin-layout.cssv=4.8.0">
+  <link rel="stylesheet" href="/css/global.css?v=4.8.2">
+  <link rel="stylesheet" href="/css/components.css?v=4.8.2">
+  <link rel="stylesheet" href="/css/views.css?v=4.8.2">
+  <link rel="stylesheet" href="/css/tactical-design.css?v=4.8.2">
+  <link rel="stylesheet" href="/css/help.css?v=4.8.2">
+  <link rel="stylesheet" href="/css/admin-layout.css?v=4.8.2">
   
   <link rel="icon" href="/logo-escuadron.png">
   <link rel="manifest" href="/manifest.json">
@@ -158,22 +158,22 @@
 
     Promise.all([
       // Header y footer (siempre cargados)
-      fetch('/components/header.htmlv=4.8.0').then(r => r.text()).catch(() => ''),
-      fetch('/components/footer.htmlv=4.8.0').then(r => r.text()).catch(() => ''),
+      fetch('/components/header.html?v=4.8.2').then(r => r.text()).catch(() => ''),
+      fetch('/components/footer.html?v=4.8.2').then(r => r.text()).catch(() => ''),
 
       // Modales fijos
       Promise.all([
-      fetch('/components/help-modal.htmlv=4.8.0').then(r => r.text()).catch(() => ''),
-      fetch('/components/session-warning.htmlv=4.8.0').then(r => r.text()).catch(() => ''),
-      fetch('/components/forgot-password-modal.htmlv=4.8.0').then(r => r.text()).catch(() => ''),
-      fetch('/components/aircraft-stats-modal.htmlv=4.8.0').then(r => r.text()).catch(() => ''),
-      fetch('/components/change-password-modal.htmlv=4.8.0').then(r => r.text()).catch(() => '')
+      fetch('/components/help-modal.html?v=4.8.2').then(r => r.text()).catch(() => ''),
+      fetch('/components/session-warning.html?v=4.8.2').then(r => r.text()).catch(() => ''),
+      fetch('/components/forgot-password-modal.html?v=4.8.2').then(r => r.text()).catch(() => ''),
+      fetch('/components/aircraft-stats-modal.html?v=4.8.2').then(r => r.text()).catch(() => ''),
+      fetch('/components/change-password-modal.html?v=4.8.2').then(r => r.text()).catch(() => '')
       ]).then(([h, s, f, a, c]) => h + s + f + a + c),
 
       // Vistas dinámicas (índice 6 en adelante) - INCLUYE performance-export
       Promise.all(
         COMPONENTS.slice(6).map(view =>
-          fetch(`/components/${view}.htmlv=4.8.0`)
+          fetch(`/components/${view}.html?v=4.8.2`)
             .then(r => {
               if (!r.ok) throw new Error(`404: /components/${view}.html`);
               return r.text();
@@ -229,44 +229,44 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   
   <!-- 2. Utils (funciones base, no depende de nada) -->
-  <script src="/js/utils.jsv=4.8.0"></script>
+  <script src="/js/utils.js?v=4.8.2"></script>
   
   <!-- 3. API client (depende de utils) -->
-  <script src="/js/api.jsv=4.8.0"></script>
+  <script src="/js/api.js?v=4.8.2"></script>
   
   <!-- 4. VIEWS (contiene showView, VIEWS, loadViewData) -->
-  <script src="/js/views.jsv=4.8.0"></script>
+  <script src="/js/views.js?v=4.8.2"></script>
   
   <!-- F5 — Módulo de navegación del Panel Admin (lazy loading) -->
-  <script src="/js/admin-sections.jsv=4.8.0"></script>
+  <script src="/js/admin-sections.js?v=4.8.2"></script>
 
   <!-- ADR-010 — Sección Veteranos del Panel Admin -->
-  <script src="/js/admin-veterans.jsv=4.8.0"></script>
+  <script src="/js/admin-veterans.js?v=4.8.2"></script>
   
   <!-- 5. BLACK MARKET (v3.7.0 - Módulo de eventos, misiones y descuentos) -->
-  <script src="/js/bm.jsv=4.8.0"></script>
+  <script src="/js/bm.js?v=4.8.2"></script>
 
   <!-- 5.5 ADMIN EVENTS (F4.3 — Panel unificado de eventos) -->
-  <script src="/js/admin-events.jsv=4.8.0"></script>
+  <script src="/js/admin-events.js?v=4.8.2"></script>
 
   <!-- 5.6 VETERAN PANEL (ADR-010 — Panel del Veterano) -->
-  <script src="/js/veteran.jsv=4.8.0"></script>
+  <script src="/js/veteran.js?v=4.8.2"></script>
   
   <!-- 6. PERFORMANCE (contiene loadAdminPilotList, initPerformanceForm, savePerformance) -->
-  <script src="/js/performance.jsv=4.8.0"></script>
+  <script src="/js/performance.js?v=4.8.2"></script>
   
   <!-- 7. AUTH (depende de views - showView YA ESTÁ DISPONIBLE) -->
-  <script src="/js/auth.jsv=4.8.0"></script>
+  <script src="/js/auth.js?v=4.8.2"></script>
   
   <!-- 7. Profile y Settings (dependen de views) -->
-  <script src="/js/profile.jsv=4.8.0"></script>
-  <script src="/js/settings.jsv=4.8.0"></script>
+  <script src="/js/profile.js?v=4.8.2"></script>
+  <script src="/js/settings.js?v=4.8.2"></script>
   
   <!-- 8. Main (inicialización final) -->
-  <script src="/js/main.jsv=4.8.0"></script>
+  <script src="/js/main.js?v=4.8.2"></script>
   
   <!-- 9. Tour (último) -->
-  <script src="/js/tour.jsv=4.8.0"></script>
+  <script src="/js/tour.js?v=4.8.2"></script>
 
   <!-- ✅ Service Worker — PWA + auto-actualización -->
   <script>

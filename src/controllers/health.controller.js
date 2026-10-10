@@ -9,7 +9,15 @@ import { logger } from '../config/logger.js';
 import { getSchedulerStatus } from '../utils/eventScheduler.js';
 
 const SERVER_START_TIME = Date.now();
-const APP_VERSION = process.env.APP_VERSION || '4.5.9';
+// Fix: leer versión desde package.json (fuente única de verdad)
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'));
+const APP_VERSION = process.env.APP_VERSION || pkg.version;
 
 /**
  * Liveness probe — /health

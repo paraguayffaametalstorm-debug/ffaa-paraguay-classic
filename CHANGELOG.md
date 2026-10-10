@@ -9,6 +9,25 @@
 
 ---
 
+## [4.8.2] - 2026-10-10
+
+### 🔧 Correcciones y Mantenimiento
+
+- **`health.controller.js`:** Ahora lee la versión desde `package.json` (fuente única de verdad). Elimina el hardcode `'4.5.9'`.
+- **`index.html`:** Restaurado el cache-busting `?v=` en los 28 assets (CSS, JS, componentes HTML). El prefijo `?` se había perdido en un bump anterior.
+- **`package.json`:** Sincronizado con la versión real del proyecto (`3.7.0` → `4.8.2`).
+- **Scripts nuevos:**
+  - `scripts/bump-version.cjs` — Orquestador de versionado automático.
+  - `scripts/sync-package-version.cjs` — Sincroniza `package.json` con `sw.js`.
+  - `scripts/fix-health-version.cjs` — Migra el health controller a versión dinámica.
+  - `scripts/fix-index-assets.cjs` — Repara cache-busting roto en `index.html`.
+
+### 📋 Pendiente para próximas versiones
+
+- **`README.md` badge:** actualizado a `v4.8.2`.
+
+---
+
 ## [4.8.0] - 2026-10-10
 
 ### ✅ F7-A — Tests de la Sección Veteranos (ADR-010)
