@@ -740,7 +740,7 @@ async function loadDashboardData() {
   try {
     const [summaryRes, historyRes] = await Promise.all([
       fetch(`${API_BASE}/api/dashboard/summary`, { headers: getAuthHeaders() }).catch(() => ({ ok: false })),
-      fetch(`${API_BASE}/api/performances/history`, { headers: getAuthHeaders() }).catch(() => ({ ok: false }))
+      apiEventsV2Mine({ limit: 10 }).catch(() => ({ success: false, participations: [] }))
     ]);
 
     let summaryData = null;
@@ -749,9 +749,8 @@ async function loadDashboardData() {
     if (summaryRes.ok) {
       summaryData = await summaryRes.json();
     }
-    if (historyRes.ok) {
-      const hData = await historyRes.json();
-      historyData = hData.history || hData.performances || [];
+    if (historyRes && historyRes.success) {
+      historyData = historyRes.participations || [];
     }
 
     updateDashboardTacticalUI(summaryData, historyData);
@@ -937,12 +936,9 @@ function renderTrendChart(history, squadAvg) {
 // ========== HISTORIAL (CORREGIDO) ==========
 function loadHistorial() {
   if (!currentUser) return;
-  fetch(`${API_BASE}/api/performances/my-history`, {
-    headers: getAuthHeaders()
-  })
-  .then(res => res.json())
-  .then(data => {
-    const history = Array.isArray(data) ? data : (data.history || data.performances || []);
+  apiEventsV2Mine()
+  .then(res => {
+    const history = (res && res.success) ? (res.participations || []) : [];
     displayHistorial(history);
   })
   .catch(err => {

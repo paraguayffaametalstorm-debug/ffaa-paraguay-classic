@@ -927,6 +927,23 @@ async function apiEventsV2Active() {
   return _eventsV2Fetch('/api/events-v2/active');
 }
 
+/**
+ * Wrapper del endpoint GET /api/events-v2/mine (BL-028).
+ * Devuelve las participaciones del piloto autenticado. Payload retrocompatible
+ * con el legacy /api/performances/my-history.
+ *
+ * @param {{limit?:number, type?:string, status?:string}} params
+ * @returns {Promise<{success:boolean, participations:Array, total:number, filters:object}>}
+ */
+async function apiEventsV2Mine(params = {}) {
+  const query = new URLSearchParams();
+  if (params.limit)  query.set('limit', params.limit);
+  if (params.type)   query.set('type', params.type);
+  if (params.status) query.set('status', params.status);
+  const qs = query.toString();
+  return _eventsV2Fetch(`/api/events-v2/mine${qs ? `?${qs}` : ''}`);
+}
+
 async function apiEventsV2GetById(id) {
   if (!id) return { success: false, error: 'ID requerido', code: 'MISSING_ID' };
   return _eventsV2Fetch(`/api/events-v2/${encodeURIComponent(id)}`);
@@ -1032,6 +1049,7 @@ async function apiEventsV2BmSubmissionWindow(eventId) {
 
 window.apiEventsV2List                 = apiEventsV2List;
 window.apiEventsV2Active               = apiEventsV2Active;
+window.apiEventsV2Mine                 = apiEventsV2Mine;
 window.apiEventsV2GetById              = apiEventsV2GetById;
 window.apiEventsV2Create               = apiEventsV2Create;
 window.apiEventsV2Update               = apiEventsV2Update;

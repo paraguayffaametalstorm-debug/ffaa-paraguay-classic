@@ -2,7 +2,7 @@
 
 > **Documento de traspaso entre sesiones de trabajo.**
 > **Actualizado:** 2026-10-10 (Sprint 4: BL-027 + BL-028 cerrados)
-> **Última sesión:** Sprint 4 — Housekeeping (F4.0a + F4.0b)
+> **Última sesión:** Sprint 4 — Housekeeping (F4.0a/b/c + F4.5 + BL-027 + BL-028)
 > **Próximo paso:** BL-029 (migrar frontend legacy a v2) · BL-025 (tests) · BL-024 (CSP)
 
 ---
@@ -31,7 +31,8 @@
 | **URL producción** | `https://paraguay-ffaa-metalstorm.onrender.com` |
 | **Sistema** | 100% funcional |
 | **Tests** | 287 passing · 69 skipped · 0 failing |
-| **Sprint 3** | ✅ Cerrado |
+| **Sprint 4 (parcial)** | 🟢 En curso (7/13 ítems cerrados) |
+| **BL-027 + BL-028** | ✅ Cerrados |
 | **Fix HALL-072** | ✅ Completado |
 | **F6 (Panel Admin v4.7.0)** | ✅ Completado |
 | **F7 (Export resultados v4.6.0)** | ✅ Completado |
