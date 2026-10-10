@@ -23,6 +23,7 @@ import {
   changeEventStatus,
   deleteEvent,
   getParticipations,
+  getMyParticipations,  // ← NUEVO (BL-028)
   createParticipation,
   updateParticipation,
   deleteParticipation
@@ -38,6 +39,7 @@ const router = Router();
 router.get('/', requireAuth, getEvents);
 router.get('/active', requireAuth, getActiveEvent);
 router.get('/open', requireAuth, getActiveEvent);  // Alias retrocompatible
+router.get('/mine', requireAuth, getMyParticipations);  // ← NUEVO (BL-028)
 router.get('/:id', requireAuth, getEventById);
 router.get('/:id/submission-window', requireAuth, getSubmissionWindow);  // ← NUEVO (ADR-008)
 

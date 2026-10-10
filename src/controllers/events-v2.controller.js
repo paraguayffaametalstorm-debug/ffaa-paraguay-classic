@@ -1137,3 +1137,189 @@ export const deleteParticipation = async (req, res) => {
     });
   }
 };
+
+// ============================================================
+// 12. GET /api/events-v2/mine — Historial de participaciones del piloto autenticado
+// ============================================================
+
+/**
+ * Devuelve todas las participaciones del piloto autenticado, con datos del evento
+ * enriquecidos (nombre, tipo, status, fechas).
+ *
+ * Reemplaza funcionalmente los endpoints legacy:
+ *   - GET /api/performances/history    (lee tabla legacy 'performances')
+ *   - GET /api/performances/my-history (alias)
+ *
+ * Payload retrocompatible con el legacy: incluye event_id, tokens, days_connected,
+ * flew_in_group, notes, status, created_at — todos los campos que consume js/views.js
+ * en displayHistorial() y renderAllPerformance().
+ *
+ * Query params opcionales:
+ *   - limit  : máximo de resultados (default 50, max 200)
+ *   - type   : filtrar por tipo de evento (SQUADRON | BLACK_MARKET | ACE_CHALLENGE)
+ *   - status : filtrar por status del evento (SCHEDULED | OPEN | CLOSED | CANCELLED)
+ *
+ * @since v4.7.3 (BL-028)
+ */
+export const getMyParticipations = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    // 1. Resolver el UUID del caller (puede venir como UUID en req.user.id
+    //    o como INTEGER en req.user.user_id)
+    let callerUUID = req.user?.id;
+
+    const isUuid = typeof callerUUID === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(callerUUID);
+
+    if (!isUuid && req.user?.user_id) {
+      const { data: userRows, error: userErr } = await supabase
+        .from('users')
+        .select('id')
+        .eq('user_id', Number(req.user.user_id))
+        .limit(1);
+
+      if (userErr) throw userErr;
+      if (userRows && userRows.length > 0) callerUUID = userRows[0].id;
+    }
+
+    if (!callerUUID) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se pudo resolver el UUID del piloto autenticado.',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    // 2. Parsear filtros opcionales
+    const limitRaw = parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(limitRaw) && limitRaw > 0
+      ? Math.min(limitRaw, 200)
+      : 50;
+
+    const typeFilter = typeof req.query.type === 'string'
+      ? req.query.type.toUpperCase().trim()
+      : null;
+
+    const statusFilter = typeof req.query.status === 'string'
+      ? req.query.status.toUpperCase().trim()
+      : null;
+
+    // 3. Query participaciones del piloto
+    const { data: participations, error: pErr } = await supabase
+      .from('event_participations')
+      .select('*')
+      .eq('user_id', callerUUID)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (pErr) throw pErr;
+
+    const list = participations || [];
+    if (list.length === 0) {
+      return res.json({
+        success: true,
+        participations: [],
+        total: 0,
+        filters: { limit, type: typeFilter, status: statusFilter }
+      });
+    }
+
+    // 4. Fetch de los eventos involucrados (en batch, 1 query)
+    const eventIds = [...new Set(list.map(p => p.event_id).filter(Boolean))];
+
+    const { data: events, error: eErr } = await supabase
+      .from('events_master')
+      .select('id, name, type, status, start_date, end_date')
+      .in('id', eventIds);
+
+    if (eErr) throw eErr;
+
+    const eventMap = new Map((events || []).map(e => [e.id, e]));
+
+    // 5. Aplicar filtros por type/status del evento (post-fetch)
+    let filtered = list;
+    if (typeFilter) {
+      filtered = filtered.filter(p => {
+        const ev = eventMap.get(p.event_id);
+        return ev && ev.type === typeFilter;
+      });
+    }
+    if (statusFilter) {
+      filtered = filtered.filter(p => {
+        const ev = eventMap.get(p.event_id);
+        return ev && ev.status === statusFilter;
+      });
+    }
+
+    // 6. Helper: calcular perf_status (semáforo militar, solo para SQUADRON)
+    const calcPerfStatus = (tokens, days) => {
+      const t = Number(tokens) || 0;
+      const d = Number(days) || 0;
+      if (t >= 175 && d >= 4) return 'VERDE';
+      if (t >= 130 && d >= 3) return 'NARANJA';
+      if (t >= 100 && d >= 2) return 'ROJO';
+      return 'NEGRO';
+    };
+
+    // 7. Merge + normalizar para el frontend
+    const result = filtered.map(p => {
+      const ev = eventMap.get(p.event_id) || {};
+      const data = p.data || {};
+
+      const tokens = data.tokens ?? p.computed_points ?? 0;
+      const days = data.days_connected ?? 0;
+      const isSquadron = ev.type === 'SQUADRON';
+
+      return {
+        // Identificadores
+        id: p.id,
+        event_id: p.event_id,
+        user_id: p.user_id,
+
+        // Datos del evento (denormalizados)
+        event_name: ev.name || null,
+        event_type: ev.type || null,
+        event_status: ev.status || null,
+        event_start_date: ev.start_date || null,
+        event_end_date: ev.end_date || null,
+
+        // Datos de la participación (retrocompatibles con legacy)
+        tokens,
+        days_connected: days,
+        flew_in_group: data.flew_in_group ?? false,
+        notes: data.notes || null,
+        computed_points: p.computed_points ?? 0,
+        status: p.status || 'PENDING',
+
+        // Semáforo (solo para SQ; null en BM)
+        perf_status: isSquadron ? calcPerfStatus(tokens, days) : null,
+
+        // Timestamps
+        created_at: p.created_at,
+        updated_at: p.updated_at
+      };
+    });
+
+    return res.json({
+      success: true,
+      participations: result,
+      total: result.length,
+      filters: { limit, type: typeFilter, status: statusFilter }
+    });
+  } catch (error) {
+    logger.error('❌ [Events-v2] Error en getMyParticipations:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      code: 'INTERNAL_ERROR'
+    });
+  }
+};
