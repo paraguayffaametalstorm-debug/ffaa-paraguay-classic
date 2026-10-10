@@ -25,7 +25,7 @@
 | Aspecto | Valor |
 |---|---|
 | **Versión en producción** | v4.7.0 |
-| **Commit HEAD** | `237d86c` |
+| **Commit HEAD** | `984c54e` |
 | **Branch** | `main` (sincronizada con origin) |
 | **Deploy** | ✅ Activo en Render.com |
 | **URL producción** | `https://paraguay-ffaa-metalstorm.onrender.com` |
@@ -172,17 +172,17 @@ Feature nueva de exportación visual de resultados de eventos:
 
 El scheduler v2.0 abrió W39 correctamente. Verificado en producción.
 
-### 🟡 Post-26/09/2026 — PENDIENTE
+### ✅ Post-26/09/2026 — COMPLETADO
 
 **F4.5 — DROP tablas BM legacy:**
 ```sql
--- Ejecutar en SQL Editor de Supabase
+-- Ejecutado en SQL Editor de Supabase el 2026-10-10
 -- Script: sql/032_drop_bm_legacy_tables.sql
 ```
 
-Tablas: `bm_events`, `bm_missions`, `bm_progress`, `bm_discounts` (0 filas cada una).
-
-**Estado actual:** script listo, pendiente de ejecución (Sprint 4).
+Tablas eliminadas: `bm_events`, `bm_missions`, `bm_progress`, `bm_discounts` (0 filas cada una).
+Verificación post-DROP: `information_schema` confirma que ya no existen.
+Impacto: `events_master` (44 filas) y `event_participations` (722 filas) intactas.
 
 ### 🟢 ASAP — Ticket a Supabase
 
@@ -200,9 +200,9 @@ Workaround: usar `AT TIME ZONE 'UTC' - INTERVAL '3 hours'`.
 | ID | Descripción | Esfuerzo | Estado |
 |---|---|---|---|
 | **F4.0a** | Actualizar ADR-005 Proposed → Accepted | XS | ✅ Cerrado (`237d86c`) |
-| **F4.0b** | Actualizar SESSION_HANDOFF.md | XS | 🟡 En curso |
-| **F4.0c** | Limpiar .bak-* del disco | XS | ⏳ Pendiente |
-| **F4.5** | Ejecutar DROP de tablas BM legacy | XS | ⏳ Pendiente |
+| **F4.0b** | Actualizar SESSION_HANDOFF.md | XS | ✅ Cerrado (`984c54e`) |
+| **F4.0c** | Limpiar .bak-* del disco | XS | ✅ Cerrado |
+| **F4.5** | Ejecutar DROP de tablas BM legacy | XS | ✅ Cerrado |
 | **BL-027** | Eliminar `savePerformance` muerta de `js/api.js` | S | ⏳ Pendiente |
 | **BL-028** | Crear `GET /api/events-v2/mine` | M | ⏳ Pendiente |
 | **BL-029** | Migrar `js/views.js` a v2 (history/my-history) | M | ⏳ Pendiente |
@@ -254,4 +254,4 @@ curl -s https://paraguay-ffaa-metalstorm.onrender.com/api/health
 
 ---
 
-**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-10 · Commit 237d86c**
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-10 · Commit 984c54e**

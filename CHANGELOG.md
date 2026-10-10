@@ -9,6 +9,57 @@
 
 ---
 
+## [4.7.1] - 2026-10-10
+
+### 📚 Sprint 4 — Housekeeping (Fase 4.0) + DROP tablas BM legacy (F4.5)
+
+#### F4.0a — ADR-005: Proposed → Accepted
+
+El ADR-005 (Migración de presence a Supabase) estaba marcado como `Proposed`
+en la documentación, pero el código ya lo tenía 100% implementado en v4.5.9
+(`presence.controller.js` con UPSERT + TTL + cleanup, `presence.routes.js`,
+`sql/040_presence_table.sql`).
+
+- **Cambio:** ADR-005 marcado como `✅ Accepted (implementado en v4.5.9)`.
+- **Archivos:** `docs/adr/ADR-005-presence-en-supabase.md`, `docs/adr/README.md`.
+- **Commit:** `237d86c`.
+
+#### F4.0b — SESSION_HANDOFF.md a v4.7.0
+
+El `docs/SESSION_HANDOFF.md` estaba desfasado (v4.5.12 con HEAD `84771b2`).
+Faltaba documentar el trabajo post-Sprint 3: F6 (Panel Admin v4.7.0),
+F7 (Export resultados v4.6.0), normativas, migración Render.
+
+- **Cambio:** versión v4.7.0, HEAD actualizado, nueva sección 3.6.
+- **Archivos:** `docs/SESSION_HANDOFF.md`.
+- **Commit:** `984c54e`.
+
+#### F4.0c — Limpieza de backups locales
+
+- Eliminados 18 archivos `.bak-*` del disco (raíz + `docs/adr/` + `docs/`).
+- No afecta git (`.gitignore` ya los excluía con `*.bak-*`).
+- Eliminado `Normativa_PARAGUAY_FFAA_METALSTORM_V3_BORRADOR.txt` (duplicado del `.md` ya versionado).
+
+#### F4.5 — DROP tablas BM legacy
+
+Las 4 tablas del Black Market pre-rediseño (F4.x) fueron eliminadas de Supabase:
+
+| Tabla | Filas al DROP | Estado |
+|---|---|---|
+| `bm_events` | 0 | 🗑️ Eliminada |
+| `bm_missions` | 0 | 🗑️ Eliminada |
+| `bm_progress` | 0 | 🗑️ Eliminada |
+| `bm_discounts` | 0 | 🗑️ Eliminada |
+
+- **Script:** `sql/032_drop_bm_legacy_tables.sql`.
+- **Verificación previa:** 0 filas en cada tabla, 0 FKs entrantes desde tablas externas.
+- **Verificación post-DROP:** `information_schema` confirma que ya no existen.
+- **Impacto:** `events_master` (44 filas) y `event_participations` (722 filas) intactas.
+- **Referencia:** ADR-006 + ADR-007 (rediseño de eventos v2).
+- **Ejecutado:** 2026-10-10.
+
+---
+
 ## [4.7.0] - 2026-10-09
 
 ### ✨ Añadido — Panel de Comandancia (F6)

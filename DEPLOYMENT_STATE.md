@@ -707,10 +707,11 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | `mod_effects` | Hangar | 50 | ✅ Documentada |
 | `upgrade_effects` | Hangar | 44 | ✅ Documentada |
 | `upgrade_nodes_v2` | Hangar | 3072 | ✅ Documentada |
-| **`events_master`** | **Eventos (Nuevo)** | **36** | ✅ **Documentada (F2)** |
-| **`event_participations`** | **Eventos (Nuevo)** | **639** | ✅ **Documentada (F2)** |
+| **`events_master`** | **Eventos (Nuevo)** | **44** | ✅ **Actualizado (Sprint 4)** |
+| **`event_participations`** | **Eventos (Nuevo)** | **722** | ✅ **Actualizado (Sprint 4)** |
 | `events` | Eventos (Legacy) | 35 | ✅ Preservada |
 | `performances` | Core (Legacy) | **639** | ✅ Preservada |
+| **`presence`** | **Presencia (Nuevo v4.5.9)** | **—** | ✅ **Documentada (ADR-005)** |
 | `security_events` | Auditoría | 214 | ✅ Documentada |
 | `audit_logs` | Auditoría | 6 | ✅ Documentada |
 | `error_logs` | Diagnóstico | 3 | ✅ Documentada |
@@ -748,10 +749,10 @@ Están **vacías (0 filas)** y su DROP está planificado para **post-2026-09-26*
 
 | Tabla | Origen | Filas | Estado |
 |---|---|---|---|
-| `bm_events` | Black Market legacy | 0 | 🗑️ DROP pendiente |
-| `bm_missions` | Black Market legacy | 0 | 🗑️ DROP pendiente |
-| `bm_progress` | Black Market legacy | 0 | 🗑️ DROP pendiente |
-| `bm_discounts` | Black Market legacy | 0 | 🗑️ DROP pendiente |
+| `bm_events` | Black Market legacy | 0 | ✅ DROP ejecutado el 2026-10-10 |
+| `bm_missions` | Black Market legacy | 0 | ✅ DROP ejecutado el 2026-10-10 |
+| `bm_progress` | Black Market legacy | 0 | ✅ DROP ejecutado el 2026-10-10 |
+| `bm_discounts` | Black Market legacy | 0 | ✅ DROP ejecutado el 2026-10-10 |
 
 > **Script de DROP:** `sql/032_drop_bm_legacy_tables.sql`
 > **Referencia:** ADR-006, fases F4.2.2-A a F4.2.2-G
