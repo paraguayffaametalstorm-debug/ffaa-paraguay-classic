@@ -1,14 +1,21 @@
 # ADR-005: Migración de presence a Supabase
 
 - **Fecha:** 2026-09-17
-- **Estado:** Proposed
+- **Estado:** ✅ Accepted (implementado en v4.5.9, verificado el 2026-10-10)
 - **Decisores:** PJPIROVANI (OWNER) + Comando C4ISR
 - **Relacionado con:** FIX-209 (Sprint 2)
 
 ## Estado
 
-**Proposed** — decisión propuesta, pendiente de implementación.
-Requiere diseño de esquema de tabla + refactor del router.
+**✅ Accepted** — implementado en v4.5.9 (commit `FIX-209`).
+Verificado contra el código real el 2026-10-10.
+
+**Implementación en producción:**
+- Tabla `presence` creada vía `sql/040_presence_table.sql`.
+- Controller `src/controllers/presence.controller.js` con UPSERT + TTL de 5 min + cleanup.
+- Router `src/routes/presence.routes.js` con 3 endpoints (`/online`, `/offline`, `/active`).
+- Cron de cleanup cada 5 min en `server.js` (`cleanupPresence()`).
+- Resolución tipada INTEGER→UUID incluida.
 
 ## Contexto y problema
 
@@ -125,9 +132,7 @@ CREATE INDEX idx_presence_last_seen ON presence(last_seen DESC);
 
 ## Pendiente de verificar
 
-- ¿El frontend actual llama a `/online` y `/offline` en qué momentos (login/logout, focus/blur)?
-- ¿Hay otros consumidores del endpoint `/active` (dashboards, etc.)?
-- ¿Cuántas réplicas corre Fly.io en producción actualmente?
+Nada pendiente — implementación verificada en código el 2026-10-10.
 
 ## Fuentes y trazabilidad
 

@@ -33,7 +33,7 @@ Un ADR (Architecture Decision Record) es un documento que registra una **decisi�
 | ADR-002 | Política público/privado en endpoints GET | 2026-09-17 | ✅ Accepted |
 | ADR-003 | Persistencia de backups en Supabase | 2026-09-17 | ✅ Accepted |
 | ADR-004 | Cuota de ADMIN: 3 → 5 | 2026-09-16 | ✅ Accepted |
-| ADR-005 | Migración de presence a Supabase | 2026-09-17 | 📝 Proposed |
+| ADR-005 | Migración de presence a Supabase | 2026-09-17 | ✅ Accepted |
 | ADR-006 | Black Market Unificado sobre events_master | 2026-09-19 | ✅ Accepted |
 | ADR-007 | Rediseño de Eventos v2 (Unificación SQ + BM) | 2026-09-20 | ✅ Accepted |
 | ADR-008 | Ventanas de Carga Desacopladas del Ciclo de Evento | 2026-09-20 | ✅ Accepted |
@@ -60,7 +60,7 @@ Un ADR (Architecture Decision Record) es un documento que registra una **decisi�
 
 | ID | Título | Prioridad |
 |---|---|---|
-| ADR-005 | Migración de presence a Supabase | Pendiente de aceptación (ver FIX-209 en Sprint 2) |
+| _(vacío — todos los ADRs planificados fueron aceptados)_ | | |
 
 ---
 
