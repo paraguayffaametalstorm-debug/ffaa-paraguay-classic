@@ -204,6 +204,40 @@ function updateUserUI(user) {
             if (drawerOwnerBtn) drawerOwnerBtn.style.display = 'none';
         }
 
+        // ============================================================
+        // ADR-010 — Panel del Veterano (VETERANO + OWNER)
+        // ============================================================
+        const isVeteran = userRoleStr === 'VETERANO';
+        const canSeeVeteranPanel = isVeteran || isOwner;
+
+        const veteranPanelNavBtn = document.getElementById('veteranPanelNavBtn');
+        const drawerVeteranBtn = document.getElementById('drawerVeteranBtn');
+
+        if (canSeeVeteranPanel) {
+            if (veteranPanelNavBtn) veteranPanelNavBtn.style.display = 'inline-flex';
+            if (drawerVeteranBtn) drawerVeteranBtn.style.display = 'flex';
+        } else {
+            if (veteranPanelNavBtn) veteranPanelNavBtn.style.display = 'none';
+            if (drawerVeteranBtn) drawerVeteranBtn.style.display = 'none';
+        }
+
+        // Bottom nav mobile: intercambiar "Ajustes" por "Veterano" si aplica
+        const mobileVeteranNavItem = document.getElementById('mobileVeteranNavItem');
+        const mobileSettingsNavItem = document.getElementById('mobileSettingsNavItem');
+        if (canSeeVeteranPanel) {
+            if (mobileVeteranNavItem) mobileVeteranNavItem.style.display = 'flex';
+            if (mobileSettingsNavItem) mobileSettingsNavItem.style.display = 'none';
+        } else {
+            if (mobileVeteranNavItem) mobileVeteranNavItem.style.display = 'none';
+            if (mobileSettingsNavItem) mobileSettingsNavItem.style.display = 'flex';
+        }
+
+        // Widget del dashboard (solo si existe)
+        const veteranWidget = document.getElementById('veteranWidget');
+        if (veteranWidget) {
+            veteranWidget.style.display = canSeeVeteranPanel ? 'block' : 'none';
+        }
+
         // Visibilidad de controles Black Market (v3.7.0)
         if (typeof updateBmAdminVisibility === 'function') {
             updateBmAdminVisibility();

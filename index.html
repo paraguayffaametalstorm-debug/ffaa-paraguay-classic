@@ -151,7 +151,9 @@
       'bm-progress',
       'bm-discount',
       'bm-leaderboard',
-      'bm-panel'
+      'bm-panel',
+      // ADR-010 — Panel del Veterano
+      'veteran-panel'
     ];
 
     Promise.all([
@@ -243,6 +245,9 @@
 
   <!-- 5.5 ADMIN EVENTS (F4.3 — Panel unificado de eventos) -->
   <script src="/js/admin-events.js?v=4.7.0"></script>
+
+  <!-- 5.6 VETERAN PANEL (ADR-010 — Panel del Veterano) -->
+  <script src="/js/veteran.js?v=4.8.0"></script>
   
   <!-- 6. PERFORMANCE (contiene loadAdminPilotList, initPerformanceForm, savePerformance) -->
   <script src="/js/performance.js?v=4.7.0"></script>
@@ -348,6 +353,10 @@
         <button class="drawer-nav-btn active" onclick="showView('appView'); closeMobileDrawer();" data-view="appView">
           <i data-lucide="layout-dashboard" class="drawer-nav-icon"></i>
           <span class="drawer-nav-text">Cuadro de Mando</span>
+        </button>
+        <button id="drawerVeteranBtn" class="drawer-nav-btn" onclick="showView('veteranPanelView'); closeMobileDrawer();" data-view="veteranPanelView" style="display:none;border-left:3px solid #38bdf8;">
+          <i data-lucide="medal" class="drawer-nav-icon" style="color:#38bdf8;"></i>
+          <span class="drawer-nav-text" style="color:#7dd3fc;font-weight:700;">Panel Veterano</span>
         </button>
         <button id="drawerBmBtn" class="drawer-nav-btn" onclick="showView('bmMissionsView'); closeMobileDrawer();" data-view="bmMissionsView" style="border-left:3px solid #e74c3c;">
           <i data-lucide="flame" class="drawer-nav-icon" style="color:#e74c3c;"></i>
@@ -457,7 +466,11 @@
       <i data-lucide="user-circle-2" class="mobile-nav-icon"></i>
       <span class="mobile-nav-label">Perfil</span>
     </button>
-    <button class="mobile-nav-item" onclick="showView('settingsView')" data-view="settingsView" aria-label="Configuración">
+    <button id="mobileVeteranNavItem" class="mobile-nav-item" onclick="showView('veteranPanelView')" data-view="veteranPanelView" aria-label="Panel Veterano" style="display:none;">
+      <i data-lucide="medal" class="mobile-nav-icon" style="color:#38bdf8;"></i>
+      <span class="mobile-nav-label" style="color:#38bdf8;font-weight:700;">Veterano</span>
+    </button>
+    <button id="mobileSettingsNavItem" class="mobile-nav-item" onclick="showView('settingsView')" data-view="settingsView" aria-label="Configuración">
       <i data-lucide="settings" class="mobile-nav-icon"></i>
       <span class="mobile-nav-label">Ajustes</span>
     </button>

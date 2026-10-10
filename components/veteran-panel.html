@@ -1,0 +1,317 @@
+<div id="veteranPanelView" class="view" style="display:none;">
+  <!-- Header táctico -->
+  <div class="view-header-tactical">
+    <div class="header-titles">
+      <div class="badge-tag">ADR-010 · SECCIÓN VETERANOS</div>
+      <h2>🎖️ Panel del Veterano</h2>
+      <p class="subtitle" id="veteranPanelSubtitle">Gestión de pupilos, contactos y evaluaciones consultivas</p>
+    </div>
+    <div class="header-actions">
+      <button onclick="loadVeteranPanel()" class="btn-secondary btn-sm">
+        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Sincronizar
+      </button>
+      <button id="veteranNewMentorshipBtn" onclick="openNewMentorshipModal()" class="btn-primary btn-sm" style="display:none;">
+        <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Asignar Mentor
+      </button>
+    </div>
+  </div>
+
+  <!-- KPIs (los llena veteran.js) -->
+  <div class="stats-grid-tactical" id="veteranStatsGrid" style="margin-bottom:1.5rem;">
+    <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #38bdf8;">
+      <div class="stat-card-header"><span class="stat-label">CARGANDO…</span></div>
+      <div class="stat-main"><span style="color:#94a3b8;">—</span></div>
+    </div>
+  </div>
+
+  <!-- Selector de Veterano (solo OWNER) -->
+  <div id="veteranOwnerSelector" class="card tactical-corners" style="display:none;margin-bottom:1.5rem;padding:1rem 1.25rem;">
+    <label style="display:block;font-size:0.8rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:600;">
+      Filtrar por Veterano
+    </label>
+    <select id="veteranFilterSelect" onchange="onVeteranFilterChange(this.value)"
+            style="width:100%;max-width:400px;background:#0f172a;color:#cbd5e1;border:1px solid #334155;border-radius:4px;padding:8px 12px;font-size:0.9rem;cursor:pointer;">
+      <option value="">— Todos los Veteranos —</option>
+    </select>
+  </div>
+
+  <!-- Pupilos -->
+  <div class="card tactical-corners" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="users" style="width:20px;height:20px;color:#d4af37;"></i>
+        <h3 id="veteranPupilosTitle">Mis Pupilos</h3>
+      </div>
+      <span id="veteranPupilosCount" class="badge-tag" style="font-size:0.7rem;">0</span>
+    </div>
+    <div id="veteranPupilosList" style="padding:0.5rem 0;">
+      <div style="text-align:center;padding:2rem;color:#94a3b8;">
+        <p>Cargando pupilos…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial -->
+  <div class="card tactical-corners">
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="history" style="width:20px;height:20px;color:#38bdf8;"></i>
+        <h3>Historial de Mentorías</h3>
+      </div>
+      <span id="veteranHistoryCount" class="badge-tag" style="font-size:0.7rem;">0</span>
+    </div>
+    <div id="veteranHistoryList" style="padding:0.5rem 0;">
+      <div style="text-align:center;padding:2rem;color:#94a3b8;">
+        <p>Sin historial cargado</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODALES
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- Modal: Registrar Contacto -->
+<div id="veteranLogModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">📝 Registrar Contacto</h3>
+      <button onclick="closeVeteranModal('veteranLogModal')" class="btn-icon" aria-label="Cerrar" style="background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem;">
+      <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1rem;">
+        Pupilo: <strong id="veteranLogMenteeNick" style="color:#e2e8f0;">—</strong>
+      </p>
+      <label style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Nota del contacto <span style="color:#64748b;">(1..2000)</span>
+      </label>
+      <textarea id="veteranLogNote" rows="6" maxlength="2000"
+                placeholder="Ej: Contacto semanal — se conversó sobre estrategias de vuelo en formación…"
+                style="width:100%;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:10px 12px;font-family:var(--font-body);font-size:0.9rem;resize:vertical;"></textarea>
+      <div style="text-align:right;font-size:0.75rem;color:#64748b;margin-top:4px;">
+        <span id="veteranLogCounter">0</span> / 2000
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.25rem;border-top:1px solid #1e293b;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeVeteranModal('veteranLogModal')" class="btn-secondary">Cancelar</button>
+      <button id="veteranLogSubmit" onclick="submitVeteranLog()" class="btn-primary">💾 Guardar Contacto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Evaluación Consultiva -->
+<div id="veteranEvalModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:700px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">🎯 Evaluación Consultiva (Art. 25.4)</h3>
+      <button onclick="closeVeteranModal('veteranEvalModal')" class="btn-icon" aria-label="Cerrar" style="background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem;max-height:70vh;overflow-y:auto;">
+      <p style="font-size:0.85rem;color:#94a3b8;margin-bottom:1rem;">
+        Pupilo: <strong id="veteranEvalMenteeNick" style="color:#e2e8f0;">—</strong>
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">Participación</label>
+          <select id="evalParticipacion" class="veteran-eval-select">
+            <option value="ALTA">ALTA</option>
+            <option value="MEDIA" selected>MEDIA</option>
+            <option value="BAJA">BAJA</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">Cooperación</label>
+          <select id="evalCooperacion" class="veteran-eval-select">
+            <option value="ALTA">ALTA</option>
+            <option value="MEDIA" selected>MEDIA</option>
+            <option value="BAJA">BAJA</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">Conducta</label>
+          <select id="evalConducta" class="veteran-eval-select">
+            <option value="ALTA">ALTA</option>
+            <option value="MEDIA" selected>MEDIA</option>
+            <option value="BAJA">BAJA</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">Integración</label>
+          <select id="evalIntegracion" class="veteran-eval-select">
+            <option value="ALTA">ALTA</option>
+            <option value="MEDIA" selected>MEDIA</option>
+            <option value="BAJA">BAJA</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;">
+          <label style="display:block;font-size:0.75rem;color:#cbd5e1;margin-bottom:4px;font-weight:600;">Disposición</label>
+          <select id="evalDisposicion" class="veteran-eval-select">
+            <option value="ALTA">ALTA</option>
+            <option value="MEDIA" selected>MEDIA</option>
+            <option value="BAJA">BAJA</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Resumen fundamentado <span style="color:#64748b;">(1..4000)</span>
+      </label>
+      <textarea id="veteranEvalSummary" rows="5" maxlength="4000"
+                placeholder="Ej: El piloto demuestra compromiso constante y buena disposición para el aprendizaje…"
+                style="width:100%;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:10px 12px;font-family:var(--font-body);font-size:0.9rem;resize:vertical;"></textarea>
+      <div style="text-align:right;font-size:0.75rem;color:#64748b;margin-top:4px;">
+        <span id="veteranEvalCounter">0</span> / 4000
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.25rem;border-top:1px solid #1e293b;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeVeteranModal('veteranEvalModal')" class="btn-secondary">Cancelar</button>
+      <button id="veteranEvalSubmit" onclick="submitVeteranEval()" class="btn-primary">💾 Registrar Evaluación</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Asignar Mentor (solo OWNER) -->
+<div id="veteranNewMentorshipModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:600px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">👥 Asignar Mentor a Pupilo</h3>
+      <button onclick="closeVeteranModal('veteranNewMentorshipModal')" class="btn-icon" aria-label="Cerrar" style="background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem;">
+      <label style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Veterano (mentor)
+      </label>
+      <select id="newMentorshipMentor" class="veteran-eval-select" style="margin-bottom:1rem;">
+        <option value="">— Seleccionar Veterano —</option>
+      </select>
+
+      <label style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Pupilo (miembro sin mentor)
+      </label>
+      <select id="newMentorshipMentee" class="veteran-eval-select">
+        <option value="">— Seleccionar Miembro —</option>
+      </select>
+
+      <p style="font-size:0.75rem;color:#64748b;margin-top:12px;line-height:1.5;">
+        ℹ️ Solo se listan miembros con rol MIEMBRO activos que aún no tengan un mentor ACTIVE.
+        Si el pupilo ya tiene mentor, el backend rechazará la asignación con error 409.
+      </p>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.25rem;border-top:1px solid #1e293b;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeVeteranModal('veteranNewMentorshipModal')" class="btn-secondary">Cancelar</button>
+      <button id="veteranNewMentorshipSubmit" onclick="submitNewMentorship()" class="btn-primary">💾 Asignar Mentor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle de Mentoría -->
+<div id="veteranMentorshipDetailModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:800px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">📂 Detalle de Mentoría</h3>
+      <button onclick="closeVeteranModal('veteranMentorshipDetailModal')" class="btn-icon" aria-label="Cerrar" style="background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" id="veteranDetailBody" style="padding:1.25rem;max-height:70vh;overflow-y:auto;">
+      <p style="color:#94a3b8;text-align:center;">Cargando…</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .veteran-eval-select {
+    width: 100%;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+  }
+  .veteran-pupilo-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(99, 110, 130, 0.3);
+    border-left: 3px solid #38bdf8;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .veteran-pupilo-card:hover {
+    background: rgba(30, 41, 59, 0.7);
+    border-left-color: #d4af37;
+  }
+  .veteran-pupilo-info { flex: 1; min-width: 200px; }
+  .veteran-pupilo-nick {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .veteran-pupilo-meta {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .veteran-pupilo-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .veteran-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(212, 175, 55, 0.08);
+    border-left: 3px solid #d4af37;
+    border-radius: 6px;
+    margin: 1.5rem 0 0.75rem 0;
+  }
+  .veteran-group-header:first-child { margin-top: 0; }
+  .veteran-group-header h4 {
+    margin: 0;
+    font-family: var(--font-tactical);
+    font-size: 0.95rem;
+    color: #d4af37;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .veteran-history-item {
+    padding: 12px 16px;
+    border-left: 3px solid #64748b;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+  }
+  .veteran-history-item.status-ACTIVE { border-left-color: #2ecc71; }
+  .veteran-history-item.status-ENDED { border-left-color: #64748b; }
+  .veteran-history-item.status-REASSIGNED { border-left-color: #f59e0b; }
+  .veteran-empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+  }
+  .veteran-empty-state p { margin-top: 0.5rem; font-size: 0.9rem; }
+  @media (max-width: 600px) {
+    .veteran-pupilo-card { flex-direction: column; align-items: stretch; }
+    .veteran-pupilo-actions { justify-content: stretch; }
+    .veteran-pupilo-actions button { flex: 1; }
+  }
+</style>

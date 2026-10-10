@@ -170,7 +170,8 @@ const VIEWS = {
   BM_PROGRESS:      'bmProgressView',
   BM_DISCOUNT:      'bmDiscountView',
   BM_LEADERBOARD:   'bmLeaderboardView',
-  BM_PANEL:         'bmPanelView'
+  BM_PANEL:         'bmPanelView',
+  VETERAN_PANEL:    'veteranPanelView'   // ADR-010
 };
 
 const VIEW_ALIASES = {
@@ -225,7 +226,15 @@ const VIEW_ALIASES = {
   'bm-panel':         VIEWS.BM_PANEL,
   'bmPanel':          VIEWS.BM_PANEL,
   'bmPanelView':      VIEWS.BM_PANEL,
-  'bmAdmin':          VIEWS.BM_PANEL
+  'bmAdmin':          VIEWS.BM_PANEL,
+  // ADR-010 — Panel del Veterano
+  'veteran':          VIEWS.VETERAN_PANEL,
+  'veterans':         VIEWS.VETERAN_PANEL,
+  'veteranPanel':     VIEWS.VETERAN_PANEL,
+  'veteranPanelView': VIEWS.VETERAN_PANEL,
+  'veteran-panel':    VIEWS.VETERAN_PANEL,
+  'mis-pupilos':      VIEWS.VETERAN_PANEL,
+  'pupilos':          VIEWS.VETERAN_PANEL
 };
 
 
@@ -468,6 +477,12 @@ function loadViewData(viewId) {
     case 'bmPanelView':
     case 'bmPanel':
       if (typeof loadBmPanelView === 'function') loadBmPanelView();
+      break;
+
+    // ADR-010 — Panel del Veterano
+    case 'veteranPanelView':
+    case 'veteranPanel':
+      if (typeof loadVeteranPanel === 'function') loadVeteranPanel();
       break;
       
     default:
@@ -733,6 +748,10 @@ async function loadDashboardData() {
     renderActiveEventWidget().catch(err => console.warn('[Widget] Error:', err));
   }
 
+  // ADR-010 — Widget del Veterano (solo si aplica)
+  if (typeof renderVeteranWidget === 'function') {
+    renderVeteranWidget().catch(err => console.warn('[Veteran Widget] Error:', err));
+  }
 
   if (!currentUser) return;
 

@@ -214,6 +214,22 @@
     </div>
   </div>
 
+  <!-- ADR-010 — Widget del Panel Veterano (solo VETERANO/OWNER) -->
+  <section id="veteranWidget" class="card tactical-corners" style="display:none;margin-top:1.5rem;margin-bottom:0.5rem;border-left:3px solid #38bdf8;">
+    <div class="card-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <i data-lucide="medal" style="width:20px;height:20px;color:#38bdf8;"></i>
+        <h3 style="color:#38bdf8;font-family:var(--font-tactical);letter-spacing:0.5px;margin:0;">Sección Veteranos</h3>
+      </div>
+      <button onclick="showView('veteranPanelView')" class="btn-link" style="font-size:0.8rem;color:#38bdf8;">
+        Ir al Panel →
+      </button>
+    </div>
+    <div id="veteranWidgetBody" style="padding:0.5rem 0;">
+      <p style="color:#94a3b8;font-size:0.85rem;margin:0;">Cargando resumen…</p>
+    </div>
+  </section>
+
   <!-- Quick Tactical Operations Hub -->
   <div class="card operations-hub-card tactical-corners" style="margin-top: 1.5rem;">
     <div class="card-header">
