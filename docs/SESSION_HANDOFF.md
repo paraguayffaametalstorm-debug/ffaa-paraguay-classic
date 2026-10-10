@@ -1,9 +1,9 @@
 # 🔄 SESSION HANDOFF — PARAGUAY-FFAA | METALSTORM
 
 > **Documento de traspaso entre sesiones de trabajo.**
-> **Actualizado:** 2026-10-10 (post-F6/F7 + Sprint 4 en curso)
+> **Actualizado:** 2026-10-10 (Sprint 4: BL-027 + BL-028 cerrados)
 > **Última sesión:** Sprint 4 — Housekeeping (F4.0a + F4.0b)
-> **Próximo paso:** F4.5 (DROP BM legacy) · BL-027 (migrar frontend legacy) · BL-025 (tests)
+> **Próximo paso:** BL-029 (migrar frontend legacy a v2) · BL-025 (tests) · BL-024 (CSP)
 
 ---
 
@@ -25,7 +25,7 @@
 | Aspecto | Valor |
 |---|---|
 | **Versión en producción** | v4.7.0 |
-| **Commit HEAD** | `984c54e` |
+| **Commit HEAD** | `3413ef3` |
 | **Branch** | `main` (sincronizada con origin) |
 | **Deploy** | ✅ Activo en Render.com |
 | **URL producción** | `https://paraguay-ffaa-metalstorm.onrender.com` |

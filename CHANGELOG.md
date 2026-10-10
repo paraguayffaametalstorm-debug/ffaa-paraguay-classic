@@ -9,6 +9,44 @@
 
 ---
 
+## [4.7.2] - 2026-10-10
+
+### 🧹 Sprint 4 — Housekeeping (BL-027 + BL-028)
+
+#### BL-027 — Eliminar `savePerformance()` muerta de `js/api.js`
+
+La versión duplicada de `savePerformance()` en `js/api.js` era **código muerto**:
+- No se exportaba a `window`.
+- La versión viva está en `js/performance.js` (línea 738: `window.savePerformance = savePerformance;`).
+- Además usaba endpoints **inexistentes o legacy**:
+  - `POST /api/performances` (legacy, escribe en tabla `performances`).
+  - `POST /api/admin/performances` (endpoint inexistente, 404).
+
+**Acción:** eliminada. Reemplazada por un comentario explicativo.
+
+- **Archivos:** `js/api.js`.
+- **Commit:** `588b4e8`.
+
+#### BL-028 — Crear `GET /api/events-v2/mine`
+
+Endpoint para que un piloto autenticado consulte **su propio historial de participaciones**
+desde el modelo unificado `event_participations` + `events_master`.
+
+**Características:**
+- Autenticado (`requireAuth`).
+- Filtros opcionales: `?limit=N&type=SQUADRON&status=CLOSED`.
+- Payload **retrocompatible** con el legacy `/api/performances/my-history`:
+  incluye `event_id`, `tokens`, `days_connected`, `flew_in_group`, `notes`, `status`, `created_at`.
+- Campos nuevos: `event_name`, `event_type`, `event_status`, `event_start_date`, `event_end_date`, `perf_status` (semáforo militar, solo SQ).
+- Resolución tipada del caller: acepta UUID (`req.user.id`) o INTEGER (`req.user.user_id`).
+
+**Uso previsto:** reemplaza funcionalmente a `/api/performances/history` y `/api/performances/my-history` (que serán deprecados en FIX-401).
+
+- **Archivos:** `src/controllers/events-v2.controller.js`, `src/routes/events-v2.routes.js`.
+- **Commit:** `3413ef3`.
+
+---
+
 ## [4.7.1] - 2026-10-10
 
 ### 📚 Sprint 4 — Housekeeping (Fase 4.0) + DROP tablas BM legacy (F4.5)
