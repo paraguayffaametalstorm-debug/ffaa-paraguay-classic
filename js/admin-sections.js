@@ -16,11 +16,13 @@
 
   // ── Configuración de las 5 secciones ──
   const ADMIN_SECTIONS = {
-    resumen:  { url: '/components/admin-sections/admin-summary.html', init: 'initAdminSummarySection', label: 'Resumen' },
-    dotacion: { url: '/components/admin-sections/admin-members.html', init: 'initAdminMembersSection', label: 'Dotación' },
-    eventos:  { url: '/components/admin-sections/admin-events.html',  init: 'initAdminEventsSection',  label: 'Eventos' },
-    catalogo: { url: '/components/admin-sections/admin-catalog.html', init: 'initAdminCatalogSection', label: 'Catálogo' },
-    estado:   { url: '/components/admin-sections/admin-status.html',  init: 'initAdminStatusSection',  label: 'Estado' }
+    resumen:   { url: '/components/admin-sections/admin-summary.html',   init: 'initAdminSummarySection',   label: 'Resumen' },
+    dotacion:  { url: '/components/admin-sections/admin-members.html',   init: 'initAdminMembersSection',   label: 'Dotación' },
+    eventos:   { url: '/components/admin-sections/admin-events.html',    init: 'initAdminEventsSection',    label: 'Eventos' },
+    catalogo:  { url: '/components/admin-sections/admin-catalog.html',   init: 'initAdminCatalogSection',   label: 'Catálogo' },
+    estado:    { url: '/components/admin-sections/admin-status.html',    init: 'initAdminStatusSection',    label: 'Estado' },
+    // ADR-010 — Sección Veteranos
+    veteranos: { url: '/components/admin-sections/admin-veterans.html',  init: 'initAdminVeteransSection',  label: 'Veteranos' }
   };
 
   // ── Caché en memoria (RAM) ──
@@ -241,6 +243,18 @@
     }
   }
 
+  // ADR-010 — Sección Veteranos
+  async function initAdminVeteransSection() {
+    console.log('[Admin][Veteranos] Init');
+    if (typeof window.adminVeteransLoad === 'function') {
+      try { await window.adminVeteransLoad(); } catch (e) {
+        console.warn('[Admin][Veteranos] Error:', e);
+      }
+    } else {
+      console.warn('[Admin][Veteranos] adminVeteransLoad no disponible');
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   //  SIDEBAR TOGGLE + DRAWER MOBILE
   // ═══════════════════════════════════════════════════════════════
@@ -323,6 +337,7 @@
   window.initAdminEventsSection = initAdminEventsSection;
   window.initAdminCatalogSection = initAdminCatalogSection;
   window.initAdminStatusSection = initAdminStatusSection;
+  window.initAdminVeteransSection = initAdminVeteransSection;  // ADR-010
 
   window._adminSectionsDebug = function() {
     return {

@@ -1195,6 +1195,151 @@ async function apiExportEventResults(eventId) {
 }
 
 window.apiExportEventResults = apiExportEventResults;
+
+// ============================================================
+// VETERANOS — ADR-010 (Sección Veteranos: mentoría + RBAC fino)
+// ============================================================
+// Patrón: retorna { success: bool, ...data } o { success: false, error, code }
+// NO lanza excepciones no capturadas.
+// ============================================================
+
+async function _veteranFetch(path, options = {}) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: options.method || 'GET',
+      headers: getAuthHeaders(),
+      ...(options.body && { body: JSON.stringify(options.body) })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        success: false,
+        error: json.error || `Error HTTP ${res.status}`,
+        code: json.code || 'HTTP_ERROR',
+        details: json.details || null
+      };
+    }
+    return { success: true, ...json };
+  } catch (err) {
+    console.error(`❌ [Veteran API] Error en ${path}:`, err);
+    return { success: false, error: err.message || 'Error de conexión', code: 'NETWORK_ERROR' };
+  }
+}
+
+/**
+ * Stats del Veterano autenticado (o globales del escuadrón si OWNER sin mentor_id).
+ * @param {{mentor_id?:string}} params
+ */
+async function apiVeteranMyStats(params = {}) {
+  const query = new URLSearchParams();
+  if (params.mentor_id) query.set('mentor_id', params.mentor_id);
+  const qs = query.toString();
+  return _veteranFetch(`/api/veteran/my-stats${qs ? `?${qs}` : ''}`);
+}
+
+/**
+ * Lista de pupilos.
+ * - VETERANO: solo los suyos.
+ * - OWNER sin params: TODOS los pupilos agrupados por Veterano.
+ * - OWNER/ADMIN con {mentor_id}: los de ese Veterano.
+ * @param {{mentor_id?:string}} params
+ */
+async function apiVeteranMyPupilos(params = {}) {
+  const query = new URLSearchParams();
+  if (params.mentor_id) query.set('mentor_id', params.mentor_id);
+  const qs = query.toString();
+  return _veteranFetch(`/api/veteran/my-pupilos${qs ? `?${qs}` : ''}`);
+}
+
+/**
+ * Historial de mentorías (ACTIVE + ENDED + REASSIGNED).
+ * @param {{mentor_id?:string}} params
+ */
+async function apiVeteranMyMentorships(params = {}) {
+  const query = new URLSearchParams();
+  if (params.mentor_id) query.set('mentor_id', params.mentor_id);
+  const qs = query.toString();
+  return _veteranFetch(`/api/veteran/my-mentorships${qs ? `?${qs}` : ''}`);
+}
+
+/**
+ * Detalle de UNA mentoría (con logs + evaluaciones).
+ * @param {string} mentorshipId
+ */
+async function apiVeteranGetMentorship(mentorshipId) {
+  if (!mentorshipId) return { success: false, error: 'mentorshipId requerido', code: 'MISSING_ID' };
+  return _veteranFetch(`/api/veteran/mentorship/${encodeURIComponent(mentorshipId)}`);
+}
+
+/**
+ * Registra un contacto del mentor con el pupilo.
+ * @param {string} mentorshipId
+ * @param {string} note
+ */
+async function apiVeteranLogContact(mentorshipId, note) {
+  if (!mentorshipId) return { success: false, error: 'mentorshipId requerido', code: 'MISSING_ID' };
+  if (!note || !String(note).trim()) {
+    return { success: false, error: 'La nota es obligatoria', code: 'NOTE_REQUIRED' };
+  }
+  return _veteranFetch(`/api/veteran/mentorship/${encodeURIComponent(mentorshipId)}/log`, {
+    method: 'POST',
+    body: { note: String(note).trim() }
+  });
+}
+
+/**
+ * Registra una evaluación consultiva (Art. 25.4).
+ * @param {string} mentorshipId
+ * @param {object} criteria - { participacion, cooperacion, conducta, integracion, disposicion }
+ * @param {string} summary
+ */
+async function apiVeteranEvaluate(mentorshipId, criteria, summary) {
+  if (!mentorshipId) return { success: false, error: 'mentorshipId requerido', code: 'MISSING_ID' };
+  return _veteranFetch(`/api/veteran/mentorship/${encodeURIComponent(mentorshipId)}/evaluate`, {
+    method: 'POST',
+    body: { criteria, summary }
+  });
+}
+
+// ─── ADMIN/OWNER: gestión de mentorías ─────────────────────
+async function apiAdminCreateMentorship(mentorId, menteeId) {
+  if (!mentorId || !menteeId) {
+    return { success: false, error: 'mentorId y menteeId requeridos', code: 'MISSING_ID' };
+  }
+  return _veteranFetch('/api/admin/mentorships', {
+    method: 'POST',
+    body: { mentor_id: mentorId, mentee_id: menteeId }
+  });
+}
+
+async function apiAdminUpdateMentorship(mentorshipId, action, payload = {}) {
+  if (!mentorshipId) return { success: false, error: 'mentorshipId requerido', code: 'MISSING_ID' };
+  return _veteranFetch(`/api/admin/mentorships/${encodeURIComponent(mentorshipId)}`, {
+    method: 'PATCH',
+    body: { action, ...payload }
+  });
+}
+
+async function apiAdminListMentorships(params = {}) {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.mentor_id) query.set('mentor_id', params.mentor_id);
+  const qs = query.toString();
+  return _veteranFetch(`/api/admin/mentorships${qs ? `?${qs}` : ''}`);
+}
+
+// Exponer en window
+window.apiVeteranMyStats         = apiVeteranMyStats;
+window.apiVeteranMyPupilos       = apiVeteranMyPupilos;
+window.apiVeteranMyMentorships   = apiVeteranMyMentorships;
+window.apiVeteranGetMentorship   = apiVeteranGetMentorship;
+window.apiVeteranLogContact      = apiVeteranLogContact;
+window.apiVeteranEvaluate        = apiVeteranEvaluate;
+window.apiAdminCreateMentorship  = apiAdminCreateMentorship;
+window.apiAdminUpdateMentorship  = apiAdminUpdateMentorship;
+window.apiAdminListMentorships   = apiAdminListMentorships;
+
+console.log('✅ [Veteran API] 9 funciones apiVeteran* + apiAdmin* expuestas en window');
 window.apiEventsV2BmList           = apiEventsV2BmList;
 window.apiEventsV2BmActive         = apiEventsV2BmActive;
 window.apiEventsV2BmGetById        = apiEventsV2BmGetById;

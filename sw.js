@@ -7,7 +7,7 @@
 // en recursos estáticos (componentes HTML) tras redirección 
 // post-vinculación.
 // ============================================================
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.8.0';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.8.1';
 
 // ✅ Assets versionados
 const STATIC_ASSETS = [
@@ -52,7 +52,10 @@ const STATIC_ASSETS = [
   '/components/performance-export.html',
   // ADR-010 — Panel del Veterano
   '/components/veteran-panel.html',
-  '/js/veteran.js'
+  '/js/veteran.js',
+  // ADR-010 — Sección Veteranos en Panel Admin
+  '/components/admin-sections/admin-veterans.html',
+  '/js/admin-veterans.js'
 ];
 
 // Instalación - Precache de assets

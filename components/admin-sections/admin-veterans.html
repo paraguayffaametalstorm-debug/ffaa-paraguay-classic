@@ -1,0 +1,219 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     SECCIÓN VETERANOS — ADR-010
+     Panel de Comandancia · Gestión de mentorías
+     ─────────────────────────────────────────────────────────────
+     Consume:
+       - GET /api/veteran/my-stats (global_view para OWNER)
+       - GET /api/admin/mentorships?status=X
+       - PATCH /api/admin/mentorships/:id (close/reassign)
+       - POST /api/admin/mentorships (asignar)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-section" id="section-veteranos" data-section="veteranos">
+
+  <!-- Header de sección -->
+  <div class="admin-section-header">
+    <div>
+      <div class="badge-tag">ADR-010 · SECCIÓN VETERANOS</div>
+      <h2>🎖️ Sección Veteranos</h2>
+      <p class="subtitle">Supervisión de mentorías del escuadrón · Asignación y reasignación</p>
+    </div>
+    <div class="admin-section-actions">
+      <button type="button"
+              onclick="window.adminVeteransReload()"
+              class="btn-secondary btn-sm"
+              title="Recargar datos">
+        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Actualizar
+      </button>
+      <button type="button"
+              onclick="window.adminVeteransOpenAssignModal()"
+              class="btn-primary btn-sm"
+              title="Asignar un mentor a un pupilo">
+        <i data-lucide="user-plus" style="width:14px;height:14px;"></i> Asignar Mentor
+      </button>
+    </div>
+  </div>
+
+  <!-- KPIs (llenados por JS) -->
+  <div class="stats-grid-tactical" id="adminVeteransStatsGrid">
+    <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #2ecc71;">
+      <div class="stat-card-header">
+        <span class="stat-label">MENTORÍAS ACTIVAS</span>
+        <span style="font-size:1.1rem;">🎖️</span>
+      </div>
+      <div class="stat-main">
+        <span class="stat-number-green" id="veteranStatActive">—</span>
+      </div>
+      <div class="stat-footer">En curso</div>
+    </div>
+
+    <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #d4af37;">
+      <div class="stat-card-header">
+        <span class="stat-label">VETERANOS ACTIVOS</span>
+        <span style="font-size:1.1rem;">🛡️</span>
+      </div>
+      <div class="stat-main">
+        <span class="stat-number-gold" id="veteranStatVeterans">—</span>
+      </div>
+      <div class="stat-footer">Habilitados</div>
+    </div>
+
+    <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #38bdf8;">
+      <div class="stat-card-header">
+        <span class="stat-label">PUPILOS ACTIVOS</span>
+        <span style="font-size:1.1rem;">👥</span>
+      </div>
+      <div class="stat-main">
+        <span class="stat-number-blue" id="veteranStatPupilos">—</span>
+      </div>
+      <div class="stat-footer">Bajo mentoría</div>
+    </div>
+
+    <div class="stat-card-tactical tactical-corners" style="border-left:4px solid #f59e0b;">
+      <div class="stat-card-header">
+        <span class="stat-label">CONTACTOS MES</span>
+        <span style="font-size:1.1rem;">📝</span>
+      </div>
+      <div class="stat-main">
+        <span class="stat-number-red" id="veteranStatContacts">—</span>
+      </div>
+      <div class="stat-footer">Registrados</div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="admin-filters" style="margin-bottom:1.2rem;">
+    <div>
+      <label for="veteranFilterMentor">Filtrar por Veterano</label>
+      <select id="veteranFilterMentor" onchange="window.adminVeteransFilterMentor(this.value)">
+        <option value="">— Todos —</option>
+      </select>
+    </div>
+    <div>
+      <label for="veteranFilterStatus">Estado</label>
+      <select id="veteranFilterStatus" onchange="window.adminVeteransFilterStatus(this.value)">
+        <option value="ACTIVE" selected>🟢 Activas</option>
+        <option value="">Todos</option>
+        <option value="ENDED">⚫ Finalizadas</option>
+        <option value="REASSIGNED">🟡 Reasignadas</option>
+      </select>
+    </div>
+    <div>
+      <button type="button"
+              onclick="window.adminVeteransClearFilters()"
+              class="btn-secondary"
+              style="width:100%;">
+        🔄 Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla de mentorías (llenada por JS) -->
+  <div id="adminVeteransTableContainer">
+    <div style="text-align:center;padding:2rem;color:#94a3b8;">
+      <i data-lucide="loader-2" class="spin"></i>
+      <p style="margin-top:8px;">Cargando mentorías…</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL: REASIGNAR MENTOR
+     (El modal "Asignar Mentor" se reutiliza de veteran-panel.html)
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="adminReassignMentorshipModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:600px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div>
+        <h3 style="font-family:var(--font-display);color:#d4af37;margin:0;">🔄 Reasignar Mentor</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">
+          Pupilo: <strong id="adminReassignMenteeNick" style="color:#f8fafc;">—</strong>
+        </p>
+      </div>
+      <button type="button"
+              onclick="window.closeModal('adminReassignMentorshipModal')"
+              class="btn-icon"
+              aria-label="Cerrar"
+              style="background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem;">
+      <input type="hidden" id="adminReassignMentorshipId" />
+
+      <div style="padding:10px 12px;background:rgba(56,189,248,0.08);border-left:3px solid #38bdf8;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#7dd3fc;line-height:1.4;">
+        ℹ️ La mentoría actual se cerrará con estado <strong>REASSIGNED</strong> y se creará una nueva con el mentor seleccionado.
+      </div>
+
+      <label for="adminReassignNewMentor" style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Nuevo Veterano (mentor) <span style="color:#e74c3c;">*</span>
+      </label>
+      <select id="adminReassignNewMentor" class="veteran-eval-select" style="margin-bottom:1rem;">
+        <option value="">— Seleccionar Veterano —</option>
+      </select>
+
+      <label for="adminReassignReason" style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Motivo de reasignación <span style="font-size:0.75rem;color:#94a3b8;font-weight:normal;">(mínimo 5 caracteres)</span>
+      </label>
+      <textarea id="adminReassignReason"
+                rows="3"
+                maxlength="500"
+                placeholder="Ej: Reasignación por disponibilidad del mentor anterior…"
+                style="width:100%;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:10px 12px;font-family:var(--font-body);font-size:0.9rem;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.25rem;border-top:1px solid #1e293b;display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button"
+              onclick="window.closeModal('adminReassignMentorshipModal')"
+              class="btn-secondary">Cancelar</button>
+      <button type="button"
+              id="adminReassignSubmitBtn"
+              onclick="window.adminVeteransSubmitReassign()"
+              class="btn-primary">💾 Reasignar Mentor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL: CERRAR MENTORÍA
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="adminCloseMentorshipModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:600px;">
+    <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div>
+        <h3 style="font-family:var(--font-display);color:#d4af37;margin:0;">🔒 Cerrar Mentoría</h3>
+        <p style="margin:4px 0 0 0;font-size:0.85rem;color:#cbd5e1;">
+          Pupilo: <strong id="adminCloseMenteeNick" style="color:#f8fafc;">—</strong>
+        </p>
+      </div>
+      <button type="button"
+              onclick="window.closeModal('adminCloseMentorshipModal')"
+              class="btn-icon"
+              aria-label="Cerrar"
+              style="background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.25rem;">
+      <input type="hidden" id="adminCloseMentorshipId" />
+
+      <div style="padding:10px 12px;background:rgba(231,76,60,0.1);border-left:3px solid #e74c3c;border-radius:4px;margin-bottom:1.2rem;font-size:0.82rem;color:#fca5a5;line-height:1.4;">
+        ⚠️ La mentoría quedará con estado <strong>ENDED</strong>. Esta acción no se puede deshacer (pero el pupilo puede recibir un nuevo mentor después).
+      </div>
+
+      <label for="adminCloseReason" style="display:block;font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+        Motivo del cierre <span style="font-size:0.75rem;color:#e74c3c;font-weight:normal;">*(mínimo 5 caracteres)</span>
+      </label>
+      <textarea id="adminCloseReason"
+                rows="3"
+                maxlength="500"
+                placeholder="Ej: Mentoría finalizada exitosamente tras 3 meses…"
+                style="width:100%;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:10px 12px;font-family:var(--font-body);font-size:0.9rem;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-footer" style="padding:1rem 1.25rem;border-top:1px solid #1e293b;display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button"
+              onclick="window.closeModal('adminCloseMentorshipModal')"
+              class="btn-secondary">Cancelar</button>
+      <button type="button"
+              id="adminCloseSubmitBtn"
+              onclick="window.adminVeteransSubmitClose()"
+              class="btn-danger">🔒 Cerrar Mentoría</button>
+    </div>
+  </div>
+</div>
