@@ -25,14 +25,14 @@
 | Aspecto | Valor |
 |---|---|
 | **Versión en producción** | v4.7.0 |
-| **Commit HEAD** | `3413ef3` |
+| **Commit HEAD** | `f001224` |
 | **Branch** | `main` (sincronizada con origin) |
 | **Deploy** | ✅ Activo en Render.com |
 | **URL producción** | `https://paraguay-ffaa-metalstorm.onrender.com` |
 | **Sistema** | 100% funcional |
 | **Tests** | 287 passing · 69 skipped · 0 failing |
 | **Sprint 4 (parcial)** | 🟢 En curso (7/13 ítems cerrados) |
-| **BL-027 + BL-028** | ✅ Cerrados |
+| **BL-027 + BL-028 + BL-029** | ✅ Cerrados |
 | **Fix HALL-072** | ✅ Completado |
 | **F6 (Panel Admin v4.7.0)** | ✅ Completado |
 | **F7 (Export resultados v4.6.0)** | ✅ Completado |
@@ -204,9 +204,10 @@ Workaround: usar `AT TIME ZONE 'UTC' - INTERVAL '3 hours'`.
 | **F4.0b** | Actualizar SESSION_HANDOFF.md | XS | ✅ Cerrado (`984c54e`) |
 | **F4.0c** | Limpiar .bak-* del disco | XS | ✅ Cerrado |
 | **F4.5** | Ejecutar DROP de tablas BM legacy | XS | ✅ Cerrado |
-| **BL-027** | Eliminar `savePerformance` muerta de `js/api.js` | S | ⏳ Pendiente |
-| **BL-028** | Crear `GET /api/events-v2/mine` | M | ⏳ Pendiente |
-| **BL-029** | Migrar `js/views.js` a v2 (history/my-history) | M | ⏳ Pendiente |
+| **BL-027** | Eliminar `savePerformance` muerta de `js/api.js` | S | ✅ Cerrado (`588b4e8`) |
+| **BL-028** | Crear `GET /api/events-v2/mine` | M | ✅ Cerrado (`3413ef3`) |
+| **BL-029** | Migrar `js/views.js` a v2 (history/my-history) | M | ✅ Cerrado (`f001224`) |
+| **FIX-310** | `loadAllPerformances()` usa endpoint roto `/api/admin/all-performances` | S | ⏳ Pendiente |
 | **BL-025** | Re-implementar 69 tests con contrato real | M (1 día) | ⏳ Pendiente |
 | **BL-024** | Eliminar `'unsafe-inline'` del CSP | L (2-3 días) | ⏳ Pendiente |
 | **FIX-305** | Tests de integración con Postgres real | L (2-3 días) | ⏳ Pendiente |
@@ -255,4 +256,4 @@ curl -s https://paraguay-ffaa-metalstorm.onrender.com/api/health
 
 ---
 
-**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-10 · Commit 984c54e**
+**PARAGUAY FFAA [PRY] · SESSION HANDOFF · 2026-10-10 · Commit f001224**

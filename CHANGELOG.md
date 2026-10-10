@@ -9,6 +9,45 @@
 
 ---
 
+## [4.7.3] - 2026-10-10
+
+### 🚀 Sprint 4 — BL-029: Migración del frontend legacy a events-v2
+
+Migración de las llamadas legacy a `/api/performances/*` (que leen de la tabla
+`performances`) hacia el endpoint unificado `/api/events-v2/mine` (BL-028).
+
+#### Cambios aplicados
+
+**`js/api.js`**
+- Nueva función `apiEventsV2Mine({ limit, type, status })` como wrapper del endpoint `GET /api/events-v2/mine`.
+- Expuesta globalmente: `window.apiEventsV2Mine`.
+
+**`js/views.js`**
+- `loadDashboardData()`: migrado de `/api/performances/history` → `apiEventsV2Mine({ limit: 10 })`.
+- `loadHistorial()`: migrado de `/api/performances/my-history` → `apiEventsV2Mine()`.
+- **NO se tocó** `loadAllPerformances()` (línea ~6708): queda con el legacy hasta crear FIX-310.
+- **NO se tocó** `loadActiveMembers()` (línea 1115): endpoint `/api/performances/pilots` sigue activo.
+
+**`sw.js`**
+- Bump `CACHE_NAME` de `v4.7.3` → `v4.7.4` (invalida caché del navegador).
+
+#### Verificación en producción
+
+- ✅ `GET /api/events-v2/mine` → **200 OK** con 26 participaciones (retrocompatible).
+- ✅ `loadDashboardData()` → gráfico de tendencia OK.
+- ✅ `loadHistorial()` → historial completo OK.
+- ✅ `window.apiEventsV2Mine` disponible en el frontend.
+- ✅ Legacy (`/api/performances/my-history`) sigue devolviendo 23 registros (deprecado en FIX-401).
+
+#### Backlog
+
+- **FIX-310** registrado: `loadAllPerformances()` usa endpoint roto `/api/admin/all-performances`.
+
+- **Archivos:** `js/api.js`, `js/views.js`, `sw.js`.
+- **Commit:** `f001224`.
+
+---
+
 ## [4.7.2] - 2026-10-10
 
 ### 🧹 Sprint 4 — Housekeeping (BL-027 + BL-028)
