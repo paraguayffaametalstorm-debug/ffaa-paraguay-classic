@@ -290,7 +290,7 @@ export async function exportPerformancesCSV(req, res, next) {
     const supabase = getSupabase();
     let list = [];
     if (supabase) {
-      const { data } = await supabase.from('performances').select('*').order('created_at', { ascending: false });
+      const { data } = await supabase.from('v_admin_participations').select('*').order('created_at', { ascending: false });
       if (data) list = data;
     }
 
