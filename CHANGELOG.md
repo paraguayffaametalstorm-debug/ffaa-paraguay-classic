@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.7...v4.8.8) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **docs:** sincronizar referencias cruzadas post-refactor (26 correcciones) ([784dbdb](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/784dbdb9bfea30d05d9d7cdedc290c1816cad3af))
+
 ## [4.8.7](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.6...v4.8.7) (2026-10-11)
 
 
