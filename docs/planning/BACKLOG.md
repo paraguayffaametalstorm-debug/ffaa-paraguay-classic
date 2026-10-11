@@ -1,7 +1,7 @@
 # 📋 BACKLOG DE MEJORAS — PARAGUAY-FFAA | METALSTORM
 
 > **Documento vivo de propuestas, mejoras y deuda técnica.**
-> **Última actualización:** 2026-10-11
+> **Última actualización:** 2026-10-12
 > **Responsable:** Comando C4ISR
 
 ---
@@ -132,6 +132,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` (95 casos) | 2026-10-12 | `480c731` |
 | **BL-023** | 🏗️ | Encoding LF (.gitattributes + .editorconfig) | 2026-10-11 | `059a32a` |
 | **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | 2026-10-11 | `059a32a` |
 | **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | 2026-10-11 | `059a32a` |
@@ -170,8 +171,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 16 |
-| Items completados | 14 |
+| Items activos | 15 |
+| Items completados | 15 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
