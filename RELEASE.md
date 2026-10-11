@@ -3,6 +3,7 @@
 > **Fuente única de verdad sobre cómo se versiona y publica una nueva release.**
 > **Última actualización:** 2026-10-11
 > **Mecanismo:** `release-please` (Google) + GitHub Actions + Conventional Commits
+> **Compatible con:** releases automáticas vía PR (`chore(main): release X.Y.Z`)
 
 ---
 
@@ -44,18 +45,23 @@ Todos los commits **deben** seguir el formato [Conventional Commits](https://www
 
 ### Tipos soportados
 
-| Tipo | Descripción | Bump SemVer |
-|---|---|---|
-| `feat` | Nueva feature | **MINOR** |
-| `fix` | Bug fix | **PATCH** |
-| `feat!` o `BREAKING CHANGE:` | Breaking change | **MAJOR** |
-| `perf` | Mejora de performance | PATCH |
-| `refactor` | Refactoring sin cambio funcional | Ninguno |
-| `docs` | Documentación | Ninguno |
-| `test` | Tests | Ninguno |
-| `ci` | CI/CD | Ninguno |
-| `chore` | Mantenimiento | Ninguno |
-| `style` | Formato/estilos | Ninguno |
+| Tipo | Descripción | Bump SemVer | ¿Aparece en CHANGELOG? |
+|---|---|---|---|
+| `feat` | Nueva feature | **MINOR** | ✅ Sí |
+| `fix` | Bug fix | **PATCH** | ✅ Sí |
+| `perf` | Mejora de performance | **PATCH** | ✅ Sí |
+| `docs` | Documentación | **PATCH** | ✅ Sí |
+| `deps` | Actualización de dependencias | **PATCH** | ❌ No |
+| `revert` | Revertir un commit | **PATCH** | ✅ Sí |
+| `feat!` o `BREAKING CHANGE:` | Breaking change | **MAJOR** | ✅ Sí |
+| `refactor` | Refactoring sin cambio funcional | Ninguno | ❌ No |
+| `test` | Tests | Ninguno | ❌ No |
+| `ci` | CI/CD | Ninguno | ❌ No |
+| `chore` | Mantenimiento | Ninguno | ❌ No |
+| `style` | Formato/estilos | Ninguno | ❌ No |
+| `build` | Sistema de build | Ninguno | ❌ No |
+
+> **⚠️ Importante:** Los tipos `feat`, `fix`, `perf`, `docs`, `deps` y `revert` **SÍ disparan un release automático** en `release-please`. Solo `refactor`, `test`, `ci`, `chore`, `style` y `build` son completamente ignorados.
 
 ### Ejemplos válidos
 
@@ -114,10 +120,25 @@ FEAT: Agregar algo
 
 ### ¿Cuándo NO genera PR?
 
-Si desde el último tag **no hay** commits de tipo `feat:` o `fix:`,
-`release-please` no genera PR (no hay razón para un nuevo release).
+`release-please` **NO genera PR** si desde el último tag **todos** los commits son de tipo ignorado:
 
-**Es normal.** Los commits `docs:`, `chore:`, `ci:` no generan release.
+- `refactor:` (refactoring sin cambio funcional)
+- `test:` (tests)
+- `ci:` (CI/CD)
+- `chore:` (mantenimiento)
+- `style:` (formato)
+- `build:` (sistema de build)
+
+**En cambio, SÍ genera PR si hay al menos un commit de tipo:**
+- `feat:` → MINOR
+- `fix:` → PATCH
+- `perf:` → PATCH
+- `docs:` → PATCH
+- `deps:` → PATCH
+- `revert:` → PATCH
+- `feat!:` → MAJOR
+
+> **💡 Nota práctica:** Un `docs:` (como el que agregó el `RELEASE.md`) **SÍ genera un PATCH**. Por eso la versión pasó de `4.8.4` a `4.8.5` cuando agregamos documentación.
 
 ---
 
@@ -234,9 +255,11 @@ Si necesitás publicar una versión explícita:
 
 ### "No aparece el PR de release-please"
 
-**Causa más probable:** los últimos commits no incluyen `feat:` ni `fix:`.
+**Causa más probable:** todos los commits desde el último tag son de tipo ignorado (`refactor:`, `test:`, `ci:`, `chore:`, `style:`, `build:`).
 
-**Solución:** hacé un commit real de tipo `feat:` o `fix:`.
+**Solución:** hacé un commit de un tipo que dispare release (`feat:`, `fix:`, `perf:`, `docs:`, `deps:`, `revert:`) o esperá al próximo release.
+
+**Verificar con:** `git log --oneline <ultimo-tag>..HEAD` para ver los tipos de commits pendientes.
 
 ### "El workflow falla con 'not permitted to create pull requests'"
 
