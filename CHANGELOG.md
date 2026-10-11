@@ -8,6 +8,22 @@
 
 ---
 
+## [4.8.19](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.18...v4.8.19) (2026-10-11)
+
+
+### ♻️ Refactoring
+
+* **dashboard:** getSummary usa v_admin_participations (FIX-310-quater) ([35a0ccb](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/35a0ccbbdc3df260d966bde729980897100ede54))
+
+
+### 📚 Documentation
+
+* **backlog:** cerrar BL-022 + registrar BL-032/BL-033 ([ae7e0dd](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/ae7e0dde7031aeffa1ab80081938ebc53fbeac59))
+* **backlog:** cerrar FIX-310-quater ([6286812](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/6286812cc6dd83cc024beb433a95c896c955d4b7))
+* **backlog:** cerrar FIX-310-quater ([16bbdec](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/16bbdec2ae432eea3cf9726a0de61d1edfdb7558))
+* **handoff:** HANDOFF v4.8.19 (FIX-310-quater + BL-022 + HALL-077) ([54947ee](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/54947ee7957a14a882dea7d719d5931f469f527b))
+* **incidentes:** HALL-077 divergencia performances vs v_admin_participations ([71bb388](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/71bb388c37bf07c14a2a84a2a8bf5eb03c4d1240))
+
 ## [4.8.18](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.17...v4.8.18) (2026-10-11)
 
 
