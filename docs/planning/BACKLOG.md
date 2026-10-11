@@ -135,7 +135,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
-| **FIX-310-quater** | 🏗️ | `getSummary` usa `v_admin_participations` (refactor avgMap UUID) | 2026-10-11 | `<hash-pendiente>` |
+| **FIX-310-quater** | 🏗️ | `getSummary` usa `v_admin_participations` (refactor avgMap UUID) | 2026-10-11 | `35a0ccb` |
 | **BL-022** | 🧪 | Tests para `/api/dashboard/summary` (previene HALL-067) | 2026-10-11 | `c8e143c` |
 | **FIX-310-ter** | 🏗️ | Refactorizar `exportPerformancesCSV` para usar `v_admin_participations` | 2026-10-11 | `2f73059` |
 | **FIX-310** | 🔧 | Endpoint v2 `/api/events-v2/admin/participations` (reemplaza legacy) | 2026-10-11 | `2e59c3b` |
