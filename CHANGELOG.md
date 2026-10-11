@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.21](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.20...v4.8.21) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **handoff:** HANDOFF v4.8.20 (quick wins + Sprint 7 setup) ([a400232](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/a4002320fa8a3e907f055ed6dd10c1eccfc4a928))
+
 ## [4.8.20](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.19...v4.8.20) (2026-10-11)
 
 
