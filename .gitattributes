@@ -1,38 +1,28 @@
-# .gitattributes — PARAGUAY-FFAA | METALSTORM
-# Normaliza line endings en el repositorio.
-# Causa raíz de HALL-068.
-
-# Por defecto, normalizar a LF en el repo
+# Normalizar line endings a LF en todo el repo
+# Ref: BL-023 · HALL-068
 * text=auto eol=lf
 
-# Archivos binarios explícitos (no tocar)
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.ico binary
-*.webp binary
-*.pdf binary
-*.zip binary
-*.woff binary
-*.woff2 binary
-*.ttf binary
-
-# Scripts de Windows (mantener CRLF si algún día se agregan)
-*.bat text eol=crlf
-*.cmd text eol=crlf
-*.ps1 text eol=crlf
-
-# Documentación: permitir LF estricto
-*.md text eol=lf
-
-# SQL: LF estricto
-*.sql text eol=lf
-
-# JS/JSON/CSS/HTML: LF estricto
+# Forzar LF en archivos específicos
 *.js   text eol=lf
-*.mjs  text eol=lf
 *.cjs  text eol=lf
+*.mjs  text eol=lf
 *.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.sql  text eol=lf
 *.css  text eol=lf
 *.html text eol=lf
+
+# Binarios (sin tocar)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.pdf  binary
+*.zip  binary
