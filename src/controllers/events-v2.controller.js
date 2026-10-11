@@ -777,7 +777,9 @@ export const createParticipation = async (req, res) => {
     // v4.5.2-hotfix: event_participations.user_id es UUID.
     // Si payload.user_id viene como INTEGER (users.user_id), resolver a users.id (UUID).
     let rawUserId = payload.user_id !== undefined ? payload.user_id : req.user?.id;
-    let targetNick = payload.nick || req.user?.nick;
+    // FIX-310-bis: NO usar req.user.nick como fallback (era el bug — el nick del caller
+    // se guardaba en vez del nick del piloto target). Se resuelve targetNick desde users.
+    let targetNick = payload.nick || null;
 
     let targetUserId = rawUserId;
 
@@ -804,7 +806,24 @@ export const createParticipation = async (req, res) => {
       }
       targetUserId = userRows[0].id;
       if (!targetNick) targetNick = userRows[0].nick;
-    } else if (!isUuid) {
+    } else if (isUuid) {
+      // FIX-310-bis: resolver nick desde users por UUID (antes no se hacía,
+      // y se caía al nick del caller cuando el payload no traía nick).
+      if (!targetNick) {
+        const { data: userRows, error: userErr } = await supabase
+          .from('users')
+          .select('nick')
+          .eq('id', rawUserId)
+          .limit(1);
+
+        if (userErr) throw userErr;
+        if (userRows && userRows.length > 0) {
+          targetNick = userRows[0].nick;
+        }
+      }
+      // Fallback final: si el usuario no existe en la tabla
+      if (!targetNick) targetNick = 'Desconocido';
+    } else {
       return res.status(400).json({
         success: false,
         error: 'user_id debe ser un UUID o un entero positivo.',
@@ -1354,20 +1373,11 @@ export const getAllParticipationsAdmin = async (req, res) => {
     const lim = Math.min(parseInt(limit, 10) || 200, 500);
     const off = Math.max(parseInt(offset, 10) || 0, 0);
 
+    // FIX-310-bis: delegamos todo el JOIN y la resolución de nick/role a la vista SQL
+    // v_admin_participations (ver sql/042_admin_participations_view.sql).
     let query = supabase
-      .from('event_participations')
-      .select(`
-        id,
-        event_id,
-        user_id,
-        nick,
-        data,
-        computed_points,
-        status,
-        created_at,
-        updated_at,
-        events_master (name, type, status, start_date, end_date)
-      `, { count: 'exact' })
+      .from('v_admin_participations')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(off, off + lim - 1);
 
@@ -1377,40 +1387,10 @@ export const getAllParticipationsAdmin = async (req, res) => {
     const { data, error, count } = await query;
     if (error) throw error;
 
-    // Resolver role de cada participación (batch, sin N+1)
-    const userIds = [...new Set((data || []).map(p => p.user_id).filter(Boolean))];
-    let roleMap = new Map();
-
-    if (userIds.length > 0) {
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, role')
-        .in('id', userIds);
-      (users || []).forEach(u => roleMap.set(u.id, u.role));
-    }
-
-    const participations = (data || []).map(p => ({
-      id: p.id,
-      event_id: p.event_id,
-      event_name: p.events_master?.name || null,
-      event_type: p.events_master?.type || null,
-      user_id: p.user_id,
-      nick: p.nick || null,
-      role: roleMap.get(p.user_id) || 'MIEMBRO',
-      tokens: p.data?.tokens ?? 0,
-      days_connected: p.data?.days_connected ?? 0,
-      flew_in_group: p.data?.flew_in_group ?? false,
-      notes: p.data?.notes ?? null,
-      computed_points: p.computed_points || 0,
-      status: p.status || 'PENDING',
-      created_at: p.created_at,
-      updated_at: p.updated_at
-    }));
-
     return res.json({
       success: true,
-      participations,
-      total: count ?? participations.length,
+      participations: data || [],
+      total: count ?? (data || []).length,
       limit: lim,
       offset: off
     });
