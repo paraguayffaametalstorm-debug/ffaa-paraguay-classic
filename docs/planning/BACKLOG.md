@@ -82,8 +82,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-023** | 🏗️ | Unificar encoding de archivos JS a LF (.editorconfig + .gitattributes) | 📋 Priorizado | XS (1h) | Causa raíz de HALL-068. Agregar * text=auto eol=lf en .gitattributes y end_of_line = lf en .editorconfig. |
 | **BL-024** | 🔐 | Eliminar `'unsafe-inline'` del CSP (FIX-103) | 📋 Diferido | L (2-3 días) | Requiere migrar ~200 `onclick` inline a `addEventListener` + nonce/hash. Diferido del Sprint 2 al Sprint 3 por bajo riesgo residual y mayor valor del Sprint 3 (tests + observabilidad). |
 | **BL-025** | 🧪 | Re-implementar tests de admin/owner/auth/rbac con schemas reales | 📋 Priorizado | M (1 día) | 69 tests skipeados en Sprint 3 (FIX-301/302/303/304) porque asumen schemas de respuesta que no coinciden con el controller real (ej: `backup.users_count` vs `backup.file`, `400` vs `409` en conflictos, supertest+MSW no matchea con `127.0.0.1:PORT`). Requiere mapear el contrato real de cada controller y actualizar los `expect()`. Ref: Sprint 3. |
-| **FIX-310-ter** | 🏗️ | Refactorizar otros endpoints para usar `v_admin_participations` (export, dashboard) | 📋 Priorizado | S (2h) | La vista SQL `v_admin_participations` ya existe y resuelve `nick`/`role` desde `users`. Endpoints futuros deberían consumirla directamente en vez de replicar joins en JS. Ref: FIX-310-bis. |
-
+| **FIX-310-quater** | 🏗️ | Refactorizar `getSummary` para usar `v_admin_participations` | 📋 Priorizado | S (2h) | Requiere adaptar el matching UUID vs INTEGER en `avgMap`. Prerequisito: BL-022 (tests de dashboard). Ref: FIX-310-ter. |
 | **BL-026** | INFRA | Eliminacion final de Fly.io (post 2-3 meses sin uso) | IDEA | XS (30 min) | Si en 2-3 meses no se usa Fly.io como backup, eliminar la app paraguay-ffaa-metalstorm para ahorrar ~$0.15/mes residuales. Requiere backup previo de los 19 secretos. Ref: HALL-076. |
 | **BL-030** | Seguridad | Auditar GRANTs explicitos en tablas public/ (nuevas politicas Supabase 1-oct) | Priorizado | M (4h) | Supabase anuncio que desde el 30-oct-2026 deja de auto-exponer tablas nuevas al Data API. Los GRANT a anon, authenticated, service_role deben ser explicitos en cada CREATE TABLE nuevo. Las tablas existentes no se tocan, pero los scripts SQL futuros deben incluir GRANT SELECT ON tabla TO anon, authenticated; GRANT ALL ON tabla TO service_role;. Ref: supabase.com/changelog |
 
@@ -136,6 +135,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **FIX-310-ter** | 🏗️ | Refactorizar `exportPerformancesCSV` para usar `v_admin_participations` | 2026-10-11 | `2f73059` |
 | **FIX-310** | 🔧 | Endpoint v2 `/api/events-v2/admin/participations` (reemplaza legacy) | 2026-10-11 | `2e59c3b` |
 | **FIX-310-bis** | 🐛 | Resolver `nick`/`role` desde `users` + vista SQL `v_admin_participations` | 2026-10-11 | `d47e194` |
 | **HALL-065** | 🐛 | Scheduler SQ: timezone PY + duración 4 días | 2026-09-20 (F4.3 + F4.4 v2) | `7f1ce93` + `074fdc3` |

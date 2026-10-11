@@ -561,6 +561,20 @@ Obtiene la lista autorizada de pilotos para el **Selector Táctico de Pilotos** 
   ```
 - **Seguridad:** Todas las celdas se sanitizan contra inyecciones de fórmulas de hojas de cálculo.
 
+> **⚠️ Nota de cambio de semántica (FIX-310-ter, v4.8.17):**
+>
+> A partir de v4.8.17, la columna **"Estado"** del CSV exporta el **estado
+> administrativo** de la participación (`PENDING` / `VALIDATED` / `REJECTED`)
+> en lugar del **semáforo de rendimiento** (`VERDE` / `NARANJA` / `ROJO` / `NEGRO`).
+>
+> **Motivo:** unificar la fuente de verdad con la vista `v_admin_participations`
+> (FIX-310). Esta columna ahora refleja el estado del registro en el sistema,
+> no la performance del piloto.
+>
+> Para obtener el semáforo de rendimiento, usar el cálculo de `calculateStatus`
+> (ver `src/controllers/performances.controller.js`) o consultar el endpoint
+> `/api/events-v2/:id/participations`.
+
 ---
 
 ## 3.5. Módulo de Eventos Unificado (`/api/events-v2`) — F3.1
