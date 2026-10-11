@@ -82,108 +82,47 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 ## 📁 Estructura del Proyecto
 
 ```
-├── .dockerignore                 # Exclusiones de construcción Docker
-├── .env.example                  # Plantilla de variables de entorno requeridas
-├── .gitignore                    # Exclusiones de control de versiones Git
-├── API_REFERENCE.md              # Especificación completa de rutas y endpoints REST
-├── ARCHITECTURE.md               # Arquitectura de sistemas, diagramas y seguridad
-├── CHANGELOG.md                  # Bitácora detallada de versiones y soluciones
-├── DEPLOYMENT_GUIDE.md           # Manual de despliegue en Fly.io, Docker y VPS
-├── Dockerfile                    # Contenedor de producción en Node.js 22 Alpine
-├── fly.toml                      # Configuración de despliegue en Fly.io (gru)
-├── index.html                    # Single Page Application y loader dinámico
-├── link-account.html             # Terminal táctica de vinculación de cuentas Google
-├── manifest.json                 # Manifiesto PWA para instalación standalone
-├── package.json                  # Dependencias y scripts del proyecto
-├── PWA_SETUP.md                  # Guía de configuración PWA y Service Worker
-├── README.md                     # Documentación principal del sistema
-├── reset-password.html           # Terminal de restablecimiento de contraseña militar
-├── server.js                     # Servidor Express, middlewares y montaje de rutas
-├── sw.js                         # Service Worker v3.9.8 (Cache-First estáticos)
-├── USER_MANUAL.md                # Manual operativo para pilotos y oficiales
-│
-├── components/                   # Vistas y componentes HTML inyectados en runtime
-│   ├── admin-panel.html          # Panel de gestión de pilotos, roles y carga masiva
-│   ├── admin-plane-models.html   # Gestión de catálogo oficial de cazas (CRUD ADMIN/OWNER)
-│   ├── aircraft-stats-modal.html # Modal de detalles tácticos de aeronaves
-│   ├── all-performances.html     # Tabla histórica global de rendimientos
-│   ├── bm-discount.html          # Ficha técnica y reclamo de oferta del caza Black Market
-│   ├── bm-leaderboard.html       # Tabla de posiciones y podio Black Market
-│   ├── bm-missions.html          # Vista de misiones tácticas diarias (Días 1 a 5)
-│   ├── bm-panel.html             # Consola oficial de gestión Black Market (ADMIN/OWNER)
-│   ├── bm-progress.html          # Panel de progreso individual y cálculo de descuentos
-│   ├── dashboard.html            # Cuadro de mando operacional principal
-│   ├── footer.html               # Pie de página institucional militar
-│   ├── forgot-password-modal.html# Modal de recuperación asistida de credenciales
-│   ├── header.html               # Barra superior con llamadas tácticas y rango
-│   ├── help-modal.html           # Modal emergente de soporte rápido
-│   ├── help-view.html            # Vista integral de ayuda y preguntas frecuentes
-│   ├── historial-view.html       # Historial personal de rendimiento del piloto
-│   ├── normativas-view.html      # Repositorio de reglamentos y protocolos
-│   ├── owner-panel.html          # Panel C4ISR: Auditoría, copias de seguridad y logs
-│   ├── performance-export.html   # Centro de exportación de reportes CSV
-│   ├── performance-form.html     # Formulario de registro de tokens semanales
-│   ├── planes-view.html          # Hangar militar y gestión de Upgrades 2.0
-│   ├── profile-view.html         # Expediente personal del piloto y cambio de clave
-│   ├── session-warning.html      # Modal de expiración y advertencia de sesión
-│   └── settings-view.html        # Configuración de interfaz, temas y alertas
-│
-├── css/                          # Sistema de diseño militar y tokens CSS
-│   ├── components.css            # Estilos de botones, tablas, formularios y tarjetas
-│   ├── global.css                # Paleta táctica, variables CSS y reset
-│   ├── help.css                  # Estilos específicos del centro de ayuda
-│   ├── tactical-design.css       # Esquinas biseladas, estados y tipografía militar
-│   └── views.css                 # Moduladores de diseño para cada vista
-│
-├── js/                           # Lógica del cliente modular
-│   ├── api.js                    # Wrapper HTTP con Bearer JWT automático y endpoints BM
-│   ├── auth.js                   # Manejo de sesiones, JWT, storage y expiración
-│   ├── bm.js                     # Controlador táctico Black Market (Misiones, progreso y descuentos)
-│   ├── main.js                   # Inicialización, registro de Service Worker y eventos
-│   ├── performance.js            # Lógica de registro y cálculo de rendimientos
-│   ├── profile.js                # Gestión del expediente militar y cambio de clave
-│   ├── settings.js               # Preferencias de temas y notificaciones
-│   ├── tour.js                   # Guía asistida interactiva para nuevos pilotos
-│   ├── utils.js                  # Utilidades DOM, alertas toast y formateo
-│   └── views.js                  # Enrutador cliente y orquestador de vistas
-│
-├── sql/                          # 35 migraciones DDL (000_* a 034_*)
-│   │                             # → ver MIGRACION_SQL_REFERENCE.md
-│   ├── 000_full_schema_dump.sql  # Schema completo (bootstrap inicial)
-│   └── ... (34 archivos más)
-│
-└── src/                          # Núcleo del servidor Backend (ES Modules)
-    ├── config/
-    │   └── env.js                # Validación y carga centralizada de variables de entorno
-    ├── controllers/              # Controladores de lógica de negocio
-    │   ├── admin.controller.js   # Gestión de miembros, roles, estados y carga masiva
-    │   ├── auth.controller.js    # Login, verify, register, password change & reset
-    │   ├── dashboard.controller.js# Resumen C4ISR, promedios y Top 5
-    │   ├── events.controller.js  # Ventanas operativas y eventos activos
-    │   ├── events-v2.controller.js   # Módulo unificado de eventos SQ/BM (F3.1)
-    │   ├── events-v2-bm.controller.js# Submódulo BM del rediseño de eventos (F3.2)
-    │   ├── normativas.controller.js# Reglamentos, circulares y descargas oficiales
-    │   ├── owner.controller.js   # Auditoría de seguridad y respaldos de datos
-    │   ├── performances.controller.js# Registro de tokens y exportación CSV
-    │   ├── plane-models.controller.js# Catálogo de modelos de aeronaves militares (CRUD)
-    │   ├── planes.controller.js  # Hangar de aeronaves y Upgrades 2.0
-    │   ├── profile.controller.js # Perfil del combatiente y datos personales
-    │   └── settings.controller.js# Ajustes de usuario y preferencias
-    ├── db/
-    │   └── supabase.js           # Cliente Supabase PostgreSQL y healthchecks
-    ├── middlewares/
-    │   ├── auth.js               # Middleware JWT, requireAuth y control de roles
-    │   ├── errorHandler.js       # Manejador centralizado de excepciones HTTP
-    │   └── rateLimiter.js        # Limitadores de peticiones por IP
-    ├── routes/                   # Enrutadores Express modulares
-    ├── scripts/                  # Utilidades CLI de diagnóstico y mantenimiento
-    └── utils/                    # Seguridad, auditoría, esquemas y sanitización CSV
-        ├── email.js              # Nodemailer + SMTP Gmail (reset password)
-        ├── modEffects.js         # Cálculo de multiplicadores de mods
-        ├── upgradeNodes.js       # Consulta de upgrade_nodes_v2
-        ├── csv.js                # Sanitización contra CSV Injection
-        ├── security.js           # Generación de claves temporales MS-XXXX-XXXX
-        └── audit.js              # Registro de auditoría C4ISR
+├── .github/
+│   └── workflows/
+│       └── release-please.yml    # CI/CD de versionado automatico
+├── components/                   # 24 vistas/modales HTML inyectados en runtime
+├── css/                          # Sistema de diseno militar (5 archivos)
+├── docs/                         # Documentacion (14 subcarpetas tematicas)
+│   ├── adr/                      # Decisiones arquitectonicas (ADR-001 a ADR-010)
+│   ├── architecture/             # ARCHITECTURE.md, API_REFERENCE.md, MIGRACION_SQL_REFERENCE.md
+│   ├── auditorias/               # Auditorias externas (frontend legacy, sprint 1)
+│   ├── deployment/               # DEPLOYMENT_GUIDE, DEPLOYMENT_STATE, PWA_SETUP, RELEASE
+│   ├── handoffs/                 # Handoffs entre sesiones (SESSION_HANDOFF + historicos)
+│   ├── incidentes/               # Post-mortems de hallazgos (HALL-xxx)
+│   ├── mockups/                  # Mockups HTML de features
+│   ├── operations/               # USER_MANUAL, POLITICA_INACTIVACION, FIXES_APPLIED
+│   ├── planning/                 # ROADMAP, BACKLOG, PLAN_TRABAJO, CURRENT_STATE
+│   ├── rfc/                      # Propuestas formales (RFC-001)
+│   └── README.md                 # Indice maestro de docs/
+├── js/                           # Logica del cliente (11 archivos ES6+)
+├── scripts/                      # Scripts de mantenimiento (3 activos)
+│   └── archive/                  # 96 scripts one-shot archivados
+├── sql/                          # Migraciones DDL (000_* a 039_*)
+├── src/                          # Backend Express (ES Modules)
+│   ├── config/                   # env.js, logger.js, passport.js
+│   ├── controllers/              # Controladores de logica de negocio
+│   ├── db/                       # Cliente Supabase y healthchecks
+│   ├── middlewares/              # Auth, errorHandler, rateLimiter, correlationId
+│   ├── routes/                   # Enrutadores Express modulares
+│   ├── scripts/                  # Utilidades CLI de diagnostico
+│   └── utils/                    # Security, audit, schemas, csv, email, modEffects
+├── tests/                        # Suite Vitest (287 passing / 69 skipped)
+├── .env.example                  # Plantilla de variables de entorno
+├── .gitignore                    # Exclusiones de control de versiones
+├── CHANGELOG.md                  # Historial de releases (gestionado por release-please)
+├── Dockerfile                    # Contenedor de produccion (usuario no-root)
+├── README.md                     # Este archivo
+├── index.html                    # SPA loader dinamico
+├── link-account.html             # Terminal de vinculacion Google OAuth
+├── reset-password.html           # Terminal de reset de contrasena
+├── server.js                     # Servidor Express y middlewares
+├── sw.js                         # Service Worker (Cache-First, v4.8.10)
+└── package.json                  # Dependencias y scripts
 ```
 
 ---
