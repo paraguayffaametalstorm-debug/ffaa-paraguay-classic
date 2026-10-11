@@ -124,7 +124,7 @@ La app migró de Fly.io a **Render.com** el 2026-10-08 (ADR-009). Costo $0/mes. 
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión Activa:** v4.8.7 (Refactorización de docs + Release automático)
+> **Versión Activa:** v4.8.18
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 

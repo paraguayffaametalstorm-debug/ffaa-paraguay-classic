@@ -687,3 +687,30 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
 **Plan de Trabajo v1.0 · 2026-09-20 · Documento vivo**
+
+
+---
+
+## SPRINT 7 — Preparación para Torneos (EN CURSO)
+
+**Estado:** 🔨 En curso
+**Objetivo:** dejar la app lista para escalar (prerequisitos del sistema de torneos).
+**Criterio de salida:** tests de aeronaves verdes + RFC-002 aprobado.
+
+### Ítems del Sprint 7
+
+| ID | Categoría | Descripción | Esfuerzo |
+|---|---|---|---|
+| **BL-023** | 🏗️ | Encoding LF (mata warnings CRLF) | XS |
+| **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | XS |
+| **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | XS |
+| **BL-032** | 🏗️ | Unificar 4 variantes de mock Supabase | M |
+| **BL-025** | 🧪 | Re-implementar 39 tests skipeados | M |
+| **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | L |
+| **RFC-002** | 📚 | RFC del sistema de torneos internos | S |
+
+### Documentos de fase
+
+- `PLAN_TRABAJO_TESTS_AERONAVES.md` — plan de la fase de tests.
+- `docs/rfc/RFC-002-sistema-torneos.md` — propuesta del sistema de torneos.
+
