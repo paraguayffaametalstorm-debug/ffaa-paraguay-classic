@@ -1,6 +1,22 @@
 # 📡 Referencia de la API RESTful - PARAGUAY-FFAA | METALSTORM
 
-> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.5.8 del núcleo táctico.**
+> **Documentación exhaustiva de endpoints, parámetros, cabeceras de autorización y esquemas de respuesta para la versión v4.8.15 del núcleo táctico.**
+
+> **📌 Estado de sincronización de este documento**
+>
+> | Aspecto | Estado | Última verificación |
+> |---|---|---|
+> | Lista de endpoints | ✅ Sincronizada | FIX-405 (2026-10-11) |
+> | Métodos y paths | ✅ Sincronizados | FIX-405 (2026-10-11) |
+> | Niveles de acceso (RBAC) | ✅ Sincronizados | FIX-405 (2026-10-11) |
+> | Query params | ⚠️ Parcialmente verificados | FIX-405 (2026-10-11) |
+> | Request/response schemas | ⚠️ Requieren verificación contra Zod | Pendiente |
+> | Ejemplos de payload | ⚠️ Pueden estar desactualizados | Pendiente |
+>
+> **Fuente de verdad de endpoints:** `docs/audit/api-endpoints-real.md` (generado por `scripts/audit-api-endpoints.cjs`).
+>
+> **Próxima revisión:** al cerrar el Sprint 8.
+
 
 ---
 
@@ -61,35 +77,50 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Events v2** | `/api/events-v2/switch-status` | `GET` | Autenticado | Alias: estado del switch de eventos |
 | **Events v2** | `/api/events-v2/:id/submission-window` | `GET` | Autenticado | Info de ventana de carga SQ (ADR-008) |
 | **Events v2** | `/api/events-v2/bm/:eventId/submission-window` | `GET` | Autenticado | Info de ventana de carga BM (ADR-008) |
+| **Events v2** | `/api/events-v2/mine` | `GET` | Autenticado | Historial de participaciones del piloto (BL-028) |
+| **Events v2** | `/api/events-v2/admin/participations` | `GET` | `ADMIN` / `OWNER` | Vista global de participaciones (FIX-310) |
+| **Events v2** | `/api/events-v2/open` | `GET` | Autenticado | Alias de `/active` (compatibilidad) |
+| **Events v2 BM** | `/api/events-v2/bm/active` | `GET` | Autenticado | Evento BM activo |
+| **Events v2 BM** | `/api/events-v2/bm/:eventId` | `PUT` | `ADMIN` / `OWNER` | Editar evento BM |
+| **Events v2 BM** | `/api/events-v2/bm/:eventId/purchase` | `POST` | Autenticado | Adquirir caza con descuento BM |
+| **Events v2 BM** | `/api/events-v2/bm/:eventId/stats` | `GET` | `ADMIN` / `OWNER` | KPIs consolidados del evento BM |
 | **Performances**| `/api/performances` | `POST` | Autenticado | Registrar tokens y evaluar estado militar |
 | **Performances**| `/api/performances/pilots` | `GET` | Autenticado | Selector táctico de pilotos para ADMIN/OWNER |
 | **Performances**| `/api/performances/history` | `GET` | Autenticado | Historial personal de eventos y tokens |
 | **Performances**| `/api/performances/stats` | `GET` | Autenticado | Estadísticas calculadas del piloto |
 | **Performances**| `/api/performances/all` | `GET` | `ADMIN` / `OWNER` | Lista global de rendimientos |
 | **Performances**| `/api/performances/export` | `GET` | `ADMIN` / `OWNER` | Descargar reporte CSV sanitizado |
+| **Performances**| `/api/performances/my-history` | `GET` | Autenticado | Alias de `/history` (compatibilidad) |
 | **Planes** | `/api/planes/catalog/plane-models` | `GET` | Público | Catálogo oficial de 44 cazas militares |
 | **Planes** | `/api/planes/catalog/plane-mods` | `GET` | Público | Catálogo oficial de modificaciones |
 | **Planes** | `/api/planes` o `/my-planes` | `GET` | Autenticado | Cazas registrados en el hangar personal |
 | **Planes** | `/api/planes/:id/stats` | `GET` | Autenticado | Métricas de combate de la aeronave |
 | **Planes** | `/api/planes/:id/details` | `GET` | Autenticado | Telemetría completa con datos Wiki |
 | **Planes** | `/api/planes/:id/system` | `PUT` | Autenticado | **Upgrades 2.0**: Mejorar Fuselaje/Motor/Aviónica/Armas |
+| **Planes** | `/api/planes/:id/systems` | `PUT` | Autenticado | Actualización múltiple de sistemas (batch) |
+| **Planes** | `/api/planes/:id/recommendation` | `GET` | Autenticado | IA de recomendación táctica (playstyle) |
+| **Planes** | `/api/planes/:id/recommended-build` | `GET` | Autenticado | Build recomendada (alias) |
+| **Planes** | `/api/planes/export` | `GET` | Autenticado | Export CSV de hangar personal |
 | **Catalog** | `/api/plane-models` | `GET` | Autenticado | Listar catálogo de cazas (activos e inactivos) |
 | **Catalog** | `/api/plane-models/:id` | `GET` | Autenticado | Obtener ficha técnica completa de un caza |
 | **Catalog** | `/api/plane-models` | `POST` | `ADMIN` / `OWNER` | Registrar nuevo modelo de aeronave |
 | **Catalog** | `/api/plane-models/:id` | `PUT` | `ADMIN` / `OWNER` | Actualizar parámetros técnicos y combate |
 | **Catalog** | `/api/plane-models/:id` | `DELETE` | `ADMIN` / `OWNER` | Desactivar modelo del catálogo (soft-delete) |
 | **Catalog** | `/api/plane-models/:id/restore` | `POST` | `ADMIN` / `OWNER` | Reactivar modelo en el catálogo |
+| **Catalog** | `/api/plane-models/:id/restore` | `PATCH` | `ADMIN` / `OWNER` | Alias PATCH de restore |
 | **Planes** | `/api/planes` | `POST` | Autenticado | Adquirir o registrar aeronave en hangar |
 | **Planes** | `/api/planes/:id` | `PUT` | Autenticado | Modificar nivel o mods de aeronave |
 | **Planes** | `/api/planes/:id` | `DELETE` | Autenticado | Desarmar o eliminar caza del hangar |
 | **Normativas** | `/api/normativas` | `GET` | Autenticado | Lista de circulares y reglamentos |
 | **Normativas** | `/api/normativas` | `POST` | `ADMIN` / `OWNER` | Publicar nuevo reglamento oficial |
 | **Normativas** | `/api/normativas/:id/download` | `GET` | Autenticado | Descargar archivo de normativa oficial |
+| **Normativas** | `/api/normativas/` | `GET` | Autenticado | Listar reglamentos y circulares |
 | **Presence** | `/api/presence/online` | `POST` | Autenticado | Registrar al piloto como conectado |
 | **Presence** | `/api/presence/offline` | `POST` | Autenticado | Desconectar al piloto del monitor de presencia |
 | **Presence** | `/api/presence/active` | `GET` | Público | Conteo de pilotos actualmente en línea |
 | **Profile** | `/api/profile` o `/me` | `GET` | Autenticado | Obtener expediente táctico del piloto |
 | **Profile** | `/api/profile` o `/me` | `PUT` | Autenticado | Actualizar Callsign, teléfono o bio. Acepta cambio de nick (v4.5.0). |
+| **Profile** | `/api/profile/change-password` | `POST` | Autenticado | Cambio de contraseña desde perfil |
 > **Campo `google_id` (v4.5.8+):** La tabla `users` incluye la columna
 > `google_id TEXT` (nullable) con indice parcial `idx_users_google_id`. Almacena el
 > `sub` claim de Google OAuth 2.0. Agregado el 2026-09-23 como parte de BL-017 (HALL-061).
@@ -136,9 +167,29 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Admin** | `/api/admin/bulk-upload` | `POST` | `ADMIN` / `OWNER` | Carga masiva de tokens (máx 20/15m) |
 | **Admin** | `/api/admin/events/activate-bm`| `POST` | `ADMIN` / `OWNER` | Activar evento Black Market |
 | **Admin** | `/api/admin/users/:id/reset-password`| `POST`| `ADMIN` / `OWNER` | Generar clave aleatoria `MS-XXXX-XXXX` |
+| **Admin** | `/api/admin/scheduler/run` | `POST` | `OWNER` | Forzar tick del scheduler (HALL-072) |
+| **Admin** | `/api/admin/scheduler/status` | `GET` | `ADMIN` / `OWNER` | Estado del scheduler |
+| **Admin** | `/api/admin/results/:eventId/export` | `GET` | `ADMIN` / `OWNER` | Payload de reporte visual del evento (v4.6.0) |
+| **Admin** | `/api/admin/members` o `/users` | `GET` | `ADMIN` / `OWNER` | Listado completo de miembros (alias) |
+| **Admin** | `/api/admin/members` o `/users` | `POST` | `ADMIN` / `OWNER` | Alta de nuevo piloto (alias) |
+| **Admin** | `/api/admin/members/:id/status` o `/users/:id/status` | `PUT`/`PATCH` | `ADMIN` / `OWNER` | Cambiar status (alias) |
+| **Admin** | `/api/admin/members/:id/role` o `/users/:id/role` | `PUT`/`PATCH` | `ADMIN` / `OWNER` | Cambiar rol (alias) |
+| **Admin** | `/api/admin/members/active` | `GET` | `ADMIN` / `OWNER` | Listar solo pilotos activos |
+| **Admin** | `/api/admin/events` | `GET` | `ADMIN` / `OWNER` | Listar eventos (tabla legacy) |
+| **Admin** | `/api/admin/all-performances` | `GET` | `ADMIN` / `OWNER` | ⚠️ LEGACY — usar `/api/events-v2/admin/participations` |
+| **Admin** | `/api/admin/performances` | `POST` | `ADMIN` / `OWNER` | ⚠️ LEGACY — usar `/api/events-v2/:id/participations` |
+| **Admin** | `/api/admin/export-performances` | `GET` | `ADMIN` / `OWNER` | ⚠️ LEGACY — export CSV |
+| **Admin** | `/api/admin/events/activate-bm` | `POST` | `ADMIN` / `OWNER` | ⚠️ LEGACY — usar `POST /api/events-v2` (type=BM) |
+| **Admin** | `/api/admin/mentorships` | `GET` | `ADMIN` / `OWNER` | Listar mentorías (ADR-010) |
+| **Admin** | `/api/admin/mentorships` | `POST` | `ADMIN` / `OWNER` | Crear mentoría manualmente |
+| **Admin** | `/api/admin/mentorships/:id` | `PATCH` | `ADMIN` / `OWNER` | Cerrar/reasignar mentoría |
 | **Owner** | `/api/owner/audit-summary` | `GET` | `OWNER` | Conteo de auditorías y logs en 24h |
 | **Owner** | `/api/owner/audit-logs` | `GET` | `OWNER` | Historial paginado con filtros de auditoría |
 | **Owner** | `/api/owner/backup/run` | `POST` | `OWNER` | Ejecución de volcado manual de datos |
+| **Owner** | `/api/owner/backup/list` | `GET` | `OWNER` | Listar backups persistidos (máx 30) |
+| **Owner** | `/api/owner/backup/download/:id` | `GET` | `OWNER` | Descargar JSON con verificación de hash SHA-256 |
+| **Owner** | `/api/owner/backup/:id` | `DELETE` | `OWNER` | Eliminar backup manualmente |
+| **Owner** | `/api/owner/error-logs` | `GET` | `OWNER` | Consultar `error_logs` del sistema |
 
 ---
 
@@ -818,6 +869,73 @@ Elimina una participación.
 
 ---
 
+#### `GET /api/events-v2/mine`
+
+Historial de participaciones del piloto autenticado (BL-028, v4.7.3).
+
+- **Acceso:** Autenticado (`requireAuth`).
+- **Query Params:** `?limit=N&type=SQUADRON&status=CLOSED` (todos opcionales).
+- **Payload:** retrocompatible con el legacy `/api/performances/my-history`.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "participations": [
+      {
+        "id": "uuid",
+        "event_id": "uuid",
+        "event_name": "Squadron Event 2026-W38",
+        "event_type": "SQUADRON",
+        "event_status": "CLOSED",
+        "tokens": 185,
+        "days_connected": 6,
+        "computed_points": 185,
+        "perf_status": "VERDE",
+        "created_at": "2026-09-21T14:30:00Z"
+      }
+    ],
+    "total": 1,
+    "filters": { "limit": 50, "type": null, "status": null }
+  }
+  ```
+
+#### `GET /api/events-v2/admin/participations`
+
+Vista global de participaciones (ADMIN/OWNER). Reemplaza el legacy `GET /api/admin/all-performances` (FIX-310).
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Query Params:**
+  | Param | Tipo | Default | Descripción |
+  |---|---|---|---|
+  | `event_id` | UUID | (todos) | Filtrar por evento |
+  | `status` | `PENDING` \| `VALIDATED` \| `REJECTED` | (todos) | Filtrar por status |
+  | `limit` | int | 200 | Máx 500 |
+  | `offset` | int | 0 | Paginación |
+- **Fuente:** Vista SQL `v_admin_participations` (ver `sql/042_admin_participations_view.sql`).
+- **⚠️ FIX-310-bis:** El `nick` y `role` se resuelven desde `users` (no desde `event_participations`) para evitar el bug de participaciones corruptas.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "participations": [
+      {
+        "id": "uuid",
+        "event_id": "uuid",
+        "user_id": "uuid",
+        "nick": "AIRJUMP",
+        "role": "MIEMBRO",
+        "data": { "tokens": 185, "days_connected": 6 },
+        "computed_points": 185,
+        "status": "PENDING",
+        "created_at": "2026-10-05T14:30:00Z"
+      }
+    ],
+    "total": 722,
+    "limit": 200,
+    "offset": 0
+  }
+  ```
+
 ### 3.5.4 Deprecación de Endpoints Legacy
 
 > **⚠️ IMPORTANTE:** Los siguientes endpoints están **deprecados** desde el 2026-09-17 y serán **eliminados** el **2026-12-16** (sunset de 90 días).
@@ -1286,6 +1404,43 @@ Modifica el rango militar de un piloto aplicando **cuotas institucionales estric
   }
   ```
 
+### Scheduler Manual (HALL-072)
+
+Endpoints para forzar y consultar el scheduler de eventos SQ cuando Render duerme la app (cold start).
+
+#### `POST /api/admin/scheduler/run`
+
+Fuerza un tick del scheduler a demanda.
+
+- **Acceso:** `OWNER` exclusivamente.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "message": "Tick del scheduler ejecutado",
+    "scheduler_status": { "status": "OK", "last_tick_at": "..." }
+  }
+  ```
+
+#### `GET /api/admin/scheduler/status`
+
+Consulta el estado del scheduler sin ejecutarlo.
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "scheduler_status": {
+      "status": "OK",
+      "last_tick_at": "2026-10-11T20:00:00Z",
+      "last_tick_ago_seconds": 26
+    }
+  }
+  ```
+
+**Referencia:** `docs/incidentes/HALL-072-scheduler-render.md`.
+
 ### `POST /api/admin/users/:userId/reset-password`
 Resetea la contraseña del usuario a un valor criptográficamente seguro y de alta entropía.
 - **Response Exitosa (200 OK):**
@@ -1739,6 +1894,6 @@ acepta eventos con `status === 'CLOSED'` si la ventana de carga está abierta
 
 ---
 
-*Versión: v4.5.9 · Actualizado: 2026-09-23*
+*Versión: v4.8.15 · Actualizado: 2026-10-11*
 
 
