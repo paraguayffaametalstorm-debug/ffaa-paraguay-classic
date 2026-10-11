@@ -8,6 +8,14 @@
 
 ---
 
+## [4.8.16](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.15...v4.8.16) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **api:** alinear API_REFERENCE con endpoints reales (FIX-405) ([7e53c1e](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/7e53c1ef47ba58faa0a52e48a9ab013fe1f6ac94))
+* **handoff:** agregar handoff v4.8.15 + registrar FIX-316 ([873952f](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/873952fe0a3eae871aa96fc56f644b06085331be))
+
 ## [4.8.15](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.14...v4.8.15) (2026-10-11)
 
 
