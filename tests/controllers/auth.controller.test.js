@@ -54,7 +54,7 @@ import { getSupabase } from '../../src/db/supabase.js';
 import { logSecurityEvent } from '../../src/utils/audit.js';
 import { generateTemporaryPassword, getNextUserId } from '../../src/utils/security.js';
 import { sendPasswordResetEmail } from '../../src/utils/email.js';
-import { createMockSupabase } from '../helpers/mockSupabase.js';
+import { createMockSupabase } from '../helpers/mockSupabaseMSW.js';
 
 // --- Configuración de MSW (Mock Service Worker) ---
 // BL-025: Un SOLO handler para */users, con matching explícito por query param.

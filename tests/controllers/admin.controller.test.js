@@ -51,7 +51,7 @@ import {
 import { getSupabase } from '../../src/db/supabase.js';
 import { logSecurityEvent, logAuditChange } from '../../src/utils/audit.js';
 import { generateTemporaryPassword } from '../../src/utils/security.js';
-import { createMockSupabase } from '../helpers/mockSupabase.js';
+import { createMockSupabase } from '../helpers/mockSupabaseMSW.js';
 import { createHybridSupabase } from '../helpers/mockSupabaseHybrid.js';
 
 // ========================================================================

@@ -42,7 +42,7 @@ import {
 } from '../../src/controllers/owner.controller.js';
 import { getSupabase } from '../../src/db/supabase.js';
 import { logSecurityEvent, logAuditChange } from '../../src/utils/audit.js';
-import { createMockSupabase } from '../helpers/mockSupabase.js';
+import { createMockSupabase } from '../helpers/mockSupabaseMSW.js';
 
 // --- Configuración de MSW ---
 // Simulamos las tablas necesarias para los backups

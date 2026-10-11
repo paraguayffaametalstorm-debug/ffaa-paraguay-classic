@@ -12,8 +12,8 @@ import {
   supaOk,
   supaError,
   resetSupabaseMock
-} from '../mocks/supabase.js';
-import { mockReq, mockRes } from '../mocks/express.js';
+} from '../helpers/mockSupabaseQueue.js';
+import { mockReq, mockRes } from '../helpers/express.js';
 import { bmEventActive } from '../fixtures/bm-events.js';
 import { participationFull } from '../fixtures/bm-participations.js';
 import { userMember } from '../fixtures/users.js';

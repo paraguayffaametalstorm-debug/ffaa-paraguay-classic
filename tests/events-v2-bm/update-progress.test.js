@@ -11,8 +11,8 @@ import {
   queueResponse,
   supaOk,
   resetSupabaseMock
-} from '../mocks/supabase.js';
-import { mockReq, mockRes } from '../mocks/express.js';
+} from '../helpers/mockSupabaseQueue.js';
+import { mockReq, mockRes } from '../helpers/express.js';
 import {
   bmEventActive,
   bmEventClosed,
