@@ -8,6 +8,19 @@
 
 ---
 
+## [4.8.20](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.19...v4.8.20) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **sql:** BL-033 - user_id NOT NULL (alinear BD al DDL) ([8cdd8b5](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/8cdd8b5a34dadca5dd3e2f35c9aec61792fe0f72))
+
+
+### 📚 Documentation
+
+* **backlog:** cerrar BL-023 + BL-033 + FIX-316 (quick wins Sprint 7) ([1b97ebc](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/1b97ebce2e09dec601eb8d36df4fbd96a7c165e7))
+* setup Sprint 7 + plan tests de aeronaves + RFC-002 torneos ([98e77f1](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/98e77f1714d404d3bd3c8481b268cebea3443e2f))
+
 ## [4.8.19](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.18...v4.8.19) (2026-10-11)
 
 
