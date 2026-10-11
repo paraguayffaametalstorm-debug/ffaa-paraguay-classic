@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.14](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.13...v4.8.14) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **backlog:** cerrar FIX-310 + FIX-310-bis + registrar FIX-310-ter ([7798882](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/7798882171a9d7079c5b5fabcd2aa00ee0bcf581))
+
 ## [4.8.13](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.12...v4.8.13) (2026-10-11)
 
 
