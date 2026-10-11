@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.9](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.8...v4.8.9) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **scripts:** bumpear sw.js a v4.8.8 y normalizar README a UTF-8 ([dbd6fd0](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/dbd6fd01eff726f71dd591cdb4b59e2a9e3df158))
+
 ## [4.8.8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.7...v4.8.8) (2026-10-11)
 
 
