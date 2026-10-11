@@ -8,6 +8,20 @@
 
 ---
 
+## [4.8.7](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.6...v4.8.7) (2026-10-11)
+
+
+### ♻️ Refactoring
+
+* **docs:** reorganizar documentación en estructura docs/ ([972e71f](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/972e71fbbfca223c12856086edf1188f9196a8cf))
+* **docs:** reorganizar documentación en estructura docs/ ([cbe479b](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/cbe479b94b096084e6197622d5dd5c1cff1cd046))
+
+
+### 📚 Documentation
+
+* **refactor:** actualizar referencias cruzadas post-reorganización ([87658a8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/87658a88e3cbe0ad10bf1726cf9478711d437b3e))
+* **refactor:** agregar índice maestro y corregir último link roto ([18e2342](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/18e2342b4fe9604f962a5cb2930f96395411fed9))
+
 ## [4.8.6](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.5...v4.8.6) (2026-10-11)
 
 
