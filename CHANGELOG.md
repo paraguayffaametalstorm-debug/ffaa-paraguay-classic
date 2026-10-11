@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.5](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.4...v4.8.5) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **release:** agregar RELEASE.md, seccion de versionado en README y reglas en PLAN_TRABAJO ([8cedf4e](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/8cedf4e8e96defa666326d60aa95d4818b10e6c4))
+
 ## [4.8.4](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.3...v4.8.4) (2026-10-11)
 
 
