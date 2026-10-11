@@ -8,6 +8,20 @@
 
 ---
 
+## [4.8.10](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.9...v4.8.10) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **docker:** correr como usuario no-root (FIX-703) ([23d1ea5](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/23d1ea5388d44128bca599015e7b836b27f7557f))
+* **docker:** correr como usuario no-root (FIX-703) ([3f06a0b](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/3f06a0b330c6edc97988a9adba9e0b1144483a6a))
+* **docker:** correr como usuario no-root (FIX-703) + actualizar backlog ([e13e389](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/e13e389e24169d828fb6962406dc7fd384abffa4))
+
+
+### 📚 Documentation
+
+* **backlog:** eliminar entrada duplicada de FIX-703 ([0f776f8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/0f776f8cce082c08f327fa7eb67fd42cc8d60564))
+
 ## [4.8.9](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.8...v4.8.9) (2026-10-11)
 
 
