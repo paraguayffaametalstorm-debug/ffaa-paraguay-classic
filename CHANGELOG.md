@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.12](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.11...v4.8.12) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **events-v2:** crear endpoint admin/participations (FIX-310) ([2e59c3b](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/2e59c3b4e43ae9536d77b8823b7b7db86ee320bb))
+
 ## [4.8.11](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.10...v4.8.11) (2026-10-11)
 
 
