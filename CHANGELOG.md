@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.15](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.14...v4.8.15) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **handoff:** agregar handoff v4.8.14 con resumen de sesión FIX-310 ([7a7238a](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/7a7238a52ccee67b7f1d908c3ec148bedd4d5e95))
+
 ## [4.8.14](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.13...v4.8.14) (2026-10-11)
 
 
