@@ -652,7 +652,7 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 - 📜 **[Plan de Mejora Continua v1.0 (Histórico, cerrado)](./docs/planning/PLAN_MEJORA_CONTINUA.md)**
 - 🎖️ **[Decisiones Arquitectónicas (ADRs)](./docs/adr/)**
 - 📄 **[Propuestas Formales (RFCs)](./docs/rfc/)**
-- 🔄 **[Handoff entre Sesiones](./docs/SESSION_HANDOFF.md)**
+- 🔄 **[Handoff entre Sesiones](./docs/handoffs/SESSION_HANDOFF.md)**
 
 ---
 
