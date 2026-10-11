@@ -37,9 +37,11 @@ export const getSummary = async (req, res, next) => {
         });
 
         if (activeUsersList.length > 0) {
-          // Obtener performances para calcular promedios actualizados
+          // FIX-310-quater: leer de v_admin_participations (fuente canónica).
+          // La vista devuelve user_id como UUID (users.id), no como INTEGER.
+          // Ref: HALL-077.
           const { data: perfData } = await supabase
-            .from('performances')
+            .from('v_admin_participations')
             .select('user_id, tokens, nick');
 
           const avgMap = {};
@@ -52,7 +54,9 @@ export const getSummary = async (req, res, next) => {
 
           // Construir lista con avg_tokens calculado
           usersWithAvg = activeUsersList.map(u => {
-            const keyId = u.user_id ? String(u.user_id) : (u.id ? String(u.id) : '');
+            // FIX-310-quater: priorizar UUID (id) porque la vista devuelve UUID.
+            // Fallback a user_id INTEGER por compatibilidad con datos legacy.
+            const keyId = u.id ? String(u.id) : (u.user_id ? String(u.user_id) : '');
             const keyNick = (u.nick || '').toLowerCase();
             const stats = avgMap[keyId] || avgMap[keyNick] || null;
             const avg = stats && stats.count > 0 ? Math.round(stats.sum / stats.count) : (Number(u.avg_tokens) || 0);

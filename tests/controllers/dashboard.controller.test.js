@@ -35,7 +35,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 let mockResponses = {
   events: { data: [], error: null },
   users: { data: [], error: null },
-  performances: { data: [], error: null }
+  performances: { data: [], error: null },
+  // FIX-310-quater: la vista v_admin_participations es la nueva fuente.
+  v_admin_participations: { data: [], error: null }
 };
 
 const mockSupabase = {
@@ -45,8 +47,10 @@ const mockSupabase = {
       order: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       then: (resolve) => {
-        // Permite await sobre la cadena
-        const response = mockResponses[table] || { data: null, error: null };
+        // FIX-310-quater: la vista v_admin_participations es la nueva fuente.
+        // Alias a "performances" para no duplicar claves en el mock.
+        const key = table === 'v_admin_participations' ? 'performances' : table;
+        const response = mockResponses[key] || { data: null, error: null };
         return Promise.resolve(response).then(resolve);
       }
     };
@@ -268,9 +272,11 @@ describe('getSummary (dashboard.controller)', () => {
       },
       performances: {
         data: [
-          { user_id: 10, tokens: 100, nick: 'U1' },
-          { user_id: 20, tokens: 200, nick: 'U2' }
-          // U3 no tiene performance → avg = 0
+          // FIX-310-quater: la fuente es v_admin_participations.
+          // user_id viene como UUID (users.id), no como INTEGER.
+          { user_id: 'uuid-1', tokens: 100, nick: 'U1' },
+          { user_id: 'uuid-2', tokens: 200, nick: 'U2' }
+          // uuid-3 (U3) no tiene performance → avg = 0
         ],
         error: null
       }
@@ -334,12 +340,14 @@ describe('getSummary (dashboard.controller)', () => {
       },
       performances: {
         data: [
-          { user_id: 1, tokens: 100, nick: 'P1' },
-          { user_id: 2, tokens: 300, nick: 'P2' },
-          { user_id: 3, tokens: 200, nick: 'P3' },
-          { user_id: 4, tokens: 500, nick: 'P4' },
-          { user_id: 5, tokens: 400, nick: 'P5' },
-          { user_id: 6, tokens: 50,  nick: 'P6' }
+          // FIX-310-quater: la fuente es v_admin_participations.
+          // user_id viene como UUID (users.id), no como INTEGER.
+          { user_id: 'uuid-1', tokens: 100, nick: 'P1' },
+          { user_id: 'uuid-2', tokens: 300, nick: 'P2' },
+          { user_id: 'uuid-3', tokens: 200, nick: 'P3' },
+          { user_id: 'uuid-4', tokens: 500, nick: 'P4' },
+          { user_id: 'uuid-5', tokens: 400, nick: 'P5' },
+          { user_id: 'uuid-6', tokens: 50,  nick: 'P6' }
         ],
         error: null
       }
