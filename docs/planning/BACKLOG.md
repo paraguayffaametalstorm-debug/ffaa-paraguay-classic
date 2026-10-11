@@ -91,6 +91,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Estado | Esfuerzo | Notas |
 |---|---|---|---|---|---|
+| **FIX-316** | 🏗️ | Eliminar `src/routes/admin.users.routes.js` (código muerto) | 📋 Priorizado | XS (30 min) | El archivo no está montado en `server.js`. Usa middleware `authenticate` (no existe; el proyecto usa `requireAuth`). Expone `password_hash` en `.select()`. Endpoints inalcanzables. Ref: detectado durante FIX-405. |
 | **BL-006** | 🎨 | Landing pública sin login | 💡 Idea | M (1 día) | Mostrar catálogo de aviones a público general antes de login. |
 | **BL-007** | 🎨 | Dashboard con WebSockets (tiempo real) | 💡 Idea | L (2 días) | Actualizar stats del dashboard sin recargar. |
 | **BL-008** | ✨ | Exportación PDF de credenciales | 💡 Idea | S (4h) | Generar PDF con credencial + QR para imprimir. |
