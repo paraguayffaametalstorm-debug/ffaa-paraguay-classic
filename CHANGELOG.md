@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.17](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.16...v4.8.17) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **performances:** export CSV usa v_admin_participations (FIX-310-ter) ([2f73059](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/2f73059e23809416a6ed7f753081241d4970d235))
+
 ## [4.8.16](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.15...v4.8.16) (2026-10-11)
 
 
