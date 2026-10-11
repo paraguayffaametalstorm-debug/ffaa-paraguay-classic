@@ -1,0 +1,29 @@
+docs\adr\ADR-010-seccion-veteranos.md:**Plan completo:** ver [`PLAN_TRABAJO_VETERANOS.md`](../../PLAN_TRABAJO_VETERANOS.md).
+docs\planning\BACKLOG.md:- [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica a 12 meses.
+docs\planning\BACKLOG.md:- [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprints activos (qué se hace ahora).
+docs\planning\BACKLOG.md:- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (fases 0-6, cerrado).
+docs\planning\PLAN_MEJORA_CONTINUA.md:> Para el trabajo activo (sprints en curso), ver **[`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md)**.
+docs\planning\PLAN_TRABAJO.md:- **Versionado automático.** Las versiones se generan desde los commits con `release-please`. Ver [`RELEASE.md`](./RELEASE.md) para el workflow completo.
+docs\planning\PLAN_TRABAJO.md:**Ver plan detallado:** [`PLAN_TRABAJO_VETERANOS.md`](./PLAN_TRABAJO_VETERANOS.md).
+docs\planning\PLAN_TRABAJO.md:- [`BACKLOG.md`](./BACKLOG.md) — Ideas y features futuras.
+docs\planning\PLAN_TRABAJO.md:- [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica.
+docs\planning\PLAN_TRABAJO.md:- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (cerrado).
+docs\planning\PLAN_TRABAJO_VETERANOS.md:- [`BACKLOG.md`](./BACKLOG.md) — BL-031
+docs\planning\PLAN_TRABAJO_VETERANOS.md:- [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprint 6
+docs\planning\ROADMAP.md:- [`BACKLOG.md`](./BACKLOG.md) — Lista detallada de items.
+docs\planning\ROADMAP.md:- [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprints activos (qué se hace ahora).
+docs\planning\ROADMAP.md:- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (cerrado).
+README.md:- 🗺️ **[Visión Estratégica a 12 meses (Roadmap)](./ROADMAP.md)**
+README.md:- 📋 **[Backlog de Ideas y Features](./BACKLOG.md)**
+README.md:- 🔧 **[Plan de Trabajo — Sprints Activos](./PLAN_TRABAJO.md)**
+README.md:- 🚀 **[Estado Congelado del Despliegue (Deployment State)](./DEPLOYMENT_STATE.md)**
+README.md:- 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./CURRENT_STATE.md#resumen-ejecutivo)**
+README.md:- 🔧 **[Historial de Fixes Aplicados y Lógica Tipada](./FIXES_APPLIED.md)**
+README.md:- 📡 **[Referencia Completa de la API RESTful](./API_REFERENCE.md)**
+README.md:- 🏛️ **[Arquitectura de Sistemas y Seguridad C4ISR](./ARCHITECTURE.md)**
+README.md:- 🚀 **[Guía de Despliegue en Producción (Fly.io / Docker)](./DEPLOYMENT_GUIDE.md)**
+README.md:- 📖 **[Manual de Usuario y Operaciones de Vuelo](./USER_MANUAL.md)**
+README.md:- 📱 **[Configuración PWA, Service Worker y Modo Offline](./PWA_SETUP.md)**
+README.md:- 🛡️ **[Política Oficial de Inactivación y Retiro Militar](./POLITICA_INACTIVACION.md)**
+README.md:- 📜 **[Plan de Mejora Continua v1.0 (Histórico, cerrado)](./PLAN_MEJORA_CONTINUA.md)**
+README.md:**Guía completa:** [`RELEASE.md`](./RELEASE.md)

@@ -183,7 +183,7 @@ Al crear un miembro (`POST /api/admin/members`):
 
 **Estado actual:** 📝 Proposed. No hay código implementado.
 
-**Plan completo:** ver [`PLAN_TRABAJO_VETERANOS.md`](../../PLAN_TRABAJO_VETERANOS.md).
+**Plan completo:** ver [`PLAN_TRABAJO_VETERANOS.md`](../planning/PLAN_TRABAJO_VETERANOS.md).
 
 **Archivos planeados:**
 

@@ -630,26 +630,26 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 
 ### Documentos de gestión del proyecto
 
-- 🗺️ **[Visión Estratégica a 12 meses (Roadmap)](./ROADMAP.md)**
-- 📋 **[Backlog de Ideas y Features](./BACKLOG.md)**
-- 🔧 **[Plan de Trabajo — Sprints Activos](./PLAN_TRABAJO.md)**
+- 🗺️ **[Visión Estratégica a 12 meses (Roadmap)](./docs/planning/ROADMAP.md)**
+- 📋 **[Backlog de Ideas y Features](./docs/planning/BACKLOG.md)**
+- 🔧 **[Plan de Trabajo — Sprints Activos](./docs/planning/PLAN_TRABAJO.md)**
 - 📝 **[Histórico de Versiones (Changelog)](./CHANGELOG.md)**
 
 ### Documentos técnicos
 
-- 🚀 **[Estado Congelado del Despliegue (Deployment State)](./DEPLOYMENT_STATE.md)**
-- 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./CURRENT_STATE.md#resumen-ejecutivo)**
-- 🔧 **[Historial de Fixes Aplicados y Lógica Tipada](./FIXES_APPLIED.md)**
-- 📡 **[Referencia Completa de la API RESTful](./API_REFERENCE.md)**
-- 🏛️ **[Arquitectura de Sistemas y Seguridad C4ISR](./ARCHITECTURE.md)**
-- 🚀 **[Guía de Despliegue en Producción (Fly.io / Docker)](./DEPLOYMENT_GUIDE.md)**
-- 📖 **[Manual de Usuario y Operaciones de Vuelo](./USER_MANUAL.md)**
-- 📱 **[Configuración PWA, Service Worker y Modo Offline](./PWA_SETUP.md)**
-- 🛡️ **[Política Oficial de Inactivación y Retiro Militar](./POLITICA_INACTIVACION.md)**
+- 🚀 **[Estado Congelado del Despliegue (Deployment State)](./docs/deployment/DEPLOYMENT_STATE.md)**
+- 📊 **[Resumen Ejecutivo de Estado Actual (Current State)](./docs/planning/CURRENT_STATE.md#resumen-ejecutivo)**
+- 🔧 **[Historial de Fixes Aplicados y Lógica Tipada](./docs/operations/FIXES_APPLIED.md)**
+- 📡 **[Referencia Completa de la API RESTful](./docs/architecture/API_REFERENCE.md)**
+- 🏛️ **[Arquitectura de Sistemas y Seguridad C4ISR](./docs/architecture/ARCHITECTURE.md)**
+- 🚀 **[Guía de Despliegue en Producción (Fly.io / Docker)](./docs/deployment/DEPLOYMENT_GUIDE.md)**
+- 📖 **[Manual de Usuario y Operaciones de Vuelo](./docs/operations/USER_MANUAL.md)**
+- 📱 **[Configuración PWA, Service Worker y Modo Offline](./docs/deployment/PWA_SETUP.md)**
+- 🛡️ **[Política Oficial de Inactivación y Retiro Militar](./docs/operations/POLITICA_INACTIVACION.md)**
 
 ### Documentos normativos e históricos
 
-- 📜 **[Plan de Mejora Continua v1.0 (Histórico, cerrado)](./PLAN_MEJORA_CONTINUA.md)**
+- 📜 **[Plan de Mejora Continua v1.0 (Histórico, cerrado)](./docs/planning/PLAN_MEJORA_CONTINUA.md)**
 - 🎖️ **[Decisiones Arquitectónicas (ADRs)](./docs/adr/)**
 - 📄 **[Propuestas Formales (RFCs)](./docs/rfc/)**
 - 🔄 **[Handoff entre Sesiones](./docs/SESSION_HANDOFF.md)**
@@ -668,7 +668,7 @@ El proyecto usa **versionado automático** basado en [Conventional Commits](http
 4. Al mergear el PR, se crea el tag y la Release automáticamente.
 5. Render auto-deploya la nueva versión.
 
-**Guía completa:** [`RELEASE.md`](./RELEASE.md)
+**Guía completa:** [`RELEASE.md`](./docs/deployment/RELEASE.md)
 
 ---
 
