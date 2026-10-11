@@ -8,6 +8,16 @@
 
 ---
 
+## [4.8.11](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.10...v4.8.11) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **handoff:** agregar handoff v4.8.10 con resumen de sesión ([cd8dc5d](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/cd8dc5db167f4af0ddae97133c58c9412f5ab1d9))
+* **plan-trabajo:** actualizar version de referencia a v4.8.10 ([3ccc205](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/3ccc2059a7d7edddf4e3c8f6e0713c126908c318))
+* **readme:** actualizar arbol de carpetas post-refactor de docs ([c1e7cec](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/c1e7cec67fba1c24b771da5f8ef72a57deabb9d7))
+* **readme:** sincronizar badge, footer y version real a v4.8.10 ([982ea20](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/982ea20bbab240822ac1990311c9eba526cef2bf))
+
 ## [4.8.10](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.9...v4.8.10) (2026-10-11)
 
 
