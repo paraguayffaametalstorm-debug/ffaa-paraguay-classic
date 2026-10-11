@@ -697,7 +697,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **Objetivo:** dejar la app lista para escalar (prerequisitos del sistema de torneos).
 **Criterio de salida:** tests de aeronaves verdes + RFC-002 aprobado.
 
-**Progreso:** 5/8 ítems cerrados.
+**Progreso:** 6/8 ítems cerrados.
 
 ### Ítems del Sprint 7
 
@@ -706,7 +706,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **BL-023** | 🏗️ | Encoding LF (mata warnings CRLF) | XS |
 | **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | XS |
 | **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | XS |
-| **BL-032** | 🏗️ | Unificar 4 variantes de mock Supabase | M |
+| **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README (reformulado) | ✅ Cerrado |
 | **BL-025** | 🧪 | Re-implementar tests skipeados (54 des-skipeados) | ✅ Cerrado |
 | **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | ✅ Cerrado |
 | **RFC-002** | 📚 | RFC del sistema de torneos internos | S |

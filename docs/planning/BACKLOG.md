@@ -86,7 +86,6 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Estado | Esfuerzo | Notas |
 |---|---|---|---|---|---|
-| **BL-032** | 🏗️ | Unificar 4 variantes de mock Supabase | 💡 Idea | M (1 día) | Existen 4 mocks distintos: `helpers/mockSupabase.js` (MSW), `helpers/mockSupabaseHybrid.js` (in-memory), `mocks/supabase.js` (cola sin filtros) e inline en `tests/controllers/dashboard.controller.test.js`. Consolidar en el híbrido. Ref: detectado durante BL-022. |
 | **BL-006** | 🎨 | Landing pública sin login | 💡 Idea | M (1 día) | Mostrar catálogo de aviones a público general antes de login. |
 | **BL-007** | 🎨 | Dashboard con WebSockets (tiempo real) | 💡 Idea | L (2 días) | Actualizar stats del dashboard sin recargar. |
 | **BL-008** | ✨ | Exportación PDF de credenciales | 💡 Idea | S (4h) | Generar PDF con credencial + QR para imprimir. |
@@ -131,6 +130,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README de uso (reformulado) | 2026-10-12 | `e3605e7` + `0ff1d07` |
 | **BL-025** | 🧪 | Re-implementar tests skipeados de auth + rbac (54 tests des-skipeados) | 2026-10-12 | `cb2ac13` + `6f175be` |
 | **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` (95 casos) | 2026-10-12 | `480c731` |
 | **BL-023** | 🏗️ | Encoding LF (.gitattributes + .editorconfig) | 2026-10-11 | `059a32a` |
@@ -171,8 +171,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 14 |
-| Items completados | 16 |
+| Items activos | 13 |
+| Items completados | 17 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
