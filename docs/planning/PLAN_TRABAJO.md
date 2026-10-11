@@ -13,7 +13,7 @@
 
 > **Documento operativo de correcciones, sincronización documental y deuda técnica.**
 > **Última actualización:** 2026-10-11
-> **Versión de referencia:** v4.8.4
+> **Versión de referencia:** v4.8.10
 > **Responsable:** Comando C4ISR
 > **Próxima revisión:** al cerrar cada Sprint
 
