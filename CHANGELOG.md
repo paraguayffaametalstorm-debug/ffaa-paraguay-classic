@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.6](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.5...v4.8.6) (2026-10-11)
+
+
+### 📚 Documentation
+
+* **release:** corregir seccion de troubleshooting para reflejar tipos reales ([f4afa24](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/f4afa24bb8bd9c00654c017c931f3ab91135f785))
+
 ## [4.8.5](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.4...v4.8.5) (2026-10-11)
 
 
