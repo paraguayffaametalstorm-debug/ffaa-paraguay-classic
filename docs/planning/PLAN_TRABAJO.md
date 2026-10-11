@@ -50,8 +50,8 @@ Este documento **SÍ es la fuente única de verdad** para:
 
 | Campo | Valor |
 |---|---|
-| **Versión real** | v4.8.4 · Sprint 6 cerrado |
-| **Commit HEAD** | `9416768` (Merge PR #1 — release v4.8.4) |
+| **Versión real** | v4.8.10 · Sprint 6 cerrado + refactor docs |
+| **Commit HEAD** | `cd8dc5d` (docs(handoff): agregar handoff v4.8.10) |
 | **Deploy producción** | ✅ Activo en Render.com |
 | **Timezone scheduler** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`, Paraguay sin DST desde oct-2024) |
 | **Duración evento SQ** | 4 días (jue 09:00 PY → lun 08:59 PY) |
