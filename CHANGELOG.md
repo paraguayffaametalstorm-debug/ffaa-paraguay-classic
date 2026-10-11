@@ -8,6 +8,13 @@
 
 ---
 
+## [4.8.13](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.12...v4.8.13) (2026-10-11)
+
+
+### 🐛 Bug Fixes
+
+* **events-v2:** resolver nick desde users + delegar admin a vista (FIX-310-bis) ([d47e194](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/d47e19408df6be6faff812d71275ebdc3b4e8d90))
+
 ## [4.8.12](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.11...v4.8.12) (2026-10-11)
 
 
