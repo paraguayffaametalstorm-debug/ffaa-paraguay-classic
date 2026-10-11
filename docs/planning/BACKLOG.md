@@ -79,7 +79,6 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-017** | 🏗️ | Sincronizar DDL `sql/001_users.sql` con BD real (HALL-061) | 📋 Priorizado | S (4h) | Agregar `google_id` a la BD real o eliminarlo del DDL. Documentar decisión. | HALL-059 reveló que existían inconsistencias puntuales. Auditar todos los archivos JS y HTML que escriben en `localStorage` para garantizar nomenclatura única y evitar futuras regresiones. |
 | **BL-018** | 📚 | Completar §3.5.2, §3.5.3 y §3.5.4 en `API_REFERENCE.md` | 📋 Priorizado | M (4h) | Agregar endpoints faltantes de events-v2 (GET /active, POST, PATCH, participaciones) y sección de deprecación legacy con sunset 2026-12-16. |
 | **BL-024** | 🔐 | Eliminar `'unsafe-inline'` del CSP (FIX-103) | 📋 Diferido | L (2-3 días) | Requiere migrar ~200 `onclick` inline a `addEventListener` + nonce/hash. Diferido del Sprint 2 al Sprint 3 por bajo riesgo residual y mayor valor del Sprint 3 (tests + observabilidad). |
-| **BL-025** | 🧪 | Re-implementar tests de admin/owner/auth/rbac con schemas reales | 📋 Priorizado | M (1 día) | 69 tests skipeados en Sprint 3 (FIX-301/302/303/304) porque asumen schemas de respuesta que no coinciden con el controller real (ej: `backup.users_count` vs `backup.file`, `400` vs `409` en conflictos, supertest+MSW no matchea con `127.0.0.1:PORT`). Requiere mapear el contrato real de cada controller y actualizar los `expect()`. Ref: Sprint 3. |
 | **BL-026** | INFRA | Eliminacion final de Fly.io (post 2-3 meses sin uso) | IDEA | XS (30 min) | Si en 2-3 meses no se usa Fly.io como backup, eliminar la app paraguay-ffaa-metalstorm para ahorrar ~$0.15/mes residuales. Requiere backup previo de los 19 secretos. Ref: HALL-076. |
 | **BL-030** | Seguridad | Auditar GRANTs explicitos en tablas public/ (nuevas politicas Supabase 1-oct) | Priorizado | M (4h) | Supabase anuncio que desde el 30-oct-2026 deja de auto-exponer tablas nuevas al Data API. Los GRANT a anon, authenticated, service_role deben ser explicitos en cada CREATE TABLE nuevo. Las tablas existentes no se tocan, pero los scripts SQL futuros deben incluir GRANT SELECT ON tabla TO anon, authenticated; GRANT ALL ON tabla TO service_role;. Ref: supabase.com/changelog |
 
@@ -132,6 +131,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **BL-025** | 🧪 | Re-implementar tests skipeados de auth + rbac (54 tests des-skipeados) | 2026-10-12 | `cb2ac13` + `6f175be` |
 | **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` (95 casos) | 2026-10-12 | `480c731` |
 | **BL-023** | 🏗️ | Encoding LF (.gitattributes + .editorconfig) | 2026-10-11 | `059a32a` |
 | **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | 2026-10-11 | `059a32a` |
@@ -171,8 +171,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 15 |
-| Items completados | 15 |
+| Items activos | 14 |
+| Items completados | 16 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
