@@ -1,7 +1,0 @@
-docs: cerrar FIX-310-ter y registrar FIX-310-quater
-
-- BACKLOG: mover FIX-310-ter a Completados + registrar FIX-310-quater
-- API_REFERENCE: nota de cambio de semántica en columna "Estado" del CSV
-- HANDOFF: agregar handoff v4.8.17 con resumen de la sesión
-
-Cierra el círculo de FIX-310 (vista v_admin_participations como fuente canónica).
