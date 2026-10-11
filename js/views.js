@@ -6718,17 +6718,14 @@ async function loadAllPerformances() {
   if (tableEl) tableEl.innerHTML = '<div class="loading-text">Cargando rendimientos globales...</div>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/admin/all-performances`, { headers: getAuthHeaders() });
+    // FIX-310: migrado de /api/admin/all-performances (legacy) a /api/events-v2/admin/participations
+    const res = await fetch(`${API_BASE}/api/events-v2/admin/participations?limit=500`, { headers: getAuthHeaders() });
     let performances = [];
     if (res.ok) {
       const data = await res.json();
-      performances = data.performances || (Array.isArray(data) ? data : []);
+      performances = data.participations || (Array.isArray(data) ? data : []);
     } else {
-      const fallback = await fetch(`${API_BASE}/api/performances/my-history`, { headers: getAuthHeaders() });
-      if (fallback.ok) {
-        const fbData = await fallback.json();
-        performances = fbData.history || fbData.performances || (Array.isArray(fbData) ? fbData : []);
-      }
+      console.warn('[AllPerformances] Endpoint v2 falló con HTTP', res.status);
     }
 
     allPerformancesCache = performances;

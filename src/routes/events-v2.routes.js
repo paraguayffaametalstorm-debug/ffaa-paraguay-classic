@@ -23,7 +23,8 @@ import {
   changeEventStatus,
   deleteEvent,
   getParticipations,
-  getMyParticipations,  // ← NUEVO (BL-028)
+  getMyParticipations,           // ← NUEVO (BL-028)
+  getAllParticipationsAdmin,     // ← NUEVO (FIX-310)
   createParticipation,
   updateParticipation,
   deleteParticipation
@@ -40,6 +41,7 @@ router.get('/', requireAuth, getEvents);
 router.get('/active', requireAuth, getActiveEvent);
 router.get('/open', requireAuth, getActiveEvent);  // Alias retrocompatible
 router.get('/mine', requireAuth, getMyParticipations);  // ← NUEVO (BL-028)
+router.get('/admin/participations', requireAuth, requireRole('ADMIN', 'OWNER'), getAllParticipationsAdmin);  // ← NUEVO (FIX-310)
 router.get('/:id', requireAuth, getEventById);
 router.get('/:id/submission-window', requireAuth, getSubmissionWindow);  // ← NUEVO (ADR-008)
 

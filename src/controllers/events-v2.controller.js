@@ -1323,3 +1323,103 @@ export const getMyParticipations = async (req, res) => {
     });
   }
 };
+
+
+// ============================================================
+// 13. GET /api/events-v2/admin/participations — Vista ADMIN/OWNER
+// ============================================================
+
+/**
+ * Devuelve TODAS las participaciones del sistema (vista ADMIN/OWNER).
+ * Reemplaza el legacy /api/admin/all-performances (FIX-310).
+ *
+ * Filtros opcionales:
+ *   - event_id: UUID del evento
+ *   - status:   PENDING | VALIDATED | REJECTED
+ *   - limit:    default 200, max 500
+ *   - offset:   default 0
+ */
+export const getAllParticipationsAdmin = async (req, res) => {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database client unavailable',
+        code: 'DB_UNAVAILABLE'
+      });
+    }
+
+    const { event_id, status, limit = 200, offset = 0 } = req.query;
+    const lim = Math.min(parseInt(limit, 10) || 200, 500);
+    const off = Math.max(parseInt(offset, 10) || 0, 0);
+
+    let query = supabase
+      .from('event_participations')
+      .select(`
+        id,
+        event_id,
+        user_id,
+        nick,
+        data,
+        computed_points,
+        status,
+        created_at,
+        updated_at,
+        events_master (name, type, status, start_date, end_date)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(off, off + lim - 1);
+
+    if (event_id) query = query.eq('event_id', event_id);
+    if (status)   query = query.eq('status', status);
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    // Resolver role de cada participación (batch, sin N+1)
+    const userIds = [...new Set((data || []).map(p => p.user_id).filter(Boolean))];
+    let roleMap = new Map();
+
+    if (userIds.length > 0) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, role')
+        .in('id', userIds);
+      (users || []).forEach(u => roleMap.set(u.id, u.role));
+    }
+
+    const participations = (data || []).map(p => ({
+      id: p.id,
+      event_id: p.event_id,
+      event_name: p.events_master?.name || null,
+      event_type: p.events_master?.type || null,
+      user_id: p.user_id,
+      nick: p.nick || null,
+      role: roleMap.get(p.user_id) || 'MIEMBRO',
+      tokens: p.data?.tokens ?? 0,
+      days_connected: p.data?.days_connected ?? 0,
+      flew_in_group: p.data?.flew_in_group ?? false,
+      notes: p.data?.notes ?? null,
+      computed_points: p.computed_points || 0,
+      status: p.status || 'PENDING',
+      created_at: p.created_at,
+      updated_at: p.updated_at
+    }));
+
+    return res.json({
+      success: true,
+      participations,
+      total: count ?? participations.length,
+      limit: lim,
+      offset: off
+    });
+  } catch (err) {
+    logger.error('❌ [Events-v2] Error en getAllParticipationsAdmin:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+      code: 'INTERNAL_ERROR'
+    });
+  }
+};
