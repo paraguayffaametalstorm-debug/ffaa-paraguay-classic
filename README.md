@@ -5,11 +5,11 @@
 [![Node.js Version](https://img.shields.io/badge/node-22.x_Alpine-brightgreen?logo=node.js)](https://nodejs.org/)
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
-[![Platform](https://img.shields.io/badge/deploy-Fly.io_gru-purple?logo=flydotio)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![Version](https://img.shields.io/badge/version-v4.8.2-gold)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.fly.dev/)
-[![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.fly.dev/)
+[![Platform](https://img.shields.io/badge/deploy-Render_oregon-blue?logo=render)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![Version](https://img.shields.io/badge/version-v4.8.2-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.onrender.com/)
 
 ---
 
@@ -49,9 +49,9 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 
 ## 🌐 URLs del Proyecto
 
-- **Producción Principal:** [https://paraguay-ffaa-metalstorm.fly.dev/](https://paraguay-ffaa-metalstorm.fly.dev/)
-- **Probe de Salud HTTP (Fly.io):** [https://paraguay-ffaa-metalstorm.fly.dev/health](https://paraguay-ffaa-metalstorm.fly.dev/health)
-- **Telemetría del Sistema (JSON):** [https://paraguay-ffaa-metalstorm.fly.dev/api/health](https://paraguay-ffaa-metalstorm.fly.dev/api/health)
+- **Producción Principal:** [https://paraguay-ffaa-metalstorm.onrender.com/](https://paraguay-ffaa-metalstorm.onrender.com/)
+- **Probe de Salud HTTP (Render):** [https://paraguay-ffaa-metalstorm.onrender.com/health](https://paraguay-ffaa-metalstorm.onrender.com/health)
+- **Telemetría del Sistema (JSON):** [https://paraguay-ffaa-metalstorm.onrender.com/api/health](https://paraguay-ffaa-metalstorm.onrender.com/api/health)
 - **Repositorio Oficial:** GitHub `paraguayffaametalstorm-debug/ffaa-paraguay-classic`
 
 ---
@@ -234,7 +234,7 @@ El servidor táctico responderá en `http://localhost:3000`.
 | `GOOGLE_CLIENT_ID` | Opcional | - | Client ID de Google Cloud Console para OAuth 2.0 |
 | `GOOGLE_CLIENT_SECRET` | Opcional | - | Client Secret de Google Cloud Console para OAuth 2.0 |
 | `GOOGLE_CALLBACK_URL` | Opcional | *(auto)* | URL de retorno autorizada (`/api/auth/google/callback`) |
-| `FRONTEND_URL` | Opcional | `https://paraguay-ffaa-metalstorm.fly.dev` | URL pública base del frontend militar |
+| `FRONTEND_URL` | Opcional | `https://paraguay-ffaa-metalstorm.onrender.com` | URL pública base del frontend militar |
 | `EMAIL_HOST` | Opcional | - | Servidor SMTP para despacho de correos tácticos |
 | `EMAIL_PORT` | Opcional | `587` | Puerto del servidor SMTP (ej: 587 o 465) |
 | `EMAIL_SECURE` | Opcional | `false` | Conexión SSL/TLS directa (`true` para puerto 465) |
