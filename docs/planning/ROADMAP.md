@@ -1,7 +1,7 @@
 # 🗺️ ROADMAP — PARAGUAY-FFAA | METALSTORM
 
 > **Visión estratégica del sistema a mediano plazo.**
-> **Última actualización:** 2026-09-17
+> **Última actualización:** 2026-10-11
 > **Responsable:** Comando C4ISR
 
 ---
@@ -134,13 +134,13 @@ Consolidar el sistema **PARAGUAY-FFAA | METALSTORM** como plataforma táctica de
 - [`BACKLOG.md`](./BACKLOG.md) — Lista detallada de items.
 - [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprints activos (qué se hace ahora).
 - [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (cerrado).
-- [`CHANGELOG.md`](./CHANGELOG.md) — Historial de versiones publicadas.
+- [`CHANGELOG.md`](../../CHANGELOG.md) — Historial de versiones publicadas.
 
 ### Documentos técnicos y normativos
 
-- [`docs/rfc/`](./docs/rfc/) — Propuestas formales.
-- [`docs/adr/`](./docs/adr/) — Decisiones arquitectónicas.
-- [`docs/SESSION_HANDOFF.md`](./docs/SESSION_HANDOFF.md) — Handoff entre sesiones.
+- [`docs/rfc/`](../rfc/) — Propuestas formales.
+- [`docs/adr/`](../adr/) — Decisiones arquitectónicas.
+- [`docs/handoffs/SESSION_HANDOFF.md`](../handoffs/SESSION_HANDOFF.md) — Handoff entre sesiones.
 
 ## 📝 Notas de Gobierno
 

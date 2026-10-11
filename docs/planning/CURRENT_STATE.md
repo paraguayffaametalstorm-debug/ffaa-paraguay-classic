@@ -38,6 +38,36 @@ Se completó el rediseño del Panel Admin (F6) con las siguientes mejoras:
 
 ---
 
+## Cambios Recientes (2026-10-11) — Refactorización de docs/ + Release v4.8.7
+
+### Reorganización de Documentación
+
+- **24 archivos movidos** a `docs/` con subcarpetas temáticas:
+  - `docs/architecture/` (ARCHITECTURE, API_REFERENCE, MIGRACION_SQL_REFERENCE)
+  - `docs/auditorias/` (auditoria-frontend-legacy, auditoria-sprint-1)
+  - `docs/deployment/` (DEPLOYMENT_GUIDE, DEPLOYMENT_STATE, PWA_SETUP, RELEASE)
+  - `docs/handoffs/` (5 archivos handoff)
+  - `docs/operations/` (USER_MANUAL, POLITICA_INACTIVACION, FIXES_APPLIED)
+  - `docs/planning/` (7 archivos de planificación)
+- **15 links corregidos** en `README.md` y `docs/adr/ADR-010-seccion-veteranos.md`.
+- **1 índice maestro creado** (`docs/README.md`).
+- **3 archivos basura eliminados**.
+- **Release v4.8.7** publicado automáticamente por `release-please`.
+
+### Beneficios
+
+- Directorio raíz limpio: solo `README.md` y `CHANGELOG.md` (de 19 a 2 `.md`).
+- Navegación clara por categorías temáticas.
+- Escalable para futuras adiciones.
+
+### Referencias
+
+- PR #4 (refactor): https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/pull/4
+- PR #5 (release): https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/pull/5
+- Release: https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/releases/tag/v4.8.7
+
+---
+
 ## Cambios Recientes (2026-10-08)
 
 ### HALL-071 + HALL-072 Completados
@@ -94,7 +124,7 @@ La app migró de Fly.io a **Render.com** el 2026-10-08 (ADR-009). Costo $0/mes. 
 
 > **⚠️ NO MODIFICAR - ESTADO CONGELADO**  
 > **Fecha de Congelamiento:** 2026-09-22  
-> **Versión Activa:** v4.5.10 (Sprint 3 completado — 287 tests, health checks)
+> **Versión Activa:** v4.8.7 (Refactorización de docs + Release automático)
 > **Ambiente:** Producción Fly.io (`gru`) & Supabase PostgreSQL  
 > **Responsable:** Mando C4ISR Escuadrón PARAGUAY FFAA `[PRY]`
 
@@ -570,5 +600,5 @@ Zod rechazaba con 400 "Invalid UUID" al cargar para otro piloto.
 - **Instance Type:** Free ($0/mes)
 - **Env vars:** 22 cargadas vía `.env` copy/paste
 
-**ADR completo:** [`docs/adr/ADR-009-migracion-render.md`](./docs/adr/ADR-009-migracion-render.md)
+**ADR completo:** [`docs/adr/ADR-009-migracion-render.md`](../adr/ADR-009-migracion-render.md)
 

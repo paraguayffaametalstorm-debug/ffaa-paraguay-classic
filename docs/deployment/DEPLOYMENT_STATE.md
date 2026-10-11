@@ -11,7 +11,7 @@
 > El esquema de base de datos (Supabase) permanece **sin cambios**. Todas las tablas,
 > columnas, índices y políticas RLS siguen iguales.
 >
-> **ADR:** [`docs/adr/ADR-009-migracion-render.md`](./docs/adr/ADR-009-migracion-render.md)
+> **ADR:** [`docs/adr/ADR-009-migracion-render.md`](../adr/ADR-009-migracion-render.md)
 
 > real. Cambios aplicados via `sql/039_sync_users_schema.sql`:
 >

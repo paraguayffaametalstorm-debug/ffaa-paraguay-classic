@@ -1,7 +1,7 @@
 # 📋 BACKLOG DE MEJORAS — PARAGUAY-FFAA | METALSTORM
 
 > **Documento vivo de propuestas, mejoras y deuda técnica.**
-> **Última actualización:** 2026-09-21
+> **Última actualización:** 2026-10-11
 > **Responsable:** Comando C4ISR
 
 ---
@@ -168,13 +168,13 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 - [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica a 12 meses.
 - [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprints activos (qué se hace ahora).
 - [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (fases 0-6, cerrado).
-- [`CHANGELOG.md`](./CHANGELOG.md) — Historial de versiones publicadas.
+- [`CHANGELOG.md`](../../CHANGELOG.md) — Historial de versiones publicadas.
 
 ### Documentos técnicos y normativos
 
-- [`docs/rfc/`](./docs/rfc/) — Propuestas formales (Request for Comments).
-- [`docs/adr/`](./docs/adr/) — Decisiones arquitectónicas.
-- [`docs/SESSION_HANDOFF.md`](./docs/SESSION_HANDOFF.md) — Handoff entre sesiones.
+- [`docs/rfc/`](../rfc/) — Propuestas formales (Request for Comments).
+- [`docs/adr/`](../adr/) — Decisiones arquitectónicas.
+- [`docs/handoffs/SESSION_HANDOFF.md`](../handoffs/SESSION_HANDOFF.md) — Handoff entre sesiones.
 
 ## 📝 Notas de Gobierno
 

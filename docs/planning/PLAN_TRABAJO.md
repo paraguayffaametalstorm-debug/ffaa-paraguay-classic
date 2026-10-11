@@ -542,7 +542,7 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 - **Deploy tras cada sprint.** No acumular cambios sin desplegar.
 - **Rollback preparado.** Documentar cómo revertir cada cambio.
 - **`CHANGELOG.md` actualizado** al cerrar cada sprint.
-- **Versionado automático.** Las versiones se generan desde los commits con `release-please`. Ver [`RELEASE.md`](./RELEASE.md) para el workflow completo.
+- **Versionado automático.** Las versiones se generan desde los commits con `release-please`. Ver [`RELEASE.md`](../deployment/RELEASE.md) para el workflow completo.
 - **Conventional Commits obligatorios.** Todos los commits deben seguir el formato `tipo(scope): mensaje`. Tipos válidos: `feat`, `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `style`, `perf`.
 
 ---
@@ -675,13 +675,13 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 
 ## 15. REFERENCIAS
 
-- [`CHANGELOG.md`](./CHANGELOG.md) — Histórico de versiones.
+- [`CHANGELOG.md`](../../CHANGELOG.md) — Histórico de versiones.
 - [`BACKLOG.md`](./BACKLOG.md) — Ideas y features futuras.
 - [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica.
 - [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (cerrado).
-- [`docs/adr/`](./docs/adr/) — Decisiones arquitectónicas.
-- [`docs/rfc/`](./docs/rfc/) — Propuestas formales.
-- [`docs/SESSION_HANDOFF.md`](./docs/SESSION_HANDOFF.md) — Handoff entre sesiones.
+- [`docs/adr/`](../adr/) — Decisiones arquitectónicas.
+- [`docs/rfc/`](../rfc/) — Propuestas formales.
+- [`docs/handoffs/SESSION_HANDOFF.md`](../handoffs/SESSION_HANDOFF.md) — Handoff entre sesiones.
 
 ---
 

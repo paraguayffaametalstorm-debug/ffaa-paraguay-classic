@@ -1,7 +1,7 @@
 # 🔧 PLAN DE TRABAJO — Sección Veteranos
 
 > **Plan de implementación del módulo de Veteranos (mentoría + RBAC fino).**
-> **ADR de referencia:** [`docs/adr/ADR-010-seccion-veteranos.md`](./docs/adr/ADR-010-seccion-veteranos.md)
+> **ADR de referencia:** [`docs/adr/ADR-010-seccion-veteranos.md`](../adr/ADR-010-seccion-veteranos.md)
 > **Fecha:** 2026-10-10
 > **Versión objetivo:** v4.8.0
 > **Duración estimada:** 5-7 días
@@ -399,13 +399,13 @@ Si durante la implementación la sesión de IA llega al 95% de tokens:
 
 ## 8. Referencias
 
-- [`docs/adr/ADR-010-seccion-veteranos.md`](./docs/adr/ADR-010-seccion-veteranos.md)
+- [`docs/adr/ADR-010-seccion-veteranos.md`](../adr/ADR-010-seccion-veteranos.md)
 - [`BACKLOG.md`](./BACKLOG.md) — BL-031
 - [`PLAN_TRABAJO.md`](./PLAN_TRABAJO.md) — Sprint 6
-- [`docs/adr/ADR-002-politica-endpoints-publico-privado.md`](./docs/adr/ADR-002-politica-endpoints-publico-privado.md)
-- [`docs/adr/ADR-004-cuota-admin.md`](./docs/adr/ADR-004-cuota-admin.md)
-- [`admin-sections.template.js`](./admin-sections.template.js)
-- [`normativa-v3.0-borrador.md`](./normativa-v3.0-borrador.md)
+- [`docs/adr/ADR-002-politica-endpoints-publico-privado.md`](../adr/ADR-002-politica-endpoints-publico-privado.md)
+- [`docs/adr/ADR-004-cuota-admin.md`](../adr/ADR-004-cuota-admin.md)
+- [`admin-sections.template.js`](../templates/admin-sections.template.js)
+- [`normativa-v3.0-borrador.md`](../normativa/normativa-v3.0-borrador.md)
 
 ---
 
