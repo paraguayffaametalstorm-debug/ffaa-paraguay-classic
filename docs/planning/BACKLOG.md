@@ -77,9 +77,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-005** | ✨ | Auto-login con link prellenado | 💡 Idea | M (1 día) | El link del QR prellena user + pass y auto-loguea. Complementa a BL-001. |
 | **BL-016** | 🐛 | Auditoría completa de claves `localStorage` en todo el frontend | 📋 Priorizado | S (4h) |
 | **BL-017** | 🏗️ | Sincronizar DDL `sql/001_users.sql` con BD real (HALL-061) | 📋 Priorizado | S (4h) | Agregar `google_id` a la BD real o eliminarlo del DDL. Documentar decisión. | HALL-059 reveló que existían inconsistencias puntuales. Auditar todos los archivos JS y HTML que escriben en `localStorage` para garantizar nomenclatura única y evitar futuras regresiones. |
-| **BL-033** | 🏗️ | Drift DDL vs BD real: `users.user_id` nullability | 📋 Priorizado | XS (30 min) | `sql/001_users.sql` declara `user_id INTEGER UNIQUE NOT NULL`, pero la BD real (verificado en Supabase el 2026-10-11) lo tiene como `nullable`. Corregir DDL o agregar constraint, documentar decisión. Ref: BL-017 (el drift se le escapó), detectado durante BL-022. |
 | **BL-018** | 📚 | Completar §3.5.2, §3.5.3 y §3.5.4 en `API_REFERENCE.md` | 📋 Priorizado | M (4h) | Agregar endpoints faltantes de events-v2 (GET /active, POST, PATCH, participaciones) y sección de deprecación legacy con sunset 2026-12-16. |
-| **BL-023** | 🏗️ | Unificar encoding de archivos JS a LF (.editorconfig + .gitattributes) | 📋 Priorizado | XS (1h) | Causa raíz de HALL-068. Agregar * text=auto eol=lf en .gitattributes y end_of_line = lf en .editorconfig. |
 | **BL-024** | 🔐 | Eliminar `'unsafe-inline'` del CSP (FIX-103) | 📋 Diferido | L (2-3 días) | Requiere migrar ~200 `onclick` inline a `addEventListener` + nonce/hash. Diferido del Sprint 2 al Sprint 3 por bajo riesgo residual y mayor valor del Sprint 3 (tests + observabilidad). |
 | **BL-025** | 🧪 | Re-implementar tests de admin/owner/auth/rbac con schemas reales | 📋 Priorizado | M (1 día) | 69 tests skipeados en Sprint 3 (FIX-301/302/303/304) porque asumen schemas de respuesta que no coinciden con el controller real (ej: `backup.users_count` vs `backup.file`, `400` vs `409` en conflictos, supertest+MSW no matchea con `127.0.0.1:PORT`). Requiere mapear el contrato real de cada controller y actualizar los `expect()`. Ref: Sprint 3. |
 | **BL-026** | INFRA | Eliminacion final de Fly.io (post 2-3 meses sin uso) | IDEA | XS (30 min) | Si en 2-3 meses no se usa Fly.io como backup, eliminar la app paraguay-ffaa-metalstorm para ahorrar ~$0.15/mes residuales. Requiere backup previo de los 19 secretos. Ref: HALL-076. |
@@ -89,7 +87,6 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Estado | Esfuerzo | Notas |
 |---|---|---|---|---|---|
-| **FIX-316** | 🏗️ | Eliminar `src/routes/admin.users.routes.js` (código muerto) | 📋 Priorizado | XS (30 min) | El archivo no está montado en `server.js`. Usa middleware `authenticate` (no existe; el proyecto usa `requireAuth`). Expone `password_hash` en `.select()`. Endpoints inalcanzables. Ref: detectado durante FIX-405. |
 | **BL-032** | 🏗️ | Unificar 4 variantes de mock Supabase | 💡 Idea | M (1 día) | Existen 4 mocks distintos: `helpers/mockSupabase.js` (MSW), `helpers/mockSupabaseHybrid.js` (in-memory), `mocks/supabase.js` (cola sin filtros) e inline en `tests/controllers/dashboard.controller.test.js`. Consolidar en el híbrido. Ref: detectado durante BL-022. |
 | **BL-006** | 🎨 | Landing pública sin login | 💡 Idea | M (1 día) | Mostrar catálogo de aviones a público general antes de login. |
 | **BL-007** | 🎨 | Dashboard con WebSockets (tiempo real) | 💡 Idea | L (2 días) | Actualizar stats del dashboard sin recargar. |
@@ -135,6 +132,9 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **BL-023** | 🏗️ | Encoding LF (.gitattributes + .editorconfig) | 2026-10-11 | `059a32a` |
+| **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | 2026-10-11 | `059a32a` |
+| **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | 2026-10-11 | `059a32a` |
 | **FIX-310-quater** | 🏗️ | `getSummary` usa `v_admin_participations` (refactor avgMap UUID) | 2026-10-11 | `35a0ccb` |
 | **BL-022** | 🧪 | Tests para `/api/dashboard/summary` (previene HALL-067) | 2026-10-11 | `c8e143c` |
 | **FIX-310-ter** | 🏗️ | Refactorizar `exportPerformancesCSV` para usar `v_admin_participations` | 2026-10-11 | `2f73059` |
@@ -170,8 +170,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 19 |
-| Items completados | 11 |
+| Items activos | 16 |
+| Items completados | 14 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
