@@ -9,6 +9,14 @@
 
 ---
 
+## [4.8.3] - 2026-10-11
+
+### Cambios
+
+- _(pendiente de documentar)_
+
+---
+
 ## [4.8.2] - 2026-10-10
 
 ### 🔧 Correcciones y Mantenimiento

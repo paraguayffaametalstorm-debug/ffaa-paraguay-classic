@@ -1,0 +1,18 @@
+{
+  "types": [
+    { "type": "feat", "section": "✨ Features" },
+    { "type": "fix", "section": "🐛 Bug Fixes" },
+    { "type": "perf", "section": "⚡ Performance" },
+    { "type": "refactor", "section": "♻️ Refactoring", "hidden": false },
+    { "type": "docs", "section": "📚 Documentation", "hidden": false },
+    { "type": "test", "section": "🧪 Testing", "hidden": false },
+    { "type": "chore", "section": "🔧 Chore", "hidden": true },
+    { "type": "style", "section": "💄 Style", "hidden": true },
+    { "type": "ci", "section": "👷 CI/CD", "hidden": false }
+  ],
+  "commitUrlFormat": "https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/{{previousTag}}...{{currentTag}}",
+  "issueUrlFormat": "https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/issues/{{id}}",
+  "releaseCommitMessageFormat": "chore(release): v{{currentTag}}",
+  "header": "# 📝 Registro de Versiones y Cambios (Changelog) - PARAGUAY-FFAA | METALSTORM\n\nTodos los cambios notables del proyecto se documentan en este archivo.\n\nEl formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).\n\n"
+}

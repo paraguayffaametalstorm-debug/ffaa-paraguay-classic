@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Render_oregon-blue?logo=render)](https://paraguay-ffaa-metalstorm.onrender.com/)
-[![Version](https://img.shields.io/badge/version-v4.8.2-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![Version](https://img.shields.io/badge/version-v4.8.3-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.onrender.com/)
