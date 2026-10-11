@@ -1,20 +1,20 @@
-# 🛠️ Scripts — PARAGUAY-FFAA | METALSTORM
+# Scripts — PARAGUAY-FFAA | METALSTORM
 
-> **Documentación de los scripts operativos activos.**
-> **Última actualización:** 2026-10-11
+> **Documentacion de los scripts operativos activos.**
+> **Ultima actualizacion:** 2026-10-11
 
 ---
 
-## 📌 Scripts Activos
+## Scripts Activos
 
 Estos son los scripts que se usan recurrentemente en el mantenimiento del proyecto.
 
 ### `bump-version.cjs`
 
-**Propósito:** Actualizar la versión en `package.json`, `sw.js`, y `index.html`.
+**Proposito:** Actualizar la version en `package.json`, `sw.js`, y `index.html`.
 
-**Cuándo usar:** Cuando se necesita hacer un bump de versión manual (raro, porque `release-please` lo hace automático).
+**Cuando usar:** Cuando se necesita hacer un bump de version manual (raro, porque `release-please` lo hace automatico).
 
 **Uso:**
 ```bash
-node scripts/bump-version.cjs
+node scripts/bump-version.cjs [patch|minor|major|X.Y.Z] [--dry-run]
