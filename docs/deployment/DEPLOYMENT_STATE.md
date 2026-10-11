@@ -709,6 +709,7 @@ Auditoría y relevamiento técnico del esquema de base de datos en Supabase (eje
 | `upgrade_nodes_v2` | Hangar | 3072 | ✅ Documentada |
 | **`events_master`** | **Eventos (Nuevo)** | **44** | ✅ **Actualizado (Sprint 4)** |
 | **`event_participations`** | **Eventos (Nuevo)** | **722** | ✅ **Actualizado (Sprint 4)** |
+| **`v_admin_participations`** | **Vista (FIX-310-bis)** | **—** | ✅ **Documentada (2026-10-11)** |
 | `events` | Eventos (Legacy) | 35 | ✅ Preservada |
 | `performances` | Core (Legacy) | **639** | ✅ Preservada |
 | **`presence`** | **Presencia (Nuevo v4.5.9)** | **—** | ✅ **Documentada (ADR-005)** |
