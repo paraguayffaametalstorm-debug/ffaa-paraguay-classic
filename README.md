@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Render_oregon-blue?logo=render)](https://paraguay-ffaa-metalstorm.onrender.com/)
-[![Version](https://img.shields.io/badge/version-v4.8.3-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![Version](https://img.shields.io/badge/version-v4.8.4-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.onrender.com/)
@@ -654,9 +654,27 @@ La asignación del estado de combate se evalúa matemáticamente en el servidor 
 - 📄 **[Propuestas Formales (RFCs)](./docs/rfc/)**
 - 🔄 **[Handoff entre Sesiones](./docs/SESSION_HANDOFF.md)**
 
+---
+
+## 🚀 Versionado y Release
+
+El proyecto usa **versionado automático** basado en [Conventional Commits](https://www.conventionalcommits.org/) + [`release-please`](https://github.com/googleapis/release-please).
+
+**Cómo funciona:**
+
+1. Los commits se escriben con formato `feat:`, `fix:`, `chore:`, etc.
+2. `release-please` analiza los commits en cada push a `main`.
+3. Abre un PR con el bump de versión + CHANGELOG actualizado.
+4. Al mergear el PR, se crea el tag y la Release automáticamente.
+5. Render auto-deploya la nueva versión.
+
+**Guía completa:** [`RELEASE.md`](./RELEASE.md)
+
+---
+
 ## 📜 Licencia y Confidencialidad
 
 © 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.
-*Versión: v4.5.9 · Actualizado: 2026-09-23*  
+*Versión: v4.8.4 · Actualizado: 2026-10-11*  
 *Uso exclusivo y reservado para los miembros del escuadrón militar.*
 

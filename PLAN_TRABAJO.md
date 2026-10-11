@@ -12,8 +12,8 @@
 ## PARAGUAY-FFAA | METALSTORM
 
 > **Documento operativo de correcciones, sincronización documental y deuda técnica.**
-> **Última actualización:** 2026-09-20
-> **Versión de referencia:** v4.3.0
+> **Última actualización:** 2026-10-11
+> **Versión de referencia:** v4.8.4
 > **Responsable:** Comando C4ISR
 > **Próxima revisión:** al cerrar cada Sprint
 
@@ -50,9 +50,9 @@ Este documento **SÍ es la fuente única de verdad** para:
 
 | Campo | Valor |
 |---|---|
-| **Versión real** | v4.5.10 runtime · Sprint 3 completado |
-| **Commit HEAD** | `879c482` (Sprint 0 Grupo G — Sprint 0 COMPLETO) |
-| **Deploy producción** | ✅ Activo en Fly.io (`gru`) |
+| **Versión real** | v4.8.4 · Sprint 6 cerrado |
+| **Commit HEAD** | `9416768` (Merge PR #1 — release v4.8.4) |
+| **Deploy producción** | ✅ Activo en Render.com |
 | **Timezone scheduler** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`, Paraguay sin DST desde oct-2024) |
 | **Duración evento SQ** | 4 días (jue 09:00 PY → lun 08:59 PY) |
 | **Duración ventana SQ** | 7 días (ADR-008) |
@@ -70,12 +70,13 @@ Este documento **SÍ es la fuente única de verdad** para:
 ## 2. SPRINTS Y FASES
 
 ```
-SPRINT 0  Sincronización documental urgente    ← ESTAMOS ACÁ
-SPRINT 1  Verificación de código crítico
-SPRINT 2  Fixes de correctitud y seguridad
-SPRINT 3  Tests y observabilidad
-SPRINT 4  Deuda técnica y limpieza
-SPRINT 5  Features del backlog
+SPRINT 0  Sincronización documental urgente    ✅ CERRADO
+SPRINT 1  Verificación de código crítico       ✅ CERRADO
+SPRINT 2  Fixes de correctitud y seguridad     ✅ CERRADO
+SPRINT 3  Tests y observabilidad               ✅ CERRADO
+SPRINT 4  Deuda técnica y limpieza             ✅ CERRADO
+SPRINT 5  Features del backlog                 ✅ CERRADO
+SPRINT 6  Sección Veteranos (mentoría + RBAC)  ✅ CERRADO (v4.8.4)
 ```
 
 Cada sprint tiene: **objetivo**, **criterio de salida**, **ítems**, **dueño**, **fecha objetivo**.
@@ -541,6 +542,8 @@ Al agregar un ítem nuevo a cualquier sprint, usar este formato:
 - **Deploy tras cada sprint.** No acumular cambios sin desplegar.
 - **Rollback preparado.** Documentar cómo revertir cada cambio.
 - **`CHANGELOG.md` actualizado** al cerrar cada sprint.
+- **Versionado automático.** Las versiones se generan desde los commits con `release-please`. Ver [`RELEASE.md`](./RELEASE.md) para el workflow completo.
+- **Conventional Commits obligatorios.** Todos los commits deben seguir el formato `tipo(scope): mensaje`. Tipos válidos: `feat`, `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `style`, `perf`.
 
 ---
 
