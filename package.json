@@ -1,6 +1,6 @@
 {
   "name": "ffaa-paraguay-classic",
-  "version": "4.8.10",
+  "version": "4.8.11",
   "type": "module",
   "scripts": {
     "dev": "node server.js",
