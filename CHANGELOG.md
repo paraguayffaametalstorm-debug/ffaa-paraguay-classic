@@ -1,3 +1,9 @@
+> **Nota de higiene del repo (2026-10-12):** El commit `0ff1d07` contiene
+> `tests/helpers/README.md` (nuevo) pero su mensaje dice `refactor(tests)`
+> en vez de `docs(tests)`. El contenido es correcto; solo el mensaje del
+> commit es cosmeticamente incorrecto. No se reescribe la historia (sin
+> force push sobre `main`).
+
 > **Nota de higiene del repo (2026-09-23):** El commit `aa4e951` contiene
 > los archivos de **BL-017** (`sql/001_users.sql` + `sql/039_sync_users_schema.sql`)
 > pero su mensaje dice `chore(hall-s2-02)` por un error de tipeo durante el
