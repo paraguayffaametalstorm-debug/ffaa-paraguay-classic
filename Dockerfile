@@ -13,6 +13,12 @@ RUN npm install --legacy-peer-deps --omit=dev
 # Copiar todo el código fuente del proyecto
 COPY . .
 
+# FIX-703: Cambiar ownership de /app al usuario `node` (ya existe en la imagen)
+RUN chown -R node:node /app
+
+# FIX-703: Ejecutar como usuario no-root (seguridad)
+USER node
+
 # Configurar variables de entorno por defecto en producción
 ENV NODE_ENV=production
 ENV PORT=3000
