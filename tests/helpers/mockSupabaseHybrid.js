@@ -176,6 +176,13 @@ function getTable(table, DB) {
   if (table === 'performances')    return DB.performances    || [];
   if (table === 'audit_logs')      return DB.audit_logs      || [];
   if (table === 'security_events') return DB.security_events || [];
+  // Sprint 7 / TESTS-AERONAVES — tablas del sistema de aeronaves
+  if (table === 'plane_models')    return DB.plane_models    || [];
+  if (table === 'planes')          return DB.planes          || [];
+  if (table === 'plane_mods')      return DB.plane_mods      || [];
+  if (table === 'plane_upgrades')  return DB.plane_upgrades  || [];
+  if (table === 'upgrade_nodes_v2') return DB.upgrade_nodes_v2 || [];
+  if (table === 'mod_effects')     return DB.mod_effects     || [];
   return [];
 }
 

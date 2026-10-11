@@ -12,8 +12,8 @@
 ## PARAGUAY-FFAA | METALSTORM
 
 > **Documento operativo de correcciones, sincronización documental y deuda técnica.**
-> **Última actualización:** 2026-10-11
-> **Versión de referencia:** v4.8.10
+> **Última actualización:** 2026-10-12
+> **Versión de referencia:** v4.8.21
 > **Responsable:** Comando C4ISR
 > **Próxima revisión:** al cerrar cada Sprint
 
@@ -697,6 +697,8 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **Objetivo:** dejar la app lista para escalar (prerequisitos del sistema de torneos).
 **Criterio de salida:** tests de aeronaves verdes + RFC-002 aprobado.
 
+**Progreso:** 4/8 ítems cerrados.
+
 ### Ítems del Sprint 7
 
 | ID | Categoría | Descripción | Esfuerzo |
@@ -706,7 +708,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | XS |
 | **BL-032** | 🏗️ | Unificar 4 variantes de mock Supabase | M |
 | **BL-025** | 🧪 | Re-implementar 39 tests skipeados | M |
-| **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | L |
+| **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | ✅ Cerrado |
 | **RFC-002** | 📚 | RFC del sistema de torneos internos | S |
 
 ### Documentos de fase
