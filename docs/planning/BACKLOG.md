@@ -149,6 +149,18 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **HALL-071** | bug | Columna closed_reason documentada pero inexistente en BD | 2026-10-08 | (detectado) |
 | **HALL-072** | bug | Scheduler no corria en Render (cold start) -> fix con cron externo | 2026-10-08 | 2c7e8df |
 
+| **HALL-066** | 🐛 | Cadena de 6 bugs bloqueando carga de W38 (v4.5.2-hotfix) | 2026-09-22 | `7157492` |
+| **HALL-S2-02** | 🐛 | Dropdown de rol frontend no permitía seleccionar ADMIN | 2026-09-22 | `13501af` |
+| **FIX-PARTICIPATION-EDIT** | ✨ | Edición de participaciones existentes con jerarquía + self-mod check | 2026-09-22 | `ed6b45e` |
+| **HALL-070** | 🐛 | Script de migración inserta imports dentro de imports multilínea | 2026-09-23 | (resuelto en FIX-308) |
+| **FIX-306** | 🧪 | Health checks separados (liveness vs readiness) | 2026-09-23 | (Sprint 3) |
+| **Sprint 3 (parcial)** | 🧪 | 287 tests pasando · 69 skipeados (BL-025) | 2026-09-23 | (Sprint 3) |
+| **BL-031** | ✨ | Sección Veteranos (mentoría + RBAC fino) | 2026-10-10 (F7) | (pendiente) |
+| **FIX-704** | 🗄️ | DROP tablas BM legacy (ya ejecutado el 2026-10-10) | 2026-10-11 | (verificado) |
+| **FIX-DOCS** | 📚 | Refactor de docs + 26 correcciones de referencias | 2026-10-11 | `dbd6fd0` |
+| **FIX-SCRIPTS** | 🏗️ | Archivar 96 scripts one-shot | 2026-10-11 | `0a6efb1` |
+| **FIX-703** | 🐳 | Dockerfile: usuario no-root | 2026-10-11 | `e13e389` |
+
 ## 📊 Métricas del Backlog
 
 | Métrica | Valor |
@@ -188,10 +200,3 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
 **Backlog v1.0 · 2026-09-17 · Documento vivo**
-| **HALL-066** | 🐛 | Cadena de 6 bugs bloqueando carga de W38 (v4.5.2-hotfix) | 2026-09-22 | `7157492` |
-| **HALL-S2-02** | 🐛 | Dropdown de rol frontend no permitía seleccionar ADMIN | 2026-09-22 | `13501af` |
-| **FIX-PARTICIPATION-EDIT** | ✨ | Edición de participaciones existentes con jerarquía + self-mod check | 2026-09-22 | `ed6b45e` |
-| **HALL-070** | 🐛 | Script de migración inserta imports dentro de imports multilínea | 2026-09-23 | (resuelto en FIX-308) |
-| **FIX-306** | 🧪 | Health checks separados (liveness vs readiness) | 2026-09-23 | (Sprint 3) |
-| **Sprint 3 (parcial)** | 🧪 | 287 tests pasando · 69 skipeados (BL-025) | 2026-09-23 | (Sprint 3) |
-| **BL-031** | ✨ | Sección Veteranos (mentoría + RBAC fino) | 2026-10-10 (F7) | (pendiente) |
