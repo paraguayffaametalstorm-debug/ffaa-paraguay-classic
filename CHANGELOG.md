@@ -14,6 +14,43 @@
 
 ---
 
+## [4.9.0](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.22...v4.9.0) (2026-10-12)
+
+
+### ✨ Features
+
+* **discord:** constantes de interaction en config/discord.js ([56cd542](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/56cd54259d2c230973f0e12311e8f25f276129e6))
+* **discord:** controller handleInteraction con PING y stubs de /torneo ([7c13fe8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/7c13fe8d8396df9cffccb6e1f2bada73c8f8f42a))
+* **discord:** middleware verifyDiscordSignature con Ed25519 ([616d5ec](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/616d5ec37b5860d11d88d2eee1f1c5c8e875c05f))
+* **discord:** notifier outbound + 7 hooks F1.6b ([d642955](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/d642955522928d000fad3242219824cbe6fb5a2b))
+* **discord:** rutas + mount POST /api/discord/interactions ([73d8ae0](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/73d8ae0d1daafdce88142d7ee30582115e8fea72))
+* **discord:** setup base F1.6a - SQL + config + schemas + ADR-012 ([682d77d](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/682d77d9c7a7d3f48117bbad85e71e2f10bb2517))
+* **discord:** slash commands /torneo status|bracket|equipos|draft con Supabase ([3a43bc8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/3a43bc8f9854fd0fe7a41ad316b4c61d83863f06))
+* **nav:** botón Torneos en menú desktop + cache v4.9.2 ([f2fe842](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/f2fe84211080772181360ab7a5d1020815c1e1b0))
+* **tournaments:** API client F1.5 - 8 wrappers apiTournaments* ([992d0f9](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/992d0f9a55339cb702b5ab409b554b3ff766818b))
+* **tournaments:** backend draft F1.5b (GET + validaciones + tests) ([fdfbe83](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/fdfbe835999caa5e4e49484ef04ccca17cbc4080))
+* **tournaments:** controller + RBAC fino F1.3 ([683c4ed](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/683c4ed89b87daa4f6707dc1c26479be4af94949))
+* **tournaments:** integración + estilos + cache bump F1.5a ([b8e73ef](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/b8e73efa63d02673914cf212641eb9dc0fc21d83))
+* **tournaments:** migración SQL F1.1 - 5 tablas RFC-002/Anexo III ([69f988b](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/69f988b5bcd3212aedb5883119cd1ad48f30348d))
+* **tournaments:** modal de draft F1.5b (frontend) ([c9e7b56](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/c9e7b56edc660dc6470cfdc5687a1cd523eae44b))
+* **tournaments:** routes + mount F1.4 ([345f452](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/345f452ee88aec946e1e480384d01d2660a3878d))
+* **tournaments:** schemas Zod F1.2 (6 schemas + 72 tests) ([2a51bb2](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/2a51bb281759f74d61f075007ca105aa491d9582))
+* **tournaments:** vista HTML + módulo JS F1.5a - listado + bracket + roster + resultado + moderador ([b728e29](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/b728e29331683da201a5311b3a76f7659bb7be14))
+
+
+### 📚 Documentation
+
+* cerrar F1.6a/b (Discord) + CHANGELOG + hallazgos ([3d6de79](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/3d6de79b4a79b19a48bfd266d3dcbc17db5c1bca))
+* **discord:** plan de trabajo post-F1.6f (planning) ([8e2fd40](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/8e2fd402671abccbe477f26ded691d7ab966ee68))
+* **discord:** plan de trabajo post-F1.6f [cierre F1.6f] ([a92656b](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/a92656b2938cea5d260e29e7080a8a699b06caf9))
+* **tournaments:** cerrar F1.2 en plan y backlog ([71a47aa](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/71a47aa29c13b569f787a97f9de2bf38dcf5e41c))
+* **tournaments:** cerrar F1.3 en plan y backlog ([d11deb0](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/d11deb0ccbf6b1b79c88d345b50e681411bce1ec))
+* **tournaments:** cerrar F1.4 en plan, backlog y API reference ([7cb77c3](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/7cb77c354800581829166c806f7c6d6492c71816))
+* **tournaments:** cierre F1.5a + plan F1.5b ([4e7e57a](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/4e7e57abd8f086c45b7bd51c258e59c66c5c0835))
+* **tournaments:** cierre F1.5b + F1 COMPLETA ([da14bf8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/da14bf82f27cdae2289f73f5c64e5e698cfc6dc0))
+* **tournaments:** corregir conteo de tests y hash F1.2 ([a7b6e8a](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/a7b6e8a37e580cc10ed4277ae2c9e2592897a208))
+* **tournaments:** plan F1 + ADR-011 + cierre F1.1 en handoff ([369e714](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/369e71427069f4d71368b5a377643bdadf4adab9))
+
 ## [4.9.4-f1.6d] — 2026-10-12
 
 ### ✨ Features
