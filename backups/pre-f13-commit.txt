@@ -1,0 +1,13 @@
+F1.3 — Backup pre-creación de archivos
+Fecha: 2026-10-12T01:31:21.143Z
+HEAD: a7b6e8a
+Working tree: SUCIO
+
+--- git status --porcelain ---
+?? scripts/f1-3-create-files.cjs
+
+--- Archivos a crear ---
+src\middlewares\tournamentModerator.js
+src\controllers\tournaments.controller.js
+tests\middlewares\tournamentModerator.test.js
+tests\controllers\tournaments.controller.test.js
