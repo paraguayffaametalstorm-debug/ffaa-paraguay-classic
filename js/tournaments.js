@@ -548,6 +548,10 @@ function renderBracketMatch(match) {
                   class="btn-primary btn-sm" style="font-size:0.72rem;padding:4px 10px;width:100%;">
             🎯 Registrar Resultado
           </button>
+            <button onclick="event.stopPropagation(); openDraftModal('${escapeHTML(match.id)}')"
+                    class="btn-secondary btn-sm" style="font-size:0.72rem;padding:4px 10px;width:100%;margin-top:4px;">
+              🎯 Draft
+            </button>
         </div>
       ` : ''}
     </div>

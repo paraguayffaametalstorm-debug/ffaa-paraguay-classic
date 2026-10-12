@@ -7,7 +7,7 @@
 // en recursos estáticos (componentes HTML) tras redirección 
 // post-vinculación.
 // ============================================================
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.9.0-f1.5a';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.9.1-f1.5b';
 
 // ✅ Assets versionados
 const STATIC_ASSETS = [
