@@ -60,7 +60,42 @@ export const DISCORD = {
     'TOURNAMENT_DRAFT_ACTION_RECORDED',
     'TOURNAMENT_STATUS_CHANGED',
     'TOURNAMENT_MODERATOR_CHANGED'
-  ]
+  ],
+
+  /**
+   * Tipos de interacción de Discord (InteractionType).
+   * Referencia: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-type
+   */
+  interactionTypes: {
+    PING: 1,
+    APPLICATION_COMMAND: 2,
+    MESSAGE_COMPONENT: 3,
+    APPLICATION_COMMAND_AUTOCOMPLETE: 4,
+    MODAL_SUBMIT: 5
+  },
+
+  /**
+   * Tipos de respuesta de interacción (InteractionResponseType).
+   * Referencia: https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-interaction-callback-type
+   */
+  responseTypes: {
+    PONG: 1,
+    CHANNEL_MESSAGE_WITH_SOURCE: 4,
+    DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE: 5,
+    DEFERRED_UPDATE_MESSAGE: 6,
+    UPDATE_MESSAGE: 7,
+    APPLICATION_COMMAND_AUTOCOMPLETE_RESULT: 8,
+    MODAL: 9
+  },
+
+  /**
+   * Flags de respuesta (bitmask).
+   * EPHEMERAL = solo el usuario que invocó el comando ve la respuesta.
+   * Referencia: https://discord.com/developers/docs/resources/message#message-object-message-flags
+   */
+  responseFlags: {
+    EPHEMERAL: 1 << 6  // 64
+  }
 };
 
 /**
@@ -83,5 +118,29 @@ export function isDiscordInteractionsReady() {
     Boolean(DISCORD.applicationId)
   );
 }
+
+/**
+ * Lista de subcomandos válidos de /torneo (Opción A — 1 comando con subcomandos).
+ * Usado por el controller para hacer dispatch.
+ * Ver Q1 del plan F1.6d.
+ */
+export const TOURNAMENT_SUBCOMMANDS = Object.freeze([
+  'status',
+  'bracket',
+  'equipos',
+  'draft'
+]);
+
+/**
+ * Colores de embed institucionales (alineados con :root de global.css).
+ */
+export const EMBED_COLORS = Object.freeze({
+  PRIMARY: 0xD52B1E,   // --pry-red
+  INFO:    0x0038A8,   // --pry-blue
+  SUCCESS: 0x28A745,
+  WARNING: 0xFFC107,
+  DANGER:  0xDC3545,
+  NEUTRAL: 0x6C757D
+});
 
 export default DISCORD;
