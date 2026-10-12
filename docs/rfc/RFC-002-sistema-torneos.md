@@ -1,6 +1,6 @@
 # RFC-002 — Sistema de Torneos Internos
 
-> **ID:** RFC-002 · **Estado:** 📝 Draft · **Autor:** OWNER + Comando C4ISR
+> **ID:** RFC-002 · **Estado:** ✅ Accepted · **Autor:** OWNER + Comando C4ISR
 > **Fecha:** 2026-10-11
 > **Relacionado con:** Normativa v3.0 Art. 18 bis, 7 ter, 7 quater, 42
 
@@ -40,12 +40,16 @@ Sistema de torneos recreativos con draft de aeronaves, incremental por fases.
 1. Tests de aeronaves verdes.
 2. Decisión OWNER: formato, tamaño, duración, premios.
 
-## 8. Preguntas abiertas para el OWNER
-1. Formato (eliminación / round-robin / ambos).
-2. Tamaño (8, 16, variable).
-3. Duración.
-4. Cómo se juegan las partidas.
-5. Premios.
+## 8. Decisiones del OWNER
+
+1. **Formato:** Swiss (Día 1) + Single Elimination (Día 2). Réplica del formato oficial MCS.
+2. **Tamaño:** Escalable por fases — F1: 4-8 equipos; F2: 8-16; F3: 16-32.
+3. **Duración:** 1 fin de semana (sáb Swiss + dom eliminación). F3+: 2 fines de semana.
+4. **Partidas:** 5v5. Bo3 en Swiss y cuartos. Bo5 en semis y final. Modo Priority Target. Draft con 1 ban/equipo, Mirrored Picks, último BM baneado.
+5. **Premios:** F1 sin premio material (badge + mención). F2-F3 a definir por acuerdo institucional.
+6. **Canales oficiales:** Discord del escuadrón + app de control.
+
+**Todas las reglas operativas están formalizadas en `docs/normativa/ANEXO-III-torneos.md`.**
 
 ## 9. Próximos pasos
 1. Aprobación del RFC-002.
