@@ -14,7 +14,49 @@
 
 ---
 
-## [4.9.2-f1.6b] — 2026-10-12
+## [4.9.4-f1.6d] — 2026-10-12
+
+### ✨ Features
+
+- **Discord integration (F1.6d):** HTTP Interactions endpoint `POST /api/discord/interactions` con verificación de firma Ed25519. Slash command `/torneo` con 4 subcomandos (`status`, `bracket`, `equipos`, `draft`) que consultan Supabase y responden con embeds institucionales (colores FFAA, footer MetalStorm). Sin deferred responses (type 5) por estabilidad en Render free.
+- **Constantes de interaction:** `INTERACTION_TYPES`, `RESPONSE_TYPES`, `RESPONSE_FLAGS`, `TOURNAMENT_SUBCOMMANDS`, `EMBED_COLORS` en `src/config/discord.js`.
+- **Middleware `verifyDiscordSignature`:** Verificación criptográfica Ed25519 con cacheo del KeyObject. Rechaza con 401 (firma inválida) o 503 (Discord no configurado).
+
+### 🐛 Fixes
+
+- **Cache busting:** 22 archivos de assets en `index.html` migrados a `?v=4.9.4`.
+- **Rate limiter:** El endpoint `/api/discord/interactions` se monta **antes** del `apiLimiter` global, para no bloquear reintentos legítimos de Discord.
+- **CORS:** Documentado que Discord no envía header `Origin` (server-to-server) y que el early-return `if (!origin)` es intencional.
+
+### 🧪 Tests
+
+- 12 tests nuevos del middleware `verifyDiscordSignature` (keypair Ed25519 efímera, firmas válidas/inválidas, headers faltantes, body alterado, DISCORD_ENABLED=false).
+- 21 tests nuevos del controller `handleInteraction` (PING + 4 subcomandos + errores de Supabase + Supabase null + validación de UUID + regresión de status 200).
+- **711 passing / 2 skipped** (total acumulado del proyecto).
+
+### 📚 Documentación
+
+- ADR-012 (Discord integration) ya documentado en F1.6a/b.
+- Handoff a F1.6e: deferred responses (type 5) + cola persistente.
+
+### 🔒 Seguridad
+
+- Firma Ed25519 obligatoria en todos los requests entrantes de Discord.
+- `DISCORD_PUBLIC_KEY` requerida; si falta, retorna 503 `DISCORD_NOT_CONFIGURED`.
+- Los logs no exponen la firma ni el body crudo en caso de rechazo (solo warn genérico).
+
+### ⚠️ Hallazgos
+
+- **H-F16d-01:** El callback `verify` de `express.json()` debe usar `req.originalUrl.split('?')[0]`, no `req.path` (no seteado aún en Express 4).
+- **H-F16d-02:** Los tests con `express.json()` sin `verify` fallan con 401 — útil para detectar configuración errónea del body parser.
+
+### 📝 Reglas agregadas al proyecto
+
+- El path `/api/discord/interactions` no pasa por `apiLimiter` (la firma Ed25519 es la autenticación).
+- Todo middleware nuevo en rutas de Discord debe ejecutarse **después** de `verifyDiscordSignature`.
+
+---
+
 
 ### ✨ Features
 

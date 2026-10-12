@@ -6,7 +6,7 @@
 [![Express Version](https://img.shields.io/badge/express-5.2.1-blue?logo=express)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/database-Supabase_PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Platform](https://img.shields.io/badge/deploy-Render_oregon-blue?logo=render)](https://paraguay-ffaa-metalstorm.onrender.com/)
-[![Version](https://img.shields.io/badge/version-v4.8.10-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
+[![Version](https://img.shields.io/badge/version-v4.9.4-gold)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![OAuth](https://img.shields.io/badge/auth-Google_OAuth_2.0_Dual-4285F4?logo=google)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![PWA](https://img.shields.io/badge/PWA-Ready_(Offline_Cache)-orange?logo=pwa)](https://paraguay-ffaa-metalstorm.onrender.com/)
 [![SMTP](https://img.shields.io/badge/SMTP-Gmail_Configurado-EA4335?logo=gmail)](https://paraguay-ffaa-metalstorm.onrender.com/)
@@ -121,7 +121,7 @@ La plataforma centraliza las operaciones del escuadrón mediante:
 ├── link-account.html             # Terminal de vinculacion Google OAuth
 ├── reset-password.html           # Terminal de reset de contrasena
 ├── server.js                     # Servidor Express y middlewares
-├── sw.js                         # Service Worker (Cache-First, v4.8.10)
+├── sw.js                         # Service Worker (Cache-First, v4.9.4)
 └── package.json                  # Dependencias y scripts
 ```
 
@@ -614,6 +614,6 @@ El proyecto usa **versionado automático** basado en [Conventional Commits](http
 ## 📜 Licencia y Confidencialidad
 
 © 2026 Escuadrón PARAGUAY FFAA `[PRY]` en MetalStorm. Todos los derechos reservados.
-*Versión: v4.8.10 · Actualizado: 2026-10-11*  
+*Versión: v4.9.4 · Actualizado: 2026-10-12*  
 *Uso exclusivo y reservado para los miembros del escuadrón militar.*
 

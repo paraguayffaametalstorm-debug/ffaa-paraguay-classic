@@ -7,7 +7,7 @@
 // en recursos estáticos (componentes HTML) tras redirección 
 // post-vinculación.
 // ============================================================
-const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.9.2-f1.5b';
+const CACHE_NAME = 'PARAGUAY-FFAA-METALSTORM-v4.9.4-f1.6d';
 
 // ✅ Assets versionados
 const STATIC_ASSETS = [
@@ -67,7 +67,7 @@ self.addEventListener('install', (event) => {
   
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Cacheando assets estáticos v4.7.4');
+      console.log('[SW] Cacheando assets estáticos v4.9.4');
       return cache.addAll(STATIC_ASSETS);
     })
   );
