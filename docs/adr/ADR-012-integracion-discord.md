@@ -247,3 +247,23 @@ information_schema.role_table_grants WHERE table_name = 'discord_webhooks';`
 debe devolver SOLO `postgres` (owner) y `service_role` (4 privilegios).
 
 ---
+
+### D5.ter — Lección aprendida: Zod 4 y UUIDs en tests
+
+**Hallazgo H-F16-01 (2026-10-12):**
+
+Durante el desarrollo de los tests del notifier (`tests/utils/discordNotifier.test.js`), 11 de 18 tests fallaron porque el fixture usaba UUIDs "falsos" tipo `11111111-1111-1111-1111-111111111111`.
+
+**Causa:** Zod 4 valida UUIDs con regex **RFC 4122 estricta**:
+- **Versión** (13° carácter) debe ser `1`-`8`.
+- **Variante** (17° carácter) debe ser `8`, `9`, `a` o `b`.
+
+El UUID `1111...-1111` tiene variante `1` → **rechazado**.
+
+**Fix aplicado:** patrón `XXXXXXXX-XXXX-4XXX-8XXX-XXXXXXXXXXXX` en todos los fixtures.
+
+**Regla para tests futuros:** en cualquier test que necesite un UUID "fake" pero válido, usar el patrón anterior. **Nunca `1111...`** porque Zod 4 lo rechaza.
+
+**Referencia:** `PLAN_TRABAJO_TORNEOS.md` (hallazgo H-F13-01, mismo tipo).
+
+---

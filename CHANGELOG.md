@@ -14,6 +14,48 @@
 
 ---
 
+## [4.9.2-f1.6b] — 2026-10-12
+
+### ✨ Features
+
+- **Discord integration (F1.6a):** Setup base con feature flag `DISCORD_ENABLED`, tabla `discord_webhooks` (RLS + GRANTs explícitos), schemas Zod para 6 eventos del sistema de torneos, ADR-012 documentando la decisión arquitectónica (webhooks outbound + HTTP Interactions).
+- **Discord integration (F1.6b):** Notifier outbound con `safeNotify()` fire-and-forget. 7 hooks en `tournaments.controller.js` para notificar: creación de torneo, registro de equipo, resultado de match, acción de draft, cambio de estado, cambio de moderador. Caché TTL 5min de URLs. Timeout 3s con AbortController.
+
+### 🐛 Fixes
+
+- **SQL 047:** REVOKE de `anon`/`authenticated` en `discord_webhooks` (Supabase otorga ALL PRIVILEGES por default).
+
+### 🧪 Tests
+
+- 23 tests nuevos del `discordNotifier` (18 de `safeNotify` + 5 de `buildEmbed`).
+- **678 passing / 0 failing / 2 skipped** (18 nuevos vs 660 previos).
+
+### 📚 Documentación
+
+- `docs/adr/ADR-012-integracion-discord.md` (nuevo).
+- `docs/DISCORD_SETUP.md` (nuevo).
+- `docs/prompts/prompt-continuacion-f1.6d.md` (handoff a HTTP Interactions).
+
+### 🔒 Seguridad
+
+- `discord_webhooks` con RLS `no_public_access` + GRANT solo a `service_role`.
+- `allowed_mentions: { parse: [] }` hardcodeado → nunca pingea `@everyone`.
+- Firma Ed25519 reservada para F1.6d.
+
+### ⚠️ Hallazgos
+
+- **H-F16-00:** `#` de comentarios en `cmd.exe` no funciona (usar `REM`).
+- **H-F16-01:** Zod 4 rechaza UUIDs falsos con variante RFC inválida.
+- **H-F16-02:** Template literals anidados con `${...}` rompen el parseo de scripts `.cjs`.
+
+### 📝 Reglas agregadas al proyecto
+
+- UUIDs de test: patrón `XXXXXXXX-XXXX-4XXX-8XXX-XXXXXXXXXXXX`.
+- Scripts `.cjs`: sin template literals anidados; usar arrays de strings.
+- Comentarios en `cmd.exe`: evitar `#`.
+
+---
+
 ## [4.8.22](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.21...v4.8.22) (2026-10-12)
 
 
