@@ -123,6 +123,57 @@ async function safeAudit(params) {
 }
 
 // ============================================================
+// BLACK MARKET — caché de último avión auto-baneado (Anexo III §7.3)
+// ============================================================
+//  La regla del torneo dice que el último avión del Black Market
+//  está auto-baneado. Como el BM es un evento de 5 días, el "último"
+//  cambia con cada edición. Para no pegarle a Supabase en cada acción
+//  de draft, cacheamos por proceso con TTL corto.
+// ============================================================
+
+const BM_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutos
+let _bmAircraftCache = { aircraft_id: null, fetched_at: 0 };
+
+/**
+ * Devuelve el aircraft_id del último evento BM finalizado/activo,
+ * o null si no hay ninguno o falla la consulta (no bloquea el draft).
+ */
+async function getActiveBmAircraft(supabase) {
+  try {
+    const now = Date.now();
+    if (_bmAircraftCache.aircraft_id !== null &&
+        now - _bmAircraftCache.fetched_at < BM_CACHE_TTL_MS) {
+      return _bmAircraftCache.aircraft_id;
+    }
+
+    const { data, error } = await supabase
+      .from('events_master')
+      .select('metadata, start_date')
+      .eq('type', 'BLACK_MARKET')
+      .in('status', ['OPEN', 'CLOSED'])
+      .order('start_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      _bmAircraftCache = { aircraft_id: null, fetched_at: now };
+      return null;
+    }
+
+    const aircraftId = (data.metadata && data.metadata.aircraft_id)
+      ? String(data.metadata.aircraft_id).trim()
+      : null;
+
+    _bmAircraftCache = { aircraft_id: aircraftId, fetched_at: now };
+    return aircraftId;
+  } catch (err) {
+    logger.warn('⚠️ [Tournaments] getActiveBmAircraft falló:', err.message);
+    return null;
+  }
+}
+
+
+// ============================================================
 // 1. GET /api/tournaments
 // ============================================================
 export async function getTournaments(req, res, next) {
@@ -653,6 +704,103 @@ export async function registerMatchResult(req, res, next) {
 // ============================================================
 // 7. POST /api/tournaments/:id/matches/:mid/draft
 // ============================================================
+// 6.bis GET /api/tournaments/:id/matches/:mid/drafts
+// ============================================================
+//  Lista todos los drafts del match agrupados por game_number.
+//
+//  RBAC: requireAuth (cualquier autenticado puede ver el draft).
+//
+//  Response:
+//    {
+//      success: true,
+//      match_id: "uuid",
+//      drafts: [ { id, game_number, team_id, action, aircraft_id, order_index, created_at }, ... ],
+//      by_game: { "1": [...], "2": [...] }
+//    }
+// ============================================================
+export async function getMatchDrafts(req, res, next) {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: 'Database client unavailable', code: 'DB_UNAVAILABLE' });
+    }
+
+    const tournamentId = req.params.id;
+    const matchId = req.params.mid;
+
+    if (!isUuid(tournamentId)) {
+      return res.status(400).json({
+        error: 'Identificador de torneo inválido',
+        code: 'INVALID_TOURNAMENT_ID'
+      });
+    }
+    if (!isUuid(matchId)) {
+      return res.status(400).json({
+        error: 'Identificador de match inválido',
+        code: 'INVALID_MATCH_ID'
+      });
+    }
+
+    // 1. Validar que el match exista y pertenezca al torneo
+    const { data: match, error: mErr } = await supabase
+      .from('tournament_matches')
+      .select('id, tournament_id, team_a_id, team_b_id, best_of, phase')
+      .eq('id', matchId)
+      .maybeSingle();
+
+    if (mErr) throw mErr;
+    if (!match) {
+      return res.status(404).json({
+        error: 'Match no encontrado',
+        code: 'MATCH_NOT_FOUND'
+      });
+    }
+    if (String(match.tournament_id) !== String(tournamentId)) {
+      return res.status(404).json({
+        error: 'Match no pertenece a este torneo',
+        code: 'MATCH_NOT_FOUND'
+      });
+    }
+
+    // 2. Leer drafts ordenados por game_number y order_index
+    const { data: drafts, error: dErr } = await supabase
+      .from('tournament_drafts')
+      .select('id, match_id, game_number, team_id, action, aircraft_id, order_index, created_at')
+      .eq('match_id', matchId)
+      .order('game_number', { ascending: true })
+      .order('order_index', { ascending: true });
+
+    if (dErr) throw dErr;
+
+    // 3. Agrupar por game_number (1..N)
+    const byGame = {};
+    (drafts || []).forEach(d => {
+      const gn = String(d.game_number);
+      if (!byGame[gn]) byGame[gn] = [];
+      byGame[gn].push(d);
+    });
+
+    return res.json({
+      success: true,
+      match_id: matchId,
+      tournament_id: tournamentId,
+      best_of: match.best_of || 3,
+      phase: match.phase || null,
+      team_a_id: match.team_a_id,
+      team_b_id: match.team_b_id,
+      total: (drafts || []).length,
+      drafts: drafts || [],
+      by_game: byGame
+    });
+
+  } catch (err) {
+    logger.error('❌ [Tournaments] getMatchDrafts:', err.message);
+    next(err);
+  }
+}
+
+
+// ============================================================
 export async function registerDraftAction(req, res, next) {
   try {
     const supabase = getSupabase();
@@ -712,7 +860,71 @@ export async function registerDraftAction(req, res, next) {
       });
     }
 
-    // 3. Insertar acción (UNIQUE match_id+game_number+order_index → 23505)
+    // 3. Validar aircraft existe en plane_models
+    const aircraftIdStr = String(data.aircraft_id).trim();
+    const { data: aircraftRow, error: aErr } = await supabase
+      .from('plane_models')
+      .select('id, name')
+      .eq('id', aircraftIdStr)
+      .maybeSingle();
+
+    if (aErr) {
+      logger.warn('⚠️ [Tournaments] Error validando aircraft_id:', aErr.message);
+    }
+    if (!aircraftRow) {
+      return res.status(400).json({
+        error: 'La aeronave no existe en el catálogo',
+        code: 'AIRCRAFT_NOT_FOUND',
+        details: { aircraft_id: aircraftIdStr }
+      });
+    }
+
+    // 4. Validar que aircraft_id no esté baneada por el OTRO equipo
+    //    en el mismo game_number. Mirrored Picks permite que AMBOS
+    //    equipos usen la misma aeronave en PICK, pero NO en BAN.
+    const otherTeamId = String(data.team_id) === String(match.team_a_id)
+      ? match.team_b_id
+      : match.team_a_id;
+
+    const { data: opponentBans, error: bErr } = await supabase
+      .from('tournament_drafts')
+      .select('id, aircraft_id, action')
+      .eq('match_id', matchId)
+      .eq('game_number', data.game_number)
+      .eq('team_id', otherTeamId)
+      .eq('action', 'BAN');
+
+    if (bErr) {
+      logger.warn('⚠️ [Tournaments] Error validando bans oponente:', bErr.message);
+    }
+    const bannedByOpponent = (opponentBans || []).some(
+      b => String(b.aircraft_id) === aircraftIdStr
+    );
+    if (bannedByOpponent) {
+      return res.status(409).json({
+        error: 'La aeronave está baneada por el equipo contrario en esta partida',
+        code: 'AIRCRAFT_BANNED_BY_OPPONENT',
+        details: { aircraft_id: aircraftIdStr, game_number: data.game_number }
+      });
+    }
+
+    // 5. Validar que aircraft_id no sea el último avión del Black Market
+    //    (auto-baneado, Anexo III §7.3).
+    //    IMPORTANTE: la validación aplica SOLO a BAN (para impedir banear
+    //    lo que ya está auto-baneado). En PICK sí se permite (Mirrored Picks).
+    if (data.action === 'BAN') {
+      const bmAircraftId = await getActiveBmAircraft(supabase);
+      if (bmAircraftId && String(bmAircraftId) === aircraftIdStr) {
+        return res.status(409).json({
+          error: 'La aeronave es el último avión del Black Market y está auto-baneada (Anexo III §7.3)',
+          code: 'AIRCRAFT_BM_AUTO_BANNED',
+          details: { aircraft_id: aircraftIdStr, rule: 'Anexo III §7.3' }
+        });
+      }
+    }
+
+    // 6. Insertar acción (UNIQUE match_id+game_number+order_index → 23505)
+    // 6. Insertar acción (UNIQUE match_id+game_number+order_index → 23505)
     const { data: inserted, error: insErr } = await supabase
       .from('tournament_drafts')
       .insert({

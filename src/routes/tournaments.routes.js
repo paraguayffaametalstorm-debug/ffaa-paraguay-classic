@@ -21,6 +21,7 @@ import {
   updateTournamentStatus,
   registerTeam,
   registerMatchResult,
+  getMatchDrafts,
   registerDraftAction,
   changeModerator
 } from '../controllers/tournaments.controller.js';
@@ -51,6 +52,9 @@ router.post('/:id/register', registerTeam);
 router.post('/:id/matches/:mid/result', requireTournamentModerator, registerMatchResult);
 
 // ========== 7. REGISTRAR DRAFT (RBAC fino) ==========
+// ========== 7.bis. LISTAR DRAFTS DEL MATCH (cualquier autenticado) ==========
+router.get('/:id/matches/:mid/drafts', getMatchDrafts);
+
 router.post('/:id/matches/:mid/draft', requireTournamentModerator, registerDraftAction);
 
 // ========== 8. REASIGNAR MODERADOR (solo ADMIN/OWNER) ==========
