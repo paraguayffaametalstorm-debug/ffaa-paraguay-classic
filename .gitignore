@@ -52,4 +52,4 @@ dist/
 # ---------- Node/Python misceláneos ----------
 .pytest_cache/
 .mypy_cache/
-.ruff_cache/
+.ruff_cache/*.bak.* 
