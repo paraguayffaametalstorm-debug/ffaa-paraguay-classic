@@ -1,0 +1,651 @@
+<!--
+  components/tournaments.html
+  ─────────────────────────────────────────────────────────────
+  Vista principal del Sistema de Torneos Internos.
+  RFC-002 / ADR-011 / Anexo III.
+
+  Estructura:
+    - Header táctico (badge + título + subtítulo + botón Nuevo).
+    - Filtros: search + status + scope + limpiar.
+    - Grid de torneos (cards).
+    - Panel detalle (oculto): tabs Bracket / Roster / Moderador.
+    - 5 modales:
+      1. tournamentCreateModal      (ADMIN/OWNER)
+      2. tournamentRegisterTeamModal (capitán o ADMIN/OWNER)
+      3. tournamentMatchResultModal  (moderador o ADMIN/OWNER)
+      4. tournamentStatusChangeModal (ADMIN/OWNER)
+      5. tournamentChangeModeratorModal (ADMIN/OWNER)
+
+  F1.5a: sin modal de draft (se posterga a F1.5b).
+  ─────────────────────────────────────────────────────────────
+-->
+<div id="tournamentsView" class="view" style="display:none;">
+
+  <!-- ══════════════════════════════════════════════════════
+       HEADER TÁCTICO
+       ══════════════════════════════════════════════════════ -->
+  <div class="view-header-tactical">
+    <div class="header-titles">
+      <div class="badge-tag">RFC-002 · ADR-011 · TORNEOS INTERNOS</div>
+      <h2>🏆 Sistema de Torneos</h2>
+      <p class="subtitle" id="tournamentsSubtitle">
+        Gestión de torneos internos del escuadrón · Swiss + Single Elimination
+      </p>
+    </div>
+    <div class="header-actions">
+      <button onclick="loadTournamentsView()" class="btn-secondary btn-sm" title="Recargar">
+        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Sincronizar
+      </button>
+      <button id="tournamentsCreateBtn" onclick="openCreateTournamentModal()"
+              class="btn-primary btn-sm" style="display:none;" title="Crear nuevo torneo">
+        <i data-lucide="plus-circle" style="width:14px;height:14px;"></i> Nuevo Torneo
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       FILTROS
+       ══════════════════════════════════════════════════════ -->
+  <div class="card tactical-corners" style="margin-bottom:1.5rem;padding:1rem 1.25rem;">
+    <div class="tournaments-filters">
+      <div>
+        <label for="tournamentsSearch">🔍 BUSCAR</label>
+        <input type="text" id="tournamentsSearch"
+               placeholder="Nombre del torneo..."
+               oninput="filterTournaments()" />
+      </div>
+      <div>
+        <label for="tournamentsStatusFilter">ESTADO</label>
+        <select id="tournamentsStatusFilter" onchange="filterTournaments()">
+          <option value="">Todos</option>
+          <option value="DRAFT">Borrador</option>
+          <option value="REGISTRATION">Inscripción</option>
+          <option value="ONGOING">En Curso</option>
+          <option value="FINISHED">Finalizado</option>
+          <option value="CANCELLED">Cancelado</option>
+        </select>
+      </div>
+      <div>
+        <label for="tournamentsScopeFilter">ALCANCE</label>
+        <select id="tournamentsScopeFilter" onchange="filterTournaments()">
+          <option value="">Todos</option>
+          <option value="F1">F1 · Principal</option>
+          <option value="F2">F2 · Con Anexos</option>
+          <option value="F3">F3 · Con Aliados</option>
+          <option value="F4">F4 · Partner</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button onclick="resetTournamentsFilters()" class="btn-secondary" style="width:100%;">
+          🔄 Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       LISTADO DE TORNEOS
+       ══════════════════════════════════════════════════════ -->
+  <div id="tournamentsList" class="tournaments-grid">
+    <div style="text-align:center;padding:2rem;color:#94a3b8;grid-column:1/-1;">
+      <p>Cargando torneos…</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       PANEL DETALLE (oculto por defecto)
+       ══════════════════════════════════════════════════════ -->
+  <div id="tournamentDetailPanel" class="card tactical-corners" style="display:none;margin-top:1.5rem;padding:1.5rem;">
+
+    <!-- Header detalle -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div style="flex:1;min-width:250px;">
+        <div id="tournamentDetailBadges" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+          <!-- Status + Format + Scope badges (JS) -->
+        </div>
+        <h3 id="tournamentDetailName" style="color:#f8fafc;font-family:var(--font-tactical);letter-spacing:0.5px;margin:0 0 4px 0;">—</h3>
+        <div id="tournamentDetailMeta" style="font-size:0.85rem;color:#94a3b8;line-height:1.5;">
+          <!-- Fechas, min/max teams, moderator (JS) -->
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+        <button onclick="closeTournamentDetail()" class="btn-secondary btn-sm">
+          ← Volver al listado
+        </button>
+        <button id="tournamentDetailActionBtn" class="btn-primary btn-sm" style="display:none;">
+          <!-- Botón dinámico (Registrar equipo, etc.) -->
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de acciones administrativas (RBAC) -->
+    <div id="tournamentAdminActions" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;">
+      <button id="tournamentChangeStatusBtn" onclick="openStatusChangeModal()" class="btn-secondary btn-sm" style="display:none;">
+        🔄 Cambiar Estado
+      </button>
+      <button id="tournamentChangeModeratorBtn" onclick="openChangeModeratorModal()" class="btn-secondary btn-sm" style="display:none;">
+        🎖️ Reasignar Moderador
+      </button>
+      <button id="tournamentRegisterTeamBtn" onclick="openRegisterTeamModal()" class="btn-secondary btn-sm" style="display:none;">
+        ➕ Registrar Equipo
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tournament-tabs" role="tablist">
+      <button class="tournament-tab active" data-tab="bracket" onclick="switchTournamentTab('bracket')">
+        🔀 Bracket
+      </button>
+      <button class="tournament-tab" data-tab="roster" onclick="switchTournamentTab('roster')">
+        👥 Roster
+      </button>
+      <button class="tournament-tab" data-tab="moderator" onclick="switchTournamentTab('moderator')">
+        🎖️ Historial Moderador
+      </button>
+    </div>
+
+    <!-- Contenido dinámico de tabs -->
+    <div id="tournamentTabContent" style="min-height:200px;padding:1rem 0;">
+      <!-- JS inyecta: bracket | roster | moderador -->
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODALES (al final, fuera del .view)
+     ══════════════════════════════════════════════════════════════ -->
+
+<!-- ═══ MODAL 1: Crear Torneo (ADMIN/OWNER) ═══ -->
+<div id="tournamentCreateModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:640px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">➕ Nuevo Torneo Interno</h3>
+      <span class="close-btn" onclick="closeModal('tournamentCreateModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tCreateName" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Nombre del Torneo <span style="color:#e74c3c;">*</span>
+        </label>
+        <input type="text" id="tCreateName" maxlength="120" placeholder="Ej: Torneo Interno W45"
+               style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;" />
+        <small style="color:#64748b;font-size:0.75rem;">3-120 caracteres</small>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+        <div class="form-group">
+          <label for="tCreateFormat" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+            Formato <span style="color:#e74c3c;">*</span>
+          </label>
+          <select id="tCreateFormat" style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;">
+            <option value="SWISS+SE">SWISS + Single Elimination</option>
+            <option value="ROUND_ROBIN+SE">Round Robin + Single Elimination</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="tCreateScope" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+            Alcance <span style="color:#e74c3c;">*</span>
+          </label>
+          <select id="tCreateScope" style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;">
+            <option value="F1">F1 · Escuadrón Principal</option>
+            <option value="F2">F2 · Con Anexos</option>
+            <option value="F3">F3 · Con Aliados</option>
+            <option value="F4">F4 · Partner</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+        <div class="form-group">
+          <label for="tCreateStartsAt" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+            Inicio <span style="color:#e74c3c;">*</span>
+          </label>
+          <input type="datetime-local" id="tCreateStartsAt"
+                 style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;" />
+        </div>
+        <div class="form-group">
+          <label for="tCreateEndsAt" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+            Cierre <span style="color:#e74c3c;">*</span>
+          </label>
+          <input type="datetime-local" id="tCreateEndsAt"
+                 style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;" />
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem;">
+        <div class="form-group">
+          <label for="tCreateMinTeams" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+            Equipos Mínimos
+          </label>
+          <input type="number" id="tCreateMinTeams" min="2" max="32" value="4"
+                 style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;" />
+        </div>
+        <div class="form-group">
+          <label for="tCreateMaxTeams" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+            Equipos Máximos
+          </label>
+          <input type="number" id="tCreateMaxTeams" min="2" max="32" value="8"
+                 style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tCreateModerator" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Moderador Designado
+        </label>
+        <select id="tCreateModerator" style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;">
+          <option value="">— Sin moderador (se asigna después) —</option>
+        </select>
+        <small style="color:#64748b;font-size:0.75rem;">El moderador puede supervisar resultados y drafts de este torneo.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="tCreateNotes" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Notas / Reglas específicas (opcional)
+        </label>
+        <textarea id="tCreateNotes" rows="3" maxlength="1000"
+                  placeholder="Ej: Bo3 en Swiss, Bo5 en final..."
+                  style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('tournamentCreateModal')" class="btn-secondary">Cancelar</button>
+      <button id="tCreateSubmit" onclick="submitCreateTournament()" class="btn-primary">💾 Crear Torneo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL 2: Registrar Equipo ═══ -->
+<div id="tournamentRegisterTeamModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:720px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">👥 Registrar Equipo</h3>
+      <span class="close-btn" onclick="closeModal('tournamentRegisterTeamModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tRegTeamName" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Nombre del Equipo <span style="color:#e74c3c;">*</span>
+        </label>
+        <input type="text" id="tRegTeamName" maxlength="40" placeholder="Ej: Alpha Squad"
+               style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;" />
+        <small style="color:#64748b;font-size:0.75rem;">2-40 caracteres. Único por torneo.</small>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tRegCaptain" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Capitán del Equipo <span style="color:#e74c3c;">*</span>
+        </label>
+        <select id="tRegCaptain" style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;">
+          <!-- JS: opciones según rol del usuario -->
+        </select>
+        <small style="color:#64748b;font-size:0.75rem;">Un piloto solo puede ser capitán de un equipo por torneo.</small>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <label style="font-size:0.85rem;color:#cbd5e1;font-weight:600;">
+          Roster <span style="color:#e74c3c;">*</span>
+          <small style="color:#64748b;font-weight:normal;margin-left:6px;">(5 titulares + 1 suplente máx)</small>
+        </label>
+        <button type="button" id="tRegAddRoster" onclick="addRosterRow()" class="btn-secondary btn-sm" style="padding:4px 10px;font-size:0.8rem;">
+          ➕ Agregar miembro
+        </button>
+      </div>
+
+      <div id="tRegRosterContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+        <!-- JS: filas dinámicas -->
+      </div>
+
+      <div style="background:rgba(212,175,55,0.08);border-left:3px solid #d4af37;border-radius:4px;padding:8px 12px;font-size:0.8rem;color:#fde047;line-height:1.5;">
+        ℹ️ <strong>Anexo III §6.1:</strong> 5 titulares + 1 suplente opcional. Los roles deben ser únicos por equipo (Unique Roles).
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('tournamentRegisterTeamModal')" class="btn-secondary">Cancelar</button>
+      <button id="tRegSubmit" onclick="submitRegisterTeam()" class="btn-primary">💾 Registrar Equipo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL 3: Resultado de Match ═══ -->
+<div id="tournamentMatchResultModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">🎯 Registrar Resultado</h3>
+      <span class="close-btn" onclick="closeModal('tournamentMatchResultModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="tResultMatchInfo" style="background:rgba(15,23,42,0.7);border:1px solid rgba(99,110,130,0.3);border-radius:6px;padding:10px 12px;margin-bottom:1rem;font-size:0.85rem;color:#cbd5e1;">
+        <!-- JS: equipo A vs equipo B, fase, round, best_of -->
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:1rem;">
+        <div>
+          <label for="tResultScoreA" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;text-align:center;">
+            Equipo A
+          </label>
+          <input type="number" id="tResultScoreA" min="0" max="5" value="0"
+                 style="width:100%;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:1.2rem;text-align:center;font-family:var(--font-mono);" />
+        </div>
+        <div style="color:#64748b;font-family:var(--font-mono);font-size:1.2rem;">—</div>
+        <div>
+          <label for="tResultScoreB" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;text-align:center;">
+            Equipo B
+          </label>
+          <input type="number" id="tResultScoreB" min="0" max="5" value="0"
+                 style="width:100%;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:1.2rem;text-align:center;font-family:var(--font-mono);" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tResultNotes" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Notas (opcional)
+        </label>
+        <textarea id="tResultNotes" rows="2" maxlength="500" placeholder="Ej: Bo3, countdown/icebound/crimson"
+                  style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="background:rgba(56,189,248,0.08);border-left:3px solid #38bdf8;border-radius:4px;padding:8px 12px;font-size:0.8rem;color:#bae6fd;line-height:1.5;">
+        ℹ️ El score no puede ser empate. El backend determina automáticamente el ganador.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('tournamentMatchResultModal')" class="btn-secondary">Cancelar</button>
+      <button id="tResultSubmit" onclick="submitMatchResult()" class="btn-primary">💾 Guardar Resultado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL 4: Cambio de Estado (ADMIN/OWNER) ═══ -->
+<div id="tournamentStatusChangeModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">🔄 Cambiar Estado del Torneo</h3>
+      <span class="close-btn" onclick="closeModal('tournamentStatusChangeModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="tStatusCurrentInfo" style="background:rgba(15,23,42,0.7);border:1px solid rgba(99,110,130,0.3);border-radius:6px;padding:10px 12px;margin-bottom:1rem;font-size:0.85rem;color:#cbd5e1;">
+        Estado actual: <strong id="tStatusCurrent">—</strong>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tStatusNew" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Nuevo Estado <span style="color:#e74c3c;">*</span>
+        </label>
+        <select id="tStatusNew" onchange="onStatusChangeSelect()" style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;">
+          <!-- JS: opciones según transición válida -->
+        </select>
+      </div>
+
+      <div class="form-group" id="tStatusReasonGroup" style="margin-bottom:1rem;display:none;">
+        <label for="tStatusReason" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Motivo de Cancelación <span style="color:#e74c3c;">*</span>
+        </label>
+        <textarea id="tStatusReason" rows="3" maxlength="500" placeholder="Motivo obligatorio si el estado es CANCELLED (5-500 chars)"
+                  style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="background:rgba(212,175,55,0.08);border-left:3px solid #d4af37;border-radius:4px;padding:8px 12px;font-size:0.8rem;color:#fde047;line-height:1.5;">
+        <strong>Transiciones válidas:</strong><br>
+        DRAFT → REGISTRATION | CANCELLED<br>
+        REGISTRATION → ONGOING | CANCELLED<br>
+        ONGOING → FINISHED | CANCELLED<br>
+        FINISHED / CANCELLED: terminales
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('tournamentStatusChangeModal')" class="btn-secondary">Cancelar</button>
+      <button id="tStatusSubmit" onclick="submitStatusChange()" class="btn-primary">💾 Cambiar Estado</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL 5: Cambio de Moderador (ADMIN/OWNER) ═══ -->
+<div id="tournamentChangeModeratorModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;">🎖️ Reasignar Moderador</h3>
+      <span class="close-btn" onclick="closeModal('tournamentChangeModeratorModal')">&times;</span>
+    </div>
+    <div class="modal-body">
+      <div id="tModCurrentInfo" style="background:rgba(15,23,42,0.7);border:1px solid rgba(99,110,130,0.3);border-radius:6px;padding:10px 12px;margin-bottom:1rem;font-size:0.85rem;color:#cbd5e1;">
+        Moderador actual: <strong id="tModCurrent">—</strong>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tModNew" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Nuevo Moderador <span style="color:#e74c3c;">*</span>
+        </label>
+        <select id="tModNew" style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;">
+          <!-- JS: lista de usuarios activos -->
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label for="tModReason" style="display:block;font-size:0.85rem;color:#cbd5e1;margin-bottom:6px;font-weight:600;">
+          Motivo <span style="color:#e74c3c;">*</span>
+        </label>
+        <textarea id="tModReason" rows="3" maxlength="500" placeholder="Motivo de la reasignación (5-500 chars)"
+                  style="width:100%;padding:9px 12px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="background:rgba(56,189,248,0.08);border-left:3px solid #38bdf8;border-radius:4px;padding:8px 12px;font-size:0.8rem;color:#bae6fd;line-height:1.5;">
+        ℹ️ El cambio queda auditado en <strong>tournament_moderator_history</strong> y <strong>audit_logs</strong> (ADR-011 D6).
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal('tournamentChangeModeratorModal')" class="btn-secondary">Cancelar</button>
+      <button id="tModSubmit" onclick="submitChangeModerator()" class="btn-primary">💾 Reasignar Moderador</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     ESTILOS INLINE (complementan css/views.css)
+     ══════════════════════════════════════════════════════════════ -->
+<style>
+  /* Grid de tarjetas de torneo */
+  .tournaments-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  @media (min-width: 768px) {
+    .tournaments-filters {
+      grid-template-columns: 2fr 1fr 1fr auto;
+    }
+  }
+  .tournaments-filters label {
+    display: block;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .tournaments-filters input,
+  .tournaments-filters select {
+    width: 100%;
+    background: #0f172a;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  .tournaments-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  @media (min-width: 768px) {
+    .tournaments-grid {
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    }
+  }
+
+  .tournament-card {
+    background: rgba(15,23,42,0.6);
+    border: 1px solid rgba(99,110,130,0.3);
+    border-left: 4px solid #38bdf8;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tournament-card:hover {
+    background: rgba(30,41,59,0.7);
+    border-left-color: #d4af37;
+    transform: translateY(-2px);
+  }
+  .tournament-card.status-DRAFT { border-left-color: #94a3b8; }
+  .tournament-card.status-REGISTRATION { border-left-color: #38bdf8; }
+  .tournament-card.status-ONGOING { border-left-color: #f59e0b; }
+  .tournament-card.status-FINISHED { border-left-color: #10b981; }
+  .tournament-card.status-CANCELLED { border-left-color: #ef4444; opacity: 0.7; }
+
+  .tournament-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .tournament-card-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+    font-family: var(--font-tactical);
+    letter-spacing: 0.5px;
+  }
+  .tournament-card-meta {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
+
+  /* Tabs de detalle */
+  .tournament-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+  }
+  .tournament-tab {
+    background: transparent;
+    color: #94a3b8;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    min-height: 38px;
+  }
+  .tournament-tab:hover { color: #cbd5e1; }
+  .tournament-tab.active {
+    color: #d4af37;
+    border-bottom-color: #d4af37;
+  }
+
+  /* Bracket */
+  .bracket-container {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    min-height: 200px;
+  }
+  .bracket-column {
+    flex: 0 0 auto;
+    min-width: 230px;
+  }
+  .bracket-column-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    font-family: var(--font-tactical);
+  }
+  .bracket-match {
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(99,110,130,0.3);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .bracket-match.status-FINISHED { border-color: rgba(46,204,113,0.4); }
+  .bracket-match.status-LIVE { border-color: rgba(231,76,60,0.5); }
+  .bracket-team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 0.85rem;
+  }
+  .bracket-team.winner { color: #2ecc71; font-weight: 700; }
+  .bracket-team.loser { color: #94a3b8; }
+  .bracket-team-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bracket-team-score {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    margin-left: 8px;
+  }
+  .bracket-match-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* Responsive móvil */
+  @media (max-width: 767px) {
+    .bracket-container {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .bracket-column {
+      min-width: 100%;
+    }
+  }
+
+  /* Tema clásico (claro) */
+  body[data-theme="clasico"] .tournament-card {
+    background: #ffffff;
+    border-color: #d0d8e8;
+    border-left-color: #0038A8;
+  }
+  body[data-theme="clasico"] .tournament-card-name { color: #0038A8; }
+  body[data-theme="clasico"] .tournament-card-meta { color: #495057; }
+  body[data-theme="clasico"] .tournament-tab.active {
+    color: #0038A8;
+    border-bottom-color: #0038A8;
+  }
+  body[data-theme="clasico"] .bracket-match {
+    background: #ffffff;
+    border-color: #d0d8e8;
+  }
+  body[data-theme="clasico"] .bracket-column-title { color: #6c757d; }
+</style>
