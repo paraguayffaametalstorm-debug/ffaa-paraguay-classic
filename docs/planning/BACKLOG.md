@@ -130,6 +130,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **RFC-002** | 📚 | Sistema de Torneos Internos (Anexo III + RFC Accepted) | 2026-10-12 | `c0ff7d7` + `9266c16` |
 | **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README de uso (reformulado) | 2026-10-12 | `e3605e7` + `0ff1d07` |
 | **BL-025** | 🧪 | Re-implementar tests skipeados de auth + rbac (54 tests des-skipeados) | 2026-10-12 | `cb2ac13` + `6f175be` |
 | **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` (95 casos) | 2026-10-12 | `480c731` |
@@ -171,8 +172,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 13 |
-| Items completados | 17 |
+| Items activos | 12 |
+| Items completados | 18 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
