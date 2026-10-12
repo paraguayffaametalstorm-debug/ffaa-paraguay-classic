@@ -171,7 +171,8 @@ const VIEWS = {
   BM_DISCOUNT:      'bmDiscountView',
   BM_LEADERBOARD:   'bmLeaderboardView',
   BM_PANEL:         'bmPanelView',
-  VETERAN_PANEL:    'veteranPanelView'   // ADR-010
+  VETERAN_PANEL:    'veteranPanelView',
+  TOURNAMENTS:      'tournamentsView'
 };
 
 const VIEW_ALIASES = {
@@ -234,7 +235,13 @@ const VIEW_ALIASES = {
   'veteranPanelView': VIEWS.VETERAN_PANEL,
   'veteran-panel':    VIEWS.VETERAN_PANEL,
   'mis-pupilos':      VIEWS.VETERAN_PANEL,
-  'pupilos':          VIEWS.VETERAN_PANEL
+  'pupilos':          VIEWS.VETERAN_PANEL,
+  // Torneos (RFC-002 / ADR-011)
+  'tournaments':      VIEWS.TOURNAMENTS,
+  'tournament':       VIEWS.TOURNAMENTS,
+  'torneos':          VIEWS.TOURNAMENTS,
+  'torneo':           VIEWS.TOURNAMENTS,
+  'tournamentsView':  VIEWS.TOURNAMENTS
 };
 
 
@@ -483,6 +490,12 @@ function loadViewData(viewId) {
     case 'veteranPanelView':
     case 'veteranPanel':
       if (typeof loadVeteranPanel === 'function') loadVeteranPanel();
+      break;
+
+    // F1.5a — Sistema de Torneos (RFC-002 / ADR-011)
+    case 'tournamentsView':
+    case 'tournaments':
+      if (typeof loadTournamentsView === 'function') loadTournamentsView();
       break;
       
     default:
