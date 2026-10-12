@@ -59,3 +59,16 @@ de header inválido, usuario fantasma en DB).
 
 **Comando:** `npm test`
 **Resultado:**
+
+## Hallazgos de la sesión (H-BL025-01 a H-BL025-06, H-RFC-01, H-RFC-02)
+
+| ID | Descripción | Severidad | Estado |
+|---|---|---|---|
+| **H-BL025-01** | 4 tests de `forgotPassword & resetPassword` aparecían skipped sin `.skip` visible (anidados en describe mal cerrado). | MEDIA | ✅ Resuelto (F1) |
+| **H-BL025-02** | Handler MSW de `login` devolvía un user para cualquier email truthy. | MEDIA | ✅ Resuelto (F1) |
+| **H-BL025-03** | Handlers MSW no hacían `.replace('eq.', '')`. | ALTA | ✅ Resuelto (F1) |
+| **H-BL025-04** | `requireRole` devuelve `INSUFFICIENT_PERMISSIONS`, no `FORBIDDEN`. | ALTA | ✅ Resuelto (F2, alineado) |
+| **H-BL025-05** | BACKLOG decía 39 skipped, la realidad era 54. | MEDIA | ✅ Resuelto (BACKLOG) |
+| **H-BL025-06** | BL-032 decía "4 mocks", quedaban 3. | BAJA | ✅ Resuelto (BACKLOG) |
+| **H-RFC-01** | `docs/rfc/README.md` no listaba RFC-002. Tampoco reflejaba que RFC-001 está implementado. | BAJA | ✅ Resuelto |
+| **H-RFC-02** | Archivos basura (255 archivos vacíos) creados por un comando CMD mal escrito durante esta sesión. | MEDIA | ✅ Resuelto (limpieza manual) |
