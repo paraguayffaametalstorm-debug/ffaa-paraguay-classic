@@ -13,7 +13,7 @@
 
 > **Documento operativo de correcciones, sincronización documental y deuda técnica.**
 > **Última actualización:** 2026-10-12
-> **Versión de referencia:** v4.8.21
+> **Versión de referencia:** v4.8.22
 > **Responsable:** Comando C4ISR
 > **Próxima revisión:** al cerrar cada Sprint
 
@@ -697,7 +697,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **Objetivo:** dejar la app lista para escalar (prerequisitos del sistema de torneos).
 **Criterio de salida:** tests de aeronaves verdes + RFC-002 aprobado.
 
-**Progreso:** 6/8 ítems cerrados.
+**Progreso:** 7/8 ítems cerrados.
 
 ### Ítems del Sprint 7
 
@@ -709,7 +709,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README (reformulado) | ✅ Cerrado |
 | **BL-025** | 🧪 | Re-implementar tests skipeados (54 des-skipeados) | ✅ Cerrado |
 | **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | ✅ Cerrado |
-| **RFC-002** | 📚 | RFC del sistema de torneos internos | S |
+| **RFC-002** | 📚 | RFC del sistema de torneos internos | ✅ Cerrado |
 
 ### Documentos de fase
 
