@@ -52,6 +52,7 @@ La capa de presentación opera como una Single Page Application (SPA) táctica m
    │  ├── /api/planes (Hangar Militar - 44 Cazas, Upgrades 2.0, i18n)            │
    │  ├── /api/admin (Gestión Miembros: status con motivo, listado de inactivos) │
    │  ├── /api/owner (Auditoría C4ISR, Backups Transaccionales, Purga)           │
+  │  ├── /api/tournaments (Sistema de Torneos — RFC-002 / ADR-011)            │
    │  └── /api/presence, /api/profile, /api/settings, /api/normativas            │
    │                                                                             │
    │  [Middlewares Centrales]                                                    │

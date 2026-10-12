@@ -84,6 +84,14 @@ En caso de falla, la API garantiza una respuesta en formato JSON con la siguient
 | **Events v2 BM** | `/api/events-v2/bm/:eventId` | `PUT` | `ADMIN` / `OWNER` | Editar evento BM |
 | **Events v2 BM** | `/api/events-v2/bm/:eventId/purchase` | `POST` | Autenticado | Adquirir caza con descuento BM |
 | **Events v2 BM** | `/api/events-v2/bm/:eventId/stats` | `GET` | `ADMIN` / `OWNER` | KPIs consolidados del evento BM |
+| **Tournaments** | `/api/tournaments` | `GET` | Autenticado | Listar torneos con filtros `status` y `scope` |
+| **Tournaments** | `/api/tournaments` | `POST` | `ADMIN` / `OWNER` | Crear torneo |
+| **Tournaments** | `/api/tournaments/:id` | `GET` | Autenticado | Detalle + bracket + roster + historial moderador |
+| **Tournaments** | `/api/tournaments/:id/status` | `PATCH` | `ADMIN` / `OWNER` | Cambiar estado (DRAFT → REGISTRATION → ONGOING → FINISHED / CANCELLED) |
+| **Tournaments** | `/api/tournaments/:id/register` | `POST` | Autenticado | Registrar equipo (capitán propio o ADMIN/OWNER) |
+| **Tournaments** | `/api/tournaments/:id/matches/:mid/result` | `POST` | Autenticado + `requireTournamentModerator` | Registrar resultado de match |
+| **Tournaments** | `/api/tournaments/:id/matches/:mid/draft` | `POST` | Autenticado + `requireTournamentModerator` | Registrar ban/pick del draft |
+| **Tournaments** | `/api/tournaments/:id/moderator` | `PATCH` | `ADMIN` / `OWNER` | Reasignar moderador con motivo |
 | **Performances**| `/api/performances` | `POST` | Autenticado | Registrar tokens y evaluar estado militar |
 | **Performances**| `/api/performances/pilots` | `GET` | Autenticado | Selector táctico de pilotos para ADMIN/OWNER |
 | **Performances**| `/api/performances/history` | `GET` | Autenticado | Historial personal de eventos y tokens |
@@ -1907,6 +1915,190 @@ acepta eventos con `status === 'CLOSED'` si la ventana de carga está abierta
 ---
 
 ---
+
+
+---
+
+## 9. Módulo de Torneos (`/api/tournaments`) — F1 (ADR-011)
+
+> **Módulo nuevo (v4.9.0, F1.4)** — Sistema de Torneos Internos según RFC-002 + Anexo III + ADR-011.
+>
+> **Fuente de verdad del reglamento:** [`docs/normativa/ANEXO-III-torneos.md`](docs/normativa/ANEXO-III-torneos.md).
+> **Decisión arquitectónica:** [`docs/adr/ADR-011-sistema-torneos.md`](docs/adr/ADR-011-sistema-torneos.md).
+
+### Política de acceso
+
+| Rol | Puede operar |
+|---|---|
+| `OWNER` | Cualquier torneo (bypass total en `requireTournamentModerator`) |
+| `ADMIN` | Cualquier torneo (bypass total en `requireTournamentModerator`) |
+| `VETERANO` | Solo torneos donde `moderator_id === req.user.id` |
+| `MIEMBRO` | Solo torneos donde `moderator_id === req.user.id` |
+
+### `GET /api/tournaments`
+
+Listar torneos con filtros opcionales.
+
+- **Acceso:** Autenticado.
+- **Query Params:**
+  | Param | Valores | Descripción |
+  |---|---|---|
+  | `status` | `DRAFT` \| `REGISTRATION` \| `ONGOING` \| `FINISHED` \| `CANCELLED` | Filtrar por estado |
+  | `scope` | `F1` \| `F2` \| `F3` \| `F4` | Filtrar por fase |
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "total": 2,
+    "tournaments": [ { "id": "uuid", "name": "Torneo Test F1", "format": "SWISS+SE", "scope": "F1", "status": "DRAFT", ... } ]
+  }
+  ```
+- **Errores Posibles:**
+  - `400 INVALID_STATUS_FILTER`: status no permitido.
+  - `400 INVALID_SCOPE_FILTER`: scope no permitido.
+  - `401 AUTH_TOKEN_REQUIRED`: sin token.
+
+### `POST /api/tournaments`
+
+Crear un nuevo torneo (estado inicial DRAFT).
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Validación:** Zod (`TournamentCreateSchema`).
+- **Request Body:**
+  ```json
+  {
+    "name": "Torneo Interno W45",
+    "format": "SWISS+SE",
+    "scope": "F1",
+    "starts_at": "2026-11-01T00:00:00Z",
+    "ends_at": "2026-11-03T00:00:00Z",
+    "min_teams": 4,
+    "max_teams": 8,
+    "moderator_id": "uuid-opcional",
+    "metadata": {}
+  }
+  ```
+- **Response Exitosa (201 Created):**
+  ```json
+  { "success": true, "message": "Torneo creado", "tournament": { "id": "uuid", "status": "DRAFT", ... } }
+  ```
+- **Errores Posibles:**
+  - `400 VALIDATION_ERROR`: body no cumple Zod (Anexo III Art. 8: F1 → 4-8 equipos).
+  - `403 INSUFFICIENT_PERMISSIONS`: rol no es ADMIN/OWNER.
+
+### `GET /api/tournaments/:id`
+
+Detalle completo de un torneo.
+
+- **Acceso:** Autenticado.
+- **Response Exitosa (200 OK):**
+  ```json
+  {
+    "success": true,
+    "tournament": { ... },
+    "participants": [ ... ],
+    "matches": [ ... ],
+    "moderator_history": [ ... ]
+  }
+  ```
+- **Errores Posibles:** `400 INVALID_TOURNAMENT_ID`, `404 TOURNAMENT_NOT_FOUND`.
+
+### `PATCH /api/tournaments/:id/status`
+
+Cambiar el estado del torneo.
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Transiciones válidas:**
+  - `DRAFT` → `REGISTRATION` \| `CANCELLED`
+  - `REGISTRATION` → `ONGOING` \| `CANCELLED`
+  - `ONGOING` → `FINISHED` \| `CANCELLED`
+  - `FINISHED`, `CANCELLED`: terminales.
+- **Request Body:**
+  ```json
+  { "status": "REGISTRATION", "reason": "motivo-opcional" }
+  ```
+  - `reason` es obligatorio cuando `status = "CANCELLED"` (trazabilidad Anexo III Art. 22).
+- **Errores Posibles:**
+  - `400 INVALID_STATUS_TRANSITION`: transición no permitida.
+  - `400 VALIDATION_ERROR`: CANCELLED sin motivo.
+
+### `POST /api/tournaments/:id/register`
+
+Registrar un equipo (5 titulares + 1 suplente opcional).
+
+- **Acceso:** Autenticado + capitán propio o `ADMIN`/`OWNER`.
+- **Request Body:**
+  ```json
+  {
+    "team_name": "Alpha Squad",
+    "captain_user_id": "uuid",
+    "roster": [
+      { "user_id": "uuid", "role": "Interceptor", "is_sub": false },
+      { "user_id": "uuid", "role": "Support",     "is_sub": false },
+      { "user_id": "uuid", "role": "Heavy",       "is_sub": true  }
+    ]
+  }
+  ```
+- **Errores Posibles:**
+  - `400 TOURNAMENT_NOT_IN_REGISTRATION`: el torneo no está en REGISTRATION.
+  - `400 VALIDATION_ERROR`: roster inválido (Zod).
+  - `403 NOT_TEAM_CAPTAIN`: no sos capitán ni privilegiado.
+  - `409 TEAM_NAME_ALREADY_EXISTS`: team_name duplicado en el torneo.
+
+### `POST /api/tournaments/:id/matches/:mid/result`
+
+Registrar el resultado de un match (Bo3 / Bo5).
+
+- **Acceso:** Autenticado + `requireTournamentModerator` (OWNER/ADMIN bypass, VETERANO/MIEMBRO solo si son moderador del torneo).
+- **Request Body:**
+  ```json
+  { "score_a": 2, "score_b": 1, "best_of": 3, "notes": "opcional" }
+  ```
+- **Errores Posibles:**
+  - `400 BEST_OF_MISMATCH`: best_of inconsistente con el match.
+  - `400 VALIDATION_ERROR`: empate o score inválido (Zod superRefine).
+  - `403 TOURNAMENT_NOT_MODERATED_BY_YOU`: no sos el moderador.
+  - `404 MATCH_NOT_FOUND`: el match no existe o no pertenece al torneo.
+
+### `POST /api/tournaments/:id/matches/:mid/draft`
+
+Registrar una acción del draft (ban/pick).
+
+- **Acceso:** Autenticado + `requireTournamentModerator`.
+- **Request Body:**
+  ```json
+  {
+    "game_number": 1,
+    "team_id": "uuid",
+    "action": "BAN",
+    "aircraft_id": "101",
+    "order_index": 1
+  }
+  ```
+- **Errores Posibles:**
+  - `400 TEAM_NOT_IN_MATCH`: team_id no pertenece al match.
+  - `409 DRAFT_ORDER_ALREADY_USED`: order_index duplicado.
+
+### `PATCH /api/tournaments/:id/moderator`
+
+Reasignar el moderador designado (ADR-011 D8).
+
+- **Acceso:** `ADMIN` / `OWNER`.
+- **Request Body:**
+  ```json
+  { "moderator_id": "uuid", "reason": "motivo 5-500 chars" }
+  ```
+- **Errores Posibles:**
+  - `400 SAME_MODERATOR`: el nuevo moderador es el mismo que el actual.
+  - `400 VALIDATION_ERROR`: motivo inválido.
+
+### Referencias
+
+- [`docs/adr/ADR-011-sistema-torneos.md`](docs/adr/ADR-011-sistema-torneos.md)
+- [`docs/normativa/ANEXO-III-torneos.md`](docs/normativa/ANEXO-III-torneos.md)
+- [`docs/rfc/RFC-002-sistema-torneos.md`](docs/rfc/RFC-002-sistema-torneos.md)
+- [`docs/planning/PLAN_TRABAJO_TORNEOS.md`](docs/planning/PLAN_TRABAJO_TORNEOS.md)
+- [`sql/045_tournaments.sql`](sql/045_tournaments.sql)
 
 *Versión: v4.8.15 · Actualizado: 2026-10-11*
 

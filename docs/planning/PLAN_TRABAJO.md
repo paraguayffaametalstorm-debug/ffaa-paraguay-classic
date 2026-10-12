@@ -754,7 +754,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
 **Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
 
-**Progreso:** F1.1 + F1.2 + F1.3 cerrados.
+**Progreso:** F1.1 + F1.2 + F1.3 + F1.4 cerrados.
 
 ### Ítems del Sprint 8
 
@@ -763,9 +763,30 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **F1.1** | 🗄️ | Migración SQL (5 tablas + RLS + GRANTs) | ✅ Cerrado |
 | **F1.2** | 🧪 | Schemas Zod (6 schemas + 72 tests) | ✅ Cerrado |
 | **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ✅ Cerrado |
-| **F1.4** | 🏗️ | Router + mount en `server.js` | ⏳ Pendiente |
+| **F1.4** | 🏗️ | Router + mount en `server.js` | ✅ Cerrado |
 | **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
 | **F1.6** | 🤖 | Integración Discord (opcional) | ⏳ Pendiente |
+
+
+### Evidencia de cierre F1.4 (2026-10-12)
+
+**Commit:** `345f452` — `feat(tournaments): routes + mount F1.4`
+
+**2 archivos afectados:**
+- `src/routes/tournaments.routes.js` (NUEVO, 60 líneas).
+- `server.js` (import + mount, +3 líneas: 1 import + 1 blank + 1 mount).
+
+**Verificado:**
+- 8 endpoints montados: GET/POST /, GET /:id, PATCH /:id/status, POST /:id/register,
+  POST /:id/matches/:mid/result, POST /:id/matches/:mid/draft, PATCH /:id/moderator.
+- Middlewares encadenados: requireAuth (global) + requireRole (3 endpoints) +
+  requireTournamentModerator (2 endpoints).
+- Suite completa: 642 passing / 0 failing / 0 skipped.
+- 0 regresiones.
+- `node --check` limpio en router y server.js.
+- Push: `52f936d..345f452 main -> main`.
+
+**Pendiente F1.5:** frontend (bracket + draft + resultados, 2-3 días).
 
 ### Documentos de fase
 

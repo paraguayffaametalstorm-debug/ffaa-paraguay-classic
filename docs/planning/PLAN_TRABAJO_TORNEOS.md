@@ -55,7 +55,7 @@ herramienta integrada en la app de control que permite:
 | Tablas en Supabase | ✅ 5 tablas (F1.1 cerrado) |
 | RLS + GRANTs | ✅ Aplicados (5 políticas, 35 grants) |
 | `tournaments.controller.js` | ❌ No existe |
-| `tournaments.routes.js` | ❌ No existe |
+| `tournaments.routes.js` | ✅ Creado (F1.4) |
 | `requireTournamentModerator` | ❌ No existe |
 | Schemas Zod | ✅ 6 schemas (F1.2 cerrado) |
 | Frontend (`tournaments.html`) | ❌ No existe |
@@ -259,7 +259,7 @@ export async function requireTournamentModerator(req, res, next) {
 
 ---
 
-### F1.4 — Routes + mount en `server.js`
+### F1.4 — Routes + mount en `server.js` ✅ CERRADO
 
 **Duración:** 1 h
 **Entregable:**
@@ -276,16 +276,32 @@ export async function requireTournamentModerator(req, res, next) {
 
 **Criterio de cierre:**
 
-- [ ] `GET /api/tournaments` responde 200/401.
-- [ ] `POST /api/tournaments` sin token responde 401.
-- [ ] `POST /api/tournaments` con token de MIEMBRO responde 403.
-- [ ] Smoke test manual con Postman/curl.
+- [x] `GET /api/tournaments` responde 200/401.
+- [x] `POST /api/tournaments` sin token responde 401.
+- [x] `POST /api/tournaments` con token de MIEMBRO responde 403.
+- [x] Smoke test manual con Postman/curl.
 
 **Commit esperado:** `feat(tournaments): routes + mount F1.4`.
 **Riesgo:** bajo.
 **Rollback:** `git revert`.
 
 ---
+
+
+**Cierre F1.4 (2026-10-12):**
+
+- **Commit:** `345f452` — `feat(tournaments): routes + mount F1.4`
+- **Archivos creados:** 1 (`src/routes/tournaments.routes.js`, 60 líneas).
+- **Archivos modificados:** 1 (`server.js`, +3 líneas: import + blank + mount).
+- **Suite completa:** 642 passing / 0 failing / 0 skipped.
+- **Regresiones:** 0.
+- **Hallazgos de la sesión:**
+  - H-F14-01: Node 24 emite warning DEP0190 al usar `spawnSync` con `shell: true` en scripts .cjs.
+    No es un bug funcional; es un aviso de seguridad. Fix opcional: usar `shell: false` y pasar
+    `npx.cmd` en Windows. Aplicar en futuros scripts.
+- **Push:** `52f936d..345f452 main -> main`.
+
+**Pendiente F1.5:** frontend (bracket + draft + resultados, 2-3 días).
 
 ### F1.5 — Frontend (bracket + draft + resultados)
 
