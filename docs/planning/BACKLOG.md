@@ -131,7 +131,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
-| **F1.2-TOURN** | 🧪 | Schemas Zod sistema de torneos (6 schemas + 59 tests) | 2026-10-12 | (pendiente hash) |
+| **F1.2-TOURN** | 🧪 | Schemas Zod sistema de torneos (6 schemas + 72 tests) | 2026-10-12 | `2a51bb2` |
 | **F1.1-TOURN** | 🗄️ | Migración SQL sistema de torneos (5 tablas + RLS + GRANTs) | 2026-10-12 | `69f988b` |
 | **RFC-002** | 📚 | Sistema de Torneos Internos (Anexo III + RFC Accepted) | 2026-10-12 | `c0ff7d7` + `9266c16` |
 | **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README de uso (reformulado) | 2026-10-12 | `e3605e7` + `0ff1d07` |

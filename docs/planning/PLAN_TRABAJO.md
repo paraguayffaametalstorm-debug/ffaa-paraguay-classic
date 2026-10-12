@@ -734,7 +734,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | ID | Categoría | Descripción | Estado |
 |---|---|---|---|
 | **F1.1** | 🗄️ | Migración SQL (5 tablas + RLS + GRANTs) | ✅ Cerrado |
-| **F1.2** | 🧪 | Schemas Zod (6 schemas + 59 tests) | ✅ Cerrado |
+| **F1.2** | 🧪 | Schemas Zod (6 schemas + 72 tests) | ✅ Cerrado |
 | **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ⏳ Pendiente |
 | **F1.4** | 🏗️ | Router + mount en `server.js` | ⏳ Pendiente |
 | **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
@@ -769,7 +769,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 
 ### Evidencia de cierre F1.2 (2026-10-12)
 
-**Commit:** (pendiente hash) — `feat(tournaments): schemas Zod F1.2`
+**Commit:** `2a51bb2` — `feat(tournaments): schemas Zod F1.2`
 
 **6 schemas + 7 constantes + 2 sub-schemas agregados a `src/utils/schemas.js`:**
 - `TournamentCreateSchema` — con validación de F1 (4-8 equipos, Anexo III Art. 8).
@@ -781,6 +781,6 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 
 **Verificado:**
 - `node --check` limpio en ambos archivos.
-- 59 casos de test pasando en `tests/schemas/tournament.schemas.test.js`.
-- Suite completa sin regresiones (507 + 59 = 566 passing).
+- 72 casos de test pasando en `tests/schemas/tournament.schemas.test.js`.
+- Suite completa sin regresiones (507 + 72 = 579 passing).
 
