@@ -3,9 +3,12 @@
 ## Contexto
 
 Sesión de continuación tras HANDOFF v4.8.21. Se cerró **BL-025** (Sprint 7),
-el ítem de mayor prioridad técnica restante y prerequisito de BL-032.
+el ítem de mayor prioridad técnica restante y prerequisito de BL-032. En la
+misma sesión se cerró **RFC-002** (Sistema de Torneos Internos) + se creó el
+**Anexo III** de la normativa v3.0.
 
-La sesión se ejecutó en 3 fases (F1, F2, F3) y se cerró con documentación actualizada.
+La sesión se ejecutó en 4 fases (F1, F2, F3, F4) y se cerró con documentación
+actualizada.
 
 ---
 
@@ -58,9 +61,32 @@ de header inválido, usuario fantasma en DB).
 ### 3. F3 — Verificación completa de la suite
 
 **Comando:** `npm test`
-**Resultado:**
+**Resultado:** 507 passed / 0 skipped / 0 failed (26 test files).
+**Duración:** 2.84s.
 
-## Hallazgos de la sesión (H-BL025-01 a H-BL025-06, H-RFC-01, H-RFC-02)
+### 4. F4 — Cierre de RFC-002 + Anexo III
+
+**Commits:**
+- `c0ff7d7` — `docs(normativa): agregar Anexo III - Régimen de Torneos Internos`
+- `1ac9aba` — `docs(normativa): agregar Anexo III al índice de la normativa v3.0`
+- `9266c16` — `docs(rfc): cerrar RFC-002 - decisiones del OWNER + referenciar Anexo III`
+- `fb66384` — `docs(rfc): agregar RFC-002 al índice + marcar RFC-001 como Accepted`
+- `e8e9029` — `docs(handoff): registrar hallazgos H-RFC-01 y H-RFC-02`
+
+**Contenido del Anexo III:**
+- 25 artículos distribuidos en 10 Títulos.
+- Título X (nuevo): Canales oficiales del torneo (Discord + app).
+- Decisiones del OWNER formalizadas en el RFC-002 §8.
+- Formato: Swiss (Día 1) + Single Elimination (Día 2). Réplica del formato MCS.
+- Tamaño escalable por fases: F1 (4-8 equipos), F2 (8-16), F3 (16-32), F4 (partner).
+- Duración: 1 fin de semana (F1/F2), 2 fines de semana (F3).
+- Partidas: 5v5, Bo3 en Swiss y cuartos, Bo5 en semis y final.
+- Draft: 1 ban por equipo, Mirrored Picks, último BM baneado.
+- Premios: sin premio material en F1 (badge + mención).
+
+---
+
+## Hallazgos de la sesión
 
 | ID | Descripción | Severidad | Estado |
 |---|---|---|---|
@@ -72,3 +98,61 @@ de header inválido, usuario fantasma en DB).
 | **H-BL025-06** | BL-032 decía "4 mocks", quedaban 3. | BAJA | ✅ Resuelto (BACKLOG) |
 | **H-RFC-01** | `docs/rfc/README.md` no listaba RFC-002. Tampoco reflejaba que RFC-001 está implementado. | BAJA | ✅ Resuelto |
 | **H-RFC-02** | Archivos basura (255 archivos vacíos) creados por un comando CMD mal escrito durante esta sesión. | MEDIA | ✅ Resuelto (limpieza manual) |
+| **H-RFC-03** | `docs/normativa/` no existía como carpeta antes de esta sesión (se creó para alojar el Anexo III). | BAJA | ✅ Resuelto |
+
+---
+
+## Estado del repositorio al cierre
+
+Branch: `main`
+e8e9029 (HEAD) docs(handoff): registrar hallazgos H-RFC-01 y H-RFC-02
+fb66384 docs(rfc): agregar RFC-002 al índice + marcar RFC-001 como Accepted
+9266c16 docs(rfc): cerrar RFC-002 - decisiones del OWNER + referenciar Anexo III
+1ac9aba docs(normativa): agregar Anexo III al índice de la normativa v3.0
+c0ff7d7 docs(normativa): agregar Anexo III - Régimen de Torneos Internos
+d1928a8 docs(changelog): registrar nota de higiene del commit 0ff1d07
+
+**Pendiente:** commit del BACKLOG + PLAN_TRABAJO + push.
+
+---
+
+## Estado de Sprint 7
+
+**Progreso:** 7/8 ítems cerrados.
+
+| ID | Categoría | Descripción | Estado |
+|---|---|---|---|
+| **BL-023** | 🏗️ | Encoding LF (.gitattributes + .editorconfig) | ✅ Cerrado |
+| **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | ✅ Cerrado |
+| **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | ✅ Cerrado |
+| **TESTS-AERONAVES** | 🧪 | Tests de aeronaves (95 casos) | ✅ Cerrado |
+| **BL-025** | 🧪 | Re-implementar tests skipeados (54 des-skipeados) | ✅ Cerrado |
+| **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` (reformulado) | ✅ Cerrado |
+| **RFC-002** | 📚 | RFC del sistema de torneos internos | ✅ Cerrado |
+| **BL-024** | 🔐 | Eliminar `unsafe-inline` del CSP | ⏳ Diferido (Sprint 8+) |
+
+**Sprint 7 efectivamente completo.** BL-024 queda formalmente diferido a Sprint 8+.
+
+---
+
+## Próximos pasos sugeridos
+
+1. **Push de los 4 commits locales** (`git push origin main`).
+2. **Commit del BACKLOG + PLAN_TRABAJO** (Sprint 7 → 7/8).
+3. **Sprint 8:** arrancar con BL-024 (CSP) o alguna feature del backlog.
+
+---
+
+## Referencias
+
+- **Handoff anterior:** `docs/handoffs/HANDOFF-v4.8.21.md`
+- **RFC-002:** `docs/rfc/RFC-002-sistema-torneos.md` (✅ Accepted)
+- **Anexo III:** `docs/normativa/ANEXO-III-torneos.md`
+- **Normativa v3.0 borrador:** `docs/normativa/normativa-v3.0-borrador.md`
+- **Tests helper README:** `tests/helpers/README.md`
+- **Repo:** https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic
+
+---
+
+**PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
+**Handoff v4.8.22 · 2026-10-12**
