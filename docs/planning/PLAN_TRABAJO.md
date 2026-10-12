@@ -727,14 +727,14 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
 **Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
 
-**Progreso:** F1.1 cerrado.
+**Progreso:** F1.1 + F1.2 cerrados.
 
 ### Ítems del Sprint 8
 
 | ID | Categoría | Descripción | Estado |
 |---|---|---|---|
 | **F1.1** | 🗄️ | Migración SQL (5 tablas + RLS + GRANTs) | ✅ Cerrado |
-| **F1.2** | 🧪 | Schemas Zod (6 schemas + ≥12 tests) | ⏳ Pendiente |
+| **F1.2** | 🧪 | Schemas Zod (6 schemas + 59 tests) | ✅ Cerrado |
 | **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ⏳ Pendiente |
 | **F1.4** | 🏗️ | Router + mount en `server.js` | ⏳ Pendiente |
 | **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
@@ -766,4 +766,21 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 - Políticas: 5 `no_public_access`.
 - GRANTs a `service_role`: 35 (20 explícitos + 15 heredados).
 - Tests: 507 passed / 0 skipped / 0 failed.
+
+### Evidencia de cierre F1.2 (2026-10-12)
+
+**Commit:** (pendiente hash) — `feat(tournaments): schemas Zod F1.2`
+
+**6 schemas + 7 constantes + 2 sub-schemas agregados a `src/utils/schemas.js`:**
+- `TournamentCreateSchema` — con validación de F1 (4-8 equipos, Anexo III Art. 8).
+- `TournamentUpdateStatusSchema` — CANCELLED requiere motivo (trazabilidad Art. 22).
+- `TournamentRegisterTeamSchema` — roster 5+1 validado en Zod (Anexo III Art. 6).
+- `TournamentMatchResultSchema` — best_of opcional + no-empate + umbral de victoria.
+- `TournamentDraftActionSchema` — coerce aircraft_id (string|number → string).
+- `TournamentModeratorChangeSchema` — motivo 5-500 obligatorio.
+
+**Verificado:**
+- `node --check` limpio en ambos archivos.
+- 59 casos de test pasando en `tests/schemas/tournament.schemas.test.js`.
+- Suite completa sin regresiones (507 + 59 = 566 passing).
 

@@ -7,7 +7,7 @@
 > **Fecha:** 2026-10-12
 > **Versión objetivo:** v4.9.0
 > **Duración estimada:** 5-7 días
-> **Estado:** 🔨 En curso (F1.1 cerrado)
+> **Estado:** 🔨 En curso (F1.1 + F1.2 cerrados)
 
 ---
 
@@ -57,7 +57,7 @@ herramienta integrada en la app de control que permite:
 | `tournaments.controller.js` | ❌ No existe |
 | `tournaments.routes.js` | ❌ No existe |
 | `requireTournamentModerator` | ❌ No existe |
-| Schemas Zod | ❌ No existen |
+| Schemas Zod | ✅ 6 schemas (F1.2 cerrado) |
 | Frontend (`tournaments.html`) | ❌ No existe |
 | Tests del sistema | ❌ No existen |
 | Endpoints activos | 0 de 8 |
@@ -150,9 +150,9 @@ herramienta integrada en la app de control que permite:
 
 **Criterio de cierre:**
 
-- [ ] 6 schemas exportados desde `src/utils/schemas.js`.
-- [ ] ≥12 casos de test pasando.
-- [ ] 0 regresiones en tests existentes.
+- [x] 6 schemas exportados desde `src/utils/schemas.js`.
+- [x] 59 casos de test pasando (supera el mínimo de 12).
+- [x] 0 regresiones en tests existentes.
 
 **Commit esperado:** `feat(tournaments): schemas Zod F1.2`.
 **Riesgo:** bajo (aditivo, sin lógica).
