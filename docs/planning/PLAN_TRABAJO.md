@@ -716,3 +716,54 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 - `PLAN_TRABAJO_TESTS_AERONAVES.md` — plan de la fase de tests.
 - `docs/rfc/RFC-002-sistema-torneos.md` — propuesta del sistema de torneos.
 
+---
+
+## SPRINT 8 — Sistema de Torneos (RFC-002 / F1)
+
+**Estado:** 🔨 En curso
+**Objetivo:** implementar el sistema de torneos internos según RFC-002 + Anexo III.
+**Criterio de salida:** bracket visible + tests verdes + deploy.
+
+**ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
+**Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
+
+**Progreso:** F1.1 cerrado.
+
+### Ítems del Sprint 8
+
+| ID | Categoría | Descripción | Estado |
+|---|---|---|---|
+| **F1.1** | 🗄️ | Migración SQL (5 tablas + RLS + GRANTs) | ✅ Cerrado |
+| **F1.2** | 🧪 | Schemas Zod (6 schemas + ≥12 tests) | ⏳ Pendiente |
+| **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ⏳ Pendiente |
+| **F1.4** | 🏗️ | Router + mount en `server.js` | ⏳ Pendiente |
+| **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
+| **F1.6** | 🤖 | Integración Discord (opcional) | ⏳ Pendiente |
+
+### Documentos de fase
+
+- `docs/rfc/RFC-002-sistema-torneos.md` — RFC aceptado.
+- `docs/adr/ADR-011-sistema-torneos.md` — ADR del sistema.
+- `docs/normativa/ANEXO-III-torneos.md` — Reglamento (Anexo III).
+- `docs/planning/PLAN_TRABAJO_TORNEOS.md` — Plan detallado F1.1 → F1.6.
+- `docs/handoffs/HANDOFF-v4.8.23.md` — Handoff de cierre de F1.1.
+- `sql/045_tournaments.sql` — Migración SQL aplicada.
+
+### Evidencia de cierre F1.1 (2026-10-12)
+
+**Commit:** `69f988b` — `feat(tournaments): migración SQL F1.1 - 5 tablas RFC-002/Anexo III`
+
+**5 tablas creadas en Supabase:**
+- `tournaments`
+- `tournament_participants`
+- `tournament_matches`
+- `tournament_drafts`
+- `tournament_moderator_history`
+
+**Verificado:**
+- Columnas: 14 / 7 / 15 / 8 / 7 (correctas).
+- RLS: 5/5 con `rowsecurity = true`.
+- Políticas: 5 `no_public_access`.
+- GRANTs a `service_role`: 35 (20 explícitos + 15 heredados).
+- Tests: 507 passed / 0 skipped / 0 failed.
+

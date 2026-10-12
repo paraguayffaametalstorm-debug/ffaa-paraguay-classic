@@ -81,6 +81,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 | **BL-024** | 🔐 | Eliminar `'unsafe-inline'` del CSP (FIX-103) | 📋 Diferido | L (2-3 días) | Requiere migrar ~200 `onclick` inline a `addEventListener` + nonce/hash. Diferido del Sprint 2 al Sprint 3 por bajo riesgo residual y mayor valor del Sprint 3 (tests + observabilidad). |
 | **BL-026** | INFRA | Eliminacion final de Fly.io (post 2-3 meses sin uso) | IDEA | XS (30 min) | Si en 2-3 meses no se usa Fly.io como backup, eliminar la app paraguay-ffaa-metalstorm para ahorrar ~$0.15/mes residuales. Requiere backup previo de los 19 secretos. Ref: HALL-076. |
 | **BL-030** | Seguridad | Auditar GRANTs explicitos en tablas public/ (nuevas politicas Supabase 1-oct) | Priorizado | M (4h) | Supabase anuncio que desde el 30-oct-2026 deja de auto-exponer tablas nuevas al Data API. Los GRANT a anon, authenticated, service_role deben ser explicitos en cada CREATE TABLE nuevo. Las tablas existentes no se tocan, pero los scripts SQL futuros deben incluir GRANT SELECT ON tabla TO anon, authenticated; GRANT ALL ON tabla TO service_role;. Ref: supabase.com/changelog |
+| **BL-034** | ✨ | Sistema de Torneos Internos (F1.2 → F1.6) | 🔨 En progreso | L (5-7 días) | Implementación del RFC-002 + Anexo III. F1.1 cerrado (migración SQL). Ver `docs/planning/PLAN_TRABAJO_TORNEOS.md` y `docs/adr/ADR-011-sistema-torneos.md`. |
 
 ### 🟡 Prioridad Baja (Could Have)
 
@@ -130,6 +131,7 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | ID | Categoría | Título | Completado | Commit |
 |---|---|---|---|---|
+| **F1.1-TOURN** | 🗄️ | Migración SQL sistema de torneos (5 tablas + RLS + GRANTs) | 2026-10-12 | `69f988b` |
 | **RFC-002** | 📚 | Sistema de Torneos Internos (Anexo III + RFC Accepted) | 2026-10-12 | `c0ff7d7` + `9266c16` |
 | **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README de uso (reformulado) | 2026-10-12 | `e3605e7` + `0ff1d07` |
 | **BL-025** | 🧪 | Re-implementar tests skipeados de auth + rbac (54 tests des-skipeados) | 2026-10-12 | `cb2ac13` + `6f175be` |
@@ -172,8 +174,8 @@ Este backlog centraliza **todas las ideas, mejoras, bugs y deuda técnica** del 
 
 | Métrica | Valor |
 |---|---|
-| Items activos | 12 |
-| Items completados | 18 |
+| Items activos | 13 |
+| Items completados | 19 |
 | Items bloqueados | 0 |
 | Items descartados | 0 |
 | Velocidad promedio (últimos 7 días) | ~3 items/día (con IA) |
