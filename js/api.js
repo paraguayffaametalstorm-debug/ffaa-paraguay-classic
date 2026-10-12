@@ -1355,3 +1355,200 @@ window.apiEventsV2BmGetStats       = apiEventsV2BmGetStats;
 window.apiEventsV2BmPurchase       = apiEventsV2BmPurchase;
 
 console.log('✅ [EventsV2] 11 funciones apiEventsV2* + 11 funciones apiEventsV2Bm* expuestas en window');
+
+// ============================================================
+// TOURNAMENTS — API CLIENT (F1.5)
+// ============================================================
+// 8 wrappers sobre /api/tournaments/*.
+//
+// Referencias:
+//   - API_REFERENCE.md §9 (Módulo de Torneos).
+//   - ADR-011 (arquitectura RBAC + convenciones).
+//   - PLAN_TRABAJO_TORNEOS.md §F1.5 (frontend).
+//
+// Patrón: retorna { success: true, ...data } o { success: false, error, code }.
+// NO lanza excepciones no capturadas.
+// ============================================================
+
+async function _tournamentsFetch(path, options = {}) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: options.method || 'GET',
+      headers: getAuthHeaders(),
+      ...(options.body && { body: JSON.stringify(options.body) })
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: json.error || `Error HTTP ${res.status}`,
+        code: json.code || 'HTTP_ERROR',
+        details: json.details || null
+      };
+    }
+
+    return { success: true, ...json };
+  } catch (err) {
+    console.error(`❌ [Tournaments] Error en ${path}:`, err);
+    return {
+      success: false,
+      error: err.message || 'Error de conexión',
+      code: 'NETWORK_ERROR'
+    };
+  }
+}
+
+// ─── LECTURA ────────────────────────────────────────────────
+
+/**
+ * Lista torneos con filtros opcionales.
+ * @param {{status?:string, scope?:string}} params
+ */
+async function apiTournamentsList(params = {}) {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.scope)  query.set('scope', params.scope);
+  const qs = query.toString();
+  return _tournamentsFetch(`/api/tournaments${qs ? `?${qs}` : ''}`);
+}
+
+/**
+ * Obtiene detalle de un torneo (con participants, matches, moderator_history).
+ * @param {string} id - UUID del torneo.
+ */
+async function apiTournamentsGetById(id) {
+  if (!id) return { success: false, error: 'ID requerido', code: 'MISSING_ID' };
+  return _tournamentsFetch(`/api/tournaments/${encodeURIComponent(id)}`);
+}
+
+// ─── ESCRITURA (ADMIN / OWNER) ──────────────────────────────
+
+/**
+ * Crea un torneo (estado inicial DRAFT).
+ * @param {object} payload - { name, format, scope, starts_at, ends_at, min_teams, max_teams, moderator_id?, metadata? }
+ */
+async function apiTournamentsCreate(payload) {
+  if (!payload || !payload.name || !payload.format || !payload.scope) {
+    return { success: false, error: 'name, format y scope son obligatorios', code: 'MISSING_FIELDS' };
+  }
+  return _tournamentsFetch('/api/tournaments', { method: 'POST', body: payload });
+}
+
+/**
+ * Cambia el estado de un torneo (transiciones válidas en controller).
+ * @param {string} id
+ * @param {string} status - DRAFT | REGISTRATION | ONGOING | FINISHED | CANCELLED
+ * @param {string|null} reason - Obligatorio si status = CANCELLED.
+ */
+async function apiTournamentsUpdateStatus(id, status, reason = null) {
+  if (!id || !status) {
+    return { success: false, error: 'id y status requeridos', code: 'MISSING_FIELDS' };
+  }
+  const body = { status };
+  if (reason) body.reason = reason;
+  return _tournamentsFetch(`/api/tournaments/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    body
+  });
+}
+
+/**
+ * Reasigna el moderador de un torneo (ADR-011 D8).
+ * @param {string} id
+ * @param {string} moderatorId - UUID del nuevo moderador.
+ * @param {string} reason - Motivo (5-500 chars).
+ */
+async function apiTournamentsChangeModerator(id, moderatorId, reason) {
+  if (!id || !moderatorId || !reason) {
+    return { success: false, error: 'id, moderator_id y reason requeridos', code: 'MISSING_FIELDS' };
+  }
+  return _tournamentsFetch(`/api/tournaments/${encodeURIComponent(id)}/moderator`, {
+    method: 'PATCH',
+    body: { moderator_id: moderatorId, reason }
+  });
+}
+
+// ─── REGISTRO DE EQUIPO ─────────────────────────────────────
+
+/**
+ * Registra un equipo en un torneo (torneo debe estar en REGISTRATION).
+ * @param {string} id - UUID del torneo.
+ * @param {object} payload - { team_name, captain_user_id, roster[] }
+ */
+async function apiTournamentsRegisterTeam(id, payload) {
+  if (!id || !payload?.team_name || !payload?.captain_user_id || !Array.isArray(payload?.roster)) {
+    return {
+      success: false,
+      error: 'team_name, captain_user_id y roster son obligatorios',
+      code: 'MISSING_FIELDS'
+    };
+  }
+  return _tournamentsFetch(`/api/tournaments/${encodeURIComponent(id)}/register`, {
+    method: 'POST',
+    body: payload
+  });
+}
+
+// ─── RESULTADO DE MATCH (requireTournamentModerator) ────────
+
+/**
+ * Registra el resultado de un match (Bo3 / Bo5).
+ * RBAC fino: OWNER/ADMIN bypass; VETERANO/MIEMBRO solo si son moderador.
+ * @param {string} id  - UUID del torneo.
+ * @param {string} mid - UUID del match.
+ * @param {object} payload - { score_a, score_b, best_of?, notes? }
+ */
+async function apiTournamentsRegisterMatchResult(id, mid, payload) {
+  if (!id || !mid) {
+    return { success: false, error: 'id y mid requeridos', code: 'MISSING_ID' };
+  }
+  if (typeof payload?.score_a !== 'number' || typeof payload?.score_b !== 'number') {
+    return { success: false, error: 'score_a y score_b deben ser números', code: 'MISSING_FIELDS' };
+  }
+  return _tournamentsFetch(
+    `/api/tournaments/${encodeURIComponent(id)}/matches/${encodeURIComponent(mid)}/result`,
+    { method: 'POST', body: payload }
+  );
+}
+
+// ─── DRAFT (requireTournamentModerator) — F1.5b ────────────
+
+/**
+ * Registra una acción del draft (ban/pick).
+ * ⚠️ F1.5b: este wrapper está listo pero la UI de draft
+ * se implementa en F1.5b (requiere GET endpoint no existente aún).
+ * @param {string} id  - UUID del torneo.
+ * @param {string} mid - UUID del match.
+ * @param {object} payload - { game_number, team_id, action, aircraft_id, order_index }
+ */
+async function apiTournamentsRegisterDraft(id, mid, payload) {
+  if (!id || !mid) {
+    return { success: false, error: 'id y mid requeridos', code: 'MISSING_ID' };
+  }
+  if (!payload?.game_number || !payload?.team_id || !payload?.action || !payload?.aircraft_id) {
+    return {
+      success: false,
+      error: 'game_number, team_id, action y aircraft_id son obligatorios',
+      code: 'MISSING_FIELDS'
+    };
+  }
+  return _tournamentsFetch(
+    `/api/tournaments/${encodeURIComponent(id)}/matches/${encodeURIComponent(mid)}/draft`,
+    { method: 'POST', body: payload }
+  );
+}
+
+// ─── EXPOSICIÓN GLOBAL ──────────────────────────────────────
+
+window.apiTournamentsList                = apiTournamentsList;
+window.apiTournamentsGetById             = apiTournamentsGetById;
+window.apiTournamentsCreate              = apiTournamentsCreate;
+window.apiTournamentsUpdateStatus        = apiTournamentsUpdateStatus;
+window.apiTournamentsChangeModerator     = apiTournamentsChangeModerator;
+window.apiTournamentsRegisterTeam        = apiTournamentsRegisterTeam;
+window.apiTournamentsRegisterMatchResult = apiTournamentsRegisterMatchResult;
+window.apiTournamentsRegisterDraft       = apiTournamentsRegisterDraft;
+
+console.log('✅ [Tournaments API] 8 funciones apiTournaments* expuestas en window');
