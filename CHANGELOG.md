@@ -14,6 +14,39 @@
 
 ---
 
+## [4.8.22](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.21...v4.8.22) (2026-10-12)
+
+
+### ♻️ Refactoring
+
+* **tests:** BL-032 - reorganizar mocks en helpers/ con nombres descriptivos ([0ff1d07](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/0ff1d07d2788c8a2514503e1f79f94335e4591a1))
+* **tests:** BL-032 - reorganizar mocks en helpers/ con nombres descriptivos ([e3605e7](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/e3605e703d77af71739640e039bd71c4eab8f203))
+
+
+### 📚 Documentation
+
+* **backlog:** cerrar BL-025 + actualizar conteo real (54 skipped) ([87efbe6](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/87efbe655cb105ad2bc33c81cc729716c963dbad))
+* **backlog:** cerrar BL-032 reformulado + Sprint 7 6/8 ([ef4e29e](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/ef4e29e861c62ec3041634d3270a0a3828b37ad6))
+* **backlog:** cerrar RFC-002 ([164fe82](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/164fe82ec739da93b973a8e5363e3c897175079c))
+* **changelog:** registrar nota de higiene del commit 0ff1d07 ([d1928a8](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/d1928a839bb63f401eea8126778ed0b0d7fe82f6))
+* **handoff:** corregir estructura (F3 truncada + footer + RFC-002) ([d1f04c7](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/d1f04c7faceab8ccf57ef80da4dd4d834f35784e))
+* **handoff:** HANDOFF v4.8.22 + cerrar BL-025 en PLAN_TRABAJO ([3f231e5](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/3f231e549e1e187c997dc090a52f467e129ba7cd))
+* **handoff:** registrar hallazgos H-RFC-01 y H-RFC-02 ([e8e9029](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/e8e9029bcf89e415aa9e3aadfc86c1328dfb9b4e))
+* **normativa:** agregar Anexo III - Régimen de Torneos Internos ([c0ff7d7](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/c0ff7d78f0ebe51b3272d225d02ca964858c453b))
+* **normativa:** agregar Anexo III al índice de la normativa v3.0 ([1ac9aba](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/1ac9abadb9423ef1bd0da816142824bee6a669df))
+* **plan-trabajo:** Sprint 7 7/8 + RFC-002 cerrado ([539df74](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/539df748fee1aae0251b0b2c4eca684de735a1bc))
+* **rfc:** agregar RFC-002 al índice + marcar RFC-001 como Accepted ([fb66384](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/fb66384116bf8c910c027b309b72373fe09192ca))
+* **rfc:** cerrar RFC-002 - decisiones del OWNER + referenciar Anexo III ([9266c16](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/9266c169431694df15208fdef16f2a313c453409))
+* **sprint7:** cerrar TESTS-AERONAVES + handoff v4.8.21 ([5b4457c](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/5b4457ce5c40dabb05083d168403510cc91c691b))
+
+
+### 🧪 Testing
+
+* **aeronaves:** F2 - tests unitarios de planes.controller (56 casos) ([272226e](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/272226e0b8a2f12cc14604a44c96d98bccbabf85))
+* **aeronaves:** F3 - tests de integración del catálogo combinado (10 casos) ([480c731](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/480c7310eee64b9174b6daf0b43726a1239b6247))
+* **auth:** des-skipear 15 tests de auth.controller (BL-025 F1) ([cb2ac13](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/cb2ac130e98d1cd393fedbed9c5095569e05d00f))
+* **rbac:** reescribir a unit puro con createHybridSupabase (BL-025 F2) ([6f175be](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/commit/6f175beaa081ba6020c70bbffbb19f950b2112e9))
+
 ## [4.8.21](https://github.com/paraguayffaametalstorm-debug/ffaa-paraguay-classic/compare/v4.8.20...v4.8.21) (2026-10-11)
 
 
