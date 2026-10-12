@@ -38,6 +38,50 @@ Se completó el rediseño del Panel Admin (F6) con las siguientes mejoras:
 
 ---
 
+## Cambios Recientes (2026-10-12) — F1.5a Torneos (v4.9.0-rc)
+
+### Sistema de Torneos — Frontend F1.5a cerrado
+
+Se implementó la vista completa del Sistema de Torneos Internos (RFC-002 / ADR-011) con:
+
+| # | Item | Estado |
+|---|------|--------|
+| 1 | Vista `components/tournaments.html` (652 líneas) | ✅ |
+| 2 | Módulo `js/tournaments.js` (1220 líneas, ~35 funciones) | ✅ |
+| 3 | API client `js/api.js` (8 wrappers `apiTournaments*`) | ✅ |
+| 4 | Listado con filtros (search/status/scope) | ✅ |
+| 5 | Detalle con 3 tabs (Bracket/Roster/Moderador) | ✅ |
+| 6 | Bracket Swiss + Single Elimination | ✅ |
+| 7 | 5 modales (crear/registrar/resultado/estado/moderador) | ✅ |
+| 8 | Integración en `js/views.js` (TOURNAMENTS + aliases) | ✅ |
+| 9 | Estilos en `css/views.css` (bloque `.tournaments-*` + `.bracket-*`) | ✅ |
+| 10 | Botón en mobile drawer + script en `index.html` | ✅ |
+| 11 | Cache bump `?v=4.8.3` → `?v=4.9.0` (28 ocurrencias) | ✅ |
+| 12 | Cache bump `sw.js` → `v4.9.0-f1.5a` | ✅ |
+| 13 | Modal de draft (postergado a F1.5b) | ⏳ F1.5b |
+
+**Commits clave:**
+- `992d0f9` feat(tournaments): API client F1.5 - 8 wrappers apiTournaments*
+- `b728e29` feat(tournaments): vista HTML + módulo JS F1.5a
+- `b8e73ef` feat(tournaments): integración + estilos + cache bump F1.5a
+
+**Estado del sistema:**
+- 642 passing / 0 failing / 0 skipped.
+- Vista accesible desde mobile drawer (sección "INFORMACIÓN & DOCTRINA").
+- RBAC fino funcional (ADMIN/OWNER/moderador designado).
+- Responsive mobile/tablet/desktop verificado.
+
+**Pendiente:**
+- F1.5b — Modal de draft (requiere `GET /api/tournaments/:id/matches/:mid/drafts`).
+- F1.6 — Integración con Discord (opcional).
+
+**Referencias:**
+- `docs/planning/PLAN_TRABAJO_TORNEOS.md` — Plan F1.1 → F1.6.
+- `docs/prompts/prompt-continuacion-torneos-f1.5b.md` — Prompt de continuación.
+
+---
+
+
 ## Cambios Recientes (2026-10-11) — Refactorización de docs/ + Release v4.8.7
 
 ### Reorganización de Documentación

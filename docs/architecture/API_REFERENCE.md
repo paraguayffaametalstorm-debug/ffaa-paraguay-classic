@@ -2100,6 +2100,24 @@ Reasignar el moderador designado (ADR-011 D8).
 - [`docs/planning/PLAN_TRABAJO_TORNEOS.md`](docs/planning/PLAN_TRABAJO_TORNEOS.md)
 - [`sql/045_tournaments.sql`](sql/045_tournaments.sql)
 
+
+### Notas de F1.5a (frontend)
+
+**Estado del frontend al 2026-10-12:** ✅ F1.5a cerrada (listado + bracket + roster + resultado + moderador).
+
+**Pendiente F1.5b (draft):**
+
+- El wrapper `apiTournamentsRegisterDraft()` ya existe (commit `992d0f9`) y funciona para **registrar** una acción de draft (ban/pick).
+- **Falta** el endpoint de **lectura** `GET /api/tournaments/:id/matches/:mid/drafts` para listar drafts existentes. Se implementará en F1.5b.
+- **Falta** la UI del modal de draft (grilla de aeronaves, timer 5 min, Mirrored Picks, auto-ban del último BM).
+
+**Referencias:**
+
+- `docs/planning/PLAN_TRABAJO_TORNEOS.md` — F1.5a cerrada + F1.5b planificada.
+- `docs/prompts/prompt-continuacion-torneos-f1.5b.md` — Prompt de continuación.
+
+---
+
 *Versión: v4.8.15 · Actualizado: 2026-10-11*
 
 

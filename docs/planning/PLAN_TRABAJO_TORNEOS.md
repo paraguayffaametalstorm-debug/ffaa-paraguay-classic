@@ -378,6 +378,57 @@ export async function requireTournamentModerator(req, res, next) {
 
 ---
 
+
+**Cierre F1.5a (2026-10-12):**
+
+- **4 commits aplicados:**
+  - `992d0f9` — `feat(tournaments): API client F1.5` (8 wrappers `apiTournaments*`).
+  - `b728e29` — `feat(tournaments): vista HTML + módulo JS F1.5a` (652 + 1220 líneas).
+  - `b8e73ef` — `feat(tournaments): integración + estilos + cache bump F1.5a` (+262 / -33 líneas).
+  - (este commit) — `docs(tournaments): cierre F1.5a + plan F1.5b`.
+- **8 de 9 criterios cubiertos.** El restante (modal de draft) se posterga a F1.5b.
+- **Archivos nuevos:**
+  - `components/tournaments.html` (652 líneas).
+  - `js/tournaments.js` (1220 líneas, ~35 funciones exportadas).
+- **Archivos modificados:**
+  - `js/api.js` (+197 líneas).
+  - `js/views.js` (+~15 líneas, 3 cambios quirúrgicos).
+  - `css/views.css` (+~230 líneas, bloque `.tournaments-*` + `.bracket-*`).
+  - `index.html` (28 ocurrencias `?v=4.8.3` → `?v=4.9.0`, +botón drawer, +script).
+  - `sw.js` (`CACHE_NAME` → `v4.9.0-f1.5a`, +2 assets).
+- **Hallazgos de la sesión:**
+  - H-F15-01: el comentario inline `// ADR-010` en `VETERAN_PANEL:` rompió el regex de inserción de coma. Se resolvió quitándolo previamente.
+  - H-F15-02: `Zod 4` valida UUIDs con regex RFC 4122 estricta (versión 1-8, variante 8/9/a/b).
+  - H-F15-03: el Service Worker cacheaba HTML viejo en mobile. Se bumpeó `CACHE_NAME` a `v4.9.0-f1.5a`.
+- **Suite completa:** 642 passing / 0 failing / 0 skipped.
+- **Regresiones:** 0.
+- **Push:** `aef6647..b8e73ef main -> main`.
+
+---
+
+### F1.5b — Draft (postergado)
+
+**Duración estimada:** 1-2 días
+**Estado:** ⏳ Pendiente (próxima sesión)
+
+**Motivo de la postergación:**
+
+`API_REFERENCE.md §9` no expone `GET drafts` para lectura. El wrapper
+`apiTournamentsRegisterDraft` ya existe (commit `992d0f9`), pero falta:
+
+1. **Backend:** endpoint `GET /api/tournaments/:id/matches/:mid/drafts` para
+   listar drafts existentes.
+2. **Backend:** validación de que `aircraft_id` no esté baneada por el otro equipo.
+3. **Frontend:** modal de draft con grilla de aeronaves, timer 5 min, soporte
+   para Mirrored Picks y auto-ban del último BM.
+
+**Referencias:**
+
+- `docs/normativa/ANEXO-III-torneos.md §7` — Reglas del draft.
+- `docs/prompts/prompt-continuacion-torneos-f1.5b.md` — Prompt de continuación.
+
+---
+
 ### F1.6 — Integración con Discord (opcional)
 
 **Duración:** 1-2 días (si se decide hacerla en F1).

@@ -754,7 +754,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
 **Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
 
-**Progreso:** F1.1 + F1.2 + F1.3 + F1.4 cerrados.
+**Progreso:** F1.1 + F1.2 + F1.3 + F1.4 + F1.5a cerrados. F1.5b pendiente.
 
 ### Ítems del Sprint 8
 
@@ -764,7 +764,8 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **F1.2** | 🧪 | Schemas Zod (6 schemas + 72 tests) | ✅ Cerrado |
 | **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ✅ Cerrado |
 | **F1.4** | 🏗️ | Router + mount en `server.js` | ✅ Cerrado |
-| **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
+| **F1.5a** | 🎨 | Frontend (listado + bracket + roster + resultado + moderador) | ✅ Cerrado |
+| **F1.5b** | 🎨 | Frontend (modal de draft: bans + picks + timer) | ⏳ Pendiente |
 | **F1.6** | 🤖 | Integración Discord (opcional) | ⏳ Pendiente |
 
 
@@ -787,6 +788,34 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 - Push: `52f936d..345f452 main -> main`.
 
 **Pendiente F1.5:** frontend (bracket + draft + resultados, 2-3 días).
+
+
+### Evidencia de cierre F1.5a (2026-10-12)
+
+**4 commits aplicados:**
+
+- `992d0f9` — `feat(tournaments): API client F1.5` (8 wrappers `apiTournaments*`).
+- `b728e29` — `feat(tournaments): vista HTML + módulo JS F1.5a`.
+- `b8e73ef` — `feat(tournaments): integración + estilos + cache bump F1.5a`.
+- (este commit) — `docs(tournaments): cierre F1.5a + plan F1.5b`.
+
+**Archivos nuevos:**
+
+- `components/tournaments.html` (652 líneas, ~28.3 KB).
+- `js/tournaments.js` (1220 líneas, ~45.8 KB, ~35 funciones exportadas).
+
+**Verificado:**
+
+- 8/8 criterios cubiertos (el de draft se posterga a F1.5b).
+- Suite completa: 642 passing / 0 failing / 0 skipped.
+- 0 regresiones.
+- `node --check` limpio en `js/api.js`, `js/tournaments.js`, `js/views.js`, `sw.js`.
+- Vista accesible desde mobile drawer.
+- RBAC fino funcional: solo ADMIN/OWNER ven botón Nuevo Torneo; solo moderador/ADMIN/OWNER cargan resultados.
+
+**Pendiente F1.5b:** modal de draft (1-2 días).
+
+---
 
 ### Documentos de fase
 
