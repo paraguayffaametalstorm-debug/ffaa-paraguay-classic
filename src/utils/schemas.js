@@ -194,3 +194,193 @@ export const CompleteBmMissionSchema = z.object({
   completed: z.boolean().optional().default(true)
 });
 
+
+
+// === F1.2 TOURNAMENTS (RFC-002) ===
+// Sistema de Torneos Internos (RFC-002 / Anexo III) — Fase F1.2
+// Fuente de verdad de datos: sql/045_tournaments.sql
+// Reglamento: docs/normativa/ANEXO-III-torneos.md
+// ADR: docs/adr/ADR-011-sistema-torneos.md
+// Requiere Zod 4.x.
+
+// --- Constantes reutilizables ---
+export const TOURNAMENT_FORMATS        = ['SWISS+SE', 'ROUND_ROBIN+SE'];
+export const TOURNAMENT_SCOPES         = ['F1', 'F2', 'F3', 'F4'];
+export const TOURNAMENT_STATUSES       = ['DRAFT', 'REGISTRATION', 'ONGOING', 'FINISHED', 'CANCELLED'];
+export const TOURNAMENT_PHASES         = ['SWISS', 'QF', 'SF', 'FINAL'];
+export const TOURNAMENT_MATCH_STATUSES = ['SCHEDULED', 'LIVE', 'FINISHED', 'CANCELLED'];
+export const TOURNAMENT_DRAFT_ACTIONS  = ['BAN', 'PICK'];
+export const TOURNAMENT_BEST_OF        = [3, 5];
+
+// --- Sub-schemas internos ---
+const TournamentRosterEntrySchema = z.object({
+  user_id: z.string().uuid('user_id debe ser un UUID válido'),
+  role: z.string().trim().min(2, 'Rol muy corto').max(40, 'Rol muy largo'),
+  is_sub: z.boolean().default(false),
+});
+
+const TournamentRosterSchema = z
+  .array(TournamentRosterEntrySchema)
+  .min(5, 'El roster debe tener al menos 5 pilotos')
+  .max(6, 'El roster no puede exceder 6 pilotos (5 titulares + 1 suplente)')
+  .superRefine((roster, ctx) => {
+    const subs = roster.filter((r) => r.is_sub).length;
+    const starters = roster.length - subs;
+
+    if (starters !== 5) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `El roster debe tener exactamente 5 titulares (recibidos: ${starters})`,
+      });
+    }
+    if (subs > 1) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `Máximo 1 suplente permitido (recibidos: ${subs})`,
+      });
+    }
+    const ids = roster.map((r) => r.user_id);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'No puede haber user_id duplicado en el roster',
+      });
+    }
+  });
+
+// --- 6 schemas públicos (Zod 4.x) ---
+
+export const TournamentCreateSchema = z
+  .object({
+    name: z.string().trim().min(3, 'Nombre muy corto').max(120, 'Nombre muy largo'),
+    format: z.enum(TOURNAMENT_FORMATS, {
+      message: `Formato inválido. Válidos: ${TOURNAMENT_FORMATS.join(', ')}`,
+    }),
+    scope: z.enum(TOURNAMENT_SCOPES, {
+      message: `Alcance inválido. Válidos: ${TOURNAMENT_SCOPES.join(', ')}`,
+    }),
+    starts_at: z
+      .string()
+      .datetime({ offset: true, message: 'starts_at debe ser ISO 8601 con offset' }),
+    ends_at: z
+      .string()
+      .datetime({ offset: true, message: 'ends_at debe ser ISO 8601 con offset' }),
+    min_teams: z.number().int().min(2, 'min_teams >= 2').max(32, 'min_teams <= 32').default(4),
+    max_teams: z.number().int().min(2, 'max_teams >= 2').max(32, 'max_teams <= 32').default(8),
+    moderator_id: z.string().uuid('moderator_id debe ser UUID').optional().nullable(),
+    metadata: z.record(z.string(), z.any()).optional().default({}),
+  })
+  .superRefine((data, ctx) => {
+    if (new Date(data.ends_at) <= new Date(data.starts_at)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['ends_at'],
+        message: 'La fecha de fin debe ser posterior a la de inicio',
+      });
+    }
+    if (data.max_teams < data.min_teams) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['max_teams'],
+        message: 'max_teams debe ser >= min_teams',
+      });
+    }
+    if (data.scope === 'F1' && (data.min_teams < 4 || data.max_teams > 8)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['scope'],
+        message: 'F1 admite entre 4 y 8 equipos (Anexo III Art. 8)',
+      });
+    }
+  });
+
+export const TournamentUpdateStatusSchema = z
+  .object({
+    status: z.enum(TOURNAMENT_STATUSES, {
+      message: `Estado inválido. Válidos: ${TOURNAMENT_STATUSES.join(', ')}`,
+    }),
+    reason: z.string().trim().min(5, 'Motivo muy corto').max(500, 'Motivo muy largo').optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === 'CANCELLED' && !data.reason) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['reason'],
+        message: 'CANCELLED requiere un motivo (trazabilidad Art. 22)',
+      });
+    }
+  });
+
+export const TournamentRegisterTeamSchema = z.object({
+  team_name: z.string().trim().min(2, 'Nombre de equipo muy corto').max(40, 'Nombre de equipo muy largo'),
+  captain_user_id: z.string().uuid('captain_user_id debe ser UUID'),
+  roster: TournamentRosterSchema,
+});
+
+export const TournamentMatchResultSchema = z
+  .object({
+    score_a: z.number().int().min(0, 'Score no puede ser negativo').max(5, 'Score máximo 5'),
+    score_b: z.number().int().min(0, 'Score no puede ser negativo').max(5, 'Score máximo 5'),
+    best_of: z.union([z.literal(3), z.literal(5)]).optional(),
+    winner_id: z.string().uuid('winner_id debe ser UUID').optional().nullable(),
+    notes: z.string().trim().max(500, 'Notas no pueden superar 500 chars').optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.score_a === data.score_b) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['score_a'],
+        message: 'No puede haber empate en Bo3/Bo5',
+      });
+    }
+    if (data.best_of === undefined) return;
+
+    if (data.score_a > data.best_of) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['score_a'],
+        message: `score_a no puede superar best_of (${data.best_of})`,
+      });
+    }
+    if (data.score_b > data.best_of) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['score_b'],
+        message: `score_b no puede superar best_of (${data.best_of})`,
+      });
+    }
+
+    const threshold = Math.ceil((data.best_of + 1) / 2);
+    const winnerScore = Math.max(data.score_a, data.score_b);
+    if (winnerScore < threshold) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['score_a'],
+        message: `El ganador debe alcanzar al menos ${threshold} partidas en Bo${data.best_of}`,
+      });
+    }
+  });
+
+export const TournamentDraftActionSchema = z.object({
+  action: z.enum(TOURNAMENT_DRAFT_ACTIONS, {
+    message: `Acción inválida. Válidas: ${TOURNAMENT_DRAFT_ACTIONS.join(', ')}`,
+  }),
+  aircraft_id: z
+    .union([z.string(), z.number()])
+    .transform((v) => String(v).trim())
+    .refine((v) => v.length > 0, 'aircraft_id no puede estar vacío'),
+  game_number: z.number().int().min(1, 'game_number >= 1').max(5, 'game_number <= 5'),
+  team_id: z.string().uuid('team_id debe ser UUID'),
+  order_index: z.number().int().min(1, 'order_index >= 1'),
+});
+
+export const TournamentModeratorChangeSchema = z.object({
+  moderator_id: z.string().uuid('moderator_id debe ser UUID'),
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'Motivo muy corto (mínimo 5 caracteres)')
+    .max(500, 'Motivo muy largo (máximo 500 caracteres)'),
+});
+
+// === END F1.2 TOURNAMENTS ===
