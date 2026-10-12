@@ -711,6 +711,33 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | ✅ Cerrado |
 | **RFC-002** | 📚 | RFC del sistema de torneos internos | ✅ Cerrado |
 
+
+
+### Evidencia de cierre F1.3 (2026-10-12)
+
+**Commit:** `683c4ed` — `feat(tournaments): controller + RBAC fino F1.3`
+
+**4 archivos nuevos:**
+- `src/middlewares/tournamentModerator.js` (middleware RBAC fino, ADR-011 D7).
+- `src/controllers/tournaments.controller.js` (8 handlers, Zod, audit, mapeo Postgres).
+- `tests/middlewares/tournamentModerator.test.js` (14 casos).
+- `tests/controllers/tournaments.controller.test.js` (49 casos).
+
+**3 scripts auxiliares:**
+- `scripts/f1-3-create-files.cjs` — crea los 4 archivos (idempotente).
+- `scripts/f1-3-fix-uuids.cjs` — corrige UUIDs a canónicos RFC 4122.
+- `scripts/f1-3-fix-beforeeach.cjs` — corrige mockReset→mockClear + default impl.
+
+**Verificado:**
+- 14/14 middleware + 49/49 controller = 63 tests nuevos.
+- Suite completa: 642 passing (579 previos + 63 nuevos).
+- 0 regresiones.
+- `node --check` limpio en los 4 archivos.
+- RBAC fino: VETERANO no-moderador → 403; VETERANO moderador → OK; OWNER → bypass total.
+- Push: `a7b6e8a..683c4ed main -> main`.
+
+**Pendiente F1.4:** routes + mount en `server.js` (1 h).
+
 ### Documentos de fase
 
 - `PLAN_TRABAJO_TESTS_AERONAVES.md` — plan de la fase de tests.
@@ -727,7 +754,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
 **Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
 
-**Progreso:** F1.1 + F1.2 cerrados.
+**Progreso:** F1.1 + F1.2 + F1.3 cerrados.
 
 ### Ítems del Sprint 8
 
@@ -735,7 +762,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 |---|---|---|---|
 | **F1.1** | 🗄️ | Migración SQL (5 tablas + RLS + GRANTs) | ✅ Cerrado |
 | **F1.2** | 🧪 | Schemas Zod (6 schemas + 72 tests) | ✅ Cerrado |
-| **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ⏳ Pendiente |
+| **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ✅ Cerrado |
 | **F1.4** | 🏗️ | Router + mount en `server.js` | ⏳ Pendiente |
 | **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
 | **F1.6** | 🤖 | Integración Discord (opcional) | ⏳ Pendiente |

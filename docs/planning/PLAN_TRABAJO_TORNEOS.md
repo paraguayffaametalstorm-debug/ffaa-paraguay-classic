@@ -160,9 +160,9 @@ herramienta integrada en la app de control que permite:
 
 ---
 
-### F1.3 — Controller + RBAC fino
+### F1.3 — Controller + RBAC fino ✅ CERRADO
 
-**Duración:** 1-1.5 días
+**Duración real:** 1 día (múltiples iteraciones de debug por UUIDs y mock)
 **Entregable:**
 
 - `src/controllers/tournaments.controller.js` (nuevo).
@@ -228,16 +228,34 @@ export async function requireTournamentModerator(req, res, next) {
 
 **Criterio de cierre:**
 
-- [ ] 8 endpoints operativos.
-- [ ] Middleware `requireTournamentModerator` funcionando.
-- [ ] Tests: VETERANO no-moderador recibe 403.
-- [ ] Tests: VETERANO moderador puede registrar draft.
-- [ ] Tests: OWNER puede operar cualquier torneo.
-- [ ] Tests: MIEMBRO sin designación recibe 403.
+- [x] 8 endpoints operativos.
+- [x] Middleware `requireTournamentModerator` funcionando.
+- [x] Tests: VETERANO no-moderador recibe 403.
+- [x] Tests: VETERANO moderador puede registrar draft.
+- [x] Tests: OWNER puede operar cualquier torneo.
+- [x] Tests: MIEMBRO sin designación recibe 403.
 
 **Commit esperado:** `feat(tournaments): controller + RBAC fino F1.3`.
 **Riesgo:** medio (RBAC fino es sensible).
 **Rollback:** `git revert` + quitar mount de rutas.
+
+---
+
+
+
+**Cierre F1.3 (2026-10-12):**
+
+- **Commit:** `683c4ed` — `feat(tournaments): controller + RBAC fino F1.3`
+- **Archivos creados:** 4 (`tournamentModerator.js`, `tournaments.controller.js`, 2 test files).
+- **Scripts auxiliares:** 3 (`f1-3-create-files.cjs`, `f1-3-fix-uuids.cjs`, `f1-3-fix-beforeeach.cjs`).
+- **Tests nuevos:** 63 (14 middleware + 49 controller).
+- **Suite completa:** 642 passing / 0 failing / 0 skipped.
+- **Regresiones:** 0.
+- **Hallazgos de la sesión:**
+  - H-F13-01: Zod 4 valida UUIDs con regex RFC 4122 estricta (versión 1-8, variante 8/9/a/b).
+  - H-F13-02: `vi.clearAllMocks()` + `mockReset()` destruye la implementación del mock. Usar `mockClear()` + default impl.
+  - H-F13-03: El helper de Express vive en `tests/helpers/express.js`, no en `tests/mocks/express.js`.
+- **Push:** `a7b6e8a..683c4ed main -> main`.
 
 ---
 
