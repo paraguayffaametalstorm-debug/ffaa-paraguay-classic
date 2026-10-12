@@ -1,0 +1,3 @@
+5e4f1bd Merge pull request #21 from paraguayffaametalstorm-debug/release-please--branches--main--components--ffaa-paraguay-classic
+945a791 chore(main): release 4.8.22
+539df74 docs(plan-trabajo): Sprint 7 7/8 + RFC-002 cerrado
