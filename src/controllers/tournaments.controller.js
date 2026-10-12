@@ -34,6 +34,9 @@ import {
   TournamentModeratorChangeSchema
 } from '../utils/schemas.js';
 
+// F1.6b — Notificaciones a Discord (outbound webhooks)
+import { safeNotify } from '../utils/discordNotifier.js';
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -283,6 +286,20 @@ export async function createTournament(req, res, next) {
       }
     });
 
+    // F1.6b — Notificación Discord (fire-and-forget)
+    await safeNotify('TOURNAMENT_CREATED', {
+      tournament_id: inserted.id,
+      name: inserted.name,
+      format: inserted.format,
+      scope: inserted.scope,
+      starts_at: inserted.starts_at,
+      ends_at: inserted.ends_at,
+      min_teams: inserted.min_teams,
+      max_teams: inserted.max_teams,
+      moderator_id: inserted.moderator_id,
+      created_by_nick: req.user.nick || req.user.email
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Torneo creado',
@@ -456,6 +473,16 @@ export async function updateTournamentStatus(req, res, next) {
       }
     });
 
+    // F1.6b — Notificación Discord (fire-and-forget)
+    await safeNotify('TOURNAMENT_STATUS_CHANGED', {
+      tournament_id: tournamentId,
+      tournament_name: current.name,
+      from_status: current.status,
+      to_status: newStatus,
+      reason: reason || null,
+      changed_by_nick: req.user.nick || req.user.email
+    });
+
     return res.json({
       success: true,
       message: `Estado actualizado: ${current.status} → ${newStatus}`,
@@ -566,6 +593,17 @@ export async function registerTeam(req, res, next) {
         captain_user_id: data.captain_user_id,
         roster_size: data.roster.length
       }
+    });
+
+    // F1.6b — Notificación Discord (fire-and-forget)
+    await safeNotify('TOURNAMENT_TEAM_REGISTERED', {
+      tournament_id: tournamentId,
+      tournament_name: tournament.name,
+      team_id: inserted.id,
+      team_name: inserted.team_name,
+      captain_user_id: data.captain_user_id,
+      captain_nick: null,
+      roster_size: data.roster.length
     });
 
     return res.status(201).json({
@@ -687,6 +725,20 @@ export async function registerMatchResult(req, res, next) {
         winner_id: winnerId,
         best_of: bestOf
       }
+    });
+
+    // F1.6b — Notificación Discord (fire-and-forget)
+    await safeNotify('TOURNAMENT_MATCH_RESULT_RECORDED', {
+      tournament_id: tournamentId,
+      tournament_name: null,
+      match_id: matchId,
+      phase: updated.phase || null,
+      best_of: bestOf,
+      score_a: data.score_a,
+      score_b: data.score_b,
+      winner_id: winnerId,
+      winner_name: null,
+      recorded_by_nick: req.user.nick || req.user.email
     });
 
     return res.json({
@@ -976,6 +1028,21 @@ export async function registerDraftAction(req, res, next) {
       }
     });
 
+    // F1.6b — Notificación Discord (fire-and-forget)
+    await safeNotify('TOURNAMENT_DRAFT_ACTION_RECORDED', {
+      tournament_id: tournamentId,
+      tournament_name: null,
+      match_id: matchId,
+      game_number: data.game_number,
+      order_index: data.order_index,
+      action: data.action,
+      aircraft_id: String(data.aircraft_id),
+      aircraft_name: aircraftRow.name || null,
+      team_id: data.team_id,
+      team_label: String(data.team_id) === String(match.team_a_id) ? 'A' : 'B',
+      recorded_by_nick: req.user.nick || req.user.email
+    });
+
     return res.status(201).json({
       success: true,
       message: `Acción ${data.action} registrada`,
@@ -1081,6 +1148,18 @@ export async function changeModerator(req, res, next) {
         new_user: newModeratorId,
         reason
       }
+    });
+
+    // F1.6b — Notificación Discord (fire-and-forget)
+    await safeNotify('TOURNAMENT_MODERATOR_CHANGED', {
+      tournament_id: tournamentId,
+      tournament_name: tournament.name,
+      previous_moderator_id: previousModeratorId,
+      previous_moderator_nick: null,
+      new_moderator_id: newModeratorId,
+      new_moderator_nick: null,
+      reason,
+      changed_by_nick: req.user.nick || req.user.email
     });
 
     return res.json({

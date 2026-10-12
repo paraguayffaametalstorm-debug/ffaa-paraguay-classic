@@ -48,5 +48,17 @@ export const ENV = {
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'https://paraguay-ffaa-metalstorm.fly.dev'
-      ]
+      ],
+
+  // ============================================================
+  // DISCORD INTEGRATION (F1.6 — ADR-012)
+  // ============================================================
+  // Feature flag global. Si no es "true", el módulo Discord se
+  // saltea silenciosamente y NO rompe el arranque.
+  DISCORD_ENABLED: process.env.DISCORD_ENABLED === 'true',
+  DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN || '',
+  DISCORD_PUBLIC_KEY: process.env.DISCORD_PUBLIC_KEY || '',
+  DISCORD_APPLICATION_ID: process.env.DISCORD_APPLICATION_ID || '',
+  DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || '',
+  DISCORD_TIMEOUT_MS: parseInt(process.env.DISCORD_TIMEOUT_MS || '3000', 10)
 };

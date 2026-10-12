@@ -214,3 +214,36 @@ La F1.6 se ejecuta en dos sub-fases:
 
 **PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
 **ADR-012 · Integración con Discord · 2026-10-12**
+
+### D5.bis — Supabase otorga ALL PRIVILEGES por default
+
+⚠️ **Hallazgo 2026-10-12 (durante F1.6a):**
+
+Al crear `discord_webhooks`, Supabase otorgó `ALL PRIVILEGES`
+automáticamente a `anon`, `authenticated`, `postgres` y `service_role`
+(comportamiento por default del rol `postgres` en Postgres 15+ vía
+`ALTER DEFAULT PRIVILEGES`).
+
+El `GRANT SELECT, INSERT, UPDATE, DELETE TO service_role` de
+`sql/046_discord_webhooks.sql` fue **aditivo**: no revocó los permisos
+que Supabase ya había otorgado a `anon`/`authenticated`.
+
+**Mitigación aplicada:** `sql/047_discord_webhooks_fix_grants.sql`:
+
+```sql
+REVOKE ALL ON public.discord_webhooks FROM anon;
+REVOKE ALL ON public.discord_webhooks FROM authenticated;
+REVOKE ALL ON public.discord_webhooks FROM service_role;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.discord_webhooks TO service_role;
+```
+
+**Regla para futuras migraciones SQL:** en cada `CREATE TABLE`,
+ejecutar siempre el bloque REVOKE+GRANT explícito. No confiar en el
+`GRANT` suelto. Refuerza **BL-030**.
+
+**Verificación:** `SELECT grantee, privilege_type FROM
+information_schema.role_table_grants WHERE table_name = 'discord_webhooks';`
+debe devolver SOLO `postgres` (owner) y `service_role` (4 privilegios).
+
+---
