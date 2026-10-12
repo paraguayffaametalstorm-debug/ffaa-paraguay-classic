@@ -114,6 +114,7 @@ TÍTULO VIII — APROBACIÓN, TRANSICIÓN Y DISPOSICIONES FINALES
 ANEXOS
   Anexo I — Matriz de capacidad y roles
   Anexo II — Criterios técnicos para la evaluación
+  Anexo III — Régimen de torneos internos
 
 CONTROL DE CAMBIOS
 
@@ -2019,4 +2020,4 @@ Nuevo (V3.0)               | Escuadrones anexos, escuadrones aliados,
                            | aporte, procedimiento de revisión con
                            | plazos, reforma Propietario/Administrador
                            | (Opción A).
-FIN DEL BORRADOR — VERSIÓN 3.0
+FIN DEL BORRADOR — VERSIÓN 3.0
