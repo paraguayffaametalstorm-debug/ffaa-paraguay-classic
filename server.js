@@ -29,6 +29,7 @@ import dashboardRoutes from './src/routes/dashboard.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import veteranRoutes from './src/routes/veteran.routes.js';
 import tournamentsRoutes from './src/routes/tournaments.routes.js';
+import discordRoutes from './src/routes/discord.routes.js';
 import { startEventScheduler } from './src/utils/eventScheduler.js';
 import { cleanupPresence } from './src/controllers/presence.controller.js';
 import cron from 'node-cron';
@@ -284,6 +285,18 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // rechazadas por rate limit tengan un ID trazable.
 // ============================================================
 app.use(correlationIdMiddleware);
+
+// ============================================================
+// DISCORD HTTP INTERACTIONS (F1.6d) — mount ANTES del apiLimiter
+// ============================================================
+// Discord firma cada request con Ed25519 (no JWT). El rate limiter
+// global podría bloquear reintentos legítimos de Discord si la app
+// se reinicia. La firma criptográfica ES la autenticación.
+//
+// Se monta DESPUÉS de correlationIdMiddleware (para trazabilidad)
+// pero ANTES de apiLimiter.
+// ============================================================
+app.use('/api/discord', discordRoutes);
 
 // Global API rate limiter
 app.use('/api', apiLimiter);
