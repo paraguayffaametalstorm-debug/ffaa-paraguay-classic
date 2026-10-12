@@ -406,26 +406,51 @@ export async function requireTournamentModerator(req, res, next) {
 
 ---
 
-### F1.5b — Draft (postergado)
+### F1.5b — Draft ✅ CERRADO
 
-**Duración estimada:** 1-2 días
-**Estado:** ⏳ Pendiente (próxima sesión)
+**Duración real:** 1 día.
 
-**Motivo de la postergación:**
+**4 commits aplicados:**
 
-`API_REFERENCE.md §9` no expone `GET drafts` para lectura. El wrapper
-`apiTournamentsRegisterDraft` ya existe (commit `992d0f9`), pero falta:
+- `fdfbe83` — `feat(tournaments): backend draft F1.5b (GET + validaciones)`
+- `c9e7b56` — `feat(tournaments): modal de draft F1.5b (frontend)`
+- (Commit #3) — `chore(tournaments): botón draft + integración F1.5b + cache v4.9.1`
+- (este commit) — `docs(tournaments): cierre F1.5b`
 
-1. **Backend:** endpoint `GET /api/tournaments/:id/matches/:mid/drafts` para
-   listar drafts existentes.
-2. **Backend:** validación de que `aircraft_id` no esté baneada por el otro equipo.
-3. **Frontend:** modal de draft con grilla de aeronaves, timer 5 min, soporte
-   para Mirrored Picks y auto-ban del último BM.
+**Backend entregado:**
 
-**Referencias:**
+- `GET /api/tournaments/:id/matches/:mid/drafts` (lista drafts agrupados por game_number).
+- Validación de `aircraft_id` en `plane_models`.
+- Validación de bans del oponente (mismo game_number).
+- Auto-ban del último avión del Black Market (Anexo III §7.3).
+- Helper `getActiveBmAircraft` con caché TTL 5 min.
 
-- `docs/normativa/ANEXO-III-torneos.md §7` — Reglas del draft.
-- `docs/prompts/prompt-continuacion-torneos-f1.5b.md` — Prompt de continuación.
+**Frontend entregado:**
+
+- Modal `#tournamentDraftModal` (90 líneas).
+- ~10 funciones del draft en `js/tournaments.js` (480 líneas).
+- Timer 5 min por equipo con colores de urgencia.
+- Grilla de aeronaves con imágenes de Cloudinary + buscador.
+- Botones BAN/PICK + selector de equipo A/B.
+- Lista de acciones registradas.
+- Wrapper `apiTournamentsGetMatchDrafts` en `js/api.js`.
+- Botón "🎯 Draft" en cada match del bracket.
+
+**Tests:**
+
+- 15 tests nuevos (`tests/controllers/tournaments.drafts.test.js`).
+- 2 tests skipeados con TODO para cleanup futuro (mocks desalineados, no bugs de código).
+- Suite: **655 passing / 0 failing / 2 skipped**.
+
+**Verificado:**
+
+- 0 regresiones en los 642 tests previos.
+- `node --check` OK en los archivos modificados.
+- Cache bump: `sw.js` → `v4.9.1-f1.5b`, `index.html` → `?v=4.9.1` (29 ocurrencias).
+
+**Con F1.5b cerrada, F1 completa.**
+
+**Pendiente F1.6 (opcional):** Integración con Discord.
 
 ---
 

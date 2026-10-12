@@ -38,6 +38,51 @@ Se completó el rediseño del Panel Admin (F6) con las siguientes mejoras:
 
 ---
 
+## Cambios Recientes (2026-10-12) — F1.5b Torneos (v4.9.1)
+
+### Sistema de Torneos — Draft F1.5b cerrado · F1 COMPLETA
+
+Se implementó el **modal de draft** completo:
+
+| # | Item | Estado |
+|---|------|--------|
+| 1 | Backend: `GET /api/tournaments/:id/matches/:mid/drafts` | ✅ |
+| 2 | Backend: validación `aircraft_id` en `plane_models` | ✅ |
+| 3 | Backend: validación bans oponente | ✅ |
+| 4 | Backend: auto-ban último BM (helper + caché TTL 5min) | ✅ |
+| 5 | Backend: 15 tests nuevos (`tournaments.drafts.test.js`) | ✅ |
+| 6 | Frontend: modal `#tournamentDraftModal` (90 líneas) | ✅ |
+| 7 | Frontend: ~10 funciones draft en `js/tournaments.js` | ✅ |
+| 8 | Frontend: timer 5 min con colores de urgencia | ✅ |
+| 9 | Frontend: grilla de aeronaves + buscador | ✅ |
+| 10 | Frontend: wrapper `apiTournamentsGetMatchDrafts` | ✅ |
+| 11 | Frontend: botón "🎯 Draft" en bracket | ✅ |
+| 12 | Cache bump: `sw.js` → `v4.9.1-f1.5b`, `index.html` → `?v=4.9.1` (29 ocurrencias) | ✅ |
+
+**Commits clave:**
+- `fdfbe83` feat(tournaments): backend draft F1.5b (GET + validaciones)
+- `c9e7b56` feat(tournaments): modal de draft F1.5b (frontend)
+- (Commit #3) chore(tournaments): botón draft + integración F1.5b + cache v4.9.1
+- (este commit) docs(tournaments): cierre F1.5b
+
+**Estado del sistema:**
+- **655 passing / 0 failing / 2 skipped** (los 2 skipeados son tests frágiles documentados).
+- 0 regresiones.
+- Backend y frontend del draft 100% funcionales.
+
+**Con F1.5b cerrada, F1 (Sistema de Torneos) queda COMPLETA.**
+
+**Pendiente:**
+- F1.6 — Integración con Discord (opcional).
+- Cleanup de los 2 tests skipeados (deuda técnica menor).
+
+**Referencias:**
+- `docs/planning/PLAN_TRABAJO_TORNEOS.md`
+- `docs/normativa/ANEXO-III-torneos.md` §7
+
+---
+
+
 ## Cambios Recientes (2026-10-12) — F1.5a Torneos (v4.9.0-rc)
 
 ### Sistema de Torneos — Frontend F1.5a cerrado

@@ -754,7 +754,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 **ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
 **Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
 
-**Progreso:** F1.1 + F1.2 + F1.3 + F1.4 + F1.5a cerrados. F1.5b pendiente.
+**Progreso:** F1.1 + F1.2 + F1.3 + F1.4 + F1.5a + F1.5b cerrados. **F1 COMPLETA.** F1.6 (opcional) pendiente.
 
 ### Ítems del Sprint 8
 
@@ -765,7 +765,7 @@ período de gracia (ADR-008). Bugs en frontend, backend y SW.
 | **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ✅ Cerrado |
 | **F1.4** | 🏗️ | Router + mount en `server.js` | ✅ Cerrado |
 | **F1.5a** | 🎨 | Frontend (listado + bracket + roster + resultado + moderador) | ✅ Cerrado |
-| **F1.5b** | 🎨 | Frontend (modal de draft: bans + picks + timer) | ⏳ Pendiente |
+| **F1.5b** | 🎨 | Frontend (modal de draft: bans + picks + timer) | ✅ Cerrado |
 | **F1.6** | 🤖 | Integración Discord (opcional) | ⏳ Pendiente |
 
 
