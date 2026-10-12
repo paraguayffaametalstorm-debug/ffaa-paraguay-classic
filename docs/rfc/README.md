@@ -1,7 +1,7 @@
 # 📄 RFC — Request for Comments
 
 > **Propuestas formales de cambios grandes en el sistema.**
-> **Última actualización:** 2026-09-17
+> **Última actualización:** 2026-10-12
 
 ## ¿Qué es un RFC?
 
@@ -29,7 +29,8 @@ Un RFC es un documento que describe una **propuesta formal** para un cambio sign
 
 | ID | Título | Autor | Estado | Fecha |
 |---|---|---|---|---|
-| RFC-001 | QR de Credenciales Temporales | OWNER | 📝 Draft | 2026-09-17 |
+| RFC-001 | QR de Credenciales Temporales | OWNER | ✅ Accepted (v4.4.0) | 2026-09-17 |
+| RFC-002 | Sistema de Torneos Internos | OWNER + Comando C4ISR | ✅ Accepted | 2026-10-11 |
 
 ---
 
