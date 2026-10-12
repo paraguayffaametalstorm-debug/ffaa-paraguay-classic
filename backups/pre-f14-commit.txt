@@ -1,0 +1,14 @@
+================================================================
+BACKUP PRE-F1.4 — Sistema de Torneos (routes + mount)
+================================================================
+
+Timestamp:  2026-10-12T01:54:59.115Z
+Commit:     52f936d6b93e21b07a4b1cdcbafee07f6f5feae5
+Mensaje:    chore(tournaments): snapshot pre-F1.3
+Branch:     main
+
+--- git status --porcelain ---
+?? scripts/f1-3-update-docs.cjs
+?? scripts/f1-4-create-routes.cjs
+
+================================================================

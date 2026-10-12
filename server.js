@@ -28,6 +28,7 @@ import presenceRoutes from './src/routes/presence.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import veteranRoutes from './src/routes/veteran.routes.js';
+import tournamentsRoutes from './src/routes/tournaments.routes.js';
 import { startEventScheduler } from './src/utils/eventScheduler.js';
 import { cleanupPresence } from './src/controllers/presence.controller.js';
 import cron from 'node-cron';
@@ -296,6 +297,8 @@ app.use('/api/events-v2', eventsV2Routes);
 app.use('/api/presence', presenceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/veteran', veteranRoutes);
+
+app.use('/api/tournaments', tournamentsRoutes);
 
 // Compatibility aliases
 app.use('/auth', authRoutes);
