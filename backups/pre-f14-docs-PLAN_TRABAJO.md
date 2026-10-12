@@ -1,0 +1,813 @@
+> **Actualización 2026-09-23 — Sprint 3 CERRADO:**
+> 287 tests pasando (80.6% cobertura) · 69 tests skipeados (BL-025) · 0 fallando.
+> Health checks separados operativos. Deploy: `deployment-01M37CFA7KZ7H58H6CQ69NB145`.
+> Commit: `e6d16dd`. Ver `CHANGELOG.md [4.5.10]` para detalles completos.
+
+# 🔧 PLAN DE TRABAJO — SPRINTS ACTIVOS
+> **Actualizacion 2026-09-23:** BL-017 (Sincronizacion DDL `users`) y BL-023 (Encoding LF)
+> cerrados. Ambos items se movieron a la seccion "Completados" de `BACKLOG.md`.
+> Ver `CHANGELOG.md` `[4.5.9]` para detalles completos.
+
+
+## PARAGUAY-FFAA | METALSTORM
+
+> **Documento operativo de correcciones, sincronización documental y deuda técnica.**
+> **Última actualización:** 2026-10-12
+> **Versión de referencia:** v4.8.22
+> **Responsable:** Comando C4ISR
+> **Próxima revisión:** al cerrar cada Sprint
+
+---
+
+## 0. CÓMO USAR ESTE DOCUMENTO
+
+Este documento **NO reemplaza** a:
+
+- `CHANGELOG.md` → histórico de versiones publicadas.
+- `BACKLOG.md` → ideas y features futuras.
+- `ROADMAP.md` → visión estratégica a 12 meses.
+- `PLAN_MEJORA_CONTINUA.md` → plan de fases históricas (0 a 6, cerrado).
+
+Este documento **SÍ es la fuente única de verdad** para:
+
+- **Fixes activos** (bugs confirmados, correcciones en curso).
+- **Sincronización documental** (docs desalineados con el código real).
+- **Deuda técnica priorizada** (refactors, limpiezas, mejoras).
+- **Vulnerabilidades pendientes** (cuando se confirmen).
+
+### Reglas de oro
+
+1. **Nada entra sin verificación.** Todo ítem debe citar `archivo:línea` o `documento:sección` y un fragmento real.
+2. **Un ítem = un PR.** No se agrupan fixes no relacionados.
+3. **Cada ítem tiene criterio de aceptación medible.** "Mejorar doc" no es criterio. "El README dice v4.3.0 y el árbol de carpetas coincide con `ls sql/`" sí.
+4. **Severidad ≠ prioridad.** Un doc desactualizado que confunde al OWNER puede ir antes que un bug teórico.
+5. **Se actualiza al cerrar cada Sprint**, no al cerrar cada ítem (excepto CRÍTICOS, que se marcan al toque).
+6. **Los ítems cerrados se mueven a la sección "✅ Completados"** con fecha y commit.
+
+---
+
+## 1. ESTADO ACTUAL DE REFERENCIA
+
+| Campo | Valor |
+|---|---|
+| **Versión real** | v4.8.10 · Sprint 6 cerrado + refactor docs |
+| **Commit HEAD** | `cd8dc5d` (docs(handoff): agregar handoff v4.8.10) |
+| **Deploy producción** | ✅ Activo en Render.com |
+| **Timezone scheduler** | UTC-3 fijo (`PY_OFFSET_HOURS = 3`, Paraguay sin DST desde oct-2024) |
+| **Duración evento SQ** | 4 días (jue 09:00 PY → lun 08:59 PY) |
+| **Duración ventana SQ** | 7 días (ADR-008) |
+| **Duración evento BM** | 5 días (mié → dom) |
+| **Duración ventana BM** | 6 días (ADR-008) |
+| **Tests** | 287 passing · 69 skipped · 0 failing (Vitest 5.0.1) |
+| **ADR cerrados** | ADR-001 a ADR-005 (Sprint 0 Grupo D) + ADR-006, ADR-007, ADR-008 |
+| **Pendientes heredados** | F4.5 (DROP tablas BM legacy), verificar W39, ticket Supabase tzdata |
+
+> ⚠️ **Si algún valor de esta tabla no coincide con la realidad, actualizalo ANTES de seguir.**
+> Un roadmap sobre datos falsos es peor que no tener roadmap.
+
+---
+
+## 2. SPRINTS Y FASES
+
+```
+SPRINT 0  Sincronización documental urgente    ✅ CERRADO
+SPRINT 1  Verificación de código crítico       ✅ CERRADO
+SPRINT 2  Fixes de correctitud y seguridad     ✅ CERRADO
+SPRINT 3  Tests y observabilidad               ✅ CERRADO
+SPRINT 4  Deuda técnica y limpieza             ✅ CERRADO
+SPRINT 5  Features del backlog                 ✅ CERRADO
+SPRINT 6  Sección Veteranos (mentoría + RBAC)  ✅ CERRADO (v4.8.4)
+```
+
+Cada sprint tiene: **objetivo**, **criterio de salida**, **ítems**, **dueño**, **fecha objetivo**.
+
+---
+
+## SPRINT 0 — Sincronización documental urgente
+
+**Objetivo:** alinear toda la documentación con la versión real (v4.3.0) y eliminar contradicciones internas.
+**Criterio de salida:** ningún documento menciona versiones v4.0.x como "actual", ninguna contradicción interna sobrevive.
+**Duración estimada:** 3-4 horas.
+**Riesgo:** bajo (solo edición de markdown, no toca código).
+**Dueño:** OWNER + asistencia IA.
+
+### Por qué es urgente
+
+Tenemos **4 versiones distintas** declaradas como "la actual" en distintos documentos (v4.0.0, v4.0.2, v4.0.5, v4.3.0). Esto genera:
+
+- Confusión al retomar el proyecto.
+- Riesgo de escribir código contra documentación vieja.
+- Imposibilidad de auditar el estado real.
+
+### Ítems del Sprint 0
+
+| ID | Severidad | Documento | Problema | Esfuerzo |
+|---|---|---|---|---|
+| **FIX-001** | ALTA | `README.md` | Badge dice v4.0.5, debería decir v4.3.0 | XS |
+| **FIX-002** | ALTA | `README.md` | Árbol de carpetas lista solo 2 SQL, hay 34 | S |
+| **FIX-003** | ALTA | `README.md` | Lista `bm.controller.js` que fue eliminado | XS |
+| **FIX-004** | ALTA | `README.md` | Cuota ADMIN dice 3, es 5 | XS |
+| **FIX-005** | ALTA | `CURRENT_STATE.md` | Resumen ejecutivo dice v4.0.2, header dice v4.3.0 | XS |
+| **FIX-007** | ALTA | `API_REFERENCE.md` | Falta endpoints `submission-window` (ADR-008) | S |
+| **FIX-008** | ALTA | `API_REFERENCE.md` | Sección completa BM legacy (`/api/bm/*`) que ya no existe | M |
+| **FIX-009** | ALTA | `API_REFERENCE.md` | Cuota ADMIN dice 3, es 5 | XS |
+| **FIX-010** | ALTA | `ARCHITECTURE.md` | Lista `bm.controller.js` y 15 endpoints `/api/bm/*` | S |
+| **FIX-011** | ALTA | `ARCHITECTURE.md` | Cuota ADMIN dice 3, es 5 | XS |
+| **FIX-012** | ALTA | `docs/adr/README.md` | ADR-008 marcado `Proposed`, es `Accepted` | XS |
+| **FIX-013** | ALTA | `docs/adr/README.md` | Faltan ADR-001 a ADR-005 (referenciados pero ausentes) | M |
+| **FIX-014** | MEDIA | `DEPLOYMENT_STATE.md` | Versión v4.0.5 → v4.3.0. Tablas `bm_*` sin marcar DROP pendiente | S |
+| **FIX-015** | MEDIA | `DEPLOYMENT_GUIDE.md` | Versión v4.0.5 → v4.3.0 | XS |
+| **FIX-016** | MEDIA | `USER_MANUAL.md` | Versión v4.0.0 → v4.3.0. Falta sección ADR-008 | S |
+| **FIX-017** | MEDIA | `PWA_SETUP.md` | `CACHE_NAME` dice v4.0.5, debería ser v4.1.0+ | XS |
+| **FIX-018** | MEDIA | `CONTEXTO_PROYECTO.md` | Cuota ADMIN dice 3, es 5. Versión v4.0.2 → v4.3.0 | S |
+| **FIX-019** | MEDIA | `BACKLOG.md` | Contador dice "7 completados", hay 8 | XS |
+| **FIX-020** | MEDIA | `BACKLOG.md` | Referencia `BL-059` no definido en tabla | XS |
+| **FIX-023** | BAJA | `README.md` | Ancla `#resumen-ejecutivo` rota en CURRENT_STATE | XS |
+| **FIX-024** | BAJA | `README.md` | Lista `metadata.json` que probablemente sobra | XS |
+| **FIX-025** | BAJA | `DEPLOYMENT_STATE.md` | Confirmar si `sql/032_drop_bm_legacy_tables.sql` se ejecutó | XS |
+| **FIX-026** | ALTA | `sw.js` | `CACHE_NAME` decía v4.2.5, debía ser v4.3.0 (hallazgo nuevo) | XS |
+
+### Criterio de cierre del Sprint 0
+
+- [ ] Ningún documento declara una versión distinta a v4.3.0 como "actual".
+- [ ] Ningún documento menciona `bm.controller.js` como existente.
+- [ ] Ningún documento dice "máximo 3 ADMIN".
+- [ ] Timezone unificado en los 5 documentos que lo mencionan.
+- [ ] Duración SQ unificada en los documentos que la mencionan.
+- [ ] `API_REFERENCE.md` refleja los endpoints reales (con `submission-window`).
+- [ ] `docs/adr/README.md` marca ADR-008 como Accepted.
+- [ ] No quedan contradicciones internas.
+
+---
+
+## SPRINT 1 — Verificación de código crítico
+
+**Objetivo:** confirmar o descartar los hallazgos de la auditoría externa (Gemini) sobre código real, antes de invertir tiempo en fixes.
+**Criterio de salida:** cada hallazgo reportado tiene estado `CONFIRMADO`, `DESCARTADO` o `NO VERIFICABLE`, con evidencia pegada.
+**Duración estimada:** 4-6 horas (depende de cuántos archivos haya que revisar).
+**Riesgo:** bajo (solo lectura, no se modifica nada).
+**Dueño:** OWNER + asistencia IA con archivos reales.
+
+### Contexto
+
+Una auditoría externa reportó **22 hallazgos** sin acceso verificado al repo. Varios tienen señales de alucinación (rangos de línea imposibles, contradicciones internas). **No se toca código hasta confirmar qué es real.**
+
+### Ítems del Sprint 1
+
+| ID | Archivo a verificar | Hallazgo reportado | Estado |
+|---|---|---|---|
+| **FIX-101** | `src/controllers/auth.controller.js` | Reset password no atómico + falta invalidar sesiones | ⏳ Pendiente |
+| **FIX-102** | `src/controllers/planes.controller.js` | IDOR en delete/update de aviones | ⏳ Pendiente |
+| **FIX-103** | `server.js` | CSP con `unsafe-inline` / `unsafe-eval` | ⏳ Pendiente |
+| **FIX-104** | `src/middlewares/errorHandler.js` | Fuga de detalles de DB en respuestas 500 | ⏳ Pendiente |
+
+| **HALL-S1-01** | `src/controllers/planes.controller.js` — ownership check en getPlaneDetails | 2026-09-22 | `5fbb2d5` |
+| **FIX-105** | `src/controllers/events-v2.controller.js` | Race condition al abrir evento | ⏳ Pendiente |
+| **FIX-106** | `js/performance.js`, `js/views.js` | XSS por `innerHTML` sin escape | ⏳ Pendiente |
+| **FIX-107** | `sql/028_events_master.sql` | RLS permisivo / falta bloqueo a `anon` | ⏳ Pendiente |
+| **FIX-108** | `src/controllers/performances.controller.js` | N+1 en stats del escuadrón | ⏳ Pendiente |
+
+### Cómo verificar
+
+Para cada ítem:
+
+1. Abrir el archivo en VS Code.
+2. Localizar el fragmento citado.
+3. Pegar el fragmento real en la columna "Evidencia" del ítem.
+4. Marcar estado:
+   - **CONFIRMADO** → el hallazgo es real.
+   - **DESCARTADO** → el hallazgo es falso, con razón.
+   - **NO VERIFICABLE** → el archivo no existe o el fragmento no se puede localizar.
+
+### Criterio de cierre del Sprint 1
+
+- [ ] Los 8 ítems tienen estado asignado.
+- [ ] Los confirmados pasan a Sprint 2 con severidad real.
+- [ ] Los descartados se documentan (para no volver a reportarlos).
+
+---
+
+## SPRINT 2 — Fixes de correctitud y seguridad  ✅ CERRADO (2026-09-23)
+
+> **Cerrado el 2026-09-23.** 7 de 8 fixes completados. FIX-103 diferido al Sprint 3.
+>
+> **FIX-103 (CSP unsafe-inline) — DIFERIDO al Sprint 3:**
+> El CSP actual mantiene `'unsafe-inline'` en `scriptSrc` y `styleSrc` porque la SPA
+> usa `onclick="..."` inline masivamente (~200 ocurrencias). Migrar a `addEventListener`
+> requiere un refactor grande + tests visuales exhaustivos.
+>
+> **Razón del diferimiento:**
+> - Los 7 fixes del Sprint 2 ya cerraron los hallazgos CRÍTICOS.
+> - `'unsafe-inline'` es un riesgo residual, no crítico.
+> - El frontend ya tiene `escapeHtml` para prevenir XSS por input.
+> - El Sprint 3 (tests + observabilidad) aporta más valor en este momento.
+>
+> **Ref:** BL-024 en `BACKLOG.md`.  ✅ CERRADO (2026-09-23)
+
+> **Cerrado el 2026-09-23.** 7 de 8 fixes completados. FIX-103 diferido al Sprint 3.
+
+> **FIX-103 (CSP unsafe-inline) — DIFERIDO al Sprint 3:**
+>
+> El CSP actual mantiene `'unsafe-inline'` en `scriptSrc` y `styleSrc` porque la SPA
+> usa `onclick="..."` inline masivamente (~200 ocurrencias). Migrar a `addEventListener`
+> requiere un refactor grande + tests visuales exhaustivos.
+>
+> **Razón del diferimiento:**
+> - Los 7 fixes del Sprint 2 ya cerraron los hallazgos CRÍTICOS.
+> - `'unsafe-inline'` es un riesgo residual, no crítico (el CSP ya limita a `'self'` + whitelist de CDNs confiables).
+> - El frontend ya tiene `escapeHtml` para prevenir XSS por input.
+> - El Sprint 3 (tests + observabilidad) aporta más valor en este momento.
+>
+> **Ref:** BL-024 en `BACKLOG.md`.
+
+**Objetivo:** resolver los hallazgos confirmados en Sprint 1, priorizando seguridad.
+**Criterio de salida:** cada fix tiene test de regresión + deploy + smoke test.
+**Duración estimada:** depende de cuántos hallazgos se confirmen.
+**Riesgo:** medio (toca código productivo).
+**Dueño:** OWNER + asistencia IA.
+
+### Estructura de cada ítem
+
+```markdown
+### [FIX-2XX] Título corto y descriptivo
+- **Severidad:** CRÍTICA / ALTA / MEDIA / BAJA
+- **Categoría:** Seguridad / Correctitud / Performance / Arquitectura
+- **Ubicación:** archivo:línea (verificado el YYYY-MM-DD)
+- **Descripción:** qué está mal y por qué importa (2-4 líneas)
+- **Evidencia:** fragmento real (máx. 10 líneas)
+- **Impacto:** qué pasa si no se corrige
+- **Propuesta:** cómo corregirlo (concreto)
+- **Criterio de aceptación:** cómo sabemos que quedó bien
+- **Esfuerzo:** XS / S / M / L / XL
+- **Riesgo de la corrección:** bajo / medio / alto
+- **PR:** #NNN (cuando exista)
+```
+
+### Estado de los ítems confirmados en Sprint 1
+
+- ✅ **FIX-104** — Filtro de detalles de DB en respuestas 500 → CERRADO (`43db2a8`)
+- ✅ **HALL-S1-01** — Ownership check en `getPlaneDetails` → CERRADO (`5fbb2d5`)
+- ✅ **HALL-S2-01** — Ampliación de poderes ADMIN (backend) → CERRADO (`d496f5c`)
+- ✅ **HALL-S2-02** — Dropdown de rol frontend → CERRADO (`13501af`)
+- ✅ **FIX-101** — Transacción en `resetPassword` (2 UPDATE sin transacción) → CERRADO (ver CHANGELOG v4.5.7)
+- ✅ **FIX-105** — Transacción en `changeEventStatus` (SELECT+UPDATE sin transacción) → CERRADO (ver CHANGELOG v4.5.8)
+- ⏳ **FIX-209** — Presence en memoria no escala → Sprint 2/Sprint 3
+
+### Criterio de cierre del Sprint 2
+
+- [ ] Todos los fixes CRÍTICOS mergeados y desplegados.
+- [ ] Todos los fixes ALTOS mergeados o con PR abierto.
+- [ ] Tests de regresión pasando (167 + nuevos).
+- [ ] `CHANGELOG.md` actualizado con nueva versión (v4.4.0).
+
+---
+
+## SPRINT 3 — Tests y observabilidad
+
+**Objetivo:** cerrar brechas de cobertura en áreas críticas y mejorar visibilidad operativa.
+**Criterio de salida:** cobertura > 60% en módulos críticos (auth, admin, owner, RBAC).
+**Duración estimada:** 3-5 días.
+**Riesgo:** bajo (solo agrega código nuevo).
+**Dueño:** OWNER + asistencia IA.
+
+### Ítems del Sprint 3
+
+| ID | Categoría | Descripción | Esfuerzo |
+|---|---|---|---|
+| **FIX-301** | Testing | Suite de tests para `auth.controller.js` (login, reset, change-password, verify) | L |
+| **FIX-302** | Testing | Suite de tests para RBAC (matriz OWNER/ADMIN/VETERANO/MIEMBRO) | M |
+| **FIX-303** | Testing | Suite de tests para `owner.controller.js` (backups, auditoría, sanitización PII) | M |
+| **FIX-304** | Testing | Suite de tests para `admin.controller.js` (promociones, jerarquía, cuotas) | L |
+| **FIX-305** | Testing | Tests de integración con Postgres real (Testcontainers o Supabase local en CI) | L |
+| **FIX-306** | Observabilidad | Health checks separados: `/health` (liveness) vs `/api/health` (readiness) | S |
+| **FIX-307** | Observabilidad | Correlation IDs en logs (UUID por request, inyectado en middleware) | M |
+| **FIX-308** | Observabilidad | Logging estructurado con Pino (nivel, contexto, sin PII) | ✅ **CERRADO** |
+| **FIX-309** | Observabilidad | Manejadores globales `unhandledRejection` y `uncaughtException` en `server.js` | S |
+
+### Criterio de cierre del Sprint 3
+
+- [ ] Cobertura de tests > 60% en módulos críticos.
+- [ ] Health checks separados operativos.
+- [ ] Logs con correlation ID en producción.
+- [ ] Manejadores globales de errores en `server.js`.
+
+---
+
+## SPRINT 4 — Deuda técnica y limpieza
+
+**Objetivo:** retirar código legacy, unificar lógica duplicada, mejorar Docker.
+**Criterio de salida:** 0 referencias a módulos legacy, Dockerfile no-root, docs alineados.
+**Duración estimada:** 2-3 días.
+**Riesgo:** medio (toca código de arranque y estructura).
+**Dueño:** OWNER + asistencia IA.
+
+### Ítems del Sprint 4
+
+| ID | Categoría | Descripción | Esfuerzo |
+|---|---|---|---|
+| **FIX-401** | Deuda técnica | Retirar rutas legacy `/api/events/*` (sunset 2026-12-16) | M |
+| **FIX-402** | Deuda técnica | Ejecutar `sql/032_drop_bm_legacy_tables.sql` (post-2026-09-26) | XS |
+| **FIX-403** | DevOps | `USER node` en Dockerfile (usuario no-root) | XS |
+| **FIX-404** | DevOps | `min_machines_running = 1` en `fly.toml` (evaluar cold starts) | XS |
+| **FIX-405** | Deuda técnica | Alinear `API_REFERENCE.md` con Zod schemas reales | S |
+| **FIX-406** | Deuda técnica | Eliminar `metadata.json` si sobra (AI Studio legacy) | XS |
+| **FIX-407** | Deuda técnica | Unificar manejo de errores: código, mensaje, correlation ID | M |
+
+### Criterio de cierre del Sprint 4
+
+- [ ] 0 referencias a `/api/bm/*` en código y docs.
+- [ ] Dockerfile corre como `node`.
+- [ ] `fly.toml` evaluado y ajustado.
+- [ ] Documentación alineada con Zod schemas.
+
+---
+
+## SPRINT 5 — Features del backlog
+
+**Objetivo:** implementar features de valor para el escuadrón.
+**Criterio de salida:** cada feature con test + deploy + actualización de docs.
+**Duración estimada:** variable.
+**Riesgo:** variable.
+**Dueño:** OWNER + asistencia IA.
+
+### Ítems del Sprint 5 (desde `BACKLOG.md`)
+
+| ID | Categoría | Descripción | Esfuerzo |
+|---|---|---|---|
+| **FIX-501** | Feature | QR de credenciales temporales (BL-001) | S |
+| **FIX-502** | Feature | Auto-login con link prellenado (BL-005) | M |
+| **FIX-503** | UX | Rediseño del registro de eventos (BL-002) | M |
+| **FIX-504** | Fix UI | Modal de cambio de contraseña: botón visible (BL-011) | XS |
+| **FIX-505** | Feature | Notificaciones push para BM (BL-010) | M |
+
+### Criterio de cierre del Sprint 5
+
+- [ ] Features mergeadas y desplegadas.
+- [ ] Docs actualizadas.
+- [ ] Backlog actualizado con ítems movidos a "Completados".
+
+---
+
+## 3. DOCUMENTOS FALTANTES (crear en Sprint 0)
+
+| ID | Documento | Contenido mínimo | Esfuerzo |
+|---|---|---|---|
+| **FIX-DOC-01** | `CONTRIBUTING.md` | Cómo clonar, correr, testear, commitear, deployar. Convención de ramas y commits. | M |
+| **FIX-DOC-02** | `SECURITY.md` | Cómo reportar vulnerabilidades. Política de divulgación. Contacto. | S |
+| **FIX-DOC-03** | `docs/adr/ADR-001` a `ADR-005` | Recuperar o escribir los ADRs referenciados pero ausentes. | M |
+| **FIX-DOC-04** | `docs/rfc/RFC-001.md` | QR de credenciales temporales. | S |
+| **FIX-DOC-05** | `docs/incidentes/HALL-062.md` | Documentar el hallazgo `ON CONFLICT` con índices parciales. | S |
+
+---
+
+## 4. PLANTILLA DE ÍTEM (obligatoria)
+
+Al agregar un ítem nuevo a cualquier sprint, usar este formato:
+
+```markdown
+### [FIX-XXX] Título corto y descriptivo
+- **Severidad:** CRÍTICA / ALTA / MEDIA / BAJA / INFO
+- **Categoría:** Seguridad / Correctitud / Performance / Arquitectura / Testing / Observabilidad / Deuda técnica / UX / Documentación
+- **Ubicación:** archivo:línea (verificado el YYYY-MM-DD)
+- **Descripción:** qué está mal y por qué importa (2-4 líneas)
+- **Evidencia:** fragmento real del código o documento (máx. 10 líneas)
+- **Impacto:** qué pasa si no se corrige
+- **Propuesta:** cómo corregirlo (concreto, con snippet si aplica)
+- **Criterio de aceptación:** cómo sabemos que quedó bien
+- **Esfuerzo:** XS / S / M / L / XL
+- **Riesgo de la corrección:** bajo / medio / alto
+- **PR:** #NNN (cuando exista)
+- **Estado:** ⏳ Pendiente / 🔄 En curso / 🧪 En revisión / ✅ Cerrado / ❌ Descartado / 🚫 Bloqueado
+```
+
+**Un ítem sin `Evidencia` NO entra al roadmap.**
+
+---
+
+## 5. CRITERIOS DE SEVERIDAD
+
+| Severidad | Cuándo aplica |
+|---|---|
+| **CRÍTICA** | Explotable remotamente sin auth, pérdida de datos, bypass de auth/RBAC, secreto expuesto, RCE, SQLi, XSS almacenado, IDOR masivo |
+| **ALTA** | Escalada de privilegios, bypass de validación, DoS trivial, race condition con impacto real, falta de validación en endpoints sensibles |
+| **MEDIA** | Correctitud que afecta a algunos usuarios, performance degradada bajo carga, manejo de errores que filtra info |
+| **BAJA** | Calidad, nombres, duplicación, logs poco útiles, bugs de UX menores |
+| **INFO** | Observaciones, sugerencias, cosas a monitorear |
+
+---
+
+## 6. WORKFLOW DE TRABAJO
+
+```
+1. Identificar ítem (bug, doc desactualizado, deuda técnica)
+   ↓
+2. Verificar (confirmar que es real, con evidencia)
+   ↓
+3. Registrar en este roadmap con ID único (FIX-XXX)
+   ↓
+4. Abrir issue o rama con criterio de aceptación
+   ↓
+5. PR pequeño y enfocado (1 ítem = 1 PR)
+   ↓
+6. Test que cubra el fix (si aplica)
+   ↓
+7. Deploy a staging / preview
+   ↓
+8. Smoke test
+   ↓
+9. Merge a main → deploy producción
+   ↓
+10. Marcar ítem como ✅ y actualizar CHANGELOG.md
+```
+
+**Reglas:**
+
+- No se mergea a `main` sin test (para fixes de código).
+- No se deploya a producción sin smoke test.
+- No se cierra un ítem sin actualizar `CHANGELOG.md`.
+- Un PR puede cerrar varios ítems **solo si son del mismo archivo y misma naturaleza**.
+
+---
+
+## 7. ESTADOS DE UN ÍTEM
+
+| Estado | Símbolo | Significado |
+|---|---|---|
+| Pendiente | ⏳ | Verificado, no arrancado |
+| En curso | 🔄 | PR abierto |
+| En revisión | 🧪 | PR en review o staging |
+| Cerrado | ✅ | Mergeado + deploy + test |
+| Descartado | ❌ | No aplica (con justificación) |
+| Bloqueado | 🚫 | Depende de otro ítem o decisión externa |
+
+---
+
+## 8. ✅ COMPLETADOS
+
+| ID | Descripción | Fecha | Commit |
+|---|---|---|---|
+| **FIX-001** | `README.md` badge v4.0.5 → v4.3.0 | 2026-09-20 | `f32ed11` |
+| **FIX-005** | `CURRENT_STATE.md` resumen v4.0.2 → v4.3.0 | 2026-09-20 | `f32ed11` |
+| **FIX-014** | `DEPLOYMENT_STATE.md` v4.0.5 → v4.3.0 | 2026-09-20 | `f32ed11` |
+| **FIX-015** | `DEPLOYMENT_GUIDE.md` v4.0.5 → v4.3.0 + cache invalidation | 2026-09-20 | `f32ed11` |
+| **FIX-017** | `PWA_SETUP.md` v4.0.5 → v4.3.0 + CACHE_NAME real | 2026-09-20 | `f32ed11` |
+| **FIX-026** | `sw.js` CACHE_NAME v4.2.5 → v4.3.0 (hallazgo nuevo) | 2026-09-20 | `f32ed11` |
+| **FIX-004** | `README.md` cuota ADMIN 3 → 5 | 2026-09-20 | `fbf4852` |
+| **FIX-009** | `API_REFERENCE.md` cuota ADMIN 3 → 5 | 2026-09-20 | `fbf4852` |
+| **FIX-011** | `ARCHITECTURE.md` cuota ADMIN ya estaba en 5 (verificado) | 2026-09-20 | `f32ed11` |
+| **FIX-018** | `CONTEXTO_PROYECTO.md` cuota ADMIN simplificada a 5 | 2026-09-20 | `fbf4852` |
+| **FIX-003** | `README.md` eliminar `bm.controller.js` del árbol + agregar v2 | 2026-09-20 | `e10c204` |
+| **FIX-008** | `API_REFERENCE.md` banner ELIMINADO en sección legacy `/api/bm/*` | 2026-09-20 | `e10c204` |
+| **FIX-010** | `ARCHITECTURE.md` reformular estado endpoints legacy | 2026-09-20 | `e10c204` |
+| **FIX-012** | `docs/adr/README.md` ADR-008 marcado como Accepted | 2026-09-20 | `079889f` |
+| **FIX-013** | 5 ADRs creados (001-005) en formato MADR 4.0 + TEMPLATE | 2026-09-20 | `079889f` |
+| **FIX-006** | Timezone en docs: "Intl dinámico" → UTC-3 fijo (`PY_OFFSET_HOURS = 3`) | 2026-09-20 | `dd5d17d` |
+| **FIX-021** | Timezone oficial (UTC-3 fijo) propagado a CURRENT_STATE, ARCHITECTURE, ADR-007 | 2026-09-20 | `dd5d17d` |
+| **FIX-022** | Duración SQ: evento 4d vs ventana 7d diferenciadas en docs | 2026-09-20 | `dd5d17d` |
+| **FIX-007** | `API_REFERENCE.md` endpoints submission-window (ADR-008) documentados | 2026-09-20 | `f734dd4` |
+| **FIX-002** | `README.md` árbol SQL 2→35 + link a MIGRACION_SQL_REFERENCE | 2026-09-20 | `77be901` |
+| **FIX-023** | `README.md` link "Resumen Ejecutivo" con ancla directa | 2026-09-20 | `77be901` |
+| **FIX-024** | `README.md` + `metadata.json` eliminado (AI Studio legacy) | 2026-09-20 | `77be901` |
+| **FIX-016** | `USER_MANUAL.md` v4.0.0→v4.3.0 + sección ADR-008 | 2026-09-20 | `d2752f3` |
+| **FIX-019** | `BACKLOG.md` contador verificado (7 correcto) — NO APLICABLE | 2026-09-20 | `d8e88fb` |
+| **FIX-020** | `BACKLOG.md` BL-059 título limpio + hash real | 2026-09-20 | `d8e88fb` |
+| **FIX-025** | `DEPLOYMENT_STATE.md` sección legacy BM + F4.5 pendiente | 2026-09-20 | `802f0dd` |
+
+---
+
+
+---
+
+### Sprint 2 — Fixes de seguridad y correctitud (EN CURSO)
+
+| ID | Descripción | Fecha | Commit |
+|---|---|---|---|
+| **FIX-104** | `src/middlewares/errorHandler.js` — filtrar detalles de DB en respuestas 500 | 2026-09-22 | `43db2a8` |
+| **FIX-101** | `src/controllers/auth.controller.js` — RPC atómica `reset_password_atomic` + fallback legacy | 2026-09-22 | (ver CHANGELOG v4.5.7) |
+| **FIX-105** | `src/controllers/events-v2.controller.js` — RPC atómica `change_event_status_atomic` + fallback legacy | 2026-09-22 | (ver CHANGELOG v4.5.8) |
+| **FIX-PARTICIPATION-EDIT** | `src/controllers/events-v2.controller.js` + `js/performance.js` — 409 con `existing` + self-mod check + confirm + PUT | 2026-09-22 | `ed6b45e` |
+| **HALL-S1-01** | Ownership check en `getPlaneDetails` | 2026-09-22 | `5fbb2d5` |
+| **HALL-S2-01** | Ampliación de poderes del ADMIN (reset, rol, status) — backend | 2026-09-22 | `d496f5c` |
+| **HALL-S2-02** | Dropdown de rol frontend — habilitar opción ADMIN | 2026-09-22 | `13501af` |
+
+## 9. ❌ DESCARTADOS
+
+| ID | Descripción | Razón | Fecha |
+|---|---|---|---|
+| _(vacío al inicio)_ | | | |
+
+---
+
+## 10. 🚫 BLOQUEADOS
+
+| ID | Descripción | Bloqueado por | Fecha |
+|---|---|---|---|
+| _(vacío al inicio)_ | | | |
+
+---
+
+## 11. MÉTRICAS DE PROGRESO
+
+| Métrica | Actual | Sprint 0 | Sprint 1 | Sprint 2 | Sprint 3 | Sprint 4 |
+|---|---|---|---|---|---|---|
+| Docs alineados con versión real | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 |
+| Hallazgos confirmados | 0 | 0 | 8 | 8 | 8 | 8 |
+| Fixes cerrados | 0 | 25 | 25 | 39 | 42+ | 49+ |
+| Cobertura de tests (críticos) | ~34% | ~34% | ~34% | ~50% | >60% | >60% |
+| Deuda técnica (horas estimadas) | ~40h | ~36h | ~28h | ~16h | ~8h | ~2h |
+
+---
+
+## 12. CRONOGRAMA SUGERIDO
+
+| Sprint | Duración | Entregable |
+|---|---|---|
+| **Sprint 0** | 3-4 h | Documentación sincronizada |
+| **Sprint 1** | 4-6 h | Hallazgos verificados |
+| **Sprint 2** | 1-2 días | Fixes críticos desplegados |
+| **Sprint 3** | 3-5 días | Cobertura >60%, observabilidad |
+| **Sprint 4** | 2-3 días | Deuda técnica limpia |
+| **Sprint 5** | 1-2 semanas | Features del backlog |
+
+**Total estimado:** 3-4 semanas calendario (con dedicación parcial).
+
+---
+
+## 13. REGLAS DE GOBIERNO
+
+- **Una fase a la vez.** No iniciar Sprint N+1 sin cerrar Sprint N.
+- **Una tarea a la vez.** No mezclar cambios de varios ítems en un commit.
+- **Rama por sprint.** Cada sprint en su rama (`fix/sprint-N`).
+- **Commit descriptivo.** Formato: `fix(fix-XXX): descripción breve`.
+- **Deploy tras cada sprint.** No acumular cambios sin desplegar.
+- **Rollback preparado.** Documentar cómo revertir cada cambio.
+- **`CHANGELOG.md` actualizado** al cerrar cada sprint.
+- **Versionado automático.** Las versiones se generan desde los commits con `release-please`. Ver [`RELEASE.md`](../deployment/RELEASE.md) para el workflow completo.
+- **Conventional Commits obligatorios.** Todos los commits deben seguir el formato `tipo(scope): mensaje`. Tipos válidos: `feat`, `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `style`, `perf`.
+
+---
+
+## 14. SECCIÓN DE CORRECCIONES
+
+Si algún valor de la sección 1 (Estado Actual de Referencia) resulta incorrecto:
+
+| Campo | Valor declarado | Valor real | Fecha corrección |
+|---|---|---|---|
+| _(vacío al inicio)_ | | | |
+
+---
+
+
+## FEATURE v4.6.0 - Exportacion de Resultados + Fixes Render (2026-10-08)
+
+**Estado:** CERRADO
+
+**Contexto:** Feature completa de exportacion de resultados en imagen + 3 bugs
+resueltos tras la migracion a Render.
+
+**Feature implementada:**
+- Backend: GET /api/admin/results/:eventId/export.
+- Frontend: nueva seccion en panel admin + preview + descarga JPG/PNG/PDF.
+- Mockup: docs/mockups/mockup-resultados.html.
+
+**Bugs resueltos:**
+- HALL-073 (CORS Render): env var ALLOWED_ORIGINS actualizada.
+- HALL-074 (loadExportEventsList): invocacion faltante en loadAdminPanel().
+- HALL-075 (nick incorrecto): priorizar users.nick sobre event_participations.nick.
+
+**Commits:**
+- 480bb0e - feat(export): endpoint de exportacion de resultados
+- 53a679f - feat(export): UI + mockup
+- 54f428d - chore(cache): bump assets y SW cache a v4.6.0
+- a722509 - fix(export): llamar loadExportEventsList en loadAdminPanel
+- fe0294c - fix(export): priorizar nick real de users
+
+**Referencias:**
+- docs/incidentes/HALL-073-cors-render.md
+- docs/incidentes/HALL-074-export-load.md
+- docs/incidentes/HALL-075-nick-participation.md
+- CHANGELOG.md - [4.6.0]
+
+
+## AUDITORIA FLY.IO - Reduccion de Costos (2026-10-09)
+
+**Estado:** CERRADO
+
+**Contexto:** Tras la migracion a Render (2026-10-08), Fly.io seguia generando
+~$9.75/mes por recursos no eliminados (maquina 24/7, IPv6 dedicadas, app
+fantasma con volumenes).
+
+**Acciones ejecutadas:**
+- fly.toml: min_machines_running 1 -> 0 (commit 0138373).
+- fly deploy para aplicar la config.
+- Liberacion de 2 IPv6 dedicadas (una por app).
+- Eliminacion de app fantasma ffaa-monitor-v2.
+- Eliminacion automatica de 3 volumenes (3GB).
+
+**Resultado:**
+- Costo Fly.io: de ~$9.75/mes a ~$0.15/mes.
+- Ahorro: ~$9.60/mes (~$115/ano).
+- paraguay-ffaa-metalstorm conservado como backup (maquinas detenidas).
+
+**Referencias:**
+- docs/incidentes/HALL-076-fly-audit.md
+- CHANGELOG.md - [4.6.1]
+- BL-026 (eliminacion final post 2-3 meses)
+
+
+## 16b. HOTFIX v4.5.3 — HALL-066-septies (2026-09-22)
+
+**Estado:** ✅ CERRADO
+
+**Contexto:** El `<select>` HTML del modo oficial devuelve `user_id` como
+STRING (`"6"`). Zod rechazaba con 400 "Invalid UUID". Fix: aceptar strings
+numéricos y convertirlos a number.
+
+**Commit:** `4da002b`
+
+**Verificación end-to-end:** POST con `user_id: "6"` → 201 Created.
+Fila insertada en `event_participations` con `nick: AIRJUMP`.
+
+---
+
+## 16. HOTFIX v4.5.2 — Cadena HALL-066 (2026-09-22)
+
+**Estado:** ✅ CERRADO
+
+**Contexto:** 6 bugs en cascada que impedían cargar performance de W38 en
+período de gracia (ADR-008). Bugs en frontend, backend y SW.
+
+**Commits:** `1614c13`, `28e3cf7`, `6d872ae`, `b3c1f00`, `4cab228`,
+`6d09ba3`, `0731c31`, `7157492`.
+
+**Deploy:** `deployment-01M33KQSV9MYTYV7GS3W8XDW8V` (rolling, sin downtime).
+
+**Referencias:**
+
+- `docs/incidentes/HALL-066-completo.md`
+- `docs/HANDOFF-v4.5.2-hotfix.md`
+- `docs/adr/ADR-008-update.md`
+- `CHANGELOG.md` — `[4.5.2]`
+
+---
+
+
+---
+
+## SPRINT 6 — Sección Veteranos (mentoría + RBAC fino)
+
+**Estado:** ✅ CERRADO (v4.8.0) (ver `PLAN_TRABAJO_VETERANOS.md`)
+**ADR:** `docs/adr/ADR-010-seccion-veteranos.md`
+**Duración estimada:** 5-7 días
+**Riesgo:** Medio (tablas nuevas + RBAC fino, pero aditivo).
+
+**Objetivo:** Dar al rol VETERANO una vista propia para gestionar sus pupilos
+(mentoría) + agregar una sección "Veteranos" al Panel de Comandancia.
+
+**Fases:** F1 a F7 (ver `PLAN_TRABAJO_VETERANOS.md`).
+
+**Dependencias:**
+- Normativa v2.0 vigente (mentoría ya es reglamentaria).
+- Ninguna dependencia de normativa v3.0 no aprobada (el "Miembro en Prueba"
+  formal queda fuera de este sprint).
+
+**Ver plan detallado:** [`PLAN_TRABAJO_VETERANOS.md`](./PLAN_TRABAJO_VETERANOS.md).
+
+## 15. REFERENCIAS
+
+- [`CHANGELOG.md`](../../CHANGELOG.md) — Histórico de versiones.
+- [`BACKLOG.md`](./BACKLOG.md) — Ideas y features futuras.
+- [`ROADMAP.md`](./ROADMAP.md) — Visión estratégica.
+- [`PLAN_MEJORA_CONTINUA.md`](./PLAN_MEJORA_CONTINUA.md) — Plan histórico (cerrado).
+- [`docs/adr/`](../adr/) — Decisiones arquitectónicas.
+- [`docs/rfc/`](../rfc/) — Propuestas formales.
+- [`docs/handoffs/SESSION_HANDOFF.md`](../handoffs/SESSION_HANDOFF.md) — Handoff entre sesiones.
+
+---
+
+**PARAGUAY FFAA `[PRY]` — Escuadrón Oficial MetalStorm**
+**Plan de Trabajo v1.0 · 2026-09-20 · Documento vivo**
+
+
+---
+
+## SPRINT 7 — Preparación para Torneos (EN CURSO)
+
+**Estado:** 🔨 En curso
+**Objetivo:** dejar la app lista para escalar (prerequisitos del sistema de torneos).
+**Criterio de salida:** tests de aeronaves verdes + RFC-002 aprobado.
+
+**Progreso:** 7/8 ítems cerrados.
+
+### Ítems del Sprint 7
+
+| ID | Categoría | Descripción | Esfuerzo |
+|---|---|---|---|
+| **BL-023** | 🏗️ | Encoding LF (mata warnings CRLF) | XS |
+| **BL-033** | 🏗️ | Drift DDL `users.user_id` nullability | XS |
+| **FIX-316** | 🏗️ | Eliminar `admin.users.routes.js` (código muerto) | XS |
+| **BL-032** | 🏗️ | Reorganizar mocks en `tests/helpers/` + README (reformulado) | ✅ Cerrado |
+| **BL-025** | 🧪 | Re-implementar tests skipeados (54 des-skipeados) | ✅ Cerrado |
+| **TESTS-AERONAVES** | 🧪 | Tests de `planes.controller.js` + `plane-models.controller.js` | ✅ Cerrado |
+| **RFC-002** | 📚 | RFC del sistema de torneos internos | ✅ Cerrado |
+
+
+
+### Evidencia de cierre F1.3 (2026-10-12)
+
+**Commit:** `683c4ed` — `feat(tournaments): controller + RBAC fino F1.3`
+
+**4 archivos nuevos:**
+- `src/middlewares/tournamentModerator.js` (middleware RBAC fino, ADR-011 D7).
+- `src/controllers/tournaments.controller.js` (8 handlers, Zod, audit, mapeo Postgres).
+- `tests/middlewares/tournamentModerator.test.js` (14 casos).
+- `tests/controllers/tournaments.controller.test.js` (49 casos).
+
+**3 scripts auxiliares:**
+- `scripts/f1-3-create-files.cjs` — crea los 4 archivos (idempotente).
+- `scripts/f1-3-fix-uuids.cjs` — corrige UUIDs a canónicos RFC 4122.
+- `scripts/f1-3-fix-beforeeach.cjs` — corrige mockReset→mockClear + default impl.
+
+**Verificado:**
+- 14/14 middleware + 49/49 controller = 63 tests nuevos.
+- Suite completa: 642 passing (579 previos + 63 nuevos).
+- 0 regresiones.
+- `node --check` limpio en los 4 archivos.
+- RBAC fino: VETERANO no-moderador → 403; VETERANO moderador → OK; OWNER → bypass total.
+- Push: `a7b6e8a..683c4ed main -> main`.
+
+**Pendiente F1.4:** routes + mount en `server.js` (1 h).
+
+### Documentos de fase
+
+- `PLAN_TRABAJO_TESTS_AERONAVES.md` — plan de la fase de tests.
+- `docs/rfc/RFC-002-sistema-torneos.md` — propuesta del sistema de torneos.
+
+---
+
+## SPRINT 8 — Sistema de Torneos (RFC-002 / F1)
+
+**Estado:** 🔨 En curso
+**Objetivo:** implementar el sistema de torneos internos según RFC-002 + Anexo III.
+**Criterio de salida:** bracket visible + tests verdes + deploy.
+
+**ADR de referencia:** [`docs/adr/ADR-011-sistema-torneos.md`](../adr/ADR-011-sistema-torneos.md)
+**Plan detallado:** [`PLAN_TRABAJO_TORNEOS.md`](./PLAN_TRABAJO_TORNEOS.md)
+
+**Progreso:** F1.1 + F1.2 + F1.3 cerrados.
+
+### Ítems del Sprint 8
+
+| ID | Categoría | Descripción | Estado |
+|---|---|---|---|
+| **F1.1** | 🗄️ | Migración SQL (5 tablas + RLS + GRANTs) | ✅ Cerrado |
+| **F1.2** | 🧪 | Schemas Zod (6 schemas + 72 tests) | ✅ Cerrado |
+| **F1.3** | 🏗️ | Controller `tournaments.controller.js` + RBAC fino | ✅ Cerrado |
+| **F1.4** | 🏗️ | Router + mount en `server.js` | ⏳ Pendiente |
+| **F1.5** | 🎨 | Frontend (bracket, draft, resultados) | ⏳ Pendiente |
+| **F1.6** | 🤖 | Integración Discord (opcional) | ⏳ Pendiente |
+
+### Documentos de fase
+
+- `docs/rfc/RFC-002-sistema-torneos.md` — RFC aceptado.
+- `docs/adr/ADR-011-sistema-torneos.md` — ADR del sistema.
+- `docs/normativa/ANEXO-III-torneos.md` — Reglamento (Anexo III).
+- `docs/planning/PLAN_TRABAJO_TORNEOS.md` — Plan detallado F1.1 → F1.6.
+- `docs/handoffs/HANDOFF-v4.8.23.md` — Handoff de cierre de F1.1.
+- `sql/045_tournaments.sql` — Migración SQL aplicada.
+
+### Evidencia de cierre F1.1 (2026-10-12)
+
+**Commit:** `69f988b` — `feat(tournaments): migración SQL F1.1 - 5 tablas RFC-002/Anexo III`
+
+**5 tablas creadas en Supabase:**
+- `tournaments`
+- `tournament_participants`
+- `tournament_matches`
+- `tournament_drafts`
+- `tournament_moderator_history`
+
+**Verificado:**
+- Columnas: 14 / 7 / 15 / 8 / 7 (correctas).
+- RLS: 5/5 con `rowsecurity = true`.
+- Políticas: 5 `no_public_access`.
+- GRANTs a `service_role`: 35 (20 explícitos + 15 heredados).
+- Tests: 507 passed / 0 skipped / 0 failed.
+
+### Evidencia de cierre F1.2 (2026-10-12)
+
+**Commit:** `2a51bb2` — `feat(tournaments): schemas Zod F1.2`
+
+**6 schemas + 7 constantes + 2 sub-schemas agregados a `src/utils/schemas.js`:**
+- `TournamentCreateSchema` — con validación de F1 (4-8 equipos, Anexo III Art. 8).
+- `TournamentUpdateStatusSchema` — CANCELLED requiere motivo (trazabilidad Art. 22).
+- `TournamentRegisterTeamSchema` — roster 5+1 validado en Zod (Anexo III Art. 6).
+- `TournamentMatchResultSchema` — best_of opcional + no-empate + umbral de victoria.
+- `TournamentDraftActionSchema` — coerce aircraft_id (string|number → string).
+- `TournamentModeratorChangeSchema` — motivo 5-500 obligatorio.
+
+**Verificado:**
+- `node --check` limpio en ambos archivos.
+- 72 casos de test pasando en `tests/schemas/tournament.schemas.test.js`.
+- Suite completa sin regresiones (507 + 72 = 579 passing).
+
