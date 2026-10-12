@@ -1540,6 +1540,22 @@ async function apiTournamentsRegisterDraft(id, mid, payload) {
   );
 }
 
+/**
+ * Lista los drafts registrados de un match (F1.5b).
+ * @param {string} id - UUID del torneo.
+ * @param {string} mid - UUID del match.
+ */
+async function apiTournamentsGetMatchDrafts(id, mid) {
+  if (!id || !mid) {
+    return { success: false, error: 'id y mid requeridos', code: 'MISSING_ID' };
+  }
+  return _tournamentsFetch(
+    `/api/tournaments/${encodeURIComponent(id)}/matches/${encodeURIComponent(mid)}/drafts`
+  );
+}
+
+window.apiTournamentsGetMatchDrafts = apiTournamentsGetMatchDrafts;
+
 // ─── EXPOSICIÓN GLOBAL ──────────────────────────────────────
 
 window.apiTournamentsList                = apiTournamentsList;

@@ -443,6 +443,96 @@
   </div>
 </div>
 
+
+<!-- ═══ MODAL 6: Draft del Match (F1.5b) ═══ -->
+<div id="tournamentDraftModal" class="modal">
+  <div class="modal-content tactical-corners" style="max-width:1000px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;">
+
+    <div class="modal-header">
+      <div style="flex:1;min-width:0;">
+        <h3 style="font-family:var(--font-tactical);color:#d4af37;margin:0;display:flex;align-items:center;gap:8px;">
+          <span>🎯 Draft</span>
+          <span id="tDraftGameNumber" style="font-size:0.9rem;color:#cbd5e1;font-weight:normal;">— Partida 1</span>
+          <span id="tDraftPhaseBadge" class="badge-tag" style="font-size:0.7rem;">—</span>
+          <span id="tDraftBestOfBadge" class="badge-tag" style="font-size:0.7rem;">Bo3</span>
+        </h3>
+      </div>
+      <span class="close-btn" onclick="closeDraftModal()">&times;</span>
+    </div>
+
+    <div class="modal-body" style="flex:1;overflow-y:auto;">
+
+      <!-- Info del match + timer -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:1rem;">
+        <div id="tDraftMatchInfo" style="background:rgba(15,23,42,0.7);border:1px solid rgba(99,110,130,0.3);border-radius:6px;padding:10px 14px;font-size:0.85rem;color:#cbd5e1;">
+          <!-- JS: equipo A vs equipo B · mapa -->
+        </div>
+        <div id="tDraftTimerBox" style="background:rgba(212,175,55,0.1);border:1px solid rgba(212,175,55,0.4);border-radius:6px;padding:10px 18px;text-align:center;min-width:130px;">
+          <div style="font-size:0.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">⏱️ Timer</div>
+          <div id="tDraftTimerValue" style="font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:#fde047;line-height:1;">05:00</div>
+          <div id="tDraftTimerTeam" style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">Equipo A</div>
+        </div>
+      </div>
+
+      <!-- Controles de acción -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem;">
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Acción</label>
+          <div style="display:flex;gap:4px;">
+            <button id="tDraftBtnBan" onclick="setDraftAction('BAN')" class="btn-secondary" style="flex:1;font-size:0.85rem;padding:6px 10px;">🚫 BAN</button>
+            <button id="tDraftBtnPick" onclick="setDraftAction('PICK')" class="btn-secondary" style="flex:1;font-size:0.85rem;padding:6px 10px;">✈️ PICK</button>
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Equipo</label>
+          <div style="display:flex;gap:4px;">
+            <button id="tDraftBtnTeamA" onclick="setDraftTeam('A')" class="btn-secondary" style="flex:1;font-size:0.85rem;padding:6px 10px;">🔵 A</button>
+            <button id="tDraftBtnTeamB" onclick="setDraftTeam('B')" class="btn-secondary" style="flex:1;font-size:0.85rem;padding:6px 10px;">🔴 B</button>
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;font-weight:600;">Partida</label>
+          <input type="number" id="tDraftGameNumberInput" min="1" max="5" value="1"
+                 style="width:100%;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.9rem;text-align:center;" />
+        </div>
+      </div>
+
+      <!-- Estado de selección -->
+      <div id="tDraftSelectionInfo" style="background:rgba(56,189,248,0.08);border-left:3px solid #38bdf8;border-radius:4px;padding:8px 12px;font-size:0.82rem;color:#bae6fd;line-height:1.5;margin-bottom:1rem;">
+        ℹ️ Seleccioná un equipo, modo (BAN/PICK) y luego una aeronave de la grilla.
+      </div>
+
+      <!-- Grilla de aeronaves -->
+      <div style="margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Aeronaves disponibles</label>
+          <input type="text" id="tDraftAircraftSearch" placeholder="Buscar..." oninput="filterDraftGrid()"
+                 style="padding:4px 10px;background:#0f172a;border:1px solid #334155;border-radius:4px;color:#f8fafc;font-size:0.8rem;width:180px;" />
+        </div>
+        <div id="tDraftAircraftGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;max-height:280px;overflow-y:auto;padding:4px;">
+          <div style="grid-column:1/-1;text-align:center;padding:2rem;color:#94a3b8;">⏳ Cargando aeronaves…</div>
+        </div>
+      </div>
+
+      <!-- Draft existente -->
+      <div>
+        <label style="display:block;font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:8px;">Acciones registradas en esta partida</label>
+        <div id="tDraftExistingList" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;">
+          <div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.85rem;">Sin acciones registradas aún.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button onclick="closeDraftModal()" class="btn-secondary">Cerrar</button>
+      <button id="tDraftSubmit" onclick="submitDraftAction()" class="btn-primary">💾 Registrar Acción</button>
+    </div>
+
+  </div>
+</div>
+
+
 <!-- ══════════════════════════════════════════════════════════════
      ESTILOS INLINE (complementan css/views.css)
      ══════════════════════════════════════════════════════════════ -->

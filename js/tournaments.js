@@ -1216,4 +1216,484 @@ async function submitChangeModerator() {
 }
 window.submitChangeModerator = submitChangeModerator;
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// F1.5b — MODAL DE DRAFT
+// ═══════════════════════════════════════════════════════════════════════════
+//  Anexo III §7: 1 ban por equipo, Mirrored Picks permitidos, último BM
+//  auto-baneado, timer 5 min por equipo.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const draftState = {
+  matchId: null,
+  tournamentId: null,
+  match: null,
+  teamAId: null,
+  teamBId: null,
+  bestOf: 3,
+  currentAction: 'BAN',   // 'BAN' | 'PICK'
+  currentTeam: 'A',       // 'A' | 'B'
+  selectedAircraftId: null,
+  aircraftList: [],
+  aircraftLoaded: false,
+  existingDrafts: [],
+  timerInterval: null,
+  timerSecondsLeft: 300
+};
+
+// ─── Apertura del modal ─────────────────────────────────
+async function openDraftModal(matchId) {
+  const detail = tournamentsState.currentDetail;
+  if (!detail?.matches || !detail?.tournament) {
+    showToast('⚠️ No hay match seleccionado', 'warning');
+    return;
+  }
+
+  const match = detail.matches.find(m => String(m.id) === String(matchId));
+  if (!match) {
+    showToast('⚠️ Match no encontrado', 'warning');
+    return;
+  }
+
+  // RBAC: solo moderador o ADMIN/OWNER
+  if (!canModerateTournament(detail.tournament)) {
+    showToast('⚠️ Solo el moderador puede operar el draft', 'warning');
+    return;
+  }
+
+  // Reset state
+  draftState.matchId = matchId;
+  draftState.tournamentId = detail.tournament.id;
+  draftState.match = match;
+  draftState.teamAId = match.team_a_id;
+  draftState.teamBId = match.team_b_id;
+  draftState.bestOf = match.best_of || 3;
+  draftState.currentAction = 'BAN';
+  draftState.currentTeam = 'A';
+  draftState.selectedAircraftId = null;
+  draftState.existingDrafts = [];
+
+  // Header del modal
+  const gn = document.getElementById('tDraftGameNumberInput')?.value || 1;
+  const gameNumberEl = document.getElementById('tDraftGameNumber');
+  if (gameNumberEl) gameNumberEl.textContent = `— Partida ${gn}`;
+
+  const phaseEl = document.getElementById('tDraftPhaseBadge');
+  if (phaseEl) phaseEl.textContent = formatMatchPhase(match.phase);
+
+  const boEl = document.getElementById('tDraftBestOfBadge');
+  if (boEl) boEl.textContent = `Bo${draftState.bestOf}`;
+
+  // Info del match
+  const teamAName = resolveNickByUserId(match.team_a_id);
+  const teamBName = resolveNickByUserId(match.team_b_id);
+  const infoEl = document.getElementById('tDraftMatchInfo');
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="font-size:0.9rem;color:#f8fafc;font-weight:600;">
+          <span style="color:#38bdf8;">${teamAName}</span> vs <span style="color:#ef4444;">${teamBName}</span>
+        </div>
+        <div style="font-size:0.75rem;color:#94a3b8;">
+          📅 Partida 1 · ${escapeHTML(formatMatchPhase(match.phase))} · Ronda ${match.round || 1}
+        </div>
+      </div>
+      <div style="font-size:0.75rem;color:#64748b;margin-top:6px;">
+        🗺️ Mapa: <em>ver reglamento</em> (Countdown / Icebound / Crimson Canyon)
+      </div>
+    `;
+  }
+
+  // Estado inicial de botones
+  updateDraftButtonStates();
+
+  // Seleccionar equipo A por defecto
+  setDraftTeam('A', true);
+
+  // Reset timer
+  stopDraftTimer();
+  draftState.timerSecondsLeft = 300;
+  updateTimerDisplay();
+  startDraftTimer();
+
+  // Mostrar modal
+  showModal('tournamentDraftModal');
+
+  // Cargar aeronaves (async)
+  await loadDraftAircraft();
+
+  // Cargar drafts existentes (async)
+  await refreshExistingDrafts();
+
+  if (typeof refreshLucideIcons === 'function') setTimeout(refreshLucideIcons, 50);
+}
+window.openDraftModal = openDraftModal;
+
+// ─── Cierre del modal ───────────────────────────────────
+function closeDraftModal() {
+  stopDraftTimer();
+  draftState.matchId = null;
+  draftState.tournamentId = null;
+  draftState.match = null;
+  draftState.selectedAircraftId = null;
+  closeModal('tournamentDraftModal');
+}
+window.closeDraftModal = closeDraftModal;
+
+// ─── Carga de aeronaves ─────────────────────────────────
+async function loadDraftAircraft() {
+  if (draftState.aircraftLoaded && draftState.aircraftList.length > 0) {
+    renderDraftAircraftGrid();
+    return;
+  }
+
+  try {
+    const res = await apiGetPlaneModels({});
+    if (!res.success) {
+      console.warn('[Draft] No se pudo cargar el catálogo', res.error);
+      draftState.aircraftList = [];
+    } else {
+      draftState.aircraftList = res.models || res.plane_models || [];
+    }
+    draftState.aircraftLoaded = true;
+    renderDraftAircraftGrid();
+  } catch (err) {
+    console.error('[Draft] loadDraftAircraft error:', err);
+    draftState.aircraftList = [];
+    renderDraftAircraftGrid();
+  }
+}
+
+// ─── Render de la grilla de aeronaves ───────────────────
+function renderDraftAircraftGrid() {
+  const grid = document.getElementById('tDraftAircraftGrid');
+  if (!grid) return;
+
+  const list = draftState.aircraftList;
+  if (!list || list.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:#f87171;">⚠️ No se pudo cargar el catálogo de aeronaves.</div>';
+    return;
+  }
+
+  // IDs baneados en esta partida
+  const gameNumber = Number(document.getElementById('tDraftGameNumberInput')?.value || 1);
+  const bannedIds = new Set(
+    draftState.existingDrafts
+      .filter(d => d.game_number === gameNumber && d.action === 'BAN')
+      .map(d => String(d.aircraft_id))
+  );
+
+  const search = (document.getElementById('tDraftAircraftSearch')?.value || '').toLowerCase().trim();
+
+  const filtered = list.filter(a => {
+    if (search) {
+      const name = String(a.name || '').toLowerCase();
+      if (!name.includes(search)) return false;
+    }
+    return true;
+  });
+
+  grid.innerHTML = filtered.map(a => {
+    const id = String(a.id || '');
+    const isBanned = bannedIds.has(id);
+    const isSelected = String(draftState.selectedAircraftId) === id;
+    const imgUrl = a.image_url || '';
+
+    return `
+      <div onclick="${isBanned ? '' : `selectAircraft('${escapeHTML(id)}')`}"
+           style="
+             position:relative;
+             background:${isSelected ? 'rgba(212,175,55,0.15)' : 'rgba(15,23,42,0.6)'};
+             border:${isSelected ? '2px solid #d4af37' : '1px solid rgba(99,110,130,0.3)'};
+             border-radius:6px;
+             padding:6px;
+             cursor:${isBanned ? 'not-allowed' : 'pointer'};
+             opacity:${isBanned ? '0.35' : '1'};
+             text-align:center;
+             transition:all 0.15s;
+           "
+           title="${escapeHTML(a.name || '')}${isBanned ? ' (BANEADA)' : ''}">
+        ${isBanned ? '<div style="position:absolute;top:2px;right:4px;font-size:0.9rem;">🚫</div>' : ''}
+        ${imgUrl
+          ? `<img src="${escapeHTML(imgUrl)}" alt="${escapeHTML(a.name || '')}" style="width:100%;height:60px;object-fit:cover;border-radius:4px;" loading="lazy" />`
+          : '<div style="width:100%;height:60px;background:#1e293b;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">✈️</div>'}
+        <div style="font-size:0.7rem;color:#cbd5e1;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHTML(a.name || '')}">
+          ${escapeHTML(a.name || 'Sin nombre')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+window.renderDraftAircraftGrid = renderDraftAircraftGrid;
+
+// ─── Filtro de la grilla ────────────────────────────────
+function filterDraftGrid() {
+  renderDraftAircraftGrid();
+}
+window.filterDraftGrid = filterDraftGrid;
+
+// ─── Selección de aeronave ──────────────────────────────
+function selectAircraft(aircraftId) {
+  draftState.selectedAircraftId = aircraftId;
+
+  const aircraft = draftState.aircraftList.find(a => String(a.id) === String(aircraftId));
+  const infoEl = document.getElementById('tDraftSelectionInfo');
+  if (infoEl && aircraft) {
+    const teamLabel = draftState.currentTeam === 'A' ? '🔵 Equipo A' : '🔴 Equipo B';
+    const actionIcon = draftState.currentAction === 'BAN' ? '🚫' : '✈️';
+    infoEl.innerHTML = `
+      <strong>${actionIcon} ${draftState.currentAction}</strong> · ${teamLabel} · Partida ${document.getElementById('tDraftGameNumberInput')?.value || 1}
+      → <span style="color:#fde047;font-weight:700;">${escapeHTML(aircraft.name || '—')}</span>
+    `;
+    infoEl.style.borderLeftColor = draftState.currentAction === 'BAN' ? '#ef4444' : '#10b981';
+  }
+
+  renderDraftAircraftGrid();
+}
+window.selectAircraft = selectAircraft;
+
+// ─── Set acción (BAN/PICK) ──────────────────────────────
+function setDraftAction(action) {
+  if (!['BAN', 'PICK'].includes(action)) return;
+  draftState.currentAction = action;
+  updateDraftButtonStates();
+
+  // Actualizar info si hay aeronave seleccionada
+  if (draftState.selectedAircraftId) {
+    selectAircraft(draftState.selectedAircraftId);
+  }
+}
+window.setDraftAction = setDraftAction;
+
+// ─── Set equipo (A/B) ───────────────────────────────────
+function setDraftTeam(team, silent = false) {
+  if (!['A', 'B'].includes(team)) return;
+  draftState.currentTeam = team;
+  updateDraftButtonStates();
+
+  // Actualizar timer label
+  const timerTeamEl = document.getElementById('tDraftTimerTeam');
+  if (timerTeamEl) {
+    timerTeamEl.textContent = team === 'A' ? 'Equipo A' : 'Equipo B';
+  }
+
+  // Reiniciar timer al cambiar equipo (regla: 5 min POR equipo)
+  if (!silent) {
+    draftState.timerSecondsLeft = 300;
+    updateTimerDisplay();
+  }
+}
+window.setDraftTeam = setDraftTeam;
+
+// ─── Actualizar estados visuales de los botones ─────────
+function updateDraftButtonStates() {
+  const btnBan = document.getElementById('tDraftBtnBan');
+  const btnPick = document.getElementById('tDraftBtnPick');
+  const btnA = document.getElementById('tDraftBtnTeamA');
+  const btnB = document.getElementById('tDraftBtnTeamB');
+
+  const activeStyle = 'background:#d4af37;color:#0f172a;border-color:#d4af37;font-weight:700;';
+  const inactiveStyle = '';
+
+  if (btnBan) btnBan.style.cssText = draftState.currentAction === 'BAN' ? activeStyle : inactiveStyle;
+  if (btnPick) btnPick.style.cssText = draftState.currentAction === 'PICK' ? activeStyle : inactiveStyle;
+  if (btnA) btnA.style.cssText = draftState.currentTeam === 'A' ? activeStyle : inactiveStyle;
+  if (btnB) btnB.style.cssText = draftState.currentTeam === 'B' ? activeStyle : inactiveStyle;
+}
+
+// ─── Timer 5 min ────────────────────────────────────────
+function startDraftTimer() {
+  stopDraftTimer();
+  draftState.timerInterval = setInterval(() => {
+    draftState.timerSecondsLeft--;
+    updateTimerDisplay();
+
+    if (draftState.timerSecondsLeft <= 0) {
+      stopDraftTimer();
+      showToast('⏰ Timer agotado. Se debe asignar aeronave por defecto del rol.', 'warning');
+      // Según Anexo III §7.6: asignar aeronave por defecto del rol correspondiente.
+      // Por ahora solo advertimos (feature futura: auto-pick).
+    }
+  }, 1000);
+}
+
+function stopDraftTimer() {
+  if (draftState.timerInterval) {
+    clearInterval(draftState.timerInterval);
+    draftState.timerInterval = null;
+  }
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('tDraftTimerValue');
+  if (!el) return;
+
+  const total = draftState.timerSecondsLeft;
+  const mm = String(Math.floor(total / 60)).padStart(2, '0');
+  const ss = String(total % 60).padStart(2, '0');
+  el.textContent = `${mm}:${ss}`;
+
+  // Color según tiempo restante
+  if (total <= 30) {
+    el.style.color = '#ef4444';
+  } else if (total <= 90) {
+    el.style.color = '#f59e0b';
+  } else {
+    el.style.color = '#fde047';
+  }
+}
+
+// ─── Refrescar lista de drafts existentes ───────────────
+async function refreshExistingDrafts() {
+  if (!draftState.matchId || !draftState.tournamentId) return;
+
+  try {
+    const res = await apiTournamentsGetMatchDrafts(draftState.tournamentId, draftState.matchId);
+    if (!res.success) {
+      console.warn('[Draft] No se pudieron cargar los drafts', res.error);
+      draftState.existingDrafts = [];
+    } else {
+      draftState.existingDrafts = res.drafts || [];
+    }
+  } catch (err) {
+    console.error('[Draft] refreshExistingDrafts error:', err);
+    draftState.existingDrafts = [];
+  }
+
+  renderExistingDraftsList();
+  renderDraftAircraftGrid();  // re-render para actualizar baneadas
+}
+window.refreshExistingDrafts = refreshExistingDrafts;
+
+// ─── Render de la lista de acciones existentes ──────────
+function renderExistingDraftsList() {
+  const listEl = document.getElementById('tDraftExistingList');
+  if (!listEl) return;
+
+  const gameNumber = Number(document.getElementById('tDraftGameNumberInput')?.value || 1);
+  const gameDrafts = draftState.existingDrafts
+    .filter(d => d.game_number === gameNumber)
+    .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+
+  if (gameDrafts.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:#94a3b8;font-size:0.85rem;">Sin acciones registradas aún.</div>';
+    return;
+  }
+
+  listEl.innerHTML = gameDrafts.map(d => {
+    const aircraft = draftState.aircraftList.find(a => String(a.id) === String(d.aircraft_id));
+    const aircraftName = aircraft?.name || `#${String(d.aircraft_id).substring(0, 8)}`;
+    const teamLabel = String(d.team_id) === String(draftState.teamAId) ? '🔵 A' : '🔴 B';
+    const actionIcon = d.action === 'BAN' ? '🚫' : '✈️';
+    const actionColor = d.action === 'BAN' ? '#ef4444' : '#10b981';
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(15,23,42,0.5);border-left:3px solid ${actionColor};border-radius:4px;font-size:0.82rem;">
+        <span style="color:#cbd5e1;">
+          <span style="color:#64748b;font-family:var(--font-mono);font-size:0.75rem;margin-right:6px;">#${d.order_index}</span>
+          ${teamLabel} ${actionIcon} <strong>${escapeHTML(d.action)}</strong>
+        </span>
+        <span style="color:#f8fafc;font-weight:600;">${escapeHTML(aircraftName)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── Submit de acción del draft ─────────────────────────
+async function submitDraftAction() {
+  if (!draftState.matchId || !draftState.tournamentId) {
+    showToast('⚠️ No hay match seleccionado', 'warning');
+    return;
+  }
+
+  if (!draftState.selectedAircraftId) {
+    showToast('⚠️ Seleccioná una aeronave primero', 'warning');
+    return;
+  }
+
+  const gameNumber = parseInt(document.getElementById('tDraftGameNumberInput')?.value || '1', 10);
+  if (!gameNumber || gameNumber < 1 || gameNumber > 5) {
+    showToast('⚠️ Número de partida inválido (1-5)', 'warning');
+    return;
+  }
+
+  // Calcular order_index: siguiente correlativo
+  const gameDrafts = draftState.existingDrafts.filter(d => d.game_number === gameNumber);
+  const nextOrderIndex = gameDrafts.length + 1;
+
+  const teamId = draftState.currentTeam === 'A' ? draftState.teamAId : draftState.teamBId;
+
+  const payload = {
+    game_number: gameNumber,
+    team_id: teamId,
+    action: draftState.currentAction,
+    aircraft_id: String(draftState.selectedAircraftId),
+    order_index: nextOrderIndex
+  };
+
+  const btn = document.getElementById('tDraftSubmit');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando…'; }
+
+  try {
+    const res = await apiTournamentsRegisterDraft(draftState.tournamentId, draftState.matchId, payload);
+    if (!res.success) {
+      showToast('❌ ' + (res.error || 'Error al registrar acción'), 'error');
+      return;
+    }
+
+    showToast(`✅ ${draftState.currentAction} registrada`, 'success');
+
+    // Reset selección
+    draftState.selectedAircraftId = null;
+
+    // Refrescar lista y grilla
+    await refreshExistingDrafts();
+
+    // Info de vuelta
+    const infoEl = document.getElementById('tDraftSelectionInfo');
+    if (infoEl) {
+      infoEl.innerHTML = 'ℹ️ Acción registrada. Seleccioná otra aeronave o cambiá de equipo.';
+      infoEl.style.borderLeftColor = '#38bdf8';
+    }
+
+    // Reiniciar timer al confirmar acción (nuevo turno)
+    draftState.timerSecondsLeft = 300;
+    updateTimerDisplay();
+
+  } catch (err) {
+    console.error('[Draft] submitDraftAction error:', err);
+    showToast('❌ Error de conexión', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Registrar Acción'; }
+  }
+}
+window.submitDraftAction = submitDraftAction;
+
+// ─── Hook de cambio de número de partida ────────────────
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'tDraftGameNumberInput') {
+    const gn = parseInt(e.target.value || '1', 10);
+    const gameNumberEl = document.getElementById('tDraftGameNumber');
+    if (gameNumberEl) gameNumberEl.textContent = `— Partida ${gn}`;
+
+    // Reset selección al cambiar de partida
+    draftState.selectedAircraftId = null;
+
+    // Re-render
+    renderExistingDraftsList();
+    renderDraftAircraftGrid();
+  }
+});
+
+// ─── Badge de draft en cada match del bracket ───────────
+//  El render original (renderBracketMatch) se modifica ligeramente para
+//  mostrar un badge con la cantidad de acciones registradas.
+//  Como no podemos reescribir renderBracketMatch (ya está definida),
+//  usamos un MutationObserver sobre #tournamentTabContent para enriquecer
+//  el DOM después del render. Es un hack aceptable para no tocar F1.5a.
+function enrichBracketWithDraftBadges() {
+  // Implementación diferida: F1.5b avanzada solo muestra el botón.
+  // La visualización del draft en el bracket se hace con el contador manual.
+}
+
 console.log('✅ [Tournaments] Módulo F1.5a cargado. Funciones expuestas en window.');
