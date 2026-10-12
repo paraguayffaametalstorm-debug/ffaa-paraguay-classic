@@ -1,0 +1,7 @@
+# Backup pre-F1.2 (schemas Zod del sistema de torneos)
+# Fecha: 2026-10-12T01:11:39.866Z
+# HEAD: 369e71427069f4d71368b5a377643bdadf4adab9
+# Working tree:
+ M docs/planning/PLAN_TRABAJO_TORNEOS.md
+?? scripts/f1-2-create-schemas.cjs
+?? scripts/f1-2-update-docs.cjs
