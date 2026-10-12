@@ -249,8 +249,31 @@ app.use(
   })
 );
 
-// JSON Body Parser with safe limits
-app.use(express.json({ limit: '2mb' }));
+// ============================================================
+// JSON BODY PARSER (F1.6d)
+// ============================================================
+// El callback `verify` captura el buffer crudo del body SOLO para
+// /api/discord/interactions. Es imprescindible para verificar la
+// firma Ed25519 de Discord: la firma se calcula sobre los bytes
+// exactos del body, no sobre el JSON re-serializado.
+//
+// Se restringe a esa ruta para no inflar memoria con el buffer
+// de cada request de la SPA (Render free = 512MB RAM).
+//
+// Referencia:
+// https://discord.com/developers/docs/interactions/receiving-and-responding#security-and-authorization
+// ============================================================
+app.use(express.json({
+  limit: '2mb',
+  verify: (req, _res, buf) => {
+    // req.originalUrl incluye query string; hacemos split para
+    // matchear solo el path (Discord no manda query, pero por las dudas).
+    const pathOnly = (req.originalUrl || '').split('?')[0];
+    if (pathOnly === '/api/discord/interactions') {
+      req.rawBody = buf;
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // ============================================================
